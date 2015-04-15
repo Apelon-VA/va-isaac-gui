@@ -32,7 +32,7 @@
 		</dependency>
 		<dependency>
 			<groupId>gov.va.isaac.modules</groupId>
-			<artifactId>isaac-app-interfaces</artifactId>
+			<artifactId>app-interfaces</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
@@ -48,7 +48,7 @@
 		<!-- Need this to get the app configuration schema -->
 		<dependency>
 			<groupId>gov.va.isaac.modules</groupId>
-			<artifactId>isaac-app</artifactId>
+			<artifactId>app</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		

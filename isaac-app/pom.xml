@@ -9,7 +9,7 @@
 	</parent>
 	
 	<groupId>gov.va.isaac.modules</groupId>
-	<artifactId>isaac-app</artifactId>
+	<artifactId>app</artifactId>
 	<packaging>jar</packaging>
 
 	<name>ISAAC Application</name>

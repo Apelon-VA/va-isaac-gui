@@ -8,7 +8,7 @@
 	</parent>
 
 	<groupId>gov.va.isaac.modules</groupId>
-	<artifactId>isaac-drools</artifactId>
+	<artifactId>drools</artifactId>
 	<packaging>jar</packaging>
 
 	<name>ISAAC Extensions for DROOLS</name>

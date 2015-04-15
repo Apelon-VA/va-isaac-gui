@@ -8,7 +8,7 @@
 		<version>Sprint_21-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.va.isaac.modules</groupId>
-	<artifactId>isaac-constants</artifactId>
+	<artifactId>constants</artifactId>
 	<packaging>jar</packaging>
 
 	<name>ISAAC Constants</name>

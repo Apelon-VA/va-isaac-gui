@@ -27,7 +27,7 @@
 		<!-- ISAAC App. -->
 		<dependency>
 			<groupId>gov.va.isaac.modules</groupId>
-			<artifactId>isaac-app</artifactId>
+			<artifactId>app</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 

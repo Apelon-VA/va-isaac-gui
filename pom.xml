@@ -314,7 +314,7 @@
     </dependencies>
 
     <modules>
-        <module>isaac-app-interfaces</module>
+        <module>app-interfaces</module>
         <module>gui-util</module>
         <module>otf-util</module>
         <module>data-model</module>
@@ -324,19 +324,19 @@
         <module>taxonomy-view</module>
         <module>lego-view</module>
         <module>search-view</module>
-        <module>isaac-app</module>
-        <module>isaac-workflow</module>
+        <module>app</module>
+        <module>workflow</module>
         <module>info-model-view</module>
         <module>list-view</module>
         <module>mojos</module>
         <module>refex-view</module>
         <module>concept-wizard-view</module>
-        <module>isaac-constants</module>
-        <module>isaac-drools</module>
+        <module>constants</module>
+        <module>drools</module>
         <module>sync-view</module>
         <module>sync-git</module>
         <module>sync-svn</module>
-        <module>isaac-db-processing-rules</module>
+        <module>db-processing-rules</module>
         <module>mapping</module>
     </modules>
 

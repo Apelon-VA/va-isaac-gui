@@ -8,7 +8,7 @@
 	</parent>
 
 	<groupId>gov.va.isaac.modules</groupId>
-	<artifactId>isaac-db-processing-rules</artifactId>
+	<artifactId>db-processing-rules</artifactId>
 	<name>ISAAC DB Processing Rules</name>
 	<packaging>jar</packaging>
 

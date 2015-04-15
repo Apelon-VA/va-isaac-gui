@@ -7,12 +7,12 @@
 		<version>Sprint_21-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.va.isaac.modules</groupId>
-	<artifactId>isaac-app-interfaces</artifactId>
+	<artifactId>app-interfaces</artifactId>
 	<packaging>jar</packaging>
 
 	<name>ISAAC App Interfaces</name>
 	<description>
-		ISAAC Application Interfaces.  Modules implement these to provide a compatible module to the isaac-app.
+		ISAAC Application Interfaces.  Modules implement these to provide a compatible module to the app.
 	</description>
 	
 	<dependencies>
