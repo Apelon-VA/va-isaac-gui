@@ -38,8 +38,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <otf-query.version>1.1-va-1.14-SNAPSHOT</otf-query.version>
-        <otf-versioning.version>1.1-va-1.14-SNAPSHOT</otf-versioning.version>
+        <query.version>2.10-SNAPSHOT</query.version>
+        <ochre.version>2.25-SNAPSHOT</ochre.version>
+        <isaac-mojo.version>1.4-SNAPSHOT</isaac-mojo.version>
+        <newtons-cradle.version>1.15-SNAPSHOT</newtons-cradle.version>
         <kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
     </properties>
     
@@ -49,89 +51,38 @@
         <dependencies>
             <!-- OTF.  Includes JavaFX 2.2.45. -->
             <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>tcc-datastore</artifactId>
-                <version>${otf-versioning.version}</version>
+                <groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
+                <artifactId>newtons-cradle</artifactId>
+                <version>${newtons-cradle.version}</version>
                 <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             
-            <!-- Make sure sub-projects that only pull in API don't get JavaFX -->
             <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
+                <groupId>gov.vha.isaac.ochre.modules</groupId>
                 <artifactId>tcc-api</artifactId>
-                <version>${otf-versioning.version}</version>
+                <version>${ochre.version}</version>
                 <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <!-- Make sure sub-projects that only pull in mojo don't get JavaFX -->
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>tcc-mojo</artifactId>
-                <version>${otf-versioning.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             
             <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
+                <groupId>gov.vha.isaac</groupId>
+                <artifactId>isaac-mojo</artifactId>
+                <version>${isaac-mojo.version}</version>
+                <type>jar</type>
+            </dependency>
+            
+            <dependency>
+                <groupId>gov.vha.isaac.ochre.modules</groupId>
                 <artifactId>tcc-model-impl</artifactId>
-                <version>${otf-versioning.version}</version>
+                <version>${ochre.version}</version>
                 <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             
             <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
+                <groupId>gov.vha.isaac.query-service.modules</groupId>
                 <artifactId>query-implementation</artifactId>
-                <version>${otf-query.version}</version>
+                <version>${query.version}</version>
                 <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>query-jaxb-objects</artifactId>
-                <version>${otf-query.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             
             <!-- The native logback implementation (note, the logback api comes from parent) -->

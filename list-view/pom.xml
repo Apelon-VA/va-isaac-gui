@@ -19,7 +19,7 @@
 	
 		<!-- OTF Query Implementation. -->
 		<dependency>
-			<groupId>org.ihtsdo.otf</groupId>
+			<groupId>gov.vha.isaac.query-service.modules</groupId>
 			<artifactId>query-implementation</artifactId>
 		</dependency>
 	

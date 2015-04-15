@@ -19,8 +19,8 @@
 
 		<!-- OTF. -->
 		<dependency>
-			<groupId>org.ihtsdo.otf</groupId>
-			<artifactId>tcc-datastore</artifactId>
+			<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
+			<artifactId>newtons-cradle</artifactId>
 		</dependency>
 
 		<dependency>
