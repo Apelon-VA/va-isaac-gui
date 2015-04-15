@@ -2,11 +2,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>gov.va.isaac</groupId>
+		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
 		<version>Sprint_21-SNAPSHOT</version>
 	</parent>
-	<groupId>gov.va.isaac.modules</groupId>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>info-model-view</artifactId>
 	<packaging>jar</packaging>
 
@@ -25,14 +25,14 @@
 	
 		<!-- ISAAC App Utils. -->
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
 			<artifactId>otf-util</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		
 		<!-- ISAAC import-export tooling -->
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
 			<artifactId>import-export</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
