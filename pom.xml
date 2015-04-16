@@ -38,10 +38,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <query.version>2.10-SNAPSHOT</query.version>
-        <ochre.version>2.25-SNAPSHOT</ochre.version>
-        <isaac-mojo.version>1.4-SNAPSHOT</isaac-mojo.version>
-        <newtons-cradle.version>1.15-SNAPSHOT</newtons-cradle.version>
+        <query.version>2.11-SNAPSHOT</query.version>
+        <ochre.version>2.26-SNAPSHOT</ochre.version>
+        <isaac-mojo.version>1.5-SNAPSHOT</isaac-mojo.version>
+        <newtons-cradle.version>1.16-SNAPSHOT</newtons-cradle.version>
         <kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
     </properties>
     
