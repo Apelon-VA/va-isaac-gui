@@ -7,7 +7,7 @@ import gov.va.isaac.util.Utility;
 import java.util.HashMap;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -19,7 +19,7 @@ public class MappingObject extends StampedItem {
 	protected final SimpleStringProperty editorStatusConceptProperty = new SimpleStringProperty();
 	protected HashMap<UUID, String> cachedValues = new HashMap<>();
 	
-	protected static BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+	protected static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 	
 	/**
 	 * @return the editorStatusConcept

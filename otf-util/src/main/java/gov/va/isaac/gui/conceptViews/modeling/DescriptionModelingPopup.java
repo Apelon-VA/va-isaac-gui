@@ -44,7 +44,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -79,15 +78,12 @@ public class DescriptionModelingPopup extends ModelingPopup
 			termTf.setBackground(notEditableBackground);
 		}
 		
-		try {
-			if (desc.getTypeNid() == SnomedMetadataRf2.SYNONYM_RF2.getNid()) {
-				typeCb.getSelectionModel().select("Synonym");
-			} else if (desc.getTypeNid() == Snomed.DEFINITION_DESCRIPTION_TYPE.getNid()) {
-				typeCb.getSelectionModel().select("Definition");
-			}
-		} catch (IOException e) {
-			logger_.error("Cannot access Description Type: " + typeCb.getSelectionModel().getSelectedItem());
+		if (desc.getTypeNid() == SnomedMetadataRf2.SYNONYM_RF2.getNid()) {
+			typeCb.getSelectionModel().select("Synonym");
+		} else if (desc.getTypeNid() == Snomed.DEFINITION_DESCRIPTION_TYPE.getNid()) {
+			typeCb.getSelectionModel().select("Definition");
 		}
+
 		
 		languageCodeCb.getSelectionModel().select(desc.getLang());
 
@@ -112,7 +108,7 @@ public class DescriptionModelingPopup extends ModelingPopup
 			createOriginalLabel(displayVersion.getLang());
 			createOriginalLabel((displayVersion.isInitialCaseSignificant()) ? "True" : "False");
 		} catch (Exception e) {
-			Log.error("Cannot access Pref Term for attributes of relationship: "  + desc.getPrimordialUuid(), e);
+			LOG.error("Cannot access Pref Term for attributes of relationship: "  + desc.getPrimordialUuid(), e);
 		}
 		
 		setupGridPaneConstraints();
@@ -333,14 +329,10 @@ public class DescriptionModelingPopup extends ModelingPopup
 	}
 
 	private int getSelectedType() {
-		try {
-			if (typeCb.getSelectionModel().getSelectedItem().equalsIgnoreCase("Synonym")) {
-				return SnomedMetadataRf2.SYNONYM_RF2.getNid();
-			} else if (typeCb.getSelectionModel().getSelectedItem().equalsIgnoreCase("Definition")) {
-				return Snomed.DEFINITION_DESCRIPTION_TYPE.getNid();
-			}
-		} catch (IOException e) {
-			logger_.error("Cannot access Description Type: " + typeCb.getSelectionModel().getSelectedItem());
+		if (typeCb.getSelectionModel().getSelectedItem().equalsIgnoreCase("Synonym")) {
+			return SnomedMetadataRf2.SYNONYM_RF2.getNid();
+		} else if (typeCb.getSelectionModel().getSelectedItem().equalsIgnoreCase("Definition")) {
+			return Snomed.DEFINITION_DESCRIPTION_TYPE.getNid();
 		}
 		
 		return 0;

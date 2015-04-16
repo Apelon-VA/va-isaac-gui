@@ -20,7 +20,7 @@ package gov.va.isaac.gui;
 
 import gov.va.isaac.util.OTFUtility;
 import java.util.function.Function;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;

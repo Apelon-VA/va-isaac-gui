@@ -45,7 +45,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,7 +192,7 @@ public class MappingUtils
 					try
 					{
 						ArrayList<CompositeSearchResult> keep = new ArrayList<>();
-						BdbTerminologyStore ds = ExtendedAppContext.getDataStore();
+						TerminologyStoreDI ds = ExtendedAppContext.getDataStore();
 						ViewCoordinate vc = OTFUtility.getViewCoordinate();
 						
 						for (CompositeSearchResult csr : t)

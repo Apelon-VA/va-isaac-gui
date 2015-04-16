@@ -20,6 +20,7 @@ package gov.va.isaac.gui.conceptViews.modeling;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.util.UpdateableBooleanBinding;
@@ -45,8 +46,9 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRfx;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -59,6 +61,8 @@ import org.jvnet.hk2.annotations.Service;
 @PerLookup
 public class RelationshipModelingPopup extends ModelingPopup
 {
+	private Logger logger = LoggerFactory.getLogger(RelationshipModelingPopup.class);
+	
 	private ConceptNode otherEndCon;
 	private ConceptNode typeCon;
 	private TextField groupNum;
@@ -137,7 +141,7 @@ public class RelationshipModelingPopup extends ModelingPopup
 			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getCharacteristicNid()).getPreferredDescription().getText());
 			createOriginalLabel(String.valueOf(displayVersion.getGroup()));
 		} catch (Exception e) {
-			Log.error("Cannot access Pref Term for attributes of relationship: "  + rel.getPrimordialUuid(), e);
+			logger.error("Cannot access Pref Term for attributes of relationship: "  + rel.getPrimordialUuid(), e);
 		}
 
 		setupGridPaneConstraints();

@@ -24,7 +24,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.Position;
 import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.dto.ChronicleConverter;
 import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ public class EConceptExporter extends CommonBase implements
       .getLogger(EConceptExporter.class);
 
   /** The data store. */
-  private static BdbTerminologyStore dataStore = ExtendedAppContext
+  private static TerminologyStoreDI dataStore = ExtendedAppContext
       .getDataStore();
 
   /** The dos. */

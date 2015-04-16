@@ -60,7 +60,7 @@ public class MappingViewRunner extends Application
 		}
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
-//		BdbTerminologyStore dataStore = AppContext.getServiceLocator().getService(BdbTerminologyStore.class);
+//		TerminologyStoreDI dataStore = AppContext.getServiceLocator().getService(TerminologyStoreDI.class);
 //		Thread.sleep(3000);
 //		
 //		MappingDataAccess.createMappingSet("test mapping2", "inverse another", "purpose 2", "description 2", UUID.fromString("d481125e-b8ca-537c-b688-d09d626e5ff9"));

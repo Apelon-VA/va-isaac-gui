@@ -41,7 +41,6 @@ import javafx.collections.ObservableList;
 import javax.inject.Singleton;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -500,7 +499,7 @@ public class UserProfileManager implements ServicesToPreloadI
 		loggedInUser_ = up;
 		AppContext.getService(UserProfileBindings.class).update(loggedInUser_);
 		userNamesWithProfiles_.add(up.getUserLogonName());
-		Log.info("User Profile Manager automation mode enabled!");
+		logger.info("User Profile Manager automation mode enabled!");
 	}
 	
 	public boolean isAutomationModeEnabled()

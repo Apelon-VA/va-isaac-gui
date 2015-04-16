@@ -37,7 +37,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -596,8 +595,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 			
 		} catch(Exception e) 
 		{ 
-			Log.error("We could not get the SCT from the Given NID");
-			e.printStackTrace();  //TODO nope
+			LOG.error("We could not get the SCT from the Given NID", e);
 			return 0;  //document the failure behavior - is 0 an appropriate thing to return if no sctid could be found?
 		}
 		

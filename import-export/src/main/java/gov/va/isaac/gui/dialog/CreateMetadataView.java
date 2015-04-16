@@ -37,7 +37,7 @@ import javafx.concurrent.Task;
 import javafx.scene.Cursor;
 import javafx.stage.Window;
 
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +104,7 @@ public class CreateMetadataView implements PopupViewI, IsaacViewWithMenusI {
     Task<Boolean> task = new Task<Boolean>() {
       @Override
       protected Boolean call() throws Exception {
-        BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+        TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
         InformationModelService service =
             new BdbInformationModelService(dataStore);
         service.createMetadataConcepts();

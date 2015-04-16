@@ -20,14 +20,10 @@ package gov.va.isaac.gui.treeview;
 
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Callable;
-
 import javafx.application.Platform;
-
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
 import org.ihtsdo.otf.tcc.ddo.ComponentReference;
 import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
@@ -36,7 +32,7 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersion
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
-import org.jfree.util.Log;
+import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +91,7 @@ public class GetSctTreeItemConceptCallable implements Callable<Boolean> {
             return false;
         }
 
-        BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+        FxTerminologyStoreDI dataStore = ExtendedAppContext.getService(FxTerminologyStoreDI.class);
         concept = dataStore.getFxConcept(reference,
                 OTFUtility.getViewCoordinate(),
                 versionPolicy, refexPolicy, relationshipPolicy);

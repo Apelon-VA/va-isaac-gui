@@ -56,7 +56,7 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -196,7 +196,7 @@ public class GenerateUsers
 		AppContext.getRuntimeGlobals().disableAllCommitListeners();
 		try
 		{
-			BdbTerminologyStore ts = ExtendedAppContext.getDataStore();
+			TerminologyStoreDI ts = ExtendedAppContext.getDataStore();
 			String fsn = user.getUniqueFullName();
 			String preferredName = user.getFullName();
 			String logonName = user.getUniqueLogonName();

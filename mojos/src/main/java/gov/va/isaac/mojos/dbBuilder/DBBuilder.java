@@ -38,7 +38,7 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.RelSpec;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
 
@@ -120,7 +120,7 @@ public class DBBuilder extends AbstractMojo
 
 			if (setupAndShutdown)
 			{
-				System.setProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY, bdbFolderFile.getCanonicalPath());
+				System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, bdbFolderFile.getCanonicalPath());
 				System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, DBLocator.findLuceneIndexFolder(bdbFolderFile).getCanonicalPath());
 
 				AppContext.setup();

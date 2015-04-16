@@ -31,7 +31,7 @@ import java.util.List;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.slf4j.Logger;
@@ -89,7 +89,7 @@ public class SampleTest extends ExporterBase {
     Field f = Hk2Looker.class.getDeclaredField("looker");
     f.setAccessible(true);
     f.set(null, AppContext.getServiceLocator());
-    System.setProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY, new File(
+    System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, new File(
         "../isaac-app/berkeley-db").getAbsolutePath());
 
     // FHIM Models RS.

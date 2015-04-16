@@ -17,10 +17,15 @@
 
 	<dependencies>
 
-		<!-- OTF. -->
 		<dependency>
 			<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
 			<artifactId>newtons-cradle</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sleepycat</groupId>
+			<artifactId>je</artifactId>
+			<version>5.0.97</version>
 		</dependency>
 
 		<dependency>

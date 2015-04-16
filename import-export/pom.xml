@@ -42,6 +42,12 @@
             <groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
             <artifactId>newtons-cradle</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>18.0</version>
+        </dependency>
         
         <!-- Eclipse EMF/UML2. -->
         <dependency>
@@ -92,8 +98,8 @@
             <artifactId>org.eclipse.emf.common</artifactId>
             <version>2.9.1-v20130827-0309</version>
         </dependency>
-		
-		<dependency>
+        
+        <dependency>
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-distribution</artifactId>
             <version>3.5.0</version>

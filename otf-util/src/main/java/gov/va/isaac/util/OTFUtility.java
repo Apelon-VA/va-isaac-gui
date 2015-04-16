@@ -74,7 +74,7 @@ import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.uuid.UuidFactory;
 import org.ihtsdo.otf.tcc.datastore.BdbTermBuilder;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
@@ -112,7 +112,7 @@ public class OTFUtility {
 	private static Integer synonymRf1Nid = null;
 	private static Integer langTypeNid = null;
 	
-	private static BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static final Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
 

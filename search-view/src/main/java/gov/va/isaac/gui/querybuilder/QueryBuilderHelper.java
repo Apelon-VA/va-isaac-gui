@@ -70,8 +70,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetItrBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
-import org.jfree.util.Log;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +83,7 @@ import org.slf4j.LoggerFactory;
 public class QueryBuilderHelper {
 	private final static Logger logger = LoggerFactory.getLogger(QueryBuilderHelper.class);
 	
-	private final static BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+	private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static NativeIdSetBI results;
 
@@ -160,7 +159,7 @@ public class QueryBuilderHelper {
 
 		if (draggableNode == null) {
 			String error = "populateNodeEditorGridPane() passed null node";
-			Log.warn(error);
+			logger.warn(error);
 		} else {
 			if (draggableNode instanceof LogicalNode) {
 				LogicalNode logicalNode = (LogicalNode)draggableNode;
@@ -674,14 +673,14 @@ public class QueryBuilderHelper {
 		
 		if (results != null) {
 			NativeIdSetItrBI itr = results.getSetBitIterator();
-            while (itr.next()) {
-            	int nid = itr.nid();
-            	ConceptVersionBI con = OTFUtility.getConceptVersion(nid);
+			while (itr.next()) {
+				int nid = itr.nid();
+				ConceptVersionBI con = OTFUtility.getConceptVersion(nid);
 				CompositeSearchResult nidResult = new CompositeSearchResult(con, 0);
 				collection.add(nidResult);
 			}
-        }
+		}
 
-        return collection;
+		return collection;
 	}
 }

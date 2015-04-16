@@ -31,14 +31,12 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationV
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
-
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -50,12 +48,10 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.jfree.util.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +62,8 @@ import org.slf4j.LoggerFactory;
  */
 public class CommonMenus
 {
+	private static final Logger LOG = LoggerFactory.getLogger(CommonMenus.class);
+	
 	public enum MergeMode {
 		USE_EXISTING, // Will not replace existing menu items with matching text
 		REPLACE_EXISTING, // Will replace existing menu items with matching text
@@ -77,9 +75,9 @@ public class CommonMenus
 		CONCEPT_VIEW("View Concept", Images.CONCEPT_VIEW),
 		CONCEPT_VIEW_LEGACY("View Concept 2", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
-        WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
-        USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
-        LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
+		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
+		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
+		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
 		
 		SEND_TO("Send To", null),
 			LIST_VIEW("List View", Images.LIST_VIEW),
@@ -110,8 +108,6 @@ public class CommonMenus
 			return image;
 		}
 	}
-
-	private static final Logger LOG = LoggerFactory.getLogger(CommonMenus.class);
 
 	public static class ObjectContainer {
 		final Object object;
@@ -317,13 +313,13 @@ public class CommonMenus
 				switch (builder.getMergeMode()) {
 				case ADD_TO_EXISTING:
 					if (existingMatch != null) {
-						Log.debug("Adding MenuItem with same name as existing MenuItem \"" + existingMatch.getText() + "\"");
+						LOG.debug("Adding MenuItem with same name as existing MenuItem \"" + existingMatch.getText() + "\"");
 					}
 					existingMenu.getItems().add(newItem);
 					break;
 				case REPLACE_EXISTING:
 					if (existingMatch != null) {
-						Log.debug("Removing and replacing existing MenuItem \"" + existingMatch.getText() + "\"");
+						LOG.debug("Removing and replacing existing MenuItem \"" + existingMatch.getText() + "\"");
 						existingMenu.getItems().remove(existingMatch);
 					}
 					existingMenu.getItems().add(newItem);
@@ -332,7 +328,7 @@ public class CommonMenus
 					if (existingMatch == null) {
 						existingMenu.getItems().add(newItem);
 					} else {
-						Log.debug("Not adding MenuItem with same name as existing MenuItem \"" + existingMatch.getText() + "\"");
+						LOG.debug("Not adding MenuItem with same name as existing MenuItem \"" + existingMatch.getText() + "\"");
 					}
 					break;
 				default:
@@ -496,47 +492,47 @@ public class CommonMenus
 			menuItems.add(openTaskViewMenuItem);
 		}
 
-        // Menu item to perform a USCRS content request
-        MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
-                CommonMenuItem.USCRS_REQUEST_VIEW,
-                builder,
-                () -> {
-                    return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-                    }, // canHandle
-                    commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),             //make visible
-                // onHandlable
-                () -> {
-                    ContentRequestHandlerI handler = AppContext.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS);
-                    handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
-                    handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-                },
-                // onNotHandlable
-                () -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-        if (uscrsRequestViewMenuItem != null)
-        {
-            menuItems.add(uscrsRequestViewMenuItem);
-        }
+		// Menu item to perform a USCRS content request
+		MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
+				CommonMenuItem.USCRS_REQUEST_VIEW,
+				builder,
+				() -> {
+					return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+					}, // canHandle
+					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+				// onHandlable
+				() -> {
+					ContentRequestHandlerI handler = AppContext.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS);
+					handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+					handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+				},
+				// onNotHandlable
+				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+		if (uscrsRequestViewMenuItem != null)
+		{
+			menuItems.add(uscrsRequestViewMenuItem);
+		}
 
-        // Menu item to perform a LOINC content request
-        MenuItem loincRequestViewMenuItem = createNewMenuItem(
-                CommonMenuItem.LOINC_REQUEST_VIEW,
-                builder,
-                () -> {
-                    return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-                    }, // canHandle
-                    commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),             //make visible
-                // onHandlable
-                () -> {
-                    ContentRequestHandlerI handler = AppContext.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC);
-                    handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
-                    handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-                },
-                // onNotHandlable
-                () -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-        if (loincRequestViewMenuItem != null)
-        {
-            menuItems.add(loincRequestViewMenuItem);
-        }
+		// Menu item to perform a LOINC content request
+		MenuItem loincRequestViewMenuItem = createNewMenuItem(
+				CommonMenuItem.LOINC_REQUEST_VIEW,
+				builder,
+				() -> {
+					return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+					}, // canHandle
+					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+				// onHandlable
+				() -> {
+					ContentRequestHandlerI handler = AppContext.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC);
+					handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+					handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+				},
+				// onNotHandlable
+				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+		if (loincRequestViewMenuItem != null)
+		{
+			menuItems.add(loincRequestViewMenuItem);
+		}
 
 		MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
 				CommonMenuItem.RELEASE_WORKFLOW_TASK,

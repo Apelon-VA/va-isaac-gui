@@ -26,7 +26,7 @@ import org.jvnet.hk2.annotations.Contract;
  * {@link CommitListenerI}
  *
  * An interface that allows implementers to easily mark their Service as something that will register 
- * itself with {@link BdbTerminologyStore#addPropertyChangeListener} as a class that does things on 
+ * itself with {@link TerminologyStoreDI#addPropertyChangeListener} as a class that does things on 
  * preCommit / Commit / postCommit.
  * 
  * The only intent of this interface is to provide a global handle to all modules which are registered to do 

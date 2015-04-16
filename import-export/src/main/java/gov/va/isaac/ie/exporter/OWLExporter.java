@@ -28,7 +28,7 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Taxonomies;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.RDFXMLOntologyFormat;
 import org.semanticweb.owlapi.model.AddOntologyAnnotation;
@@ -66,7 +66,7 @@ public class OWLExporter extends CommonBase implements Exporter,
   private static final Logger LOG = LoggerFactory.getLogger(OWLExporter.class);
 
   /** The data store. */
-  private static BdbTerminologyStore dataStore = ExtendedAppContext
+  private static TerminologyStoreDI dataStore = ExtendedAppContext
       .getDataStore();
 
   /** The dos. */

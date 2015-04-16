@@ -40,7 +40,7 @@ import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -278,7 +278,7 @@ public class SearchHandler
 			public void run()
 			{
 				//make sure the data store is loaded
-				BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+				TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 				List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
 				try
 				{
@@ -427,7 +427,7 @@ public class SearchHandler
 				try
 				{
 					//make sure the data store is loaded
-					BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+					TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 					List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
 					LuceneDynamicRefexIndexer refexIndexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
 					

@@ -42,8 +42,6 @@ import java.util.UUID;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
-
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

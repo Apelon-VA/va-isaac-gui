@@ -27,7 +27,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.ihtsdo.otf.query.lucene.LuceneIndexer;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
 /**
@@ -73,7 +73,7 @@ public class Setup extends AbstractMojo
 
 			bdbFolderFile = DBLocator.findDBFolder(bdbFolderFile);
 			
-			System.setProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY, bdbFolderFile.getCanonicalPath());
+			System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, bdbFolderFile.getCanonicalPath());
 			System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, DBLocator.findLuceneIndexFolder(bdbFolderFile).getCanonicalPath());
 
 			getLog().info("  Setup AppContext, bdb location = " + bdbFolderFile.getCanonicalPath());

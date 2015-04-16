@@ -62,7 +62,7 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.time.TimeHelper;
 import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,7 +193,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
   private int pathNid;
 
   /** The data store. */
-  private static BdbTerminologyStore dataStore = ExtendedAppContext
+  private static TerminologyStoreDI dataStore = ExtendedAppContext
       .getDataStore();
 
   /** the count so far. */

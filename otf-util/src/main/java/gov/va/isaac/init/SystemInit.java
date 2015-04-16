@@ -25,7 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,13 +66,13 @@ public class SystemInit
 			{
 				configDataStorePaths(dbLocation);
 			}
-			else if (System.getProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY) == null)
+			else if (System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY) == null)
 			{
-				configDataStorePaths(new File(BdbTerminologyStore.DEFAULT_BDB_LOCATION));
+				configDataStorePaths(new File(TerminologyStoreDI.DEFAULT_BDB_LOCATION));
 			}
 			else
 			{
-				configDataStorePaths(new File(System.getProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY)));
+				configDataStorePaths(new File(System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY)));
 			}
 		}
 		catch (IOException e)
@@ -113,14 +113,14 @@ public class SystemInit
 				throw new IOException("The specified bdb data store: '" + localBDBLocation.getAbsolutePath() + "' is not a folder");
 			}
 
-			if (System.getProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY) == null)
+			if (System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY) == null)
 			{
-				System.setProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY, localBDBLocation.getCanonicalPath());
+				System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, localBDBLocation.getCanonicalPath());
 			}
 			else
 			{
-				LOG.warn("The application specified '" + localBDBLocation.getCanonicalPath() + "' but the system property " + BdbTerminologyStore.BDB_LOCATION_PROPERTY
-						+ " is set to " + System.getProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY) + " this will override the application path");
+				LOG.warn("The application specified '" + localBDBLocation.getCanonicalPath() + "' but the system property " + TerminologyStoreDI.BDB_LOCATION_PROPERTY
+						+ " is set to " + System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY) + " this will override the application path");
 			}
 			if (System.getProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY) == null)
 			{

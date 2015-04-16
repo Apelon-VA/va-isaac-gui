@@ -31,7 +31,7 @@ import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
 /**
@@ -64,7 +64,7 @@ public class NewConceptCreationWizardRunner extends Application
 		Field f = Hk2Looker.class.getDeclaredField("looker");
 		f.setAccessible(true);
 		f.set(null, AppContext.getServiceLocator());
-		System.setProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY, new File("../../ISAAC-PA/app/berkeley-db").getCanonicalPath());
+		System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, new File("../../ISAAC-PA/app/berkeley-db").getCanonicalPath());
 		System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, new File("../../ISAAC-PA/app/berkeley-db").getCanonicalPath());
 		launch(args);
 	}

@@ -59,7 +59,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +122,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 			AtomicBoolean readAppMetadata = new AtomicBoolean(false);
 			
 			//Read the db metadata
-			String dbLocation = System.getProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY);
+			String dbLocation = System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY);
 			if (dbLocation != null)
 			{
 				//find the pom.properties file in the hierarchy

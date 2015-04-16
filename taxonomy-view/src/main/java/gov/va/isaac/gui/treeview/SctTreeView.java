@@ -61,7 +61,7 @@ import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedRelType;
 import org.ihtsdo.otf.tcc.api.store.TerminologySnapshotDI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronicleDdo;
@@ -69,6 +69,7 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersion
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
+import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,7 +294,7 @@ class SctTreeView {
             @Override
             protected ConceptChronicleDdo call() throws Exception {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
-                ConceptChronicleDdo rootConceptCC = ExtendedAppContext.getDataStore().getFxConcept(
+                ConceptChronicleDdo rootConceptCC = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(
                         rootConcept,
                         OTFUtility.getViewCoordinate(),
                         VersionPolicy.ACTIVE_VERSIONS,
@@ -616,7 +617,7 @@ class SctTreeView {
     }
 
     /**
-     * The various {@link BdbTerminologyStore#getFxConcept()} APIs break if
+     * The various {@link TerminologyStoreDI#getFxConcept()} APIs break if
      * you ask for a concept that doesn't exist.
      * This method creates a {@link ConceptChronicleDdo} manually instead.
      */
@@ -629,7 +630,7 @@ class SctTreeView {
             return null;
         }
 
-        BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+        TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
         ViewCoordinate viewCoordinate = OTFUtility.getViewCoordinate();
         TerminologySnapshotDI snapshot = dataStore.getSnapshot(viewCoordinate);
 

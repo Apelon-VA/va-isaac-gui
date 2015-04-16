@@ -39,7 +39,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,12 +154,12 @@ public class App extends Application implements ApplicationWindowI{
     private void loadDataStore() {
 
         // Do work in background.
-        Task<BdbTerminologyStore> task = new Task<BdbTerminologyStore>() {
+        Task<TerminologyStoreDI> task = new Task<TerminologyStoreDI>() {
 
             @Override
-            protected BdbTerminologyStore call() throws Exception {
+            protected TerminologyStoreDI call() throws Exception {
                 LOG.info("Opening Workbench database");
-                BdbTerminologyStore dataStore = AppContext.getServiceLocator().getService(BdbTerminologyStore.class);
+                TerminologyStoreDI dataStore = AppContext.getServiceLocator().getService(TerminologyStoreDI.class);
                 LOG.info("Finished opening Workbench database");
 
                 // Check if user shut down early.

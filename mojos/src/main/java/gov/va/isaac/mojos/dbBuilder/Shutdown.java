@@ -24,7 +24,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.ihtsdo.otf.tcc.api.io.FileIO;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 /**
  * Goal which shuts down an open data store.
@@ -67,7 +67,7 @@ public class Shutdown extends AbstractMojo
 			{
 				getLog().info("moving mutable to read-only");
 
-				String bdbFolderLocation = System.getProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY);
+				String bdbFolderLocation = System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY);
 
 				File readOnlyDir = new File(bdbFolderLocation, "read-only");
 				FileIO.recursiveDelete(readOnlyDir);
