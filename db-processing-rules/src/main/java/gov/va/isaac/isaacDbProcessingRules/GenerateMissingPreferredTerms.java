@@ -32,7 +32,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf1;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
@@ -115,24 +114,21 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 				continue;
 			}
 			
-			if (currentDescription.getTypeNid() == SnomedMetadataRf2.FULLY_SPECIFIED_NAME_RF2.getNid() 
-					|| currentDescription.getTypeNid() == SnomedMetadataRf1.FULLY_SPECIFIED_DESCRIPTION_TYPE.getNid())
+			if (currentDescription.getTypeNid() == SnomedMetadataRf2.FULLY_SPECIFIED_NAME_RF2.getNid())
 			{
 				fsnText = currentDescription.getText();
 				fsnLC = LanguageCode.getLangCode(currentDescription.getLang());
 				pathNid = currentDescription.getPathNid();
 				moduleNid = currentDescription.getModuleNid();
 			}
-			else if (currentDescription.getTypeNid() == SnomedMetadataRf2.SYNONYM_RF2.getNid() ||
-					currentDescription.getTypeNid() == SnomedMetadataRf1.SYNOMYM_DESCRIPTION_TYPE_RF1.getNid())
+			else if (currentDescription.getTypeNid() == SnomedMetadataRf2.SYNONYM_RF2.getNid())
 			{
 				for (RefexChronicleBI<?> refex : currentDescription.getRefexes())
 				{
 					RefexVersionBI<?> currentRefex = OTFUtility.getLatestRefexVersion(refex.getVersions());
 					if (currentRefex instanceof RefexNidVersionBI)
 					{
-						if (((RefexNidVersionBI<?>)currentRefex).getNid1() == SnomedMetadataRf2.PREFERRED_RF2.getNid() ||
-								((RefexNidVersionBI<?>)currentRefex).getNid1() == SnomedMetadataRf1.PREFERRED_TERM_DESCRIPTION_TYPE_RF1.getNid())
+						if (((RefexNidVersionBI<?>)currentRefex).getNid1() == SnomedMetadataRf2.PREFERRED_RF2.getNid())
 						{
 							foundPreferred = true;
 							break;

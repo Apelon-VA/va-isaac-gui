@@ -58,7 +58,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf1;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedRelType;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
@@ -100,16 +99,10 @@ public class OTFUtility {
 	private static final UUID FSN_UUID = SnomedMetadataRf2.FULLY_SPECIFIED_NAME_RF2.getUuids()[0];
 	private static final UUID PREFERRED_UUID = SnomedMetadataRf2.PREFERRED_RF2.getUuids()[0];
 	private static final UUID SYNONYM_UUID = SnomedMetadataRf2.SYNONYM_RF2.getUuids()[0];
-	private static final UUID FSN_RF1_UUID = SnomedMetadataRf1.FULLY_SPECIFIED_DESCRIPTION_TYPE.getUuids()[0];
-	private static final UUID PREFERRED_RF1_UUID = SnomedMetadataRf1.PREFERRED_TERM_DESCRIPTION_TYPE_RF1.getUuids()[0];
-	private static final UUID SYNONYM_RF1_UUID = SnomedMetadataRf1.SYNOMYM_DESCRIPTION_TYPE_RF1.getUuids()[0];
 
 	private static Integer fsnNid = null;
 	private static Integer preferredNid = null;
 	private static Integer synonymNid = null;
-	private static Integer fsnRf1Nid = null;
-	private static Integer preferredRf1Nid = null;
-	private static Integer synonymRf1Nid = null;
 	private static Integer langTypeNid = null;
 	
 	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
@@ -263,7 +256,7 @@ public class OTFUtility {
 					DescriptionVersionBI<?> descVer = desc.getVersions()
 							.toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
 
-					if (descVer.getTypeNid() == getFSNNid() || descVer.getTypeNid() == getFsnRf1Nid()) {
+					if (descVer.getTypeNid() == getFSNNid()) {
 						if (descVer.getStatus() == Status.ACTIVE) {
 							if (ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
 								return descVer.getText();
@@ -274,7 +267,7 @@ public class OTFUtility {
 						} else {
 							bestFound = descVer.getText();
 						}
-					} else if ((descVer.getTypeNid() == getSynonymTypeNid() || descVer.getTypeNid() == getSynonymRf1TypeNid()) && 
+					} else if ((descVer.getTypeNid() == getSynonymTypeNid()) && 
 							isPreferred(descVer.getAnnotations())) {
 						if (descVer.getStatus() == Status.ACTIVE) {
 							if (!ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
@@ -304,7 +297,7 @@ public class OTFUtility {
 					DescriptionVersionBI<?> descVer = desc.getVersions()
 							.toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
 
-					if (descVer.getTypeNid() == getFSNNid() || descVer.getTypeNid() == getFsnRf1Nid()) {
+					if (descVer.getTypeNid() == getFSNNid()) {
 						if (descVer.getStatus() == Status.ACTIVE) {
 								return descVer.getText();
 						}
@@ -325,13 +318,6 @@ public class OTFUtility {
 		return fsnNid;
 	}
 
-	private static int getFsnRf1Nid() {
-		if (fsnRf1Nid == null) {
-			fsnRf1Nid = dataStore.getNidForUuids(FSN_RF1_UUID);
-		}
-		return fsnRf1Nid;
-	}
-
 	private static int getSynonymTypeNid() {
 		// Lazily load.
 		if (synonymNid == null) {
@@ -340,14 +326,6 @@ public class OTFUtility {
 		return synonymNid;
 	}
 
-	private static int getSynonymRf1TypeNid() {
-		// Lazily load.
-		if (synonymRf1Nid == null) {
-			synonymRf1Nid = dataStore.getNidForUuids(SYNONYM_RF1_UUID);
-		}
-		return synonymRf1Nid;
-	}
-	
 	public static int getLangTypeNid() {
 		// Lazily load.
 		if (langTypeNid == null) {
@@ -364,14 +342,6 @@ public class OTFUtility {
 		return preferredNid;
 	}
 
-	private static int getPreferredRf1TypeNid() {
-		// Lazily load.
-		if (preferredRf1Nid == null) {
-			preferredRf1Nid = dataStore.getNidForUuids(PREFERRED_RF1_UUID);
-		}
-		return preferredRf1Nid;
-	}
-
 	/**
 	 * Pass in the annotations on a description component to determine if one of the 
 	 * annotations is the isPreferred annotation
@@ -380,7 +350,7 @@ public class OTFUtility {
 		for (RefexChronicleBI<?> rc : collection) {
 			if (rc.getRefexType() == RefexType.CID) {
 				int nid1 = ((NidMember) rc).getNid1();  // RefexType.CID means NidMember.
-				if (nid1 == getPreferredTypeNid() || nid1 == getPreferredRf1TypeNid()) {
+				if (nid1 == getPreferredTypeNid()) {
 					return true;
 				}
 			}
@@ -404,7 +374,7 @@ public class OTFUtility {
 		String bestFound = null;
 		for (DescriptionChronicleDdo d : concept.getDescriptions()) {
 			DescriptionVersionDdo dv = d.getVersions().get(d.getVersions().size() - 1);
-			if (dv.getTypeReference().getUuid().equals(FSN_UUID) || dv.getTypeReference().getUuid().equals(FSN_RF1_UUID)) {
+			if (dv.getTypeReference().getUuid().equals(FSN_UUID) ) {
 				if (dv.getStatus() == Status.ACTIVE) {
 					if (ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
 						return dv.getText();
@@ -414,7 +384,7 @@ public class OTFUtility {
 				} else {
 					bestFound = dv.getText();
 				}
-			} else if (dv.getTypeReference().getUuid().equals(SYNONYM_UUID) || dv.getTypeReference().getUuid().equals(SYNONYM_RF1_UUID)) {
+			} else if (dv.getTypeReference().getUuid().equals(SYNONYM_UUID)) {
 				if ((dv.getStatus() == Status.ACTIVE) && isPreferred(dv.getAnnotations())) {
 					if (!ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
 						return dv.getText();
@@ -438,7 +408,7 @@ public class OTFUtility {
 			for (Object version : frc.getVersions()) {
 				if (version instanceof RefexCompVersionDdo) {
 					UUID uuid = ((RefexCompVersionDdo<?, ?>) version).getComp1Ref().getUuid();
-					return uuid.equals(PREFERRED_UUID) || uuid.equals(PREFERRED_RF1_UUID);
+					return uuid.equals(PREFERRED_UUID);
 				}
 			}
 		}
