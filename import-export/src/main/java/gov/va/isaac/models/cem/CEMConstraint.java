@@ -5,11 +5,10 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
@@ -127,7 +126,8 @@ public class CEMConstraint {
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
 					RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, 
 																									 new RefexDynamicColumnInfo[] {},
-																									 InformationModels.CEM_ENUMERATIONS.getUuids()[0], false, null);
+																									 InformationModels.CEM_ENUMERATIONS.getUuids()[0], false, null,
+																									 ViewCoordinates.getMetadataViewCoordinate());
 				} catch (IOException | ContradictionException | InvalidCAB
 						| PropertyVetoException e) {
 					LOGGER.error("Unable to create CEM enumeration for " + value);

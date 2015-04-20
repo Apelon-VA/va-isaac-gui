@@ -6,6 +6,7 @@ import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,7 +75,7 @@ public class MappingSetDAO extends MappingDAO
 								RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
 						new RefexDynamicColumnInfo(2, MappingConstants.MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
 								RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
-					null, true, ComponentType.CONCEPT);
+					null, true, ComponentType.CONCEPT, ViewCoordinates.getMetadataViewCoordinate());
 			
 			Utility.execute(() ->
 			{

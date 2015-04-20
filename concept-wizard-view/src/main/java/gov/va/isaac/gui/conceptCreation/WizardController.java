@@ -161,7 +161,8 @@ public class WizardController {
 		LanguageCode lc = LanguageCode.EN_US;
 		UUID module = Snomed.CORE_MODULE.getLenient().getPrimordialUuid();
 		
-		ConceptCB newConCB = new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, parentCons);
+		//TODO OCHRE deal with paths
+		ConceptCB newConCB = new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentCons);
 										
 		newConCB.setDefined(!isPrimitive);
 		

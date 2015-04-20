@@ -39,7 +39,7 @@ public final class UserProfileDefaults {
 	private UserProfileDefaults() {}
 	
 	public static StatedInferredOptions getDefaultStatedInferredPolicy() {
-		return StatedInferredOptions.INFERRED_THEN_STATED;
+		return StatedInferredOptions.STATED;
 	}
 
 	public static boolean getDefaultDisplayFSN() { 

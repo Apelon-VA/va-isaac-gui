@@ -20,6 +20,7 @@ package gov.va.isaac.workflow.gui;
 
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dialog.BusyPopover;
 import gov.va.isaac.util.ComponentDescriptionHelper;
@@ -31,9 +32,8 @@ import gov.va.isaac.workflow.exceptions.DatastoreException;
 import gov.va.isaac.workflow.taskmodel.TaskModel;
 import gov.va.isaac.workflow.taskmodel.TaskModel.UserActionOutputResponse;
 import gov.va.isaac.workflow.taskmodel.TaskModelFactory;
-
+import java.io.IOException;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -44,9 +44,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
-
 import javax.inject.Inject;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -249,7 +247,7 @@ public class WorkflowAdvancementViewController
 			}
 		} else {
 			try {
-				containingConcept = componentChronicle.getEnclosingConcept().getVersion(OTFUtility.getViewCoordinate());
+				containingConcept = ExtendedAppContext.getDataStore().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate());
 			} catch (Exception e) {
 				String details = "Failed getting version from ComponentChronicleBI task " + initialTask.getId() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
 
@@ -289,7 +287,15 @@ public class WorkflowAdvancementViewController
 			}
 		});
 		
-		loadContent();
+		try
+		{
+			loadContent();
+		}
+		catch (IOException e)
+		{
+			logger.error("Unexpected", e);
+			AppContext.getCommonDialogs().showErrorDialog(errorDialogTitle, errorDialogMsg, e.toString(), stage);
+		}
 	}
 
 	ConceptVersionBI getConcept() {
@@ -304,7 +310,7 @@ public class WorkflowAdvancementViewController
 	}
 
 	// Load data into GUI components not already loaded by TaskModel
-	protected void loadContent()
+	protected void loadContent() throws IOException
 	{
 		componentId = UUID.fromString(initialTask.getComponentId());
 		generatedComponentSummary.setText(ComponentDescriptionHelper.getComponentDescription(componentId));

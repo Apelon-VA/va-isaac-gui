@@ -25,7 +25,6 @@ import gov.va.isaac.workflow.LocalTasksServiceBI;
 import gov.va.isaac.workflow.TaskActionStatus;
 import gov.va.isaac.workflow.exceptions.DatastoreException;
 import org.kie.api.task.model.Status;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +35,7 @@ import java.util.Map;
  */
 public class LocalTasksApiDemo extends BaseTest {
     
-    public static void main(String[] args) throws DatastoreException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, IOException {
+    public static void main(String[] args) throws Exception {
         setup();
         LocalTasksServiceBI tapi = AppContext.getService(LocalTasksServiceBI.class);
         tapi.dropSchema();

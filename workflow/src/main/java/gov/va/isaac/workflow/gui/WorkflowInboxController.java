@@ -37,6 +37,7 @@ import gov.va.isaac.workflow.engine.RemoteSynchronizer;
 import gov.va.isaac.workflow.engine.SynchronizeResult;
 import gov.va.isaac.workflow.exceptions.DatastoreException;
 
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -209,7 +210,7 @@ public class WorkflowInboxController
 				}
 			} else {
 				try {
-					containingConcept = componentChronicle.getEnclosingConcept().getVersion(OTFUtility.getViewCoordinate());
+					containingConcept = ExtendedAppContext.getDataStore().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate());
 				} catch (Exception e) {
 					LOG.error("Failed getting version from ComponentChronicleBI task " + value.getValue().getId() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
 					e.printStackTrace();

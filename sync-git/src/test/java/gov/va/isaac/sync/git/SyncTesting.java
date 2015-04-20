@@ -36,7 +36,7 @@ public class SyncTesting
 	{
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
-		AppContext.setup();
+
 		ProfileSyncI ssg = AppContext.getService(SyncServiceGIT.class);
 		File localFolder = new File("/mnt/SSD/scratch/gitTesting");
 		ssg.setRootLocation(localFolder);

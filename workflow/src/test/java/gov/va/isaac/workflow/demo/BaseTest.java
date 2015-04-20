@@ -22,6 +22,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.testUtils.MockIsaacAppConfig;
 import gov.va.isaac.testUtils.MockUserProfileManager;
 import gov.va.isaac.workflow.persistence.DatastoreManager;
@@ -48,19 +49,15 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 @Service
 public class BaseTest 
 {
-	protected static void setup() throws ClassNotFoundException, IOException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
-			SecurityException
+	protected static void setup() throws Exception
 	{
-		System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, new File("../../ISAAC-PA-VA-Fork/app/berkeley-db").getCanonicalPath());
-		System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, new File("../../ISAAC-PA-VA-Fork/app/berkeley-db").getCanonicalPath());
-		// Configure Java logging into logback
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
-		AppContext.setup();
-		// TODO OTF fix: this needs to be fixed so I don't have to hack it with reflection.... https://jira.ihtsdotools.org/browse/OTFISSUE-11
-		Field f = Hk2Looker.class.getDeclaredField("looker");
-		f.setAccessible(true);
-		f.set(null, AppContext.getServiceLocator());
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+		if (dataStoreLocationInitException != null)
+		{
+			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
+			System.exit(-1);
+		}
+		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
 		AppContext.getServiceLocator().getServiceHandle(UserProfileManager.class).destroy();
 		//AppContext.getServiceLocator().getServiceHandle(IsaacAppConfigWrapper.class).destroy();  //This isn't on the classpath for local run
@@ -78,7 +75,7 @@ public class BaseTest
 		AppContext.getService(DatastoreManager.class).loadRequested();
 
 		//Hack the extended appcontext to return our mock UserProfileManager
-		f = ExtendedAppContext.class.getDeclaredField("userProfileManagerClass");
+		Field f = ExtendedAppContext.class.getDeclaredField("userProfileManagerClass");
 		f.setAccessible(true);
 		f.set(null, MockUserProfileManager.class);
 	}

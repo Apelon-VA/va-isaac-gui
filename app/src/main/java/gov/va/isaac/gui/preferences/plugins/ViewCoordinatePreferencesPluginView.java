@@ -35,6 +35,7 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.ochre.api.commit.CommitManager;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -78,8 +79,6 @@ import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
 import org.ihtsdo.otf.tcc.api.nid.NidSet;
 import org.ihtsdo.otf.tcc.api.nid.NidSetBI;
-import org.ihtsdo.otf.tcc.datastore.Bdb;
-import org.ihtsdo.otf.tcc.datastore.stamp.StampBdb;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,10 +194,6 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 				{
 					optionButton.setText("Stated");
 				}
-				else if (option == StatedInferredOptions.INFERRED_THEN_STATED)
-				{
-					optionButton.setText("Inferred Then Stated");
-				}
 				else if (option == StatedInferredOptions.INFERRED)
 				{
 					optionButton.setText("Inferred");
@@ -261,7 +256,7 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 					if(selectedPath != null) {
 						int path = OTFUtility.getConceptVersion(selectedPath).getPathNid();
 						
-						StampBdb stampDb = Bdb.getStampDb();
+						CommitManager stampDb = AppContext.getService(CommitManager.class);
 						NidSet nidSet = new NidSet();
 						nidSet.add(path);
 						//TODO: Make this multi-threaded and possibly implement setTimeOptions() here also
@@ -607,7 +602,7 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 			
 			Date startDate = null, finishDate = null;
 			if(storedTimePref != null) {
-				StampBdb stampDb = Bdb.getStampDb();
+				CommitManager stampDb = AppContext.getService(CommitManager.class);
 				NidSet nidSet = new NidSet(); 
 				nidSet.add(path); 
 				

@@ -33,6 +33,7 @@ import gov.va.isaac.interfaces.sync.MergeFailOption;
 import gov.va.isaac.interfaces.sync.MergeFailure;
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -637,7 +638,7 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 			}
 			else
 			{
-				syncService_ = AppContext.getService(ProfileSyncI.class, urlType);
+				syncService_ = LookupService.getService(ProfileSyncI.class, urlType);
 				
 				if (syncService_ == null)
 				{

@@ -25,6 +25,7 @@ import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.util.List;
 import javafx.event.ActionEvent;
@@ -206,17 +207,19 @@ public class SummaryController implements PanelControllers {
 				processController.getWizard().createNewRelationship(newCon, i);
 			}
 			OTFUtility.addUncommitted(newCon.getNid());
-			boolean committed = OTFUtility.commit(newCon.getNid());
-			if (!committed)
-			{
-				AppContext.getCommonDialogs().showErrorDialog("Commit Failed", "The concept could not be committed", "The commit was vetoed by a validator");
-				ListBatchViewI lv = AppContext.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
-				if (lv != null)
-				{
-					lv.addConcept(newCon.getNid());
-					AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
-				}
-			}
+			//boolean committed = 
+			OTFUtility.commit(newCon.getNid());
+			//TODO OCHRE - figure out how commits get voided now that they don't return boolean
+//			if (!committed)
+//			{
+//				AppContext.getCommonDialogs().showErrorDialog("Commit Failed", "The concept could not be committed", "The commit was vetoed by a validator");
+//				ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
+//				if (lv != null)
+//				{
+//					lv.addConcept(newCon.getNid());
+//					AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
+//				}
+//			}
 		} catch (Exception e) {
 			LOGGER.error("Unable to create and/or commit new concept", e);
 			AppContext.getCommonDialogs().showErrorDialog("Error Creating Concept", "Unexpected error creating the Concept", e.getMessage(), summaryPane.getScene().getWindow());

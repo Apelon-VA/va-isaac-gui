@@ -312,7 +312,7 @@ public class DescriptionModelingPopup extends ModelingPopup
 				DescriptionCAB dcab = new DescriptionCAB((desc != null) ? desc.getConceptNid() : conceptNid, type, LanguageCode.getLangCode(langCode), term, isInitCap, desc, OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 	
 				DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
-				OTFUtility.addUncommitted(dcbi.getEnclosingConcept());
+				OTFUtility.addUncommitted(dcbi.getConceptNid());
 			}
 		}
 		catch (Exception e)

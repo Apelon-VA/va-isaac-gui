@@ -37,6 +37,7 @@ import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.UpdateableDoubleBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -187,7 +188,7 @@ public class ListBatchViewController
 	@FXML
 	public void initialize()
 	{
-		conceptView = AppContext.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		conceptView = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 		
 		operationsList.getChildren().add(new OperationNode(this));
 
@@ -487,8 +488,16 @@ public class ListBatchViewController
 			@Override
 			public void handle(ActionEvent event)
 			{
-				OTFUtility.cancel();
-				uncommitAllTableItems();
+				try
+				{
+					OTFUtility.cancel();
+					uncommitAllTableItems();
+				}
+				catch (IOException e)
+				{
+					// TODO OCHRE
+					e.printStackTrace();
+				}
 			}
 		});
 

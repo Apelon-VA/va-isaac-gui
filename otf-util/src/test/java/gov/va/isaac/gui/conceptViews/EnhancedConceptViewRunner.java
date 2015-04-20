@@ -23,6 +23,7 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -51,7 +52,7 @@ public class EnhancedConceptViewRunner extends Application
 	{
 		primaryStage.setTitle("New Concept Panel");
 
-		PopupConceptViewI cv = AppContext.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 
 		primaryStage.setScene(new Scene(new Label("hello world"), 200, 100));
 		primaryStage.show();
@@ -61,7 +62,7 @@ public class EnhancedConceptViewRunner extends Application
 
 	public static void main(String[] args) throws Exception
 	{
-		IOException dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
 		if (dataStoreLocationInitException != null)
 		{
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);

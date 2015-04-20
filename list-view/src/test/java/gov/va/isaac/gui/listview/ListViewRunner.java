@@ -19,20 +19,15 @@
 package gov.va.isaac.gui.listview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.ApplicationWindowI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.utility.ShutdownBroadcastListenerI;
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.jvnet.hk2.annotations.Service;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * {@link ListViewRunner}
@@ -55,28 +50,16 @@ public class ListViewRunner extends Application implements ApplicationWindowI
 		primaryStage.show();
 	}
 
-	/**
-	 * @param args
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 * @throws IllegalAccessException
-	 * @throws IllegalArgumentException
-	 * @throws SecurityException
-	 * @throws NoSuchFieldException
-	 */
-	public static void main(String[] args) throws ClassNotFoundException, IOException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
-			SecurityException
+
+	public static void main(String[] args) throws Exception
 	{
-		// Configure Java logging into logback
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
-		AppContext.setup();
-		// TODO OTF fix: this needs to be fixed so I don't have to hack it with reflection.... https://jira.ihtsdotools.org/browse/OTFISSUE-11
-		Field f = Hk2Looker.class.getDeclaredField("looker");
-		f.setAccessible(true);
-		f.set(null, AppContext.getServiceLocator());
-		System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, new File("../../ISAAC-PA/app/berkeley-db").getCanonicalPath());
-		System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, new File("../../ISAAC-PA/app/berkeley-db").getCanonicalPath());
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+		if (dataStoreLocationInitException != null)
+		{
+			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
+			System.exit(-1);
+		}
+		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		launch(args);
 	}
 

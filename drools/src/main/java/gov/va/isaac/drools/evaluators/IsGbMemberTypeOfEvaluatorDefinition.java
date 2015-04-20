@@ -17,16 +17,14 @@
 package gov.va.isaac.drools.evaluators;
 
 import gov.va.isaac.drools.evaluators.facts.DescFact;
-
 import java.io.IOException;
 import java.util.Collection;
-
 import org.drools.core.base.BaseEvaluator;
 import org.drools.core.base.ValueType;
 import org.drools.core.base.evaluators.Operator;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRfx;
+import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.type_nid.RefexNidVersionBI;
@@ -80,7 +78,7 @@ public class IsGbMemberTypeOfEvaluatorDefinition extends IsaacBaseEvaluatorDefin
 				DescriptionVersionBI<?> desc = fact.getComponent();
 				ViewCoordinate vc = fact.getVc();
 				ConceptSpec possibleType = null;
-				int evalRefsetNid = SnomedMetadataRfx.getGB_DIALECT_REFEX_NID();
+				int evalRefsetNid = SnomedMetadataRf2.GB_ENGLISH_REFSET_RF2.getNid();
 				int typeNid = 0;
 
 				if (ConceptSpec.class.isAssignableFrom(value2.getClass()))

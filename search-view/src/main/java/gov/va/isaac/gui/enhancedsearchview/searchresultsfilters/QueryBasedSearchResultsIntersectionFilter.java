@@ -180,6 +180,13 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 					return null;
 				}
 			}
+
+			@Override
+			protected org.ihtsdo.otf.query.implementation.ForSetSpecification ForSetSpecification() throws IOException
+			{
+				// TODO OCHRE issue
+				return null;
+			}
 		};
 
 		NativeIdSetBI outputNids = null;

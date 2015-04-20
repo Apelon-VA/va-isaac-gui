@@ -22,6 +22,8 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
+import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -50,7 +52,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
@@ -71,15 +72,15 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
-import org.ihtsdo.otf.tcc.api.uuid.UuidFactory;
-import org.ihtsdo.otf.tcc.datastore.BdbTermBuilder;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.uuid.UuidFactory;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.RefexChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.type_comp.RefexCompVersionDdo;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
+import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,10 +113,10 @@ public class OTFUtility {
 	private static Set<UUID> rootNodeList = null;
 
 	public static TerminologyBuilderBI getBuilder() {
-		return new BdbTermBuilder(getEditCoordinate(), getViewCoordinateAllowInactive());
+		return new Builder(getEditCoordinate(), getViewCoordinateAllowInactive(), AppContext.getService(PersistentStoreI.class));
 	}
 	public static TerminologyBuilderBI getBuilder(EditCoordinate ec, ViewCoordinate vc) {
-		return new BdbTermBuilder(ec, vc);
+		return new Builder(ec, vc, AppContext.getService(PersistentStoreI.class));
 	}
 	
 	public static ViewCoordinate getViewCoordinate() {
@@ -125,13 +126,10 @@ public class OTFUtility {
 			StatedInferredOptions policy = userProfile.getStatedInferredPolicy();
 			switch(policy) {
 			case STATED:
-				vc = StandardViewCoordinates.getSnomedStatedLatest();
+				vc = ViewCoordinates.getDevelopmentStatedLatest();
 				break;
 			case INFERRED:
-				vc = StandardViewCoordinates.getSnomedInferredLatest();
-				break;
-			case INFERRED_THEN_STATED:
-				vc = StandardViewCoordinates.getSnomedInferredThenStatedLatest();
+				vc = ViewCoordinates.getDevelopmentInferredLatest();
 				break;
 			default: // Should never happen unless a new policy has been coded
 				throw new RuntimeException("Unsupported StatedInferredOptions policy " + policy);
@@ -738,12 +736,12 @@ public class OTFUtility {
 		return dataStore.getUncommittedConcepts().contains(con.getChronicle());
 	}
 	
-	public static boolean commit(ConceptVersionBI con) throws IOException {
-		return dataStore.commit(con);
+	public static void commit(ConceptVersionBI con) throws IOException {
+		dataStore.commit(con);
 	}
 
-	public static boolean commit() throws IOException {
-		return dataStore.commit();
+	public static void commit() throws IOException {
+		dataStore.commit();
 	}
 
 	public static void addUncommitted(ConceptChronicleBI newCon) throws IOException {
@@ -755,8 +753,7 @@ public class OTFUtility {
 	}
 
 	public static void addUncommitted(int nid) throws IOException {
-		ConceptVersionBI con = getConceptVersion(nid);
-		dataStore.addUncommitted(con);
+		dataStore.addUncommitted(dataStore.getConceptForNid(nid));
 	}
 
 	public static void addUncommitted(UUID uuid) throws IOException {
@@ -960,15 +957,16 @@ public class OTFUtility {
 		UUID module = Snomed.CORE_MODULE.getLenient().getPrimordialUuid();
 		UUID parentUUIDs[] = new UUID[1];
 		parentUUIDs[0] = parent.getPrimordialUuid();
-		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, parentUUIDs);
+		//TODO OCHRE deal with path
+		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
 	}
 
-	public static boolean commit(int nid) throws IOException {
+	public static void commit(int nid) throws IOException {
 		ConceptVersionBI con = getConceptVersion(nid);
-		return commit(con);
+		commit(con);
 	}
 
-	public static void cancel() {
+	public static void cancel() throws IOException {
 		dataStore.cancel();
 	}
 

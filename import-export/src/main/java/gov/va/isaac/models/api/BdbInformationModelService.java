@@ -27,7 +27,7 @@ import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -38,8 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import org.apache.lucene.queryparser.classic.ParseException;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
@@ -215,8 +213,8 @@ public class BdbInformationModelService implements InformationModelService {
       }
       LOG.debug("  Model not found");
       return null;
-    } catch (ParseException e) {
-      throw new IOException("Unable to parse key for lucene search, " + key, e);
+    } catch (Exception e) {
+      throw new IOException("Unexepected error, " + key, e);
     }
 
   }
@@ -814,7 +812,8 @@ public class BdbInformationModelService implements InformationModelService {
     // Create single parent
     UUID parentUUIDs[] = new UUID[1];
     parentUUIDs[0] = parent.getPrimordialUuid();
-    return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, parentUUIDs);
+    //TODO OCHRE deal with path
+    return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
   }
 
   /*
@@ -869,7 +868,7 @@ public class BdbInformationModelService implements InformationModelService {
         LOG.debug("  Attempting to create COLUMN " + columnNames[i]);
         ConceptChronicleBI columnConcept =
             RefexDynamicColumnInfo.createNewRefexDynamicColumnInfoConcept(
-                columnNames[i], columnDescriptions[i]);
+                columnNames[i], columnDescriptions[i], ViewCoordinates.getMetadataViewCoordinate());
         LOG.debug("    PT = "
             + OTFUtility.getConPrefTerm(columnConcept.getNid()));
         LOG.debug("    UUID = " + columnConcept.getPrimordialUuid());
@@ -892,7 +891,7 @@ public class BdbInformationModelService implements InformationModelService {
                   "Information model property refset",
                   "Used to capture information about information model properties",
                   columnArray, RefexDynamic.REFEX_DYNAMIC_IDENTITY.getLenient()
-                      .getPrimordialUuid(), true, null);
+                      .getPrimordialUuid(), true, null, ViewCoordinates.getMetadataViewCoordinate());
       ConceptVersionBI refexConcept =
           OTFUtility.getConceptVersion(refex.getRefexUsageDescriptorNid());
       LOG.debug("    PT = " + refexConcept.getPreferredDescription().getText());

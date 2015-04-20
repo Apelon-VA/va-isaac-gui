@@ -20,13 +20,12 @@ package gov.va.isaac.mojos.dbBuilder;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.util.DBLocator;
 import java.io.File;
 import java.lang.reflect.Field;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
@@ -73,11 +72,14 @@ public class Setup extends AbstractMojo
 
 			bdbFolderFile = DBLocator.findDBFolder(bdbFolderFile);
 			
-			System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, bdbFolderFile.getCanonicalPath());
-			System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, DBLocator.findLuceneIndexFolder(bdbFolderFile).getCanonicalPath());
+			Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(bdbFolderFile);
+			if (dataStoreLocationInitException != null)
+			{
+				System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
+				System.exit(-1);
+			}
 
 			getLog().info("  Setup AppContext, bdb location = " + bdbFolderFile.getCanonicalPath());
-			AppContext.setup();
 
 			// TODO OTF fix: this needs to be fixed so I don't have to hack it with reflection.... https://jira.ihtsdotools.org/browse/OTFISSUE-11
 			Field f = Hk2Looker.class.getDeclaredField("looker");

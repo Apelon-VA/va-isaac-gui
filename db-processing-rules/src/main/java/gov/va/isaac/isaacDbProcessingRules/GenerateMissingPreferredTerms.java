@@ -20,6 +20,7 @@ package gov.va.isaac.isaacDbProcessingRules;
 
 import gov.va.isaac.mojos.dbTransforms.TransformConceptIterateI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
@@ -27,7 +28,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
@@ -155,10 +155,11 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 				}
 				DescriptionCAB dCab = new DescriptionCAB(cc.getPrimordialUuid(), Snomed.SYNONYM_DESCRIPTION_TYPE.getUuids()[0], fsnLC, fsnWithoutSemTag,
 						true, IdDirective.GENERATE_HASH);
-				dCab.makePreferredNameDialectRefexes(fsnLC);
+				//TODO figure out module/path mess (these params are wrong)
+				dCab.makePreferredNameDialectRefexes(fsnLC, null, null);
 				
 				ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), moduleNid, pathNid), 
-						StandardViewCoordinates.getWbAuxiliary()).construct(dCab);
+						ViewCoordinates.getDevelopmentStatedLatest()).construct(dCab);
 				ts.addUncommitted(cc);
 				generatedDescriptions.getAndIncrement();
 				return true;

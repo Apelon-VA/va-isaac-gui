@@ -23,6 +23,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.IsaacUserCreation;
 import gov.va.isaac.config.generated.User;
 import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -49,14 +50,13 @@ import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
-import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -228,7 +228,7 @@ public class GenerateUsers
 			//Build this on the lowest level path, otherwise, other code that references this will fail (as it doesn't know about custom paths)
 			ConceptChronicleBI newCon = ts.getTerminologyBuilder(
 					new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), TermAux.TERM_AUX_MODULE.getLenient().getNid(), TermAux.WB_AUX_PATH.getLenient()
-							.getConceptNid()), StandardViewCoordinates.getWbAuxiliary()).construct(cab);
+							.getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
 			ts.addUncommitted(newCon);
 			ts.commit(newCon);
 		}

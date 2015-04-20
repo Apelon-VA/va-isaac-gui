@@ -137,7 +137,7 @@ public class ConceptModelingPopup extends ModelingPopup
 			
 			ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 			
-			OTFUtility.addUncommitted(cabi.getEnclosingConcept());
+			OTFUtility.addUncommitted(cabi.getConceptNid());
 		}
 		catch (Exception e)
 		{

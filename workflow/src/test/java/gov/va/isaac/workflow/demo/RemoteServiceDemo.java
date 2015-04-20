@@ -22,7 +22,6 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.workflow.LocalWorkflowRuntimeEngineBI;
 import gov.va.isaac.workflow.engine.RemoteWfEngine;
 import org.kie.api.task.model.TaskSummary;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -37,7 +36,7 @@ import java.util.UUID;
  */
 public class RemoteServiceDemo extends BaseTest {
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+    public static void main(String[] args) throws Exception {
         setup();
         LocalWorkflowRuntimeEngineBI wfEngine = AppContext.getService(LocalWorkflowRuntimeEngineBI.class);
 

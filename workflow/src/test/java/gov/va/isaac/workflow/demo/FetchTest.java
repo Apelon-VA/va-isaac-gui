@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  */
 public class FetchTest extends BaseTest {
     
-    public static void main(String[] args) throws ClassNotFoundException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, IOException, DatastoreException {
+    public static void main(String[] args) throws Exception {
         setup();
         LocalTasksServiceBI tapi = AppContext.getService(LocalTasksServiceBI.class);
         tapi.dropSchema();

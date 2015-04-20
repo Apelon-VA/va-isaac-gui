@@ -42,7 +42,7 @@ import gov.va.isaac.gui.enhancedsearchview.model.type.sememe.SememeSearchTypeMod
 import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -54,9 +54,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-
 import javax.naming.InvalidNameException;
-
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
@@ -65,7 +63,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
@@ -509,8 +506,10 @@ public class SearchConceptHelper {
 				try {
 					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" all refexes: " +  matchingConcept.getRefexes().size());
 					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" all dynamic sememes: " +  matchingConcept.getRefexesDynamic().size());
-					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (StandardViewCoordinates.getWbAuxiliary()): " +  matchingConcept.getRefexesDynamicActive(StandardViewCoordinates.getWbAuxiliary()).size());
-					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (OTFUtility.getViewCoordinate()): " +  matchingConcept.getRefexesDynamicActive(OTFUtility.getViewCoordinate()).size());
+					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (StandardViewCoordinates.getWbAuxiliary()): " 
+							+  matchingConcept.getRefexesDynamicActive(ViewCoordinates.getMetadataViewCoordinate()).size());
+					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (OTFUtility.getViewCoordinate()): " 
+							+  matchingConcept.getRefexesDynamicActive(OTFUtility.getViewCoordinate()).size());
 			
 					LOG.debug("Displaying newly loaded save concept refexes");
 					DynamicRefexHelper.displayDynamicRefexes(matchingConcept);

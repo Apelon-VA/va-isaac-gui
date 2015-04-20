@@ -18,13 +18,9 @@
  */
 package gov.va.isaac.mojos.dbBuilder;
 
-import gov.va.isaac.AppContext;
-import java.io.File;
+import gov.vha.isaac.ochre.api.LookupService;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.ihtsdo.otf.tcc.api.io.FileIO;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 /**
  * Goal which shuts down an open data store.
@@ -35,16 +31,6 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
  */
 public class Shutdown extends AbstractMojo
 {
-
-	/**
-	 * true if the mutable database should replace the read-only database after
-	 * load is complete.
-	 * 
-	 * @parameter default-value=true
-	 * @required
-	 */
-	private boolean moveToReadOnly = true;
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -57,23 +43,10 @@ public class Shutdown extends AbstractMojo
 		{
 			getLog().info("Shutdown terminology store");
 			// ASSUMES setup has run already
-			TerminologyStoreDI store = AppContext.getService(TerminologyStoreDI.class);
 
 			getLog().info("  Shutting Down");
 
-			store.shutdown();
-
-			if (moveToReadOnly)
-			{
-				getLog().info("moving mutable to read-only");
-
-				String bdbFolderLocation = System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY);
-
-				File readOnlyDir = new File(bdbFolderLocation, "read-only");
-				FileIO.recursiveDelete(readOnlyDir);
-				File mutableDir = new File(bdbFolderLocation, "mutable");
-				mutableDir.renameTo(readOnlyDir);
-			}
+			LookupService.shutdownIsaac();
 
 			getLog().info("Done shutting down terminology store");
 		}

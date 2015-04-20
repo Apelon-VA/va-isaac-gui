@@ -21,6 +21,7 @@ package gov.va.isaac;
 import gov.va.isaac.interfaces.RuntimeGlobalsI;
 import gov.va.isaac.interfaces.utility.CommitListenerI;
 import gov.va.isaac.interfaces.utility.ShutdownBroadcastListenerI;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
@@ -90,7 +91,7 @@ public class RuntimeGlobals implements RuntimeGlobalsI
 	@Override
 	public void disableCommitListener(String commitListenerName) throws InvalidNameException
 	{
-		CommitListenerI item = AppContext.getService(CommitListenerI.class, commitListenerName);
+		CommitListenerI item = LookupService.getService(CommitListenerI.class, commitListenerName);
 		if (item == null)
 		{
 			throw new InvalidNameException("Couldn't find a commit listener with the name '" + commitListenerName + "'");
@@ -107,7 +108,7 @@ public class RuntimeGlobals implements RuntimeGlobalsI
 	@Override
 	public void enableCommitListener(String commitListenerName) throws InvalidNameException
 	{
-		CommitListenerI item = AppContext.getService(CommitListenerI.class, commitListenerName);
+		CommitListenerI item = LookupService.getService(CommitListenerI.class, commitListenerName);
 		if (item == null)
 		{
 			throw new InvalidNameException("Couldn't find a commit listener with the name '" + commitListenerName + "'");

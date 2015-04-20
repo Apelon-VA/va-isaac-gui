@@ -83,6 +83,13 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 					return ConceptIsDescendentOf(concept.getPrimordialUuid().toString());
 				}
 			}
+
+			@Override
+			protected org.ihtsdo.otf.query.implementation.ForSetSpecification ForSetSpecification() throws IOException
+			{
+				// TODO OCHRE issue
+				return null;
+			}
 		};
 
 		NativeIdSetBI outputNids = null;

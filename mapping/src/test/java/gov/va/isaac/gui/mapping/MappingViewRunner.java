@@ -52,7 +52,7 @@ public class MappingViewRunner extends Application
 
 	public static void main(String[] args) throws Exception
 	{
-		IOException dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
 		if (dataStoreLocationInitException != null)
 		{
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);

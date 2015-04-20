@@ -23,14 +23,13 @@ import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.constants.Search;
+import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.util.DBLocator;
+import gov.vha.isaac.mojo.GenerateMetadataEConcepts;
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.ihtsdo.otf.mojo.GenerateMetadataEConcepts;
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
 import org.ihtsdo.otf.tcc.api.io.FileIO;
 import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
@@ -38,8 +37,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.RelSpec;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
 
 /**
@@ -120,16 +117,12 @@ public class DBBuilder extends AbstractMojo
 
 			if (setupAndShutdown)
 			{
-				System.setProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY, bdbFolderFile.getCanonicalPath());
-				System.setProperty(LuceneIndexer.LUCENE_ROOT_LOCATION_PROPERTY, DBLocator.findLuceneIndexFolder(bdbFolderFile).getCanonicalPath());
-
-				AppContext.setup();
-
-				// TODO OTF fix: this needs to be fixed so I don't have to hack it with
-				// reflection.... https://jira.ihtsdotools.org/browse/OTFISSUE-11
-				Field f = Hk2Looker.class.getDeclaredField("looker");
-				f.setAccessible(true);
-				f.set(null, AppContext.getServiceLocator());
+				Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(bdbFolderFile);
+				if (dataStoreLocationInitException != null)
+				{
+					System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
+					System.exit(-1);
+				}
 			}
 
 			TerminologyStoreDI store = AppContext.getService(TerminologyStoreDI.class);

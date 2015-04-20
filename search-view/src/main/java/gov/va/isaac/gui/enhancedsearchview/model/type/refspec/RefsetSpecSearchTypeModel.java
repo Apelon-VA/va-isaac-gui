@@ -294,8 +294,7 @@ public class RefsetSpecSearchTypeModel  extends SearchTypeModel {
 				//,QueryNodeType.DESCRIPTION_REGEX_MATCH
 		
 		addNewNodeSubMenu(menu, ownerNode, "New Relationship Assertion",
-				QueryNodeType.REL_RESTRICTION,
-				QueryNodeType.REL_TYPE);
+				QueryNodeType.REL_RESTRICTION);
 	}
 	private void addNewNodeSubMenu(ContextMenu menu, Node ownerNode, String subMenuName, QueryNodeType...nodeTypes) {
 		Menu subMenu = new Menu(subMenuName);

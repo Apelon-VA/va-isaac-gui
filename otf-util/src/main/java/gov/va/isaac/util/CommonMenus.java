@@ -24,13 +24,14 @@ import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,10 @@ import org.slf4j.LoggerFactory;
  */
 public class CommonMenus
 {
+	
+	//TODO OCHRE - Every single call to LookupService.getService(...) in this class is unsafe, because it isn't null checking the result.
+	//All of the menus that do things like that need to be updated properly, so that the menu doesn't even appear of the service isn't available.
+	
 	private static final Logger LOG = LoggerFactory.getLogger(CommonMenus.class);
 	
 	public enum MergeMode {
@@ -420,7 +425,7 @@ public class CommonMenus
 					LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
 							+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-					PopupConceptViewI cv = AppContext.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+					PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 					cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 					cv.showView(null);
 				},
@@ -442,7 +447,7 @@ public class CommonMenus
 					LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
 							+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-					PopupConceptViewI cv = AppContext.getService(PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
+					PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
 					cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 
 					cv.showView(null);
@@ -463,7 +468,7 @@ public class CommonMenus
 				() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
 				commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
 				// onHandlable
-				() -> { AppContext.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
+				() -> { LookupService.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
 				// onNotHandlable
 				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't locate an invalid concept");});
 		if (findInTaxonomyViewMenuItem != null)
@@ -502,7 +507,7 @@ public class CommonMenus
 					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
 				// onHandlable
 				() -> {
-					ContentRequestHandlerI handler = AppContext.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS);
+					ContentRequestHandlerI handler = LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS);
 					handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
 					handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 				},
@@ -523,7 +528,7 @@ public class CommonMenus
 					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
 				// onHandlable
 				() -> {
-					ContentRequestHandlerI handler = AppContext.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC);
+					ContentRequestHandlerI handler = LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC);
 					handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
 					handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 				},
@@ -663,7 +668,7 @@ public class CommonMenus
 					LOG.debug("Using \"" + CommonMenuItem.LIST_VIEW.getText() + "\" menu item to list concept(s) with id(s) \"" 
 							+ Arrays.toString(nidList.toArray()) + "\"");
 
-					ListBatchViewI lv = AppContext.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
+					ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
 
 					AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
 

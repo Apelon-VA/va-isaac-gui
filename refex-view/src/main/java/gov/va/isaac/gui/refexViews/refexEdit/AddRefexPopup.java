@@ -722,7 +722,6 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			}
 			if (callingView_ != null)
 			{
-				ExtendedAppContext.getDataStore().waitTillWritesFinished();
 				callingView_.setNewComponentHint(componentNid, indexGen);
 				callingView_.refresh();
 			}

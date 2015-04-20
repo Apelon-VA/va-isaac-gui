@@ -3,11 +3,12 @@
 	elementFormDefault="qualified">
 	
 
-<!-- Version 2014/10/01 -->
+<!-- Version 2015/04/20 -->
 <!-- 
 	Changelog:
 	
 	2014/10/01	- Initial version
+	2015/04/20	- removed inferred then latest
  -->
 
 	<!-- Note that JAXB is broken (has been forever) and doesn't properly create javadocs from <documentation> tags like it should for elements...
@@ -170,7 +171,6 @@
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="stated" />
 			<xs:enumeration value="inferred" />
-			<xs:enumeration value="inferredThenStated" />
 		</xs:restriction>
 	</xs:simpleType>
 	

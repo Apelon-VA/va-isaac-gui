@@ -42,14 +42,13 @@ import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -61,12 +60,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.GridPane;
-
 import org.ihtsdo.otf.query.implementation.Clause;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetItrBI;
@@ -597,7 +594,7 @@ public class QueryBuilderHelper {
 		}
 	}
 	
-	public static String getDescription(int nid) {
+	public static String getDescription(int nid) throws IOException {
 		String componentDescription = null;
 		ComponentVersionBI component = OTFUtility.getComponentVersion(nid);
 		if (component != null) {
@@ -643,7 +640,7 @@ public class QueryBuilderHelper {
 
 		ViewCoordinate viewCoordinate = null;
 		try {
-			viewCoordinate = StandardViewCoordinates.getSnomedInferredLatest();
+			viewCoordinate = ViewCoordinates.getDevelopmentInferredLatest();
 		} catch (IOException ex) {
 			logger.error("Failed getting default ViewCoordinate. Caught {} \"{}\"", ex.getClass().getName(), ex.getLocalizedMessage());
 		}
@@ -662,6 +659,13 @@ public class QueryBuilderHelper {
 			@Override
 			public Clause Where() {
 				return ClauseFactory.createClause(this, tree.getRoot());
+			}
+
+			@Override
+			protected org.ihtsdo.otf.query.implementation.ForSetSpecification ForSetSpecification() throws IOException
+			{
+				// TODO OCHRE issue
+				return null;
 			}
 		};
 		

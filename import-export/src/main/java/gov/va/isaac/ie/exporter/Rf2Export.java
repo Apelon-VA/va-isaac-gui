@@ -20,9 +20,8 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.ie.exporter.Rf2File.ReleaseType;
 import gov.va.isaac.util.AbstractProgressReporter;
-import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.ProgressListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -37,7 +36,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeChronicleBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
@@ -52,7 +50,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRfx;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
@@ -60,9 +57,9 @@ import org.ihtsdo.otf.tcc.api.refex.type_nid.RefexNidVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.time.TimeHelper;
 import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -878,11 +875,9 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
           }
           if (inTaxonomy) {
 
-            if (rv.getCharacteristicNid() == SnomedMetadataRfx
-                .getREL_CH_INFERRED_RELATIONSHIP_NID()) {
+            if (rv.getCharacteristicNid() == SnomedMetadataRf2.INFERRED_RELATIONSHIP_RF2.getNid()) {
               processInferredRelationship(rv);
-            } else if (rv.getCharacteristicNid() == SnomedMetadataRfx
-                .getREL_CH_STATED_RELATIONSHIP_NID()) {
+            } else if (rv.getCharacteristicNid() == SnomedMetadataRf2.STATED_RELATIONSHIP_RF2.getNid()) {
               processStatedRelationship(rv);
             }
           }

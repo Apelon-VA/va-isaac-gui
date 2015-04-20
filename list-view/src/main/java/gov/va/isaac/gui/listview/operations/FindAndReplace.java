@@ -248,7 +248,7 @@ public class FindAndReplace extends Operation
 				DescriptionCAB dcab = desc.makeBlueprint(OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.INCLUDE);
 				dcab.setText(newTxt);
 				DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
-				OTFUtility.addUncommitted(dcbi.getEnclosingConcept());
+				OTFUtility.addUncommitted(dcbi.getConceptNid());
 			}
 
 			private Set<DescriptionVersionBI<?>> getDescsToChange(ConceptVersionBI con) {

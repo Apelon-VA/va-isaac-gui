@@ -35,7 +35,7 @@ public class SyncTesting
 	{
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
-		AppContext.setup();
+		
 		ProfileSyncI ssg = AppContext.getService(SyncServiceSVN.class);
 		File localFolder = new File("/mnt/SSD/scratch/svnTest1/svnTestRepo");
 		ssg.setRootLocation(localFolder);

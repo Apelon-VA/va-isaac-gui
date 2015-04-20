@@ -23,7 +23,7 @@ import gov.va.isaac.config.generated.IsaacAppConfig;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.interfaces.config.IsaacAppConfigI;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.ochre.api.ConfigurationService;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -42,7 +42,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.inject.Singleton;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
@@ -58,7 +57,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,103 +120,100 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 			AtomicBoolean readAppMetadata = new AtomicBoolean(false);
 			
 			//Read the db metadata
-			String dbLocation = System.getProperty(TerminologyStoreDI.BDB_LOCATION_PROPERTY);
-			if (dbLocation != null)
+			Path dbLocation = AppContext.getService(ConfigurationService.class).getChronicleFolderPath();
+			//find the pom.properties file in the hierarchy
+			File dbMetadata = new File(dbLocation.toFile(), "META-INF");
+			if (dbMetadata.isDirectory())
 			{
-				//find the pom.properties file in the hierarchy
-				File metadata = new File(new File(dbLocation).getParentFile(), "META-INF");
-				if (metadata.isDirectory())
+				Files.walkFileTree(dbMetadata.toPath(), new SimpleFileVisitor<Path>()
 				{
-					Files.walkFileTree(metadata.toPath(), new SimpleFileVisitor<Path>()
+					/**
+					 * @see java.nio.file.SimpleFileVisitor#visitFile(java.lang.Object, java.nio.file.attribute.BasicFileAttributes)
+					 */
+					@Override
+					public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException
 					{
-						/**
-						 * @see java.nio.file.SimpleFileVisitor#visitFile(java.lang.Object, java.nio.file.attribute.BasicFileAttributes)
-						 */
-						@Override
-						public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException
+						File f = path.toFile();
+						if (f.isFile() && f.getName().toLowerCase().equals("pom.properties"))
 						{
-							File f = path.toFile();
-							if (f.isFile() && f.getName().toLowerCase().equals("pom.properties"))
-							{
-								Properties p = new Properties();
-								p.load(new FileReader(f));
+							Properties p = new Properties();
+							p.load(new FileReader(f));
 
-								dbGroupId = p.getProperty("project.groupId");
-								dbArtifactId = p.getProperty("project.artifactId");
-								dbVersion = p.getProperty("project.version");
-								dbClassifier = p.getProperty("project.classifier");
-								dbType = p.getProperty("project.type");
-								readDbMetadataFromProperties.set(true);
-								return readDbMetadataFromPom.get() ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
-							} else if (f.isFile() && f.getName().toLowerCase().equals("pom.xml")) {
-								DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-								DocumentBuilder builder;
-								Document dDoc = null;
-								XPath xPath = XPathFactory.newInstance().newXPath();
+							dbGroupId = p.getProperty("project.groupId");
+							dbArtifactId = p.getProperty("project.artifactId");
+							dbVersion = p.getProperty("project.version");
+							dbClassifier = p.getProperty("project.classifier");
+							dbType = p.getProperty("project.type");
+							readDbMetadataFromProperties.set(true);
+							return readDbMetadataFromPom.get() ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
+						} else if (f.isFile() && f.getName().toLowerCase().equals("pom.xml")) {
+							DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+							DocumentBuilder builder;
+							Document dDoc = null;
+							XPath xPath = XPathFactory.newInstance().newXPath();
 
-								try {
-									builder = domFactory.newDocumentBuilder();
+							try {
+								builder = domFactory.newDocumentBuilder();
 
-									dDoc = builder.parse(f);
-									
-									{
-										NodeList dbLicensesNodes = ((NodeList) xPath.evaluate("/project/licenses/license/name", dDoc, XPathConstants.NODESET));
-
-										log_.debug("Found {} license names in DB pom.xml", dbLicensesNodes.getLength());
-										for (int i = 0; i < dbLicensesNodes.getLength(); i++) {
-											Node currentLicenseNameNode = dbLicensesNodes.item(i);
-											String name = currentLicenseNameNode.getTextContent();
-
-											Map<String, String> license = new HashMap<>();
-											license.put("name", name);
-											license.put("url", ((Node)xPath.evaluate("/project/licenses/license[name='" + name + "']/url", dDoc, XPathConstants.NODE)).getTextContent());
-											license.put("comments", ((Node)xPath.evaluate("/project/licenses/license[name='" + name + "']/comments", dDoc, XPathConstants.NODE)).getTextContent());
-
-											dbLicenses.add(Collections.unmodifiableMap(license));
-
-											log_.debug("Extracted license \"{}\" from DB pom.xml: {}", name, license.toString());
-										}
-									}
-									
-									{
-										NodeList dbDependenciesNodes = ((NodeList) xPath.evaluate("/project/dependencies/dependency/artifactId", dDoc, XPathConstants.NODESET));
-
-										log_.debug("Found {} dependency artifactIds in DB pom.xml", dbDependenciesNodes.getLength());
-										for (int i = 0; i < dbDependenciesNodes.getLength(); i++) {
-											Node currentDbDependencyArtifactIdNode = dbDependenciesNodes.item(i);
-											String artifactId = currentDbDependencyArtifactIdNode.getTextContent();
-
-											Map<String, String> dependency = new HashMap<>();
-											dependency.put("artifactId", artifactId);
-											dependency.put("groupId", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/groupId", dDoc, XPathConstants.NODE)).getTextContent());
-											dependency.put("version", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/version", dDoc, XPathConstants.NODE)).getTextContent());
+								dDoc = builder.parse(f);
 								
-											try {
-												dependency.put("classifier", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/classifier", dDoc, XPathConstants.NODE)).getTextContent());
-											} catch (Throwable t) {
-												log_.debug("Problem reading \"classifier\" element for {}", artifactId);
-											}
-											dependency.put("type", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/type", dDoc, XPathConstants.NODE)).getTextContent());
+								{
+									NodeList dbLicensesNodes = ((NodeList) xPath.evaluate("/project/licenses/license/name", dDoc, XPathConstants.NODESET));
 
-											dbDependencies.add(Collections.unmodifiableMap(dependency));
+									log_.debug("Found {} license names in DB pom.xml", dbLicensesNodes.getLength());
+									for (int i = 0; i < dbLicensesNodes.getLength(); i++) {
+										Node currentLicenseNameNode = dbLicensesNodes.item(i);
+										String name = currentLicenseNameNode.getTextContent();
 
-											log_.debug("Extracted dependency \"{}\" from DB pom.xml: {}", artifactId, dependency.toString());
-										}
+										Map<String, String> license = new HashMap<>();
+										license.put("name", name);
+										license.put("url", ((Node)xPath.evaluate("/project/licenses/license[name='" + name + "']/url", dDoc, XPathConstants.NODE)).getTextContent());
+										license.put("comments", ((Node)xPath.evaluate("/project/licenses/license[name='" + name + "']/comments", dDoc, XPathConstants.NODE)).getTextContent());
+
+										dbLicenses.add(Collections.unmodifiableMap(license));
+
+										log_.debug("Extracted license \"{}\" from DB pom.xml: {}", name, license.toString());
 									}
-								} catch (XPathExpressionException | SAXException | ParserConfigurationException e) {
-									e.printStackTrace();
-									throw new IOException(e);
 								}
+								
+								{
+									NodeList dbDependenciesNodes = ((NodeList) xPath.evaluate("/project/dependencies/dependency/artifactId", dDoc, XPathConstants.NODESET));
 
+									log_.debug("Found {} dependency artifactIds in DB pom.xml", dbDependenciesNodes.getLength());
+									for (int i = 0; i < dbDependenciesNodes.getLength(); i++) {
+										Node currentDbDependencyArtifactIdNode = dbDependenciesNodes.item(i);
+										String artifactId = currentDbDependencyArtifactIdNode.getTextContent();
 
-								readDbMetadataFromPom.set(true);
-								return readDbMetadataFromProperties.get() ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
+										Map<String, String> dependency = new HashMap<>();
+										dependency.put("artifactId", artifactId);
+										dependency.put("groupId", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/groupId", dDoc, XPathConstants.NODE)).getTextContent());
+										dependency.put("version", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/version", dDoc, XPathConstants.NODE)).getTextContent());
+							
+										try {
+											dependency.put("classifier", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/classifier", dDoc, XPathConstants.NODE)).getTextContent());
+										} catch (Throwable t) {
+											log_.debug("Problem reading \"classifier\" element for {}", artifactId);
+										}
+										dependency.put("type", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/type", dDoc, XPathConstants.NODE)).getTextContent());
+
+										dbDependencies.add(Collections.unmodifiableMap(dependency));
+
+										log_.debug("Extracted dependency \"{}\" from DB pom.xml: {}", artifactId, dependency.toString());
+									}
+								}
+							} catch (XPathExpressionException | SAXException | ParserConfigurationException e) {
+								e.printStackTrace();
+								throw new IOException(e);
 							}
 
-							return FileVisitResult.CONTINUE;
+
+							readDbMetadataFromPom.set(true);
+							return readDbMetadataFromProperties.get() ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
 						}
-					});
-				}
+
+						return FileVisitResult.CONTINUE;
+					}
+				});
 			}
 			
 			if (!readDbMetadataFromProperties.get())
@@ -270,10 +265,10 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 				}
 			}
 			//otherwise, running from an installation - we should have a META-INF folder
-			File metadata = new File("META-INF");
-			if (metadata.isDirectory())
+			File appMetadata = new File("META-INF");
+			if (appMetadata.isDirectory())
 			{
-				Files.walkFileTree(metadata.toPath(), new SimpleFileVisitor<Path>()
+				Files.walkFileTree(appMetadata.toPath(), new SimpleFileVisitor<Path>()
 				{
 					/**
 					 * @see java.nio.file.SimpleFileVisitor#visitFile(java.lang.Object, java.nio.file.attribute.BasicFileAttributes)
@@ -281,11 +276,11 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 					@Override
 					public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException
 					{
-						File f = path.toFile();
-						if (f.isFile() && f.getName().toLowerCase().equals("pom.properties"))
+						File visitFile = path.toFile();
+						if (visitFile.isFile() && visitFile.getName().toLowerCase().equals("pom.properties"))
 						{
 							Properties p = new Properties();
-							p.load(new FileReader(f));
+							p.load(new FileReader(visitFile));
 
 							scmUrl = p.getProperty("scm.url");
 							isaacVersion = p.getProperty("isaac.version");

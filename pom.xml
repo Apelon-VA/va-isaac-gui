@@ -49,7 +49,6 @@
         <!-- The dependencies that we expect child modules may need to depend on - with the versions and 
         scopes set to reasonable defaults. -->
         <dependencies>
-            <!-- OTF.  Includes JavaFX 2.2.45. -->
             <dependency>
                 <groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
                 <artifactId>newtons-cradle</artifactId>

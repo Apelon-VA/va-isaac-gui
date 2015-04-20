@@ -40,7 +40,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;

@@ -33,8 +33,7 @@ import java.io.IOException;
  */
 public class FullSyncTest extends BaseTest {
     
-   public static void main(String[] args) throws DatastoreException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException,
-       NoSuchFieldException, SecurityException, IOException, InterruptedException {
+   public static void main(String[] args) throws Exception {
         setup();
 
         LocalTasksServiceBI localTasksService = AppContext.getService(LocalTasksServiceBI.class);

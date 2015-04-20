@@ -386,7 +386,7 @@ public class ConceptViewerLabelHelper {
 								
 								ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 								
-								OTFUtility.addUncommitted(cabi.getEnclosingConcept());
+								OTFUtility.addUncommitted(cabi.getConceptNid());
 								
 								// Commit
 								OTFUtility.commit(con);
@@ -404,7 +404,7 @@ public class ConceptViewerLabelHelper {
 						
 						DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
 						
-						OTFUtility.addUncommitted(dcbi.getEnclosingConcept());
+						OTFUtility.addUncommitted(dcbi.getConceptNid());
 	
 					} else if (type == ComponentType.RELATIONSHIP) {
 						RelationshipVersionBI<?> rel = (RelationshipVersionBI<?>)comp;
@@ -429,7 +429,7 @@ public class ConceptViewerLabelHelper {
 				
 				RelationshipChronicleBI rcbi = OTFUtility.getBuilder().constructIfNotCurrent(rcab);
 				
-				OTFUtility.addUncommitted(rcbi.getEnclosingConcept());
+				OTFUtility.addUncommitted(rcbi.getConceptNid());
 			}
 		});
 

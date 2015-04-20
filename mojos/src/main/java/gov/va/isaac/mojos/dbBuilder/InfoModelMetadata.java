@@ -20,11 +20,9 @@ package gov.va.isaac.mojos.dbBuilder;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.models.api.BdbInformationModelService;
-
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.datastore.BdbPathManager;
 
 /**
  * Goal which creates information model refset metadata in the ISAAC environment
@@ -49,7 +47,8 @@ public class InfoModelMetadata extends AbstractMojo {
   public void execute() throws MojoExecutionException {
     try {
       getLog().info("Creating metadata");
-      BdbPathManager.get().resetPathMap();  //TODO dan doesn't know what this does... really the only thing preventing the killing of this mojo.
+      //TODO OCHRE this doesn't exist anymore
+      //BdbPathManager.get().resetPathMap();  //TODO dan doesn't know what this does... really the only thing preventing the killing of this mojo.
       createMetadata();
       getLog().info("Done creating new path.");
     } catch (Exception e) {

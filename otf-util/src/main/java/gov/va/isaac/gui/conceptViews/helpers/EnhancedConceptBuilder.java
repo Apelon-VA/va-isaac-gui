@@ -16,6 +16,7 @@ import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -313,7 +314,7 @@ public class EnhancedConceptBuilder {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				ListBatchViewI lv = AppContext.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
+				ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
 				AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
 				List<Integer> nidList = new ArrayList<>();
 				nidList.add(con.getNid());
@@ -327,7 +328,7 @@ public class EnhancedConceptBuilder {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				AppContext.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(con.getNid(), null);			
+				LookupService.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(con.getNid(), null);
 			}
 		});
 

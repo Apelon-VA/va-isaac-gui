@@ -31,19 +31,17 @@ import gov.va.isaac.workflow.LocalTasksServiceBI;
 import gov.va.isaac.workflow.LocalWorkflowRuntimeEngineBI;
 import gov.va.isaac.workflow.TaskActionStatus;
 import gov.va.isaac.workflow.exceptions.DatastoreException;
-
+import gov.vha.isaac.ochre.api.LookupService;
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-
 import javax.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,7 +153,15 @@ public class WorkflowTaskDetailsViewController {
 
 		LOG.debug("Set task to " + task);
 
-		loadContents();
+		try
+		{
+			loadContents();
+		}
+		catch (IOException e)
+		{
+			LOG.error("Unexpected", e);
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public void setTask(long taskId) throws DatastoreException {
@@ -193,7 +199,7 @@ public class WorkflowTaskDetailsViewController {
 		viewWfHxButton.setOnAction((e) -> viewWorkflowHistory());
 	}
 
-	private void loadContents() {
+	private void loadContents() throws IOException {
 		UUID componentId = UUID.fromString(task.getComponentId());
 		conceptId = OTFUtility.getComponentChronicle(componentId).getConceptNid();
 		generatedComponentSummary.setText(ComponentDescriptionHelper.getComponentDescription(componentId));
@@ -243,7 +249,7 @@ public class WorkflowTaskDetailsViewController {
 	}
 	
 	private void openConceptPanel() {
-		PopupConceptViewI cv = AppContext.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 		cv.setConcept(conceptId);
 		cv.showView(null);
 	}

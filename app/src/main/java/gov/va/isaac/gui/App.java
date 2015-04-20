@@ -57,7 +57,7 @@ public class App extends Application implements ApplicationWindowI{
     private boolean shutdown = false;
     private Stage primaryStage_;
     private CommonDialogs commonDialog_;
-    private static IOException dataStoreLocationInitException_ = null;
+    private static Exception dataStoreLocationInitException_ = null;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -125,7 +125,7 @@ public class App extends Application implements ApplicationWindowI{
                         dataStoreLocationInitException_ = null;
                         try
                         {
-                            SystemInit.configDataStorePaths(new File("berkeley-db"));
+                            SystemInit.configDataStorePaths(new File(""));
                         }
                         catch (IOException e)
                         {

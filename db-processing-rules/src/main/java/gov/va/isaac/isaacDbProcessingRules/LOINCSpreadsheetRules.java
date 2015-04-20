@@ -32,6 +32,7 @@ import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +56,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
@@ -137,7 +137,7 @@ public class LOINCSpreadsheetRules implements TransformConceptIterateI
 		startTime = System.currentTimeMillis();
 		//TODO pass in the spreadsheet?  But then where to store it?
 		ts_ = ts;
-		vc_ = StandardViewCoordinates.getSnomedStatedLatest();
+		vc_ = ViewCoordinates.getDevelopmentStatedLatest();
 		
 		// Start with standard view coordinate and override the path setting to use the LOINC path
 		Position position = ts.newPosition(ts.getPath(getNid(LOINC_PATH)), Long.MAX_VALUE);
@@ -332,7 +332,7 @@ public class LOINCSpreadsheetRules implements TransformConceptIterateI
 				}
 				else
 				{
-					cc = ts_.getComponent(searchResults.get(0).getNid()).getEnclosingConcept();
+					cc = ts_.getConceptForNid(searchResults.get(0).getNid());
 				}
 			}
 			for (DescriptionChronicleBI dc : cc.getDescriptions())
@@ -424,7 +424,7 @@ public class LOINCSpreadsheetRules implements TransformConceptIterateI
 				IdDirective.GENERATE_HASH);
 		
 		ts_.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), TermAux.UNSPECIFIED_MODULE.getLenient().getNid(), 
-				getNid(LOINC_PATH)), StandardViewCoordinates.getWbAuxiliary()).construct(rCab);
+				getNid(LOINC_PATH)), vc_).construct(rCab);
 		ts_.addUncommitted(source);
 	}
 	
@@ -577,7 +577,7 @@ public class LOINCSpreadsheetRules implements TransformConceptIterateI
 	
 	public static void main(String[] args) throws Exception
 	{
-		IOException dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../../ISAAC-DB/isaac-db-solor/target/"));
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../../ISAAC-DB/isaac-db-solor/target/"));
 		if (dataStoreLocationInitException != null)
 		{
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);

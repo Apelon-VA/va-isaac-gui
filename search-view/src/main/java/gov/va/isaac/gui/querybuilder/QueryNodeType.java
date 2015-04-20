@@ -107,8 +107,7 @@ public enum QueryNodeType implements QueryNodeTypeI {
 	REFSET_CONTAINS_STRING("Refset contains string", RefsetContainsString.class, org.ihtsdo.otf.query.implementation.clauses.RefsetContainsString.class),
 
 		// Relationship
-	REL_RESTRICTION("Relationship restriction", RelRestriction.class, org.ihtsdo.otf.query.implementation.clauses.RelRestriction.class),
-	REL_TYPE("Relationship type", RelType.class, org.ihtsdo.otf.query.implementation.clauses.RelType.class);
+	REL_RESTRICTION("Relationship restriction", RelRestriction.class, org.ihtsdo.otf.query.implementation.clauses.RelRestriction.class);
 
 	private final static Logger logger = LoggerFactory.getLogger(QueryNodeType.class);
 	

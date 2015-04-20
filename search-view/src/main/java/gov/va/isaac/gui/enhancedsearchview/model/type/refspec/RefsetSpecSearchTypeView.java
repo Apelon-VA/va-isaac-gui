@@ -108,9 +108,7 @@ public class RefsetSpecSearchTypeView implements SearchTypeSpecificView {
 		
 		List<QueryNodeType> relationshipAssertionNodeTypes = getSupportedQueryNodeTypes(
 				refsetSpecModel.getUnsupportedQueryNodeTypes(),
-				QueryNodeType.REL_RESTRICTION,
-				QueryNodeType.REL_TYPE
-				);
+				QueryNodeType.REL_RESTRICTION);
 		
 		// Add to dropdown
 		boolean separatorNeeded = false;

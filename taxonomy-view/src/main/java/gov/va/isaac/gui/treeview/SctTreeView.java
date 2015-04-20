@@ -147,10 +147,7 @@ class SctTreeView {
         ImageView taxonomyStated = Images.TAXONOMY_STATED.createImageView();
         taxonomyStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(StatedInferredOptions.STATED));
         Tooltip.install(taxonomyStated, new Tooltip("Displaying the Stated view- click to display the Inferred view"));
-        ImageView taxonomyInferredThenStated = Images.TAXONOMY_INFERRED_THEN_STATED.createImageView();
-        taxonomyInferredThenStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(StatedInferredOptions.INFERRED_THEN_STATED));
-        Tooltip.install(taxonomyInferredThenStated, new Tooltip("Displaying the Inferred then Stated view- click to display the Stated view"));
-        taxonomyViewMode.setGraphic(new StackPane(taxonomyInferred, taxonomyStated, taxonomyInferredThenStated));
+        taxonomyViewMode.setGraphic(new StackPane(taxonomyInferred, taxonomyStated));
         taxonomyViewMode.setOnAction(new EventHandler<ActionEvent>()
         {
             @Override
@@ -165,10 +162,6 @@ class SctTreeView {
                         sip = StatedInferredOptions.INFERRED;
                     }
                     else if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == StatedInferredOptions.INFERRED)
-                    {
-                        sip = StatedInferredOptions.INFERRED_THEN_STATED;
-                    }
-                    else if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == StatedInferredOptions.INFERRED_THEN_STATED)
                     {
                         sip = StatedInferredOptions.STATED;
                     }

@@ -12,10 +12,9 @@ import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.search.CompositeSearchResult;
-
+import gov.vha.isaac.ochre.api.LookupService;
 import java.util.ArrayList;
 import java.util.List;
-
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -35,7 +34,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -231,7 +229,7 @@ public class EnhancedSearchViewBottomPane {
 	}
 
 	private void resultsToList() {
-		ListBatchViewI lv = AppContext.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
+		ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
 		AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI) lv);
 
 		List<Integer> nids = new ArrayList<>();

@@ -145,7 +145,7 @@ public class AssociationUtilities
 		List<SearchResult> refexes = indexer.queryAssemblageUsage(ISAAC.ASSOCIATION_REFEX.getNid(), Integer.MAX_VALUE, null);
 		for (SearchResult sr : refexes)
 		{
-			result.add(ExtendedAppContext.getDataStore().getComponent(sr.getNid()).getEnclosingConcept());
+			result.add(ExtendedAppContext.getDataStore().getConceptForNid(sr.getNid()));
 		}
 		return result;
 	}

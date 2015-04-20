@@ -25,12 +25,10 @@ import gov.va.isaac.interfaces.workflow.ProcessInstanceCreationRequestI;
 import gov.va.isaac.interfaces.workflow.WorkflowProcess;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -42,7 +40,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.InputEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -240,7 +237,15 @@ public class WorkflowInitiationViewController {
 					+ OTFUtility.getDescription(passedComponentOrConcept.getNid()));
 		}
 
-		loadContents();
+		try
+		{
+			loadContents();
+		}
+		catch (IOException e)
+		{
+			LOG.error("Unexpected", e);
+			throw new RuntimeException(e);
+		}
 	}
 
 	public void setComponent(int componentOrConceptNid) {
@@ -259,7 +264,7 @@ public class WorkflowInitiationViewController {
 		setComponent(componentVersion);
 	}
 
-	private void loadContents() {
+	private void loadContents() throws IOException {
 		loadWorkflowProcessesComboBox();
 
 		generatedComponentDescriptionLabel.setText(ComponentDescriptionHelper.getComponentDescription(componentOrConcept));

@@ -24,6 +24,7 @@ import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import javafx.fxml.FXML;
@@ -136,7 +137,8 @@ public class SummaryController implements PanelControllersI {
 					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new RefexDynamicColumnInfo[0]), 
 					refexData.getParentConcept().getPrimordialUuid(), 
 					refexData.isAnnotatedStyle(),
-					refexData.getComponentRestrictionType());
+					refexData.getComponentRestrictionType(), 
+					ViewCoordinates.getMetadataViewCoordinate());
 		} catch (IOException | ContradictionException | InvalidCAB | PropertyVetoException e) {
 			logger.error("Unable to create and/or commit refset concept and metadata", e);
 			AppContext.getCommonDialogs().showErrorDialog("Error Creating Sememe", "Unexpected error creating the Sememe", e.getMessage(), summaryPane.getScene().getWindow());

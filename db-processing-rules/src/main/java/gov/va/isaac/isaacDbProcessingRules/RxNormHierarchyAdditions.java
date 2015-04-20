@@ -20,6 +20,7 @@ package gov.va.isaac.isaacDbProcessingRules;
 
 import gov.va.isaac.mojos.dbTransforms.TransformArbitraryI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -31,7 +32,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
@@ -168,7 +168,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 							0, RelationshipType.STATED_ROLE, IdDirective.GENERATE_HASH);
 					
 					ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), TermAux.UNSPECIFIED_MODULE.getLenient().getNid(), 
-							rxNormPathNid), StandardViewCoordinates.getWbAuxiliary()).construct(rCab);
+							rxNormPathNid), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
 					ts.addUncommitted(cc);
 					
 					int last = addedRels.getAndIncrement();

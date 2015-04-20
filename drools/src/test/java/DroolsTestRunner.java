@@ -18,6 +18,7 @@
  */
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.drools.helper.ResultsCollector;
 import gov.va.isaac.drools.helper.ResultsItem;
 import gov.va.isaac.drools.helper.templates.AbstractTemplate;
@@ -25,13 +26,13 @@ import gov.va.isaac.drools.helper.templates.DescriptionTemplate;
 import gov.va.isaac.drools.manager.DroolsExecutor;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
 import gov.va.isaac.drools.testmodel.DrDescription;
-
+import gov.va.isaac.init.SystemInit;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
@@ -43,13 +44,15 @@ import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 public class DroolsTestRunner
 {
 
-	public static void main(String[] args) throws ClassNotFoundException, IOException, NoSuchFieldException, SecurityException, IllegalArgumentException,
-			IllegalAccessException, InterruptedException
+	public static void main(String[] args) throws Exception
 	{
-		AppContext.setup();
-		Field f = Hk2Looker.class.getDeclaredField("looker");
-		f.setAccessible(true);
-		f.set(null, AppContext.getServiceLocator());
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+		if (dataStoreLocationInitException != null)
+		{
+			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
+			System.exit(-1);
+		}
+		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 
 		DroolsExecutorsManager dem = AppContext.getService(DroolsExecutorsManager.class);
 		
