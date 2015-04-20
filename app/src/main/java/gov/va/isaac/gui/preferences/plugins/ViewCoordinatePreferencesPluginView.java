@@ -76,7 +76,6 @@ import javax.inject.Singleton;
 import org.apache.commons.lang3.time.DateUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Position;
 import org.ihtsdo.otf.tcc.api.nid.NidSet;
 import org.ihtsdo.otf.tcc.api.nid.NidSetBI;
 import org.jvnet.hk2.annotations.Service;
@@ -268,8 +267,7 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 					
 						for(Integer thisStamp : stamps.getAsSet()) {
 							try {
-								Position stampPosition = stampDb.getPosition(thisStamp);
-								this.stampDate = new Date(stampPosition.getTime());
+								this.stampDate = new Date(stampDb.getTimeForStamp(thisStamp));
 								stampDateInstant = stampDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 								this.pathDatesList.add(stampDateInstant); //Build DatePicker
 							} catch (Exception e) {
@@ -635,7 +633,7 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 						SortedSet<Integer> s = new TreeSet<Integer>(allStampSet);
 						if (!s.isEmpty()) {
 							Integer stampToSet = s.last();
-							overrideTimestamp = stampDb.getPosition(stampToSet).getTime();
+							overrideTimestamp = stampDb.getTimeForStamp(stampToSet);
 							timeSelectCombo.getItems().add(Long.MAX_VALUE);
 							timeSelectCombo.setValue(Long.MAX_VALUE);
 						}
@@ -651,7 +649,7 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 							Date stampDate;
 							LocalDate stampInstant = null;
 							try {
-								fullTime = stampDb.getPosition(thisStamp).getTime();
+								fullTime = stampDb.getTimeForStamp(thisStamp);
 								stampDate = new Date(fullTime);
 								stampInstant = stampDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 							} catch (Exception e) {
