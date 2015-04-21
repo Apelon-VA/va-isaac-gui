@@ -62,10 +62,11 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 		final ConceptVersionBI concept = OTFUtility.getConceptVersion(filter.getNid());
 
 		Query q = new Query() {
-			@Override
-			protected NativeIdSetBI For() throws IOException {
-				return finalInputNids;
-			}
+			// TODO For() method's functionality must be replaced for QueryBasedIsDescendantOfSearchResultsFilter to work
+//			@Override
+//			protected NativeIdSetBI For() throws IOException {
+//				return finalInputNids;
+//			}
 
 			@Override
 			public void Let() throws IOException {

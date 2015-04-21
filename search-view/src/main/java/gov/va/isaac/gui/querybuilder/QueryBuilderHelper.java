@@ -647,10 +647,11 @@ public class QueryBuilderHelper {
 
 		Query syntheticQuery = new Query(viewCoordinate) {
 			
-			@Override
-			protected NativeIdSetBI For() throws IOException {
-				return dataStore.getAllConceptNids();
-			}
+			// TODO test change made to conform with new Query OCHRE interface
+//			@Override
+//			protected NativeIdSetBI For() throws IOException {
+//				return dataStore.getAllConceptNids();
+//			}
 
 			@Override
 			public void Let() throws IOException {

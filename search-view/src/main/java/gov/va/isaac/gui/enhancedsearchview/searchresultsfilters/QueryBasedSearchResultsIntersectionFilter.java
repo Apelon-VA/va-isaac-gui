@@ -99,10 +99,11 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		Query q = null;
 
 		q = new Query() {
-			@Override
-			protected NativeIdSetBI For() throws IOException {
-				return finalInputNids;
-			}
+			// TODO For() method's functionality must be replaced for QueryBasedSearchResultsIntersectionFilter to work
+//			@Override
+//			protected NativeIdSetBI For() throws IOException {
+//				return finalInputNids;
+//			}
 
 			@Override
 			public void Let() throws IOException {
