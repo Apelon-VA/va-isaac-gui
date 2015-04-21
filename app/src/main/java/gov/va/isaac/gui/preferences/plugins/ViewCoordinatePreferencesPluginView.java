@@ -35,7 +35,9 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.commit.CommitManager;
+import gov.vha.isaac.ochre.api.commit.CommitService;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -53,6 +55,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
@@ -253,27 +257,29 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 				if(!pathComboFirstRun) {
 					UUID selectedPath = pathComboBox.getSelectionModel().getSelectedItem();
 					if(selectedPath != null) {
-						int path = OTFUtility.getConceptVersion(selectedPath).getPathNid();
 						
-						CommitManager stampDb = AppContext.getService(CommitManager.class);
-						NidSet nidSet = new NidSet();
-						nidSet.add(path);
+						CommitService stampDb = AppContext.getService(CommitService.class);
+						
 						//TODO: Make this multi-threaded and possibly implement setTimeOptions() here also
-						NidSetBI stamps = stampDb.getSpecifiedStamps(nidSet, Long.MIN_VALUE, Long.MAX_VALUE); 
+						//TODO OCHRE use the right path here
+						//int path = OTFUtility.getConceptVersion(selectedPath).getPathNid();
+						IntStream stamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
 						
 						pathDatesList.clear(); 
 //						disableTimeCombo(true);
 						timeSelectCombo.setValue(Long.MAX_VALUE);
 					
-						for(Integer thisStamp : stamps.getAsSet()) {
+						stamps.forEach((thisStamp) ->
+						{
 							try {
 								this.stampDate = new Date(stampDb.getTimeForStamp(thisStamp));
 								stampDateInstant = stampDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 								this.pathDatesList.add(stampDateInstant); //Build DatePicker
 							} catch (Exception e) {
-								e.printStackTrace();
+								e.printStackTrace();  //TODO OCHRE fix!
 							}
-						}
+						});
+
 						datePicker.setValue(LocalDate.now());
 					}
 				} else {
@@ -555,6 +561,21 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 	}
 	
 	
+	private IntStream getStamps(int pathSequence, long startTime, long endTime)
+	{
+		CommitService cs = AppContext.getService(CommitService.class);
+		return  cs.getStampSequences().filter((stampSequence) ->
+		{
+				if (cs.getPathSequenceForStamp(stampSequence) == pathSequence
+						&& cs.getTimeForStamp(stampSequence) >= startTime
+						&& cs.getTimeForStamp(stampSequence) <= endTime)
+				{
+					return true;
+				}
+				return false;
+		});
+	}
+	
 	/**
 	 *  Disables the Time Combo Box by changing opacity, bg color and disabling GUI object.
 	 *  
@@ -600,36 +621,36 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 			
 			Date startDate = null, finishDate = null;
 			if(storedTimePref != null) {
-				CommitManager stampDb = AppContext.getService(CommitManager.class);
-				NidSet nidSet = new NidSet(); 
-				nidSet.add(path); 
-				
-				NidSetBI stamps = null;
+				CommitService stampDb = AppContext.getService(CommitService.class);
+//				NidSet nidSet = new NidSet(); 
+//				nidSet.add(path); 
+				//TODO OCHRE use the right path here
+				IntStream stamps = null;
 				if(!storedTimePref.equals(getDefaultTime())) {
 					startDate = getStartOfDay(new Date(storedTimePref)); 
 					finishDate = getEndOfDay(new Date(storedTimePref));
-					stamps = stampDb.getSpecifiedStamps(nidSet, startDate.getTime(), finishDate.getTime());
+					stamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), startDate.getTime(), finishDate.getTime());
 				} else {
-					stamps = stampDb.getSpecifiedStamps(nidSet, Long.MIN_VALUE, Long.MAX_VALUE);
+					stamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
 				}
 				
 				truncTimeToFullTimeMap.clear();
 				times.clear();
 
-				HashSet<Integer> stampSet = stamps.getAsSet();
+				HashSet<Integer> stampSet = new HashSet<>(stamps.boxed().collect(Collectors.toList()));
 				
 				Date d = new Date(storedTimePref);
 				if (dateIsLocalDate(d)) {
 					// Get stamps of day
 					Date todayStartDate = getStartOfDay(new Date()); 
 					Date todayFinishDate = getEndOfDay(new Date());
-					NidSetBI todayStamps = stampDb.getSpecifiedStamps(nidSet, todayStartDate.getTime(), todayFinishDate.getTime());
+					IntStream todayStamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), todayStartDate.getTime(), todayFinishDate.getTime());
 					
 					// If have stamps, no action, if not, show Latest and set stamps to latest stamp we have in stampset
-					if (todayStamps.size() == 0) {
+					if (todayStamps.toArray().length == 0) {
 //						timeSelectCombo.getItems().add(Long.MAX_VALUE);
-						NidSetBI allStamps = stampDb.getSpecifiedStamps(nidSet, Long.MIN_VALUE, Long.MAX_VALUE);
-						HashSet<Integer> allStampSet = allStamps.getAsSet();
+						IntStream allStamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
+						HashSet<Integer> allStampSet = new HashSet<>(allStamps.boxed().collect(Collectors.toList()));
 						SortedSet<Integer> s = new TreeSet<Integer>(allStampSet);
 						if (!s.isEmpty()) {
 							Integer stampToSet = s.last();
