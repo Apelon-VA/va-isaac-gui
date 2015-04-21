@@ -61,7 +61,7 @@ public class VasTestCodeRunner {
 	public static void main(String[] args) 
 			throws Exception {
 
-		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../ISAAC-PA/app/"));
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../va-isaac-gui-pa/app/"));
 		if (dataStoreLocationInitException != null)
 		{
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);

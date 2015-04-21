@@ -224,6 +224,6 @@ public class AboutViewController {
 	}
 	
 	private String getDependencies() {
-		return "http://apelon-va.github.io/ISAAC-PA/app/dependencies.html";
+		return "http://apelon-va.github.io/va-isaac-gui-pa/app/dependencies.html";
 	}
 }

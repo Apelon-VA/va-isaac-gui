@@ -163,8 +163,8 @@ public class Export extends AbstractMojo
 	public static void main(String[] args) {
 		
 		Setup setup = new Setup();
-		setup.setBdbFolderLocation("../../ISAAC-PA/app/solor-snomed-2015.03.06-active-only.bdb");
-		setup.setUserProfileFolderLocation( new File("../../ISAAC-PA/app/profiles"));
+		setup.setBdbFolderLocation("../../va-isaac-gui-pa/app/solor-snomed-2015.03.06-active-only.bdb");
+		setup.setUserProfileFolderLocation( new File("../../va-isaac-gui-pa/app/profiles"));
 		
 		try {
 			setup.execute();
@@ -173,11 +173,11 @@ public class Export extends AbstractMojo
 		}
 		
 		Export export = new Export();
-//		export.bdbFolderLocation = new File("../../ISAAC-PA/app/solor-snomed-2015.03.06-active-only.bdb");
+//		export.bdbFolderLocation = new File("../../va-isaac-gui-pa/app/solor-snomed-2015.03.06-active-only.bdb");
 		export.outputFolder = new File("target/output");
 		export.exportType = new ExportReleaseType[]{ExportReleaseType.SNAPSHOT};
 		export.skipExportAssembly = false;
-//		export.userProfileLocation = new File("../../ISAAC-PA/app/profiles");
+//		export.userProfileLocation = new File("../../va-isaac-gui-pa/app/profiles");
 		
 		MojoConceptSpec mojoConceptSpec = new MojoConceptSpec();
 //		mojoConceptSpec.setFsn("ISAAC development path origin");
