@@ -26,6 +26,7 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.ApplicationWindowI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -159,6 +160,7 @@ public class App extends Application implements ApplicationWindowI{
             @Override
             protected TerminologyStoreDI call() throws Exception {
                 LOG.info("Opening Workbench database");
+                LookupService.startupIsaac();
                 TerminologyStoreDI dataStore = AppContext.getServiceLocator().getService(TerminologyStoreDI.class);
                 LOG.info("Finished opening Workbench database");
 
@@ -210,7 +212,7 @@ public class App extends Application implements ApplicationWindowI{
             //don't bother with shutdown if we know the path was bad... other wise, this actually tries to init the DB.  Sigh.
             if (dataStoreLocationInitException_ == null)
             {
-                ExtendedAppContext.getDataStore().shutdown();
+                LookupService.shutdownIsaac();
             }
             controller.shutdown();
         } catch (Throwable ex) {
@@ -250,10 +252,11 @@ public class App extends Application implements ApplicationWindowI{
     }
 
     public static void main(String[] args) throws Exception {
-        dataStoreLocationInitException_ = SystemInit.doBasicSystemInit(null);
+        dataStoreLocationInitException_ = SystemInit.doBasicSystemInit(new File(""));
         if (dataStoreLocationInitException_ != null)
         {
             System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException_);
+            dataStoreLocationInitException_.printStackTrace();
         }
 
         Application.launch(args);

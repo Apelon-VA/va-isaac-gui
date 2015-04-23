@@ -112,8 +112,9 @@ public class WorkflowInitiationPropertyChangeListener implements PropertyChangeL
 		if (!enabled && loggedIn != null && loggedIn.isLaunchWorkflowForEachCommit())
 		{
 			LOG.info("Enabling the workflow commit listener");
-			ExtendedAppContext.getDataStore().addPropertyChangeListener(CONCEPT_EVENT.POST_COMMIT, this);
-			ExtendedAppContext.getDataStore().addPropertyChangeListener(CONCEPT_EVENT.PRE_COMMIT, this);
+			//TODO OCHRE these don't work right now
+			//ExtendedAppContext.getDataStore().addPropertyChangeListener(CONCEPT_EVENT.POST_COMMIT, this);
+			//ExtendedAppContext.getDataStore().addPropertyChangeListener(CONCEPT_EVENT.PRE_COMMIT, this);
 			enabled = true;
 			localTasksService = AppContext.getService(LocalTasksServiceBI.class);
 			processService = AppContext.getService(ProcessInstanceServiceBI.class);

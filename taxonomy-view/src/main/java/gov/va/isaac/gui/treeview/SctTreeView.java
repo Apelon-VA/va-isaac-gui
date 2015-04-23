@@ -30,6 +30,7 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -263,7 +264,7 @@ class SctTreeView {
     }
     
     public void init() {
-        init(ISAAC.ISAAC_ROOT.getUuids()[0]);
+        init(IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getPrimodialUuid());
     }
 
     private synchronized void init(final UUID rootConcept) {

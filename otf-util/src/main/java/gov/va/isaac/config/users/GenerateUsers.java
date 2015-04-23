@@ -24,6 +24,7 @@ import gov.va.isaac.config.generated.IsaacUserCreation;
 import gov.va.isaac.config.generated.User;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -204,7 +205,7 @@ public class GenerateUsers
 	
 			LanguageCode lc = LanguageCode.EN_US;
 			UUID isA = Snomed.IS_A.getUuids()[0];
-			IdDirective idDir = IdDirective.PRESERVE_CONCEPT_REST_HASH;
+			IdDirective idDir = IdDirective.GENERATE_RANDOM;  //TODO OCHRE fix this
 			UUID module = TermAux.TERM_AUX_MODULE.getUuids()[0];
 			UUID parents[] = new UUID[] { TermAux.USER.getUuids()[0] };
 	
@@ -227,7 +228,7 @@ public class GenerateUsers
 	
 			//Build this on the lowest level path, otherwise, other code that references this will fail (as it doesn't know about custom paths)
 			ConceptChronicleBI newCon = ts.getTerminologyBuilder(
-					new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), TermAux.TERM_AUX_MODULE.getLenient().getNid(), TermAux.WB_AUX_PATH.getLenient()
+					new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(), TermAux.WB_AUX_PATH.getLenient()
 							.getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
 			ts.addUncommitted(newCon);
 			ts.commit(newCon);

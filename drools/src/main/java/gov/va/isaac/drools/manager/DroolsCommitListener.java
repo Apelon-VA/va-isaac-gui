@@ -116,7 +116,9 @@ public class DroolsCommitListener implements CommitListenerI, VetoableChangeList
 		if (!enabled && loggedIn != null && loggedIn.isRunDroolsBeforeEachCommit())
 		{
 			LOG.info("Enabling the drools pre-commit listener");
-			ExtendedAppContext.getDataStore().addVetoablePropertyChangeListener(CONCEPT_EVENT.PRE_COMMIT, this);
+			
+			//TODO OCHRE this doesn't work right now
+			//ExtendedAppContext.getDataStore().addVetoablePropertyChangeListener(CONCEPT_EVENT.PRE_COMMIT, this);
 			enabled = true;
 		}
 
