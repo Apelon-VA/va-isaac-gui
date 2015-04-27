@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.dbBuilder;
+package gov.va.isaac.mojos.datastore;
 
 import gov.va.isaac.config.users.GenerateUsers;
 import java.io.File;

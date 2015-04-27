@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.dbBuilder;
+package gov.va.isaac.mojos.configuration;
 
 import gov.va.isaac.config.IsaacAppConfigWrapper;
 import gov.va.isaac.config.users.GenerateUsers;

@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.dbTransforms;
+package gov.va.isaac.mojos.datastore.transforms;
 
 import gov.va.isaac.AppContext;
 import java.io.File;

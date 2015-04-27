@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.isaacDbProcessingRules;
 
-import gov.va.isaac.mojos.dbTransforms.TransformConceptIterateI;
+import gov.va.isaac.mojos.datastore.transforms.TransformConceptIterateI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.File;
@@ -66,7 +66,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getName()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getName()
 	 */
 	@Override
 	public String getName()
@@ -75,7 +75,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 	}
 	
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#configure(java.io.File, org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#configure(java.io.File, org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
 	 */
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts)
@@ -85,7 +85,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 
 	/**
 	 * 
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformConceptIterateI#transform(org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI, 
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformConceptIterateI#transform(org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI, 
 	 *  org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI)
 	 */
 	@Override
@@ -169,7 +169,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getDescription()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getDescription()
 	 */
 	@Override
 	public String getDescription()
@@ -178,7 +178,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getWorkResultSummary()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getWorkResultSummary()
 	 */
 	@Override
 	public String getWorkResultSummary()
@@ -188,7 +188,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getWorkResultDocBookTable()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getWorkResultDocBookTable()
 	 */
 	@Override
 	public String getWorkResultDocBookTable()

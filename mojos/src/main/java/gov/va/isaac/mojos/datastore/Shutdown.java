@@ -16,8 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.dbBuilder;
+package gov.va.isaac.mojos.datastore;
 
+import gov.vha.isaac.mojo.hk2.ShutdownIsaac;
 import gov.vha.isaac.ochre.api.LookupService;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -25,7 +26,8 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 
 /**
- * Goal which shuts down an open data store.
+ * Goal which shuts down an open data store.  Note that this duplicates functionality found in {@link ShutdownIsaac}
+ * but we can't use that in combination with other things in this mojo package, due to limitations of maven.
  */
 @Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "shutdown-terminology-store")
 public class Shutdown extends AbstractMojo

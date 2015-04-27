@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.isaacDbProcessingRules;
 
-import gov.va.isaac.mojos.dbTransforms.TransformArbitraryI;
+import gov.va.isaac.mojos.datastore.transforms.TransformArbitraryI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.File;
@@ -73,7 +73,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	private final UUID rxNormDescType = UUID.fromString("3599879d-78c6-5b1e-b442-9ef08eaedd3c");// "RxNorm Description Type" - refex that carries ingredient linkage
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getName()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getName()
 	 */
 	@Override
 	public String getName()
@@ -82,7 +82,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	}
 	
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#configure(java.io.File, org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#configure(java.io.File, org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
 	 */
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts)
@@ -92,7 +92,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 
 	/**
 	 * @throws Exception
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#transform(org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#transform(org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
 	 */
 	@Override
 	public void transform(TerminologyStoreDI ts) throws Exception
@@ -201,7 +201,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getDescription()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getDescription()
 	 */
 	@Override
 	public String getDescription()
@@ -210,7 +210,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getWorkResultSummary()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getWorkResultSummary()
 	 */
 	@Override
 	public String getWorkResultSummary()
@@ -219,7 +219,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	}
 	
 	/**
-	 * @see gov.va.isaac.mojos.dbTransforms.TransformI#getWorkResultDocBookTable()
+	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getWorkResultDocBookTable()
 	 */
 	@Override
 	public String getWorkResultDocBookTable()

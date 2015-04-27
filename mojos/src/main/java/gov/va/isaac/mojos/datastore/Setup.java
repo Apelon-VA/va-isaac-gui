@@ -16,11 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.dbBuilder;
+package gov.va.isaac.mojos.datastore;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
+import gov.vha.isaac.mojo.hk2.StartupIsaac;
+import gov.vha.isaac.mojo.properties.SetTermstoreProperties;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
@@ -31,7 +33,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Goal which opens (and creates if necessary) an OTF Versioning Store DB.
+ * Goal which opens (and creates if necessary) a Data Store.
+ * 
+ * Note that this duplicates functionality found in {@link SetTermstoreProperties} and {@link StartupIsaac}, but we can't use that in 
+ * combination with other things in the package, due to limitations of maven when it comes to interweaving operations from multiple 
+ * mojo plugins.
  */
 @Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "setup-terminology-store")
 public class Setup extends AbstractMojo

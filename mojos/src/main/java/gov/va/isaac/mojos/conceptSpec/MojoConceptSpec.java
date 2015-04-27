@@ -16,22 +16,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.dbTransforms;
+package gov.va.isaac.mojos.conceptSpec;
 
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.jvnet.hk2.annotations.Contract;
+import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 
 /**
- * {@link TransformArbitraryI}
+ * {@link MojoConceptSpec}
+ * 
+ * A class that Maven can utilize to create a real ConceptSpec from snippits in our pom.xml files.
+ * Should look like:
+ * <pre>
+ * <MojoConceptSpec>
+ *     <fsn>The FSN</fsn>
+ *     <uuid>f4d2fabc-7e96-3b3a-a348-ae867ba74029</uuid>
+ * </MojoConceptSpec>
+ * </pre>
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-@Contract
-public interface TransformArbitraryI extends TransformI
+public class MojoConceptSpec
 {
-	/**
-	 * Execute the transform
-	 * @throws Exception 
-	 */
-	public void transform(TerminologyStoreDI ts) throws Exception;
+	private String fsn;
+	private String uuid;
+	
+	public ConceptSpec getConceptSpec()
+	{
+		return new ConceptSpec(fsn, uuid);
+	}
+	
+	public void setFsn(String thisFsn) {
+		fsn = thisFsn;
+	}
+	
+	public String getFsn() {
+		return fsn;
+	}
+	
+	public void setUuid(String uuidInput) {
+		uuid = uuidInput;
+	}
+	
+	public String getUuid() {
+		return uuid;
+	}
 }

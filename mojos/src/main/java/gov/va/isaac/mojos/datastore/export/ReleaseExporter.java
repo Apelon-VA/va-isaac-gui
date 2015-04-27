@@ -16,11 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.export;
+package gov.va.isaac.mojos.datastore.export;
 
 import gov.va.isaac.ie.exporter.EConceptExporter;
-import gov.va.isaac.mojos.dbBuilder.MojoConceptSpec;
-import gov.va.isaac.mojos.dbBuilder.Setup;
+import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
+import gov.va.isaac.mojos.datastore.Setup;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
@@ -41,8 +41,8 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 /**
  * Exports a jBin file type (an eConcept) .
  */
-@Mojo( name = "Export")
-public class Export extends AbstractMojo
+@Mojo( name = "release-export")
+public class ReleaseExporter extends AbstractMojo
 {
 	private EConceptExporter eConExporter;
 	private DataOutputStream dos_;
@@ -189,7 +189,7 @@ public class Export extends AbstractMojo
 			e1.printStackTrace();
 		}
 		
-		Export export = new Export();
+		ReleaseExporter export = new ReleaseExporter();
 //		export.bdbFolderLocation = new File("../../va-isaac-gui-pa/app/solor-snomed-2015.03.06-active-only.bdb");
 		export.outputFolder = new File("target/output");
 		export.exportType = new ExportReleaseType[]{ExportReleaseType.SNAPSHOT};
