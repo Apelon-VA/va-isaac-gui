@@ -12,7 +12,6 @@
 	<packaging>jar</packaging>
 
 	<name>ISAAC Extensions for DROOLS</name>
-	<url>http://maven.apache.org</url>
 
 	<dependencies>
 		<dependency>
