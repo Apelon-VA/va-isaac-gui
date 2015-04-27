@@ -8,7 +8,6 @@
     <packaging>pom</packaging>
     
     <name>ISAAC Modules Parent</name>
-    <url>https://csfe.aceworkspace.net/sf/projects/veterans_administration_project/</url>
     
     <licenses>
         <license>
@@ -27,12 +26,14 @@
     </description>
 
     <scm>
-        <url>https://github.com/Apelon-VA/ISAAC</url>
+        <url>https://github.com/Apelon-VA/va-isaac-gui.git</url>
     </scm>
+    
+    <!-- This is only used for publishing the site -->
     <distributionManagement>
         <site>
             <id>site</id>
-            <url>scm:git:git@github.com:Apelon-VA/ISAAC.git</url>
+            <url>scm:git:git@github.com:Apelon-VA/va-isaac-gui.git</url>
         </site>
     </distributionManagement>
 
@@ -41,6 +42,7 @@
         <query.version>2.12-SNAPSHOT</query.version>
         <ochre.version>2.27-SNAPSHOT</ochre.version>
         <isaac-mojo.version>1.6-SNAPSHOT</isaac-mojo.version>
+        <isaac-metadata.version>1.29-SNAPSHOT</isaac-metadata.version>
         <newtons-cradle.version>1.17-SNAPSHOT</newtons-cradle.version>
         <kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
     </properties>
@@ -49,6 +51,13 @@
         <!-- The dependencies that we expect child modules may need to depend on - with the versions and 
         scopes set to reasonable defaults. -->
         <dependencies>
+            <dependency>
+                <groupId>gov.vha.isaac.isaac-metadata.modules</groupId>
+                <artifactId>isaac-metadata-artifacts</artifactId>
+                <version>${isaac-metadata.version}</version>
+                <type>jar</type>
+            </dependency>
+        
             <dependency>
                 <groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
                 <artifactId>newtons-cradle</artifactId>

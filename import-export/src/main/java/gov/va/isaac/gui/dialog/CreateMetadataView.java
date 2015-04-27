@@ -105,9 +105,7 @@ public class CreateMetadataView implements PopupViewI, IsaacViewWithMenusI {
       @Override
       protected Boolean call() throws Exception {
         TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
-        InformationModelService service =
-            new BdbInformationModelService(dataStore);
-        service.createMetadataConcepts();
+        InformationModelService service = new BdbInformationModelService(dataStore);
         return true;
       }
 

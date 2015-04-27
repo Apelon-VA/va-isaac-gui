@@ -19,20 +19,18 @@
 package gov.va.isaac.models.api;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.model.InformationModelType;
 import gov.va.isaac.models.DefaultInformationModelProperty;
 import gov.va.isaac.models.InformationModel;
-import gov.va.isaac.models.InformationModelAux;
 import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -51,13 +49,10 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
@@ -344,7 +339,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Create refex entries for properties
     RefexDynamicUsageDescription propertyRefset =
         RefexDynamicUsageDescriptionBuilder
-            .readRefexDynamicUsageDescriptionConcept(InformationModelAux.INFORMATION_MODEL_PROPERTIES_REFSET
+            .readRefexDynamicUsageDescriptionConcept(InformationModels.INFORMATION_MODEL_PROPERTIES
                 .getLenient().getNid());
     LOG.debug("  property refset = " + propertyRefset.getRefexName());
     for (RefexDynamicChronicleBI<?> refex : modelConcept
@@ -391,7 +386,7 @@ public class BdbInformationModelService implements InformationModelService {
       RelationshipVersionBI<?> relVersion =
           rel.getVersion(OTFUtility.getViewCoordinate());
       // Look for matching typeId and "active" flag
-      if (relVersion.getTypeNid() == InformationModelAux.HAS_TERMINOLOGY_CONCEPT
+      if (relVersion.getTypeNid() == InformationModels.HAS_TERMINOLOGY_CONCEPT
           .getLenient().getNid() && relVersion.isActive()) {
         // Add the destination UUID
         model.addAssociatedConceptUuid(OTFUtility.getConceptVersion(
@@ -662,7 +657,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Retire any active relationships to UUIDs no longer in this set
     for (RelationshipCAB relCAB : modelConceptCB.getRelationshipCABs()) {
       // Look for matching typeId and "active" flag
-      if (relCAB.getTypeNid() == InformationModelAux.HAS_TERMINOLOGY_CONCEPT
+      if (relCAB.getTypeNid() == InformationModels.HAS_TERMINOLOGY_CONCEPT
           .getLenient().getNid()) {
         UUID uuid =
             OTFUtility.getConceptVersion(relCAB.getTargetNid())
@@ -688,7 +683,7 @@ public class BdbInformationModelService implements InformationModelService {
       LOG.debug("  Create relationship for "
           + modelConceptCB.getComponentUuid() + " => " + destinationUuid);
       UUID typeUid =
-          InformationModelAux.HAS_TERMINOLOGY_CONCEPT.getLenient()
+          InformationModels.HAS_TERMINOLOGY_CONCEPT.getLenient()
               .getPrimordialUuid();
       RelationshipCAB relCAB =
           new RelationshipCAB(modelConceptCB.getComponentUuid(), typeUid,
@@ -716,7 +711,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Create refex entries for properties
     RefexDynamicUsageDescription propertyRefset =
         RefexDynamicUsageDescriptionBuilder
-            .readRefexDynamicUsageDescriptionConcept(InformationModelAux.INFORMATION_MODEL_PROPERTIES_REFSET
+            .readRefexDynamicUsageDescriptionConcept(InformationModels.INFORMATION_MODEL_PROPERTIES
                 .getLenient().getNid());
     LOG.debug("  Found " + propertyRefset.getRefexName());
     // Iterate through information model properties and add refexes
@@ -815,112 +810,4 @@ public class BdbInformationModelService implements InformationModelService {
     //TODO OCHRE deal with path
     return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * gov.va.isaac.models.api.InformationModelService#createMetadataConcepts()
-   */
-  @Override
-  public void createMetadataConcepts() throws IOException, InvalidCAB,
-    ContradictionException, PropertyVetoException {
-    LOG.info("Create information models metadata concepts");
-    // disable commit listeners
-    try {
-      AppContext.getRuntimeGlobals().disableAllCommitListeners();
-
-      // TODO Dan notes - this should be moved to the InformationModels class in
-      // isaac-constants.
-      // None of this building code is necessary - dynamic refexes that are
-      // properly specified as ConceptSpec entries are automatically created
-      // during the DB build.
-
-      // TODO Dan asks - when are we doing all of this work, instead of just
-      // checking to see if it already exists up front?
-
-      // Create columns for dynamic refsets
-      String[] columnNames =
-          new String[] {
-              "info model property label", "info model property type",
-              "info model property name", "info model property default value",
-              "info model property value",
-              "info model property cardinality min",
-              "info model property cardinality max",
-              "info model property visibility"
-          };
-      String[] columnDescriptions =
-          new String[] {
-              "Used to capture the label for a property as used by the native information model type, e.g. 'qual' in CEM",
-              "Used to capture the property type as expressed in the model, e.g. 'MethodDevice' in CEM",
-              "Used to capture the property name as expressed in the model",
-              "Used to capture any default value the property has in the model",
-              "Used to capture any actual value the property has (for demo purposes)",
-              "Used to capture the cardinality lower limit in the model",
-              "Used to capture the cardinality upper limit in the model",
-              "Used to capture the property visibility in the model"
-          };
-      // TODO Dan notes - this was never tested to see what it does when you ask
-      // it to recreate column concepts that already exist... its probably doing
-      // the wrong thing.
-      List<RefexDynamicColumnInfo> columns = new ArrayList<>();
-      for (int i = 0; i < columnNames.length; i++) {
-        LOG.debug("  Attempting to create COLUMN " + columnNames[i]);
-        ConceptChronicleBI columnConcept =
-            RefexDynamicColumnInfo.createNewRefexDynamicColumnInfoConcept(
-                columnNames[i], columnDescriptions[i], ViewCoordinates.getMetadataViewCoordinate());
-        LOG.debug("    PT = "
-            + OTFUtility.getConPrefTerm(columnConcept.getNid()));
-        LOG.debug("    UUID = " + columnConcept.getPrimordialUuid());
-        RefexDynamicColumnInfo column =
-            new RefexDynamicColumnInfo(i, columnConcept.getPrimordialUuid(),
-                RefexDynamicDataType.STRING, null, false, null, null);
-        columns.add(column);
-      }
-
-      // Create dynamic refset for information model properties
-      RefexDynamicColumnInfo[] columnArray =
-          columns.toArray(new RefexDynamicColumnInfo[] {});
-      LOG.debug("  Attempting to create info model property refset");
-      RefexDynamicUsageDescription refex =
-          RefexDynamicUsageDescriptionBuilder
-              .createNewRefexDynamicUsageDescriptionConcept(
-                  // TODO Dan notes this also doesn't check to see if it already
-                  // exists - not sure what it does in that case
-                  "Information model property refset",
-                  "Information model property refset",
-                  "Used to capture information about information model properties",
-                  columnArray, RefexDynamic.REFEX_DYNAMIC_IDENTITY.getLenient()
-                      .getPrimordialUuid(), true, null, ViewCoordinates.getMetadataViewCoordinate());
-      ConceptVersionBI refexConcept =
-          OTFUtility.getConceptVersion(refex.getRefexUsageDescriptorNid());
-      LOG.debug("    PT = " + refexConcept.getPreferredDescription().getText());
-      LOG.debug("    UUID = " + refexConcept.getPrimordialUuid());
-
-      // Create relationship type metadata for connecting
-      // info models to terminology - this is to avoid having
-      // a dependency on a SNOMED relationship - though there is
-      // now a dependency on term aux.
-      LOG.debug("  Create rel type concept");
-      UUID parentUuid = UUID.fromString("4c3152a8-c927-330f-868d-b065a3362558");
-      ConceptChronicleBI parent = OTFUtility.getConceptVersion(parentUuid);
-      ConceptCB relTypeConceptCB =
-          createNewConceptBlueprint(parent, "Has terminology concept",
-              "Has terminology concept");
-      ConceptChronicleBI relTypeConcept =
-          OTFUtility.getBuilder().constructIfNotCurrent(relTypeConceptCB);
-
-      LOG.debug("    PT = " + OTFUtility.getConPrefTerm(relTypeConcept.getNid()));
-      LOG.debug("    UUID = " + relTypeConcept.getPrimordialUuid());
-      dataStore.addUncommitted(relTypeConcept);
-      dataStore.commit(relTypeConcept);
-
-    } catch (Exception e) {
-      throw e;
-    } finally {
-      AppContext.getRuntimeGlobals().enableAllCommitListeners();
-    }
-
-  }
-
 }
