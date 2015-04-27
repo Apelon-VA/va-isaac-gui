@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
@@ -39,30 +42,24 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
  * 
  * @phase process-sources
  */
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "execute-transforms")
 public class TransformExecutor extends AbstractMojo
 {
 
 	/**
 	 * The transforms and their configuration that are to be executed
-	 * 
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	private Transform[] transforms;
 	
 	/**
 	 * The folder where any summary output files should be written
-	 * 
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	private File summaryOutputFolder;
 
 	
-	
-	/*
-	 * (non-Javadoc)
-	 * 
+	/**
 	 * @see org.apache.maven.plugin.Mojo#execute()
 	 */
 	@Override

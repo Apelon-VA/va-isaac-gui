@@ -40,6 +40,7 @@ import javax.xml.bind.JAXBException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.xml.sax.SAXException;
 
 /**
@@ -80,30 +81,26 @@ public abstract class ProfilesMojoBase extends AbstractMojo
 	
 	/**
 	 * The location of the (already existing) profiles folder which should be shared via SCM.
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File userProfileFolderLocation = null;
 	
 	/**
 	 * The location of the (already existing) app.xml file which contains the SCM connection information.
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File appXMLFile = null;
 	
 	/**
 	 * The username to use for remote operations
-	 * @parameter
-	 * @optional
 	 */
+	@Parameter (required = false)
 	private String profileSyncUsername = null;
 	
 	/**
 	 * The password to use for remote operations
-	 * @parameter
-	 * @optional
 	 */
+	@Parameter (required = false)
 	private String profileSyncPassword = null;
 	
 	private IsaacAppConfig config_;

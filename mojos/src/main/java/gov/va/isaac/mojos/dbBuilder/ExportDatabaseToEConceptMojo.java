@@ -19,7 +19,6 @@
 package gov.va.isaac.mojos.dbBuilder;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.config.users.GenerateUsers;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -27,6 +26,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
@@ -34,23 +36,17 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
 
 /**
- * Goal which processes a users.xml file which is formatted according to the UserGenerationSchema.xsd
- * stored in otf-util.  See {@link GenerateUsers} for more details.
- * 
- * @goal export-to-econcept
- * 
- * @phase process-sources
+ * Goal which exports the entire database to eConcept.
  */
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "export-all-to-econcept")
 public class ExportDatabaseToEConceptMojo extends AbstractMojo implements ProcessUnfetchedConceptDataBI
 {
 
 	/**
 	 * The filename to use for the output.  Typically, this file would 
 	 * end with an extension of .jbin
-	 * 
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File outputFile = null;
 	
 	private int conCount = 0;
@@ -126,6 +122,6 @@ public class ExportDatabaseToEConceptMojo extends AbstractMojo implements Proces
 	@Override
 	public String getTitle()
 	{
-		return "Exporter";
+		return "Full Datastore Exporter";
 	}	
 }

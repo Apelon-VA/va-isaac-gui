@@ -21,45 +21,39 @@ package gov.va.isaac.mojos.dbBuilder;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.util.DBLocator;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
-import java.lang.reflect.Field;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * Goal which opens (and creates if necessary) an OTF Versioning Store DB.
- * 
- * @goal setup-terminology-store
- * 
- * @phase process-sources
  */
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "setup-terminology-store")
 public class Setup extends AbstractMojo
 {
 
 	/**
-	 * Location of the folder to look for the BDB database. May be a direct link to a "berkeley-db" folder,
-	 * or it may be a link to a "foo.bdb" folder which contains a "berkeley-db" folder, or it may be a link
-	 * to the parent of a "foo.bdb" folder.
+	 * See {@link ConfigurationService#setDataStoreFolderPath(java.nio.file.Path) for details on what should
+	 * be in the passed in folder location.
 	 * 
 	 * @parameter
 	 * @required
 	 */
-	private String bdbFolderLocation; //TODO: Dan - change this from a String to a File type variable
+	@Parameter (required = true)
+	private File dataStoreLocation;
 	
 	/**
 	 * Location of the folder that contains the user profiles
-	 * 
-	 * @parameter
-	 * @optional
 	 */
+	@Parameter (required = false)
 	private File userProfileFolderLocation;
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/**
 	 * @see org.apache.maven.plugin.Mojo#execute()
 	 */
 	@Override
@@ -68,26 +62,17 @@ public class Setup extends AbstractMojo
 		getLog().info("Setup terminology store");
 		try
 		{
-			File bdbFolderFile = new File(bdbFolderLocation);
-
-			bdbFolderFile = DBLocator.findDBFolder(bdbFolderFile);
 			
-			Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(bdbFolderFile);
+			Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(dataStoreLocation);
 			if (dataStoreLocationInitException != null)
 			{
 				System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
 				System.exit(-1);
 			}
 
-			getLog().info("  Setup AppContext, bdb location = " + bdbFolderFile.getCanonicalPath());
+			getLog().info("  Setup AppContext, data store location = " + dataStoreLocation.getCanonicalPath());
 
-			// TODO OTF fix: this needs to be fixed so I don't have to hack it with reflection.... https://jira.ihtsdotools.org/browse/OTFISSUE-11
-			Field f = Hk2Looker.class.getDeclaredField("looker");
-			f.setAccessible(true);
-			f.set(null, AppContext.getServiceLocator());
-
-			getLog().info("Loading terminology store");
-			AppContext.getService(TerminologyStoreDI.class);
+			LookupService.startupIsaac();
 			
 			getLog().info("Done setting up terminology store");
 			
@@ -101,8 +86,8 @@ public class Setup extends AbstractMojo
 	}
 	
 	
-	public void setBdbFolderLocation(String inputBdbFolderlocation) {
-		bdbFolderLocation = inputBdbFolderlocation;
+	public void setDataStoreLocation(File inputBdbFolderlocation) {
+		dataStoreLocation = inputBdbFolderlocation;
 	}
 	
 	public void setUserProfileFolderLocation(File inputUserProfileLocation) {

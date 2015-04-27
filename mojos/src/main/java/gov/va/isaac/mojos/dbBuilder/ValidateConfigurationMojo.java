@@ -30,28 +30,26 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.xml.sax.SAXException;
 
 /**
  * {@link ValidateConfigurationMojo}
  * Validate that all of the required user specified configuration information is present, and schema valid.
- * 
- * @goal validate-configuration
- * 
- * @phase process-sources
+ *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "validate-configuration")
 public class ValidateConfigurationMojo extends AbstractMojo
 {
 
 	/**
 	 * The location of the resources folder that will be included on the classpath during build -
 	 * this folder should contain the things we are looking to validate.
-	 * 
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File resourcesFolderPath = null;
 
 	@Override

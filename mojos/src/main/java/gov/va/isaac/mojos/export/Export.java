@@ -1,12 +1,30 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright
+ * protection in the United States. Foreign copyrights may apply.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package gov.va.isaac.mojos.export;
 
-import gov.va.isaac.AppContext;
 import gov.va.isaac.ie.exporter.EConceptExporter;
 import gov.va.isaac.mojos.dbBuilder.MojoConceptSpec;
 import gov.va.isaac.mojos.dbBuilder.Setup;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -19,7 +37,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 /**
  * Exports a jBin file type (an eConcept) .
@@ -163,7 +180,7 @@ public class Export extends AbstractMojo
 	public static void main(String[] args) {
 		
 		Setup setup = new Setup();
-		setup.setBdbFolderLocation("../../va-isaac-gui-pa/app/solor-snomed-2015.03.06-active-only.bdb");
+		setup.setDataStoreLocation(new File("../../va-isaac-gui-pa/app/solor-snomed-2015.03.06-active-only.bdb"));
 		setup.setUserProfileFolderLocation( new File("../../va-isaac-gui-pa/app/profiles"));
 		
 		try {
@@ -195,7 +212,7 @@ public class Export extends AbstractMojo
 		}
 		
 		//SHUTDOWN
-		AppContext.getService(TerminologyStoreDI.class).shutdown();
+		LookupService.shutdownIsaac();
 		
 	}
 	

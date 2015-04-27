@@ -21,14 +21,13 @@ package gov.va.isaac.mojos.dbBuilder;
 import gov.vha.isaac.ochre.api.LookupService;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * Goal which shuts down an open data store.
- * 
- * @goal shutdown-terminology-store
- * 
- * @phase process-sources
  */
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "shutdown-terminology-store")
 public class Shutdown extends AbstractMojo
 {
 	/*

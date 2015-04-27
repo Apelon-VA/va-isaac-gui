@@ -22,23 +22,21 @@ import gov.va.isaac.config.changesets.ChangesetProcessor;
 import java.io.File;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * Goal which recursively processes any changeset (*.eccs) files found in the specified folder.
- * 
- * @goal process-changesets
- * @phase compile
  */
-
+@Mojo (defaultPhase = LifecyclePhase.COMPILE, name = "process-changesets")
 public class ProcessChangesets extends AbstractMojo
 {
 
 	/**
 	 * The location of the (already existing) profiles folder which contains changesets to process
-	 * 
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File userProfileFolderLocation = null;
 
 	/**

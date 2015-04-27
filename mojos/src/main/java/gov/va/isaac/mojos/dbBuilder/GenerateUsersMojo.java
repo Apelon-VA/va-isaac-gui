@@ -22,25 +22,23 @@ import gov.va.isaac.config.users.GenerateUsers;
 import java.io.File;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * Goal which processes a users.xml file which is formatted according to the UserGenerationSchema.xsd
  * stored in otf-util.  See {@link GenerateUsers} for more details.
- * 
- * @goal create-users
- * 
- * @phase process-sources
  */
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "create-users")
 public class GenerateUsersMojo extends AbstractMojo
 {
 
 	/**
 	 * The location of the users.xml file to process. If not provided,
 	 * will read "/users.xml" from the classpath.
-	 * 
-	 * @parameter
-	 * @optional
 	 */
+	@Parameter (required = false)
 	File usersFileLocation = null;
 
 	/**
