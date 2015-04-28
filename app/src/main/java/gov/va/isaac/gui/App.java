@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  */
 public class App extends Application implements ApplicationWindowI{
 
-    private static final Logger LOG = LoggerFactory.getLogger(App.class);
+    private final Logger LOG = LoggerFactory.getLogger(App.class);
 
     private AppController controller;
     private boolean shutdown = false;

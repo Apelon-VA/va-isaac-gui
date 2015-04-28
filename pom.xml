@@ -87,36 +87,6 @@
 				<type>jar</type>
 			</dependency>
 			
-			<!-- The native logback implementation -->
-			<dependency> 
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-classic</artifactId>
-				<version>1.1.2</version>
-				<!-- Default to test scope - only the executable app(s) should need them at normal scope.   -->
-				<!-- Code should be written against the slf4j-api - which is included below for all descendants.-->
-				<scope>test</scope>  
-			</dependency>
-
-			<!-- Redirects Java logging into logback -->
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>jul-to-slf4j</artifactId>
-				<version>${slf4j.version}</version>
-				<!-- Default to test scope -  only the executable app(s) should need them at normal scope.-->
-				<!-- Code should be written against the slf4j-api - which is included below for all descendants.-->
-				<scope>test</scope>
-			</dependency>
-			
-			<!-- Redirects log4j into logback - note - we must not include log4j in our classpath... -->
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>log4j-over-slf4j</artifactId>
-				<version>${slf4j.version}</version>
-				<!-- Default to test scope -  only the executable app(s) should need them at normal scope.-->
-				<!-- Code should be written against the slf4j-api - which is included below for all descendants.-->
-				<scope>test</scope>
-			</dependency>
-
 			<!-- Apache POI -->
 			<dependency>
 				<groupId>org.apache.poi</groupId>
@@ -197,24 +167,7 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-		</dependency>
-		
-		<!-- The native logback implementation (test scope only by default) -->
-		<dependency> 
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-		</dependency>
-
-		<!-- Redirects Java logging into logback (test scope only by default) -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-		
-		<!-- Redirects log4j into logback - note - we must not include log4j in our classpath. (test scope only by default) -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>log4j-over-slf4j</artifactId>
+			<version>1.7.12</version>
 		</dependency>
 		
 	</dependencies>

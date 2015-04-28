@@ -27,16 +27,11 @@ import gov.va.isaac.testUtils.MockIsaacAppConfig;
 import gov.va.isaac.testUtils.MockUserProfileManager;
 import gov.va.isaac.workflow.persistence.DatastoreManager;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.UUID;
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.jvnet.hk2.annotations.Service;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * {@link BaseTest}

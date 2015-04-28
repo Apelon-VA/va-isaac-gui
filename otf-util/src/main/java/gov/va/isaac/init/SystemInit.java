@@ -26,7 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * {@link SystemInit}
@@ -35,8 +34,6 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
  */
 public class SystemInit
 {
-	private static final Logger LOG = LoggerFactory.getLogger(SystemInit.class);
-
 	/**
 	 * Performs the basic init of ISAAC related applications.  Configures SLF4J Logging, configures the HK2 looker from OTF properly, 
 	 * configures the DB location paths of OTF properly.
@@ -46,9 +43,8 @@ public class SystemInit
 	 */
 	public static Exception doBasicSystemInit(File dbLocation) throws Exception
 	{
-		//Configure Java logging into logback
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
+		//Configure Java logging into log4j2
+		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
 		
 		//Make sure the service Locator comes up ok
 		LookupService.get();
@@ -81,7 +77,7 @@ public class SystemInit
 		{
 			throw new IOException("The specified data store: '" + dataStoreLocation.getAbsolutePath() + "' is not a folder");
 		}
-		LOG.info("Configuring cradle to use the data store " + dataStoreLocation.getAbsolutePath());
+		LoggerFactory.getLogger(SystemInit.class).info("Configuring cradle to use the data store " + dataStoreLocation.getAbsolutePath());
 		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(dataStoreLocation.toPath());
 	}
 }

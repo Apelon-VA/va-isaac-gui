@@ -26,13 +26,6 @@
 			<artifactId>gui-util</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
-		<!-- Redirects Java logging into logback - need to put on the compile classpath for some of the init utils to use -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-			<scope>compile</scope>
-			<optional>true</optional><!-- Don't export -->
-		</dependency>
 		<dependency>
 			<groupId>gov.vha.isaac.gui.modules</groupId>
 			<artifactId>constants</artifactId>
