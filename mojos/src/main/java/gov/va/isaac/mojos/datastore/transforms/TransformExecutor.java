@@ -37,10 +37,6 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 /**
  * Goal which executes arbitrary transforms.
- * 
- * @goal execute-transforms
- * 
- * @phase process-sources
  */
 @Mojo (defaultPhase = LifecyclePhase.PROCESS_SOURCES, name = "execute-transforms")
 public class TransformExecutor extends AbstractMojo
