@@ -16,7 +16,6 @@
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
-			<version>2.2.1</version>
 		</dependency>
 		<dependency>
 			<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
@@ -52,13 +51,6 @@
 			<version>${project.parent.version}</version>
 		</dependency>
 		
-		<!-- Need this to run classifier -->
-		<dependency>
-			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>isaac-classifier</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		
 		<!-- Needed to support Profile Sync (using GIT) -->
 		<dependency>
 			<groupId>gov.vha.isaac.gui.modules</groupId>
@@ -77,22 +69,21 @@
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>
 			<artifactId>maven-plugin-annotations</artifactId>
-			<version>3.4</version>
-			<scope>provided</scope><!-- annotations are needed only to build the plugin -->
+		</dependency>
+
+		<!-- Mojo execution needs this -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 	
-	<!-- Deal with older (broken) versions of maven that can't find mojo code properly without help -->
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-plugin-plugin</artifactId>
-				<version>3.4</version>
-				<configuration>
-					<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
-					<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-				</configuration>
 				<executions>
 					<execution>
 						<id>mojo-descriptor</id>

@@ -47,17 +47,6 @@
 			<artifactId>poi-ooxml</artifactId>
 		</dependency>
 
-		<!-- Redirects Java logging into logback -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-
-		<!-- Redirects log4j into logback - note - we must not include log4j in our classpath... -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>log4j-over-slf4j</artifactId>
-		</dependency>
 	</dependencies>
 
 </project>

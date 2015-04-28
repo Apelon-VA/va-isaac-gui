@@ -31,6 +31,7 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>jul-to-slf4j</artifactId>
 			<scope>compile</scope>
+			<optional>true</optional><!-- Don't export -->
 		</dependency>
 		<dependency>
 			<groupId>gov.vha.isaac.gui.modules</groupId>
@@ -49,7 +50,6 @@
 		<dependency>
 			<groupId>org.controlsfx</groupId>
 			<artifactId>controlsfx</artifactId>
-			<version>8.0.5</version>
 		</dependency>
 	</dependencies>
 	
@@ -58,7 +58,6 @@
 			<plugin>
 				<groupId>org.jvnet.jaxb2.maven2</groupId>
 				<artifactId>maven-jaxb2-plugin</artifactId>
-				<version>0.9.0</version>
 				<executions>
 					<execution>
 						<goals>

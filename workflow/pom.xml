@@ -28,12 +28,12 @@
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>10.10.1.1</version>
+            <version>10.11.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.9.5-pre8</version>
+            <version>0.9.5</version>
         </dependency>
         <dependency>
             <groupId>gov.vha.isaac.gui.modules</groupId>
@@ -46,7 +46,4 @@
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
-    <properties>
-        <netbeans.hint.license>apache20_1</netbeans.hint.license>
-    </properties>
 </project>
