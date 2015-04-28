@@ -163,13 +163,12 @@
 	</build>
 
 	<dependencies>
-		<!-- The dependencies that we give to all child modules by default.  Note - most of these are test scope only -->
+		<!-- TODO replace this with LOG4j 2 -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.12</version>
 		</dependency>
-		
 	</dependencies>
 
 	<modules>
