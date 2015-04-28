@@ -36,7 +36,7 @@ import org.apache.maven.plugins.annotations.Mojo;
  * See the above references for specific details on the behavior of this commit process
  * Keep this in a phase later than GenerateUsersMojo
  */
-@Mojo (defaultPhase = LifecyclePhase.PROCESS_TEST_RESOURCES, name = "add-commit-and-push-profile-scm")
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_TEST_RESOURCES, name = "add-commit-and-push-profiles-scm")
 public class AddCommitAndPushProfilesToSCMMojo extends ProfilesMojoBase
 {
 	/**
