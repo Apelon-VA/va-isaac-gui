@@ -67,7 +67,7 @@ public class InformationModels
 	
 	//Required columns
 	public static ConceptSpecWithDescriptions PROPERTY_LABEL = new ConceptSpecWithDescriptions("info model property label", 
-			UUID.fromString("7f1102be-2fe4-57e3-9b9d-80087d6ee054'"),
+			UUID.fromString("7f1102be-2fe4-57e3-9b9d-80087d6ee054"),
 			new String[] {"info model property label"},
 			new String[] {"Used to capture the label for a property as used by the native information model type, e.g. 'qual' in CEM"},
 			RefexDynamic.REFEX_DYNAMIC_COLUMNS);
