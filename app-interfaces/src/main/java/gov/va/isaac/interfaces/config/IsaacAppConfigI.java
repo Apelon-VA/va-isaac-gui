@@ -175,14 +175,7 @@ public interface IsaacAppConfigI {
    */
   public String getChangeSetUrlTypeName();
 
-  /**
-   * Default edit path name.
-   * 
-   * @return possible object is {@link String }
-   * 
-   */
-  public String getDefaultEditPathName();
-  
+
   /**
    * Current edit path name.
    * 
@@ -193,14 +186,7 @@ public interface IsaacAppConfigI {
    */
   public String getCurrentEditPathName();
 
-  /**
-   * Default edit path uuid.
-   * 
-   * @return possible object is {@link String }
-   * 
-   */
-  public String getDefaultEditPathUuid();
-  
+
   /**
    * Current edit path uuid.
    * 
@@ -211,14 +197,7 @@ public interface IsaacAppConfigI {
    */
   public String getCurrentEditPathUuid();
 
-  /**
-   * Default view path name.
-   * 
-   * @return possible object is {@link String }
-   * 
-   */
-  public String getDefaultViewPathName();
-  
+
   /**
    * Current view path name.
    * 
@@ -229,14 +208,7 @@ public interface IsaacAppConfigI {
    */
   public String getCurrentViewPathName();
 
-  /**
-   * Default view path uuid.
-   * 
-   * @return possible object is {@link String }
-   * 
-   */
-  public String getDefaultViewPathUuid();
-  
+
   /**
    * Current view path uuid.
    * 

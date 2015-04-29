@@ -279,18 +279,13 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
       return;
     }
 
-    // Check LOINC Path and current edit path
+    // Check LOINC Path and current edit path  //TODO OCHRE change this to module checking
     if (!OTFUtility.getConceptVersion(concept.getPathNid()).getPrimordialUuid()
-        .toString().equals("b2b1cc96-9ca6-5513-aad9-aa21e61ddc29")
-        && !OTFUtility.getConceptVersion(concept.getPathNid())
-            .getPrimordialUuid().toString()
-            .equals(AppContext.getAppConfiguration().getDefaultEditPathUuid())) {
+        .toString().equals("b2b1cc96-9ca6-5513-aad9-aa21e61ddc29")) {
       DialogResponse response =
           AppContext.getCommonDialogs().showYesNoDialog(
               "LOINC Content Request",
-              "The concept path is neither LOINC Path nor "
-                  + AppContext.getAppConfiguration().getDefaultEditPathName()
-                  + ". It is recommended that you only submit "
+              "The concept path is not LOINC Path. It is recommended that you only submit "
                   + "concepts edited on one of these paths to LOINC.\n\n"
                   + "Do you want to continue?");
       if (response == DialogResponse.NO) {

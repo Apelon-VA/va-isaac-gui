@@ -348,10 +348,6 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 		setChangeSetUrlType(read.getChangeSetUrlType());
 		setWorkflowServerUrl(read.getWorkflowServerUrl());
 		setWorkflowServerDeploymentId(read.getWorkflowServerDeploymentId());
-		setDefaultEditPathName(read.getDefaultEditPathName());
-		setDefaultEditPathUuid(read.getDefaultEditPathUuid());
-		setDefaultViewPathName(read.getDefaultViewPathName());
-		setDefaultViewPathUuid(read.getDefaultViewPathUuid());
 		setWorkflowPromotionPathName(read.getWorkflowPromotionPathName());
 		setWorkflowPromotionPathUuid(read.getWorkflowPromotionPathUuid());
 	}

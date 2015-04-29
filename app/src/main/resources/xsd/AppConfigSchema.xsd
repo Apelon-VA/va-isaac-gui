@@ -6,6 +6,7 @@
 <!-- Version 2015/03/18 -->
 <!-- 
   Changelog:
+  2015/04/25 - Removing unused paths
   2015/03/18 - Removing unused items, updating some docs.
   2014/12/20 - Removing things that should be read from other config files.
   2014/11/04 - Added changeSetUrlType 
@@ -112,50 +113,6 @@
           </xs:annotation>
         </xs:element>
 
-        <xs:element name="defaultEditPathName" type="xs:string" minOccurs="0" maxOccurs="1">
-          <xs:annotation>
-            <xs:appinfo>
-              <jxb:property>
-                <jxb:javadoc>Default edit path name.</jxb:javadoc>
-              </jxb:property>
-            </xs:appinfo>
-            <xs:documentation>Default edit path name.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-
-        <xs:element name="defaultEditPathUuid" type="UUID" minOccurs="1" maxOccurs="1">
-          <xs:annotation>
-            <xs:appinfo>
-              <jxb:property>
-                <jxb:javadoc>Default edit path uuid.</jxb:javadoc>
-              </jxb:property>
-            </xs:appinfo>
-            <xs:documentation>Default edit path uuid.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-
-        <xs:element name="defaultViewPathName" type="xs:string" minOccurs="0" maxOccurs="1">
-          <xs:annotation>
-            <xs:appinfo>
-              <jxb:property>
-                <jxb:javadoc>Default view path name.</jxb:javadoc>
-              </jxb:property>
-            </xs:appinfo>
-            <xs:documentation>Default view path name.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-
-        <xs:element name="defaultViewPathUuid" type="UUID" minOccurs="1" maxOccurs="1">
-          <xs:annotation>
-            <xs:appinfo>
-              <jxb:property>
-                <jxb:javadoc>Default view path uuid.</jxb:javadoc>
-              </jxb:property>
-            </xs:appinfo>
-            <xs:documentation>Default view path uuid.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-
         <xs:element name="workflowPromotionPathName" type="xs:string" minOccurs="0" maxOccurs="1">
           <xs:annotation>
             <xs:appinfo>
@@ -194,38 +151,5 @@
       <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
     </xs:restriction>
   </xs:simpleType>
-  
-	<!-- TODO - convert the path stuff up above over to a concept spec, rather than this pair of values stuff we have now...
-	However, none of these paths should be necessary / required anyway - they should simply be marked as default when the DB is built
-	and the runtime can read the default paths from the DB.  The way it is defined here, it is impossible to create correctly anyway
-	because the DB build generates the UUIDs... they are not prespecified - so we won't know what they are until we launch the app...
-	but we can't build the app without specifying these paths.  The easieast solution it to simply get rid of them.  This is yet another
-	thing that we should not have to manually configure multiple times. -->
-	<!--xs:element name="conceptSpec">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element name="FSN" type="xs:string" minOccurs="1" maxOccurs="1">
-					<xs:annotation>
-						<xs:appinfo>
-							<jxb:property>
-								<jxb:javadoc>The FSN for the concept</jxb:javadoc>
-							</jxb:property>
-						</xs:appinfo>
-						<xs:documentation>The FSN for the concept</xs:documentation>
-					</xs:annotation>
-				</xs:element>
-				<xs:element name="UUID" type="UUID" minOccurs="1" maxOccurs="1">
-					<xs:annotation>
-						<xs:appinfo>
-							<jxb:property>
-								<jxb:javadoc>The UUID for the concept</jxb:javadoc>
-							</jxb:property>
-						</xs:appinfo>
-						<xs:documentation>The UUID for the concept</xs:documentation>
-					</xs:annotation>
-				</xs:element>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element-->
 
 </xs:schema>

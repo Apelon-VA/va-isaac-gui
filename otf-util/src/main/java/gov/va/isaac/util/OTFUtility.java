@@ -24,6 +24,7 @@ import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -1088,7 +1089,7 @@ public class OTFUtility {
 		ConceptVersionBI conceptWithComp = OTFUtility.getConceptVersion(getComponentVersion(compUuid).getConceptNid());
 		Set<ComponentVersionBI> componentsInConcept = getConceptComponents(conceptWithComp);
 
-		int devPathNid = ExtendedAppContext.getDataStore().getNidForUuids(UUID.fromString(AppContext.getAppConfiguration().getDefaultEditPathUuid()));
+		int devPathNid = IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getNid();
 		
 		for (ComponentVersionBI comp : componentsInConcept) {
 			if (comp.getPathNid() == devPathNid) {

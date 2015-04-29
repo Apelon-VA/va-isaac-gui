@@ -157,12 +157,8 @@ public class SnomedSnorocketClassifier implements Classifier {
     // things
     // are getting in the way
     validPaths.add(TermAux.SNOMED_CORE.getLenient().getNid());
-    // when running in mojo mode, this may not be available
-    if (AppContext.getAppConfiguration().getDefaultEditPathUuid() != null) {
-      validPaths.add(OTFUtility.getConceptVersion(
-          UUID.fromString(AppContext.getAppConfiguration()
-              .getDefaultEditPathUuid())).getNid());
-    }
+    //TODO OCHRE rework paths (or throw this out)
+    
   }
 
   /**

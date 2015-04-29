@@ -219,38 +219,6 @@ public class MockIsaacAppConfig implements IsaacAppConfigI
 	}
 
 	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultEditPathName()
-	 */
-	@Override
-	public String getDefaultEditPathName() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultEditPathUuid()
-	 */
-	@Override
-	public String getDefaultEditPathUuid() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultViewPathName()
-	 */
-	@Override
-	public String getDefaultViewPathName() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultViewPathUuid()
-	 */
-	@Override
-	public String getDefaultViewPathUuid() {
-		return null;
-	}
-
-	/* (non-Javadoc)
 	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getCurrentWorkflowServerUrl()
 	 */
 	@Override
