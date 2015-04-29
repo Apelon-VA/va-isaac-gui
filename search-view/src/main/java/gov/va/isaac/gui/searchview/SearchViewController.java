@@ -41,6 +41,7 @@ import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -871,7 +872,7 @@ public class SearchViewController implements TaskCompleteCallback
 		{
 			try
 			{
-				Set<ConceptVersionBI> extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(SnomedMetadataRf2.DESCRIPTION_NAME_IN_SOURCE_TERM_RF2.getNid());
+				Set<ConceptVersionBI> extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
 				ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
 				for (ConceptVersionBI c : extendedDescriptionTypes)
 				{

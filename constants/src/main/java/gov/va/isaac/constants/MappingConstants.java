@@ -107,7 +107,7 @@ public class MappingConstants
 					new RefexDynamicColumnInfo(0, MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
 						RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MAPPING_STATUS.getPrimodialUuid())),
 					new RefexDynamicColumnInfo(1, COLUMN_PURPOSE.getPrimodialUuid(), RefexDynamicDataType.STRING, null, false, null, null)},
-				RefexDynamic.DYNAMIC_SEMEME_IDENTITY,
+				RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES,
 				new Integer[] {});  //want to index this sememe, but don't need to index the data columns
 		}
 		catch (PropertyVetoException e)

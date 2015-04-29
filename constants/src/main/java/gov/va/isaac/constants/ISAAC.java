@@ -58,7 +58,7 @@ public class ISAAC
 			new RefexDynamicColumnInfo[] {
 				new RefexDynamicColumnInfo(0, EDITOR_COMMENT.getUuids()[0], RefexDynamicDataType.STRING, null, true, null, null),
 				new RefexDynamicColumnInfo(1, EDITOR_COMMENT_CONTEXT.getUuids()[0], RefexDynamicDataType.STRING, null, false, null, null)},
-			RefexDynamic.DYNAMIC_SEMEME_IDENTITY,
+			RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES,
 			new Integer[] {0,1});  //Index the comments, and the columns
 	
 	public static ConceptSpecWithDescriptions REFEX_COLUMN_TARGET_COMPONENT = new ConceptSpecWithDescriptions("target", 
@@ -73,7 +73,7 @@ public class ISAAC
 			"A Sememe used to annotate other sememes which define an association, which is defined as a sememe which contains "
 			+ "a data column named 'target concept', among other criteria.", 
 			new RefexDynamicColumnInfo[] {},
-			RefexDynamic.DYNAMIC_SEMEME_IDENTITY,
+			RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES,
 			new Integer[] {});  //Index the associations
 	
 	public static DynamicRefexConceptSpec ASSOCIATION_INVERSE_NAME = new DynamicRefexConceptSpec("inverse name", 
@@ -84,7 +84,7 @@ public class ISAAC
 			"This is the extended description type that may be attached to a description within a concept that defines an Association Refex to signify that "
 					+ "the referenced description is the inverse of the association name.",
 			new RefexDynamicColumnInfo[0],
-			RefexDynamic.DYNAMIC_SEMEME_IDENTITY,
+			RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES,
 			ComponentType.DESCRIPTION,
 			null);
 }

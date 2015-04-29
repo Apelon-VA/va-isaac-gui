@@ -98,7 +98,8 @@ public class ClassifierCommitListener implements PropertyChangeListener,
       LOG.info("Disabling the classifier commit listener");
       // TODO file yet another OTF bug - this doesn't work. We still get
       // property change notifications after calling remove...
-      ExtendedAppContext.getDataStore().removePropertyChangeListener(this);
+      //TODO OCHRE this doesn't exist yet.
+      //ExtendedAppContext.getDataStore().removePropertyChangeListener(this);
       enabled = false;
     }
   }
@@ -114,10 +115,11 @@ public class ClassifierCommitListener implements PropertyChangeListener,
     if (!enabled && loggedIn != null
         && loggedIn.isLaunchWorkflowForEachCommit()) {
       LOG.info("Enabling the classifier commit listener");
-      ExtendedAppContext.getDataStore().addPropertyChangeListener(
-          CONCEPT_EVENT.PRE_COMMIT, this);
-      ExtendedAppContext.getDataStore().addPropertyChangeListener(
-          CONCEPT_EVENT.POST_COMMIT, this);
+    //TODO OCHRE this doesn't exist yet.
+//      ExtendedAppContext.getDataStore().addPropertyChangeListener(
+//          CONCEPT_EVENT.PRE_COMMIT, this);
+//      ExtendedAppContext.getDataStore().addPropertyChangeListener(
+ //         CONCEPT_EVENT.POST_COMMIT, this);
       enabled = true;
     }
   }

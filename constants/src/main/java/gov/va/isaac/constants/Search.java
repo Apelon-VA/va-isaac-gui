@@ -59,7 +59,7 @@ public class Search {
 		
 	public static ConceptSpec STORED_QUERIES = new ConceptSpec("stored queries", 
 			UUID.fromString("c47282db-18e3-55bc-9094-0256c0168caf"), 
-			RefexDynamic.DYNAMIC_SEMEME_IDENTITY);
+			RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES);
 	
 	public static ConceptSpec VIEW_COORDINATE_COLUMN = new ConceptSpecWithDescriptions("view coordinate", 
 			UUID.fromString("5010f18f-c469-5315-8c5e-f7d9b65373c5"),

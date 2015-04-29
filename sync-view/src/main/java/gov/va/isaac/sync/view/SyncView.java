@@ -430,7 +430,8 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 			StringBuilder errorsDuringProcess = new StringBuilder();
 			try
 			{
-				AppContext.getService(TerminologyStoreDI.class).suspendChangeNotifications();
+				//TODO OCHRE this doesn't exist yet.
+				//AppContext.getService(TerminologyStoreDI.class).suspendChangeNotifications();
 				for (String s : changedFiles)
 				{
 					log.debug("Post processing {} after change during sync", s);
@@ -477,7 +478,8 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 			}
 			finally
 			{
-				AppContext.getService(TerminologyStoreDI.class).resumeChangeNotifications();
+				//TODO OCHRE this doesn't exist yet.
+//				AppContext.getService(TerminologyStoreDI.class).resumeChangeNotifications();
 			}
 			if (errorsDuringProcess.length() > 0)
 			{

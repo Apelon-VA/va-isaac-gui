@@ -52,9 +52,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
@@ -204,21 +201,21 @@ public class GenerateUsers
 			UUID userUUID = UUID.fromString(user.getUUID());
 	
 			LanguageCode lc = LanguageCode.EN_US;
-			UUID isA = Snomed.IS_A.getUuids()[0];
+			UUID isA = IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid();
 			IdDirective idDir = IdDirective.GENERATE_RANDOM;  //TODO OCHRE fix this
-			UUID module = TermAux.TERM_AUX_MODULE.getUuids()[0];
-			UUID parents[] = new UUID[] { TermAux.USER.getUuids()[0] };
+			UUID module = IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getPrimodialUuid();
+			UUID parents[] = new UUID[] {IsaacMetadataAuxiliaryBinding.USER.getPrimodialUuid()};
 	
 			ConceptCB cab = new ConceptCB(fsn, preferredName, lc, isA, idDir, module, userUUID, parents);
 	
-			DescriptionCAB dCab = new DescriptionCAB(cab.getComponentUuid(), Snomed.SYNONYM_DESCRIPTION_TYPE.getUuids()[0], lc, logonName, true,
+			DescriptionCAB dCab = new DescriptionCAB(cab.getComponentUuid(), IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid(), lc, logonName, true,
 					IdDirective.GENERATE_HASH);
 			dCab.getProperties().put(ComponentProperty.MODULE_ID, module);
 	
 			//Mark it as acceptable
-			RefexCAB rCabAcceptable = new RefexCAB(RefexType.CID, dCab.getComponentUuid(), Snomed.US_LANGUAGE_REFEX.getUuids()[0], IdDirective.GENERATE_HASH,
-					RefexDirective.EXCLUDE);
-			rCabAcceptable.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, SnomedMetadataRf2.ACCEPTABLE_RF2.getUuids()[0]);
+			RefexCAB rCabAcceptable = new RefexCAB(RefexType.CID, dCab.getComponentUuid(), IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT.getPrimodialUuid(), 
+					IdDirective.GENERATE_HASH, RefexDirective.EXCLUDE);
+			rCabAcceptable.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getPrimodialUuid());
 			rCabAcceptable.getProperties().put(ComponentProperty.MODULE_ID, module);
 			dCab.addAnnotationBlueprint(rCabAcceptable);
 	
@@ -228,8 +225,8 @@ public class GenerateUsers
 	
 			//Build this on the lowest level path, otherwise, other code that references this will fail (as it doesn't know about custom paths)
 			ConceptChronicleBI newCon = ts.getTerminologyBuilder(
-					new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(), TermAux.WB_AUX_PATH.getLenient()
-							.getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
+					new EditCoordinate(IsaacMetadataAuxiliaryBinding.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(), 
+							IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
 			ts.addUncommitted(newCon);
 			ts.commit(newCon);
 		}

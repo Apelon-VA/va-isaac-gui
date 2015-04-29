@@ -29,6 +29,7 @@ import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -277,12 +278,10 @@ public class MappingUtils
 		ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
 		try
 		{
-			if (ExtendedAppContext.getDataStore().hasConcept(SnomedMetadataRf2.DESCRIPTION_NAME_IN_SOURCE_TERM_RF2.getPrimodialUuid())) {
-				extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(SnomedMetadataRf2.DESCRIPTION_NAME_IN_SOURCE_TERM_RF2.getNid());
-				for (ConceptVersionBI c : extendedDescriptionTypes)
-				{
-					temp.add(new SimpleDisplayConcept(c));
-				}
+			extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
+			for (ConceptVersionBI c : extendedDescriptionTypes)
+			{
+				temp.add(new SimpleDisplayConcept(c));
 			}
 			Collections.sort(temp);
 			return temp;

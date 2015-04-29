@@ -128,7 +128,7 @@ public class InformationModels
 				new RefexDynamicColumnInfo(5, PROPERTY_CARDINALITY_MIN.getPrimodialUuid(), RefexDynamicDataType.STRING, null, false, null, null),
 				new RefexDynamicColumnInfo(6, PROPERTY_CARDINALITY_MAX.getPrimodialUuid(), RefexDynamicDataType.STRING, null, false, null, null),
 				new RefexDynamicColumnInfo(7, PROPERTY_VISIBILITY.getPrimodialUuid(), RefexDynamicDataType.STRING, null, false, null, null)
-			}, RefexDynamic.DYNAMIC_SEMEME_IDENTITY);
+			}, RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES);
 	
 	public static ConceptSpecWithDescriptions HAS_TERMINOLOGY_CONCEPT = new ConceptSpecWithDescriptions("Has terminology concept", 
 			UUID.fromString("890b36d9-655f-5acb-9339-dd8628dced65"), 
