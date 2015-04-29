@@ -297,7 +297,8 @@ class SctTreeView {
                 LOG.debug("Finished loading root concept");
                 
                 if (rootConceptCC.getDestinationRelationships().size() == 0) {
-                    LOG.warn("ROOT CONCEPT {} HAS NO DESTINATION RELATIONSHIPS.  MAY BE A PROBLEM WITH VIEWCOORDINATE RELATIONSHIP ASSERTION TYPE ({})", OTFUtility.getDescription(rootConceptCC), OTFUtility.getViewCoordinate().getRelationshipAssertionType());
+                    LOG.warn("ROOT CONCEPT {} HAS NO DESTINATION RELATIONSHIPS.  MAY BE A PROBLEM WITH VIEWCOORDINATE RELATIONSHIP ASSERTION TYPE ({})",
+                            OTFUtility.getDescription(rootConceptCC), OTFUtility.getViewCoordinate().getRelationshipAssertionType());
                 }
                 return rootConceptCC;
             }
