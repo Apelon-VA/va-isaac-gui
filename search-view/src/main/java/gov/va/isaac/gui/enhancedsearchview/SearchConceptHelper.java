@@ -146,12 +146,12 @@ public class SearchConceptHelper {
 		//
 
 		try {
-			ConceptChronicleBI searchConcept = OTFUtility.createNewConcept(OTFUtility.getConceptVersion(Search.SEARCH_PERSISTABLE.getUuids()[0]), saveConceptFSN, saveConceptPT);
+			ConceptChronicleBI searchConcept = OTFUtility.createNewConcept(OTFUtility.getConceptVersion(Search.STORED_QUERIES.getUuids()[0]), saveConceptFSN, saveConceptPT);
 			ConceptAttributeAB conceptAttributeBlueprintAmender = new ConceptAttributeAB(searchConcept.getConceptNid(), searchConcept.getVersion(OTFUtility.getViewCoordinate()).getConceptAttributesActive().isDefined(), RefexDirective.INCLUDE); //bp.getConceptAttributeAB();
 
 			{
 				// Start with Search Global Attributes
-				RefexDynamicUsageDescription searchGlobalAttributesRDUD = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(Search.SEARCH_GLOBAL_ATTRIBUTES.getNid());
+				RefexDynamicUsageDescription searchGlobalAttributesRDUD = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getNid());
 
 				// Add View Coordinate byte[]
 				RefexDynamicData[] searchGlobalAttributesData = new RefexDynamicData[searchGlobalAttributesRDUD.getColumnInfo().length];
@@ -178,7 +178,7 @@ public class SearchConceptHelper {
 				//{
 
 				// Creates new refex
-				globalAttributesCAB = new RefexDynamicCAB(searchConcept.getPrimordialUuid(), Search.SEARCH_GLOBAL_ATTRIBUTES.getUuids()[0]);
+				globalAttributesCAB = new RefexDynamicCAB(searchConcept.getPrimordialUuid(), Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getUuids()[0]);
 				//}
 				//else
 				//{
@@ -537,7 +537,7 @@ public class SearchConceptHelper {
 					if (SearchModel.getSearchTypeSelector().getCurrentType() == SearchType.TEXT) {
 						TextSearchTypeModel compModel = (TextSearchTypeModel)SearchModel.getSearchTypeSelector().getTypeSpecificModel();
 						
-						if (dud.getRefexName().equals(Search.SEARCH_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
+						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
 							// handle "Search Global Attributes"
 	
 							LOG.debug("Loading data into model from Search Global Attributes sememe");
@@ -647,7 +647,7 @@ public class SearchConceptHelper {
 					} else if (SearchModel.getSearchTypeSelector().getCurrentType() == SearchType.SEMEME) {
 						SememeSearchTypeModel compModel = (SememeSearchTypeModel)SearchModel.getSearchTypeSelector().getTypeSpecificModel();
 						
-						if (dud.getRefexName().equals(Search.SEARCH_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
+						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
 							// handle "Search Global Attributes"
 	
 							LOG.debug("Loading data into model from Search Global Attributes sememe");

@@ -113,7 +113,7 @@ public class RefexDynamicUtil
 
 		try {
 			LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-			List<SearchResult> refexes = indexer.queryAssemblageUsage(RefexDynamic.REFEX_DYNAMIC_DEFINITION_DESCRIPTION.getNid(), 1000, Long.MAX_VALUE);
+			List<SearchResult> refexes = indexer.queryAssemblageUsage(RefexDynamic.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getNid(), 1000, Long.MAX_VALUE);
 			for (SearchResult sr : refexes) {
 				RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
 				if (rc == null) {

@@ -105,7 +105,7 @@ public class MappingSetDAO extends MappingDAO
 					(StringUtils.isBlank(purpose) ? null : new RefexDynamicString(purpose))}, OTFUtility.getViewCoordinateAllowInactive());
 			OTFUtility.getBuilder().construct(mappingAnnotation);
 			
-			RefexDynamicCAB associationAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_REFEX.getNid());
+			RefexDynamicCAB associationAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_SEMEME.getNid());
 			associationAnnotation.setData(new RefexDynamicDataBI[] {}, null);
 			OTFUtility.getBuilder().construct(associationAnnotation);
 			

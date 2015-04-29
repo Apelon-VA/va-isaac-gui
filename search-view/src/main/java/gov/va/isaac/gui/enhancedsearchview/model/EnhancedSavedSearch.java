@@ -245,7 +245,7 @@ public class EnhancedSavedSearch {
 
 			@Override
 			protected List<SearchDisplayConcept> call() throws Exception {
-				Set<ConceptVersionBI> savedSearches = OTFUtility.getAllChildrenOfConcept(Search.SEARCH_PERSISTABLE.getNid(), true);
+				Set<ConceptVersionBI> savedSearches = OTFUtility.getAllChildrenOfConcept(Search.STORED_QUERIES.getNid(), true);
 
 				SearchType currentSearchType = SearchModel.getSearchTypeSelector().getSearchTypeComboBox().getSelectionModel().getSelectedItem();
 				for (ConceptVersionBI concept : savedSearches) {

@@ -457,7 +457,7 @@ public class ColumnController implements PanelControllersI {
 
 	private void initializeColumnConcepts() {
 		try {
-			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.REFEX_DYNAMIC_COLUMNS.getNid());
+			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getNid());
 			Set<ConceptVersionBI> colCons = OTFUtility.getAllChildrenOfConcept(colCon, false);
 
 			for (ConceptVersionBI col : colCons) {
