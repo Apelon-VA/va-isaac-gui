@@ -124,7 +124,7 @@ public class AboutViewController {
 		appGridPane_.addRow(appGridPaneRowCount++, new Label("Bundle Version"), WrappedLabeled.wrap(new CopyableLabel(AppContext.getAppConfiguration().getApplicationTitle() 
 				+ " - " + AppContext.getAppConfiguration().getVersion())));
 		appGridPane_.addRow(appGridPaneRowCount++, new Label("Dependencies"), WrappedLabeled.wrap(new Hyperlink(getDependencies())));
-		appGridPane_.addRow(appGridPaneRowCount++, new Label("ISAAC version"), WrappedLabeled.wrap(new CopyableLabel(appConfig.getIsaacVersion())));
+		appGridPane_.addRow(appGridPaneRowCount++, new Label("ISAAC GUI version"), WrappedLabeled.wrap(new CopyableLabel(appConfig.getIsaacVersion())));
 		appGridPane_.addRow(appGridPaneRowCount++, new Label("SCM"), WrappedLabeled.wrap(new Hyperlink(appConfig.getScmUrl())));
 		
 

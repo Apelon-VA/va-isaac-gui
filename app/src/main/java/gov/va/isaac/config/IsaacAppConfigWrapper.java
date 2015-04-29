@@ -82,6 +82,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	//things we read from other pom based property files
 	private String dbGroupId, dbArtifactId, dbVersion, dbClassifier, dbType;
 	private String scmUrl, isaacVersion, version;
+	private String metadataVersion = "?";
 
 	private final Set<Map<String, String>> appLicenses = new HashSet<>();
 	private final Set<Map<String, String>> dbLicenses = new HashSet<>();
@@ -120,7 +121,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 			AtomicBoolean readAppMetadata = new AtomicBoolean(false);
 			
 			//Read the db metadata
-			Path dbLocation = AppContext.getService(ConfigurationService.class).getChronicleFolderPath();
+			Path dbLocation = AppContext.getService(ConfigurationService.class).getChronicleFolderPath().getParent();
 			//find the pom.properties file in the hierarchy
 			File dbMetadata = new File(dbLocation.toFile(), "META-INF");
 			if (dbMetadata.isDirectory())
@@ -142,8 +143,9 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 							dbGroupId = p.getProperty("project.groupId");
 							dbArtifactId = p.getProperty("project.artifactId");
 							dbVersion = p.getProperty("project.version");
-							dbClassifier = p.getProperty("project.classifier");
-							dbType = p.getProperty("project.type");
+							dbClassifier = p.getProperty("resultArtifactClassifier");
+							dbType = p.getProperty("chronicles.type");
+							metadataVersion = p.getProperty("isaac-metadata.version");
 							readDbMetadataFromProperties.set(true);
 							return readDbMetadataFromPom.get() ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
 						} else if (f.isFile() && f.getName().toLowerCase().equals("pom.xml")) {
@@ -196,7 +198,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 										}
 										dependency.put("type", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/type", dDoc, XPathConstants.NODE)).getTextContent());
 
-										dbDependencies.add(Collections.unmodifiableMap(dependency));
+										dbDependencies.add(dependency);
 
 										log_.debug("Extracted dependency \"{}\" from DB pom.xml: {}", artifactId, dependency.toString());
 									}
@@ -222,6 +224,13 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 			}
 			else
 			{
+				for (Map<String, String> dependency : dbDependencies)
+				{
+					if ("${isaac-metadata.version}".equals(dependency.get("version")))
+					{
+						dependency.put("version", metadataVersion);
+					}
+				}
 				log_.debug("Successfully read db properties from maven config files.  dbGroupId: {} dbArtifactId: {} dbVersion: {} dbClassifier: {} dbType: {}", 
 						dbGroupId, dbArtifactId, dbVersion, dbClassifier, dbType);
 			}
@@ -230,7 +239,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 			
 			//if running from eclipse - our launch folder should be "app".  Go up one directory, read the pom file.
 			File f = new File("").getAbsoluteFile();
-			if (f.getName().endsWith("app"))
+			if (f.getName().endsWith("app-assembly"))
 			{
 				File pom = new File(f.getParent(), "pom.xml");
 				if (pom.isFile())
@@ -240,7 +249,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 					Document dDoc = builder.parse(pom);
 
 					XPath xPath = XPathFactory.newInstance().newXPath();
-					isaacVersion = ((Node) xPath.evaluate("/project/properties/isaac.version", dDoc, XPathConstants.NODE)).getTextContent();
+					isaacVersion = ((Node) xPath.evaluate("/project/properties/va-isaac-gui.version", dDoc, XPathConstants.NODE)).getTextContent();
 					scmUrl= ((Node) xPath.evaluate("/project/scm/url", dDoc, XPathConstants.NODE)).getTextContent();
 					version= ((Node) xPath.evaluate("/project/version", dDoc, XPathConstants.NODE)).getTextContent();
 					
