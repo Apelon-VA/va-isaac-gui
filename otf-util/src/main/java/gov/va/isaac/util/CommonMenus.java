@@ -32,12 +32,14 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetails
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
+
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -49,6 +51,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -63,18 +66,14 @@ import org.slf4j.LoggerFactory;
  */
 public class CommonMenus
 {
-	
-	//TODO OCHRE - Every single call to LookupService.getService(...) in this class is unsafe, because it isn't null checking the result.
-	//All of the menus that do things like that need to be updated properly, so that the menu doesn't even appear of the service isn't available.
-	
 	private static final Logger LOG = LoggerFactory.getLogger(CommonMenus.class);
-	
+
 	public enum MergeMode {
 		USE_EXISTING, // Will not replace existing menu items with matching text
 		REPLACE_EXISTING, // Will replace existing menu items with matching text
 		ADD_TO_EXISTING // Will add, ignoring any existing menu items with matching text
 	}
-	public enum CommonMenuItem {
+	public static enum CommonMenuItem {
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
 		CONCEPT_VIEW("View Concept", Images.CONCEPT_VIEW),
@@ -84,13 +83,13 @@ public class CommonMenus
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
 		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
 		
-		SEND_TO("Send To", null),
+		SEND_TO("Send To"),
 			LIST_VIEW("List View", Images.LIST_VIEW),
-			WORKFLOW_ADVANCEMENT_VIEW("Advance Workflow", Images.CONCEPT_VIEW), // Only accessible from inbox
+			//WORKFLOW_ADVANCEMENT_VIEW("Advance Workflow", Images.CONCEPT_VIEW), // Only accessible from inbox
 			WORKFLOW_INITIALIZATION_VIEW("Workflow Initialization", Images.COMMIT),
 			RELEASE_WORKFLOW_TASK("Release Workflow Task", Images.CANCEL),
 		
-		COPY("Copy", null),
+		COPY("Copy"),
 			COPY_TEXT("Copy Text", Images.COPY),
 			COPY_CONTENT("Copy Content", Images.COPY),
 			
@@ -101,6 +100,9 @@ public class CommonMenus
 		final String text;
 		final Images image;
 
+		private CommonMenuItem(String text) {
+			this(text, (Images)null);
+		}
 		private CommonMenuItem(String text, Images image) {
 			this.text = text;
 			this.image = image;
@@ -112,6 +114,19 @@ public class CommonMenus
 		public Images getImage() {
 			return image;
 		}
+	}
+	
+	// Initialize service call cache
+	static {
+		CommonMenusServices.setServiceCall(CommonMenuItem.CONCEPT_VIEW, () -> LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE));
+		CommonMenusServices.setServiceCall(CommonMenuItem.CONCEPT_VIEW_LEGACY, () -> LookupService.getService(PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE));
+		CommonMenusServices.setServiceCall(CommonMenuItem.TAXONOMY_VIEW, () -> LookupService.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED));
+		CommonMenusServices.setServiceCall(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW, () -> AppContext.getService(WorkflowTaskDetailsViewI.class));
+		CommonMenusServices.setServiceCall(CommonMenuItem.USCRS_REQUEST_VIEW, () -> LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS));
+		CommonMenusServices.setServiceCall(CommonMenuItem.LOINC_REQUEST_VIEW, () -> LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC));
+		CommonMenusServices.setServiceCall(CommonMenuItem.LIST_VIEW, () -> LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED));
+		CommonMenusServices.setServiceCall(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, () -> AppContext.getService(WorkflowInitiationViewI.class));
+		CommonMenusServices.setServiceCall(CommonMenuItem.RELEASE_WORKFLOW_TASK, () -> AppContext.getService(ComponentWorkflowServiceI.class));
 	}
 
 	public static class ObjectContainer {
@@ -416,155 +431,169 @@ public class CommonMenus
 		final CommonMenusNIdProvider commonMenusNIdProvider = tmpCommonMenusNIdProvider;
 		
 		// Menu item to show concept details.
-		MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
-				CommonMenuItem.CONCEPT_VIEW,
-				builder, 
-				() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-				commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-				() -> { // onHandlable
-					LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
-							+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW)) {
+			MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
+					CommonMenuItem.CONCEPT_VIEW,
+					builder, 
+					() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+					() -> { // onHandlable
+						LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
+								+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-					PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
-					cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
-					cv.showView(null);
-				},
-				() -> { // onNotHandlable
-					AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
-				});
-		if (enhancedConceptViewMenuItem != null)
-		{
-			menuItems.add(enhancedConceptViewMenuItem);
+						PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW).executeServiceCall();
+						cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+						cv.showView(null);
+					},
+					() -> { // onNotHandlable
+						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
+					});
+			if (enhancedConceptViewMenuItem != null)
+			{
+				menuItems.add(enhancedConceptViewMenuItem);
+			}
 		}
 
 		// Menu item to show concept details. (legacy)
-		MenuItem legacyConceptViewMenuItem = createNewMenuItem(
-				CommonMenuItem.CONCEPT_VIEW_LEGACY,
-				builder,
-				() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-				commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-				() -> {
-					LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
-							+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY)) {
+			MenuItem legacyConceptViewMenuItem = createNewMenuItem(
+					CommonMenuItem.CONCEPT_VIEW_LEGACY,
+					builder,
+					() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+					() -> {
+						LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
+								+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-					PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
-					cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+						PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW_LEGACY).executeServiceCall();
+						cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 
-					cv.showView(null);
-				},
-				() -> {
-					AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
-				}
-				);
-		if (legacyConceptViewMenuItem != null)
-		{
-			menuItems.add(legacyConceptViewMenuItem);
+						cv.showView(null);
+					},
+					() -> {
+						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
+					}
+					);
+			if (legacyConceptViewMenuItem != null)
+			{
+				menuItems.add(legacyConceptViewMenuItem);
+			}
 		}
 
 		// Menu item to find concept in tree.
-		MenuItem findInTaxonomyViewMenuItem = createNewMenuItem(
-				CommonMenuItem.TAXONOMY_VIEW,
-				builder,
-				() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-				commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-				// onHandlable
-				() -> { LookupService.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
-				// onNotHandlable
-				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't locate an invalid concept");});
-		if (findInTaxonomyViewMenuItem != null)
-		{
-			menuItems.add(findInTaxonomyViewMenuItem);
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW)) {
+			MenuItem findInTaxonomyViewMenuItem = createNewMenuItem(
+					CommonMenuItem.TAXONOMY_VIEW,
+					builder,
+					() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+					// onHandlable
+					() -> { ((TaxonomyViewI)CommonMenusServices.getServiceCall(CommonMenuItem.TAXONOMY_VIEW).executeServiceCall()).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
+					// onNotHandlable
+					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't locate an invalid concept");});
+			if (findInTaxonomyViewMenuItem != null)
+			{
+				menuItems.add(findInTaxonomyViewMenuItem);
+			}
 		}
 
 		// Menu item to find concept in tree.
-		MenuItem openTaskViewMenuItem = createNewMenuItem(
-				CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW,
-				builder,
-				() -> {
-					return taskIdProvider.getObservableTaskIdCount().get() == 1;
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW)) {
+			MenuItem openTaskViewMenuItem = createNewMenuItem(
+					CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW,
+					builder,
+					() -> {
+						return taskIdProvider.getObservableTaskIdCount().get() == 1;
 					}, // canHandle
 					taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
-				// onHandlable
-				() -> {
-					WorkflowTaskDetailsViewI view = AppContext.getService(WorkflowTaskDetailsViewI.class);
-					view.setTask(taskIdProvider.getTaskIds().iterator().next());
-					view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-				},
-				// onNotHandlable
-				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-		if (openTaskViewMenuItem != null)
-		{
-			menuItems.add(openTaskViewMenuItem);
+					// onHandlable
+					() -> {
+						WorkflowTaskDetailsViewI view = (WorkflowTaskDetailsViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW).executeServiceCall();
+						view.setTask(taskIdProvider.getTaskIds().iterator().next());
+						view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+					},
+					// onNotHandlable
+					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+			if (openTaskViewMenuItem != null)
+			{
+				menuItems.add(openTaskViewMenuItem);
+			}
 		}
 
 		// Menu item to perform a USCRS content request
-		MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
-				CommonMenuItem.USCRS_REQUEST_VIEW,
-				builder,
-				() -> {
-					return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW)) {
+			MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
+					CommonMenuItem.USCRS_REQUEST_VIEW,
+					builder,
+					() -> {
+						return commonMenusNIdProvider.getObservableNidCount().get() == 1;
 					}, // canHandle
 					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
-				// onHandlable
-				() -> {
-					ContentRequestHandlerI handler = LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS);
-					handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
-					handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-				},
-				// onNotHandlable
-				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-		if (uscrsRequestViewMenuItem != null)
-		{
-			menuItems.add(uscrsRequestViewMenuItem);
+					// onHandlable
+					() -> {
+						ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.USCRS_REQUEST_VIEW).executeServiceCall();
+						handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+						handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+					},
+					// onNotHandlable
+					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+			if (uscrsRequestViewMenuItem != null)
+			{
+				menuItems.add(uscrsRequestViewMenuItem);
+			}
 		}
 
 		// Menu item to perform a LOINC content request
-		MenuItem loincRequestViewMenuItem = createNewMenuItem(
-				CommonMenuItem.LOINC_REQUEST_VIEW,
-				builder,
-				() -> {
-					return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW)) {
+			MenuItem loincRequestViewMenuItem = createNewMenuItem(
+					CommonMenuItem.LOINC_REQUEST_VIEW,
+					builder,
+					() -> {
+						return commonMenusNIdProvider.getObservableNidCount().get() == 1;
 					}, // canHandle
 					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
-				// onHandlable
-				() -> {
-					ContentRequestHandlerI handler = LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC);
-					handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
-					handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-				},
-				// onNotHandlable
-				() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-		if (loincRequestViewMenuItem != null)
-		{
-			menuItems.add(loincRequestViewMenuItem);
+					// onHandlable
+					() -> {
+						ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.LOINC_REQUEST_VIEW).executeServiceCall();
+						handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+						handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+					},
+					// onNotHandlable
+					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+			if (loincRequestViewMenuItem != null)
+			{
+				menuItems.add(loincRequestViewMenuItem);
+			}
 		}
 
-		MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
-				CommonMenuItem.RELEASE_WORKFLOW_TASK,
-				builder,
-				() -> {
-					return taskIdProvider.getObservableTaskIdCount().get() == 1;
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
+			MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
+					CommonMenuItem.RELEASE_WORKFLOW_TASK,
+					builder,
+					() -> {
+						return taskIdProvider.getObservableTaskIdCount().get() == 1;
 					}, // canHandle
 					taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
-				() -> { // onHandlable
-					try
-					{
-						ComponentWorkflowServiceI wfEngine = AppContext.getService(ComponentWorkflowServiceI.class);
-						wfEngine.releaseTask(taskIdProvider.getTaskIds().iterator().next());
+					() -> { // onHandlable
+						try
+						{
+							ComponentWorkflowServiceI wfEngine = (ComponentWorkflowServiceI)CommonMenusServices.getServiceCall(CommonMenuItem.RELEASE_WORKFLOW_TASK).executeServiceCall();
+							wfEngine.releaseTask(taskIdProvider.getTaskIds().iterator().next());
+						}
+						catch (IOException e)
+						{
+							LOG.error("Problem releasing task");
+							AppContext.getCommonDialogs().showErrorDialog("problem releasing task", e);
+						}
+					},
+					() -> { // onNotHandlable
+						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or invalid number of Concepts selected", "Selection must be of exactly one valid Concept");
 					}
-					catch (IOException e)
-					{
-						LOG.error("Problem releasing task");
-						AppContext.getCommonDialogs().showErrorDialog("problem releasing task", e);
-					}
-				},
-				() -> { // onNotHandlable
-					AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or invalid number of Concepts selected", "Selection must be of exactly one valid Concept");
-				}
-				);
-		if (newReleaseWorkflowTaskItem != null)
-		{
-			menuItems.add(newReleaseWorkflowTaskItem);
+					);
+			if (newReleaseWorkflowTaskItem != null)
+			{
+				menuItems.add(newReleaseWorkflowTaskItem);
+			}
 		}
 
 		// get Send-To menu items
@@ -654,58 +683,62 @@ public class CommonMenus
 		List<MenuItem> menuItems = new ArrayList<>();
 
 		// Menu item to send Concept to ListView
-		MenuItem listViewMenuItem = createNewMenuItem(
-				CommonMenuItem.LIST_VIEW,
-				builder,
-				() -> {return nids.getObservableNidCount().get() > 0;}, // canHandle
-				nids.getObservableNidCount().greaterThan(0),				//make visible
-				() -> { // onHandlable
-					ArrayList<Integer> nidList = new ArrayList<>();
-					for (int i : nids.getNIds())
-					{
-						nidList.add(getComponentParentConceptNid(i));
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW)) {
+			MenuItem listViewMenuItem = createNewMenuItem(
+					CommonMenuItem.LIST_VIEW,
+					builder,
+					() -> {return nids.getObservableNidCount().get() > 0;}, // canHandle
+					nids.getObservableNidCount().greaterThan(0),				//make visible
+					() -> { // onHandlable
+						ArrayList<Integer> nidList = new ArrayList<>();
+						for (int i : nids.getNIds())
+						{
+							nidList.add(getComponentParentConceptNid(i));
+						}
+						LOG.debug("Using \"" + CommonMenuItem.LIST_VIEW.getText() + "\" menu item to list concept(s) with id(s) \"" 
+								+ Arrays.toString(nidList.toArray()) + "\"");
+
+						ListBatchViewI lv = (ListBatchViewI)CommonMenusServices.getServiceCall(CommonMenuItem.LIST_VIEW).executeServiceCall();
+
+						AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
+
+						lv.addConcepts(nidList);		
+					},
+					() -> {	 // onNotHandlable
+						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or no concept selected", "Can only list valid concept(s)");
 					}
-					LOG.debug("Using \"" + CommonMenuItem.LIST_VIEW.getText() + "\" menu item to list concept(s) with id(s) \"" 
-							+ Arrays.toString(nidList.toArray()) + "\"");
-
-					ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
-
-					AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
-
-					lv.addConcepts(nidList);		
-				},
-				() -> {	 // onNotHandlable
-					AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or no concept selected", "Can only list valid concept(s)");
-				}
-				);
-		if (listViewMenuItem != null)
-		{
-			menuItems.add(listViewMenuItem);
+					);
+			if (listViewMenuItem != null)
+			{
+				menuItems.add(listViewMenuItem);
+			}
 		}
 
 		// Menu item to generate New Workflow Instance.
-		MenuItem newWorkflowInstanceInitializationItem = createNewMenuItem(
-				CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW,
-				builder,
-				() -> {
-					return nids.getObservableNidCount().get() == 1;
+		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW)) {
+			MenuItem newWorkflowInstanceInitializationItem = createNewMenuItem(
+					CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW,
+					builder,
+					() -> {
+						return nids.getObservableNidCount().get() == 1;
 					}, // canHandle
-				nids.getObservableNidCount().isEqualTo(1),				//make visible
-				() -> { // onHandlable
-					WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
-					if (view == null) {
-						LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
+					nids.getObservableNidCount().isEqualTo(1),				//make visible
+					() -> { // onHandlable
+						WorkflowInitiationViewI view = (WorkflowInitiationViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW).executeServiceCall();
+						if (view == null) {
+							LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
+						}
+						view.setComponent(nids.getNIds().iterator().next());
+						view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+					},
+					() -> { // onNotHandlable
+						AppContext.getCommonDialogs().showInformationDialog("Invalid Component or invalid number of Components selected", "Selection must be of exactly one valid Component");
 					}
-					view.setComponent(nids.getNIds().iterator().next());
-					view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-				},
-				() -> { // onNotHandlable
-					AppContext.getCommonDialogs().showInformationDialog("Invalid Component or invalid number of Components selected", "Selection must be of exactly one valid Component");
-				}
-				);
-		if (newWorkflowInstanceInitializationItem != null)
-		{
-			menuItems.add(newWorkflowInstanceInitializationItem);
+					);
+			if (newWorkflowInstanceInitializationItem != null)
+			{
+				menuItems.add(newWorkflowInstanceInitializationItem);
+			}
 		}
 
 		return menuItems;
