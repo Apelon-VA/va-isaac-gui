@@ -228,7 +228,7 @@ public class GenerateUsers
 					new EditCoordinate(IsaacMetadataAuxiliaryBinding.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(), 
 							IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
 			ts.addUncommitted(newCon);
-			ts.commit(newCon);
+			ts.commit();  //TODO OCHRE change back to a concept commit
 		}
 		finally
 		{
