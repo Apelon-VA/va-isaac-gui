@@ -170,7 +170,7 @@ public class EnhancedConceptViewController {
 			public void handle(ActionEvent arg0) {
 				try
 				{
-					OTFUtility.commit(concept);
+					ExtendedAppContext.getDataStore().commit(/* concept */);
 					clearContents();
 					commitButton.setDisable(true);
 					cancelButton.setDisable(true);

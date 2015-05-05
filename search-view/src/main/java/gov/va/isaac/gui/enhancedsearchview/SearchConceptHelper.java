@@ -379,7 +379,8 @@ public class SearchConceptHelper {
 		    try
 			{
 				AppContext.getRuntimeGlobals().disableAllCommitListeners();
-				ExtendedAppContext.getDataStore().commit(searchConcept);
+				// TODO OCHRE add add confirm to alert user that all uncommitted concepts will be committed on persist of save criteria
+				ExtendedAppContext.getDataStore().commit(/* searchConcept */);
 			} catch (Exception e) {
 				LOG.error("Coudn't Disable WF Init & Commit Creation of Search Concept", e);
 			}

@@ -1,14 +1,17 @@
 package gov.va.isaac.gui.conceptViews.enhanced;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.conceptViews.helpers.EnhancedConceptBuilder;
 import gov.va.isaac.util.OTFUtility;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
@@ -30,6 +33,7 @@ import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
@@ -168,7 +172,7 @@ public class PreferredAcceptabilityPrompt {
 
 		try {
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			OTFUtility.commit();
+			ExtendedAppContext.getDataStore().commit();
 		} catch (Exception e) {
 			LOG.error("Coudn't commit selected preferred/acceptability changes", e);
 		} finally {
@@ -187,7 +191,7 @@ public class PreferredAcceptabilityPrompt {
 			OTFUtility.getBuilder().constructIfNotCurrent(bp);
 			ConceptVersionBI refCon = OTFUtility.getConceptVersion(member.getConceptNid());
 	
-			OTFUtility.addUncommitted(refCon);
+			ExtendedAppContext.getDataStore().addUncommitted(refCon);
 		} catch (Exception e) {
 			AppContext.getCommonDialogs().showErrorDialog("Failed to retire member: " + member, e);
 		}
@@ -202,7 +206,7 @@ public class PreferredAcceptabilityPrompt {
 		
 		 OTFUtility.getBuilder().construct(newMember);
 
-		OTFUtility.addUncommitted(description.getConceptNid());
+		 ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(description.getConceptNid()));
 	}
 	private static HBox setupLangugaeSelection() {
 		HBox languageSelectionHBox = new HBox(10);

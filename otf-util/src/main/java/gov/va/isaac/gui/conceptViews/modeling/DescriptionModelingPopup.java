@@ -23,7 +23,6 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.OTFUtility;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -312,7 +311,7 @@ public class DescriptionModelingPopup extends ModelingPopup
 				DescriptionCAB dcab = new DescriptionCAB((desc != null) ? desc.getConceptNid() : conceptNid, type, LanguageCode.getLangCode(langCode), term, isInitCap, desc, OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 	
 				DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
-				OTFUtility.addUncommitted(dcbi.getConceptNid());
+				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(dcbi.getConceptNid()));
 			}
 		}
 		catch (Exception e)

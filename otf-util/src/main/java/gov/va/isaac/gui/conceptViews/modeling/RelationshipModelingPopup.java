@@ -20,12 +20,10 @@ package gov.va.isaac.gui.conceptViews.modeling;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.OTFUtility;
-import java.util.UUID;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -410,9 +408,9 @@ public class RelationshipModelingPopup extends ModelingPopup
 				OTFUtility.getBuilder().constructIfNotCurrent(dcab);
 				
 				if (!isDestination) {
-					OTFUtility.addUncommitted(rel.getOriginNid());
+					ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rel.getOriginNid()));
 				} else {
-					OTFUtility.addUncommitted(otherEndConNid);
+					ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(otherEndConNid));
 				}
 			}
 		}

@@ -19,6 +19,7 @@
 package gov.va.isaac.models.api;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.model.InformationModelType;
 import gov.va.isaac.models.DefaultInformationModelProperty;
@@ -27,6 +28,7 @@ import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
+
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -36,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
@@ -531,9 +534,9 @@ public class BdbInformationModelService implements InformationModelService {
     syncRefexes(modelConcept, model);
 
     LOG.debug("  add uncommitted");
-    OTFUtility.addUncommitted(modelConcept);
+    ExtendedAppContext.getDataStore().addUncommitted(modelConcept);
     LOG.debug("  commit");
-    OTFUtility.commit();
+    ExtendedAppContext.getDataStore().commit();
 
     return modelConcept;
   }

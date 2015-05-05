@@ -67,7 +67,7 @@ public class MappingItemDAO extends MappingDAO
 
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cv);
-			ExtendedAppContext.getDataStore().commit(cv);
+			ExtendedAppContext.getDataStore().commit(/* cv */);
 			
 			return new MappingItem((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));
 		}
@@ -183,7 +183,7 @@ public class MappingItemDAO extends MappingDAO
 			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
-			ExtendedAppContext.getDataStore().commit(cc);
+			ExtendedAppContext.getDataStore().commit(/* cc */);
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{

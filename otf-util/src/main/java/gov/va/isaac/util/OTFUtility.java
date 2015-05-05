@@ -52,7 +52,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
-import org.ihtsdo.otf.tcc.api.coordinate.Position;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
@@ -738,31 +737,6 @@ public class OTFUtility {
 		return dataStore.getUncommittedConcepts().contains(con.getChronicle());
 	}
 	
-	public static void commit(ConceptVersionBI con) throws IOException {
-		dataStore.commit(con);
-	}
-
-	public static void commit() throws IOException {
-		dataStore.commit();
-	}
-
-	public static void addUncommitted(ConceptChronicleBI newCon) throws IOException {
-		dataStore.addUncommitted(newCon);
-	}
-
-	public static void addUncommitted(ConceptVersionBI newCon) throws IOException {
-		dataStore.addUncommitted(newCon);
-	}
-
-	public static void addUncommitted(int nid) throws IOException {
-		dataStore.addUncommitted(dataStore.getConceptForNid(nid));
-	}
-
-	public static void addUncommitted(UUID uuid) throws IOException {
-		ConceptVersionBI con = getConceptVersion(uuid);
-		dataStore.addUncommitted(con);
-	}
-	
 	/**
 	 * Recursively find the leaf nodes of a concept hierarchy
 	 * @param nid - starting concept
@@ -946,8 +920,8 @@ public class OTFUtility {
 
 		ConceptChronicleBI newCon = getBuilder().construct(newConCB);
 
-		addUncommitted(newCon);
-		commit();
+		ExtendedAppContext.getDataStore().addUncommitted(newCon);
+		ExtendedAppContext.getDataStore().commit();
 
 		return newCon;
 	}
@@ -963,10 +937,10 @@ public class OTFUtility {
 		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
 	}
 
-	public static void commit(int nid) throws IOException {
-		ConceptVersionBI con = getConceptVersion(nid);
-		commit(con);
-	}
+//	public static void commit(int nid) throws IOException {
+//		ConceptVersionBI con = getConceptVersion(nid);
+//		commit(/* con */);
+//	}
 
 	public static void cancel() throws IOException {
 		dataStore.cancel();
@@ -1011,39 +985,35 @@ public class OTFUtility {
 		DescriptionCAB newDesc = new DescriptionCAB(conNid, typeNid, lang, term, isInitial, IdDirective.GENERATE_HASH); 
 
 		getBuilder().construct(newDesc);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 
 	public static void createNewRelationship(int conNid, int typeNid, int targetNid, int group, RelationshipType type) throws IOException, InvalidCAB, ContradictionException {
 		RelationshipCAB newRel = new RelationshipCAB(conNid, typeNid, targetNid, group, type, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 		
 	public static void createNewDescription(int conNid, String term) throws IOException, InvalidCAB, ContradictionException {
 		DescriptionCAB newDesc = new DescriptionCAB(conNid, SnomedMetadataRf2.SYNONYM_RF2.getNid(), LanguageCode.EN_US, term, false, IdDirective.GENERATE_HASH); 
 
 		getBuilder().construct(newDesc);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 
 	public static void createNewRole(int conNid, int typeNid, int targetNid) throws IOException, InvalidCAB, ContradictionException {
 		RelationshipCAB newRel = new RelationshipCAB(conNid, typeNid, targetNid, 0, RelationshipType.STATED_ROLE, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 
 	public static void createNewParent(int conNid, int targetNid) throws ValidationException, IOException, InvalidCAB, ContradictionException {
 		RelationshipCAB newRel = new RelationshipCAB(conNid, SnomedRelType.IS_A.getNid(), targetNid, 0, RelationshipType.STATED_HIERARCHY, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
-		addUncommitted(conNid);
-	}
-
-	public static void addUncommittedNoChecks(ConceptChronicleBI con) throws IOException {
-		dataStore.addUncommittedNoChecks(con);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 	
 	public static List<ConceptChronicleBI> getPathConcepts() throws ValidationException, IOException, ContradictionException {
@@ -1116,7 +1086,7 @@ public class OTFUtility {
 			}	
 		}
 		
-		commit(conceptWithComp.getVersion(getViewCoordinate()));
+		ExtendedAppContext.getDataStore().commit(/* conceptWithComp.getVersion(getViewCoordinate()) */);
 	}
 	
 	

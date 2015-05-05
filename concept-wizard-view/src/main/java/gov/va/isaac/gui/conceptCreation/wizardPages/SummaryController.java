@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
@@ -26,8 +27,10 @@ import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.IOException;
 import java.util.List;
+
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -38,6 +41,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -206,9 +210,9 @@ public class SummaryController implements PanelControllers {
 			for (int i = 0; i < processController.getWizard().getRelationshipsCreated(); i++) {
 				processController.getWizard().createNewRelationship(newCon, i);
 			}
-			OTFUtility.addUncommitted(newCon.getNid());
+			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(newCon.getNid()));
 			//boolean committed = 
-			OTFUtility.commit(newCon.getNid());
+			ExtendedAppContext.getDataStore().commit(/* newCon.getNid() */);
 			//TODO OCHRE - figure out how commits get voided now that they don't return boolean
 //			if (!committed)
 //			{

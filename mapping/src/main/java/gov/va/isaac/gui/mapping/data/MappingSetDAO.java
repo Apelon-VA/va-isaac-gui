@@ -111,7 +111,7 @@ public class MappingSetDAO extends MappingDAO
 			
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(createdConcept);
-			ExtendedAppContext.getDataStore().commit(createdConcept);
+			ExtendedAppContext.getDataStore().commit(/* createdConcept */);
 			
 			//Find the constructed dynamic refset
 			return new MappingSet((RefexDynamicVersionBI<?>)ExtendedAppContext.getDataStore().getComponent(mappingAnnotation.getMemberUUID())
@@ -202,7 +202,7 @@ public class MappingSetDAO extends MappingDAO
 
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(mappingConcept);
-			ExtendedAppContext.getDataStore().commit(mappingConcept);
+			ExtendedAppContext.getDataStore().commit(/* mappingConcept */);
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{

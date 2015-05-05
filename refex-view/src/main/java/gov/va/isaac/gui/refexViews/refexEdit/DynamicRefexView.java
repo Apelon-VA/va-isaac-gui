@@ -566,7 +566,7 @@ public class DynamicRefexView implements RefexViewI
 						ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConceptForNid(i);
 						if (cc.isUncommitted() || cc.getConceptAttributes().isUncommitted())
 						{
-							ExtendedAppContext.getDataStore().commit(cc);
+							ExtendedAppContext.getDataStore().commit(/* cc */);
 						}
 					}
 					
@@ -576,7 +576,7 @@ public class DynamicRefexView implements RefexViewI
 						ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(i);
 						if (!cc.isAnnotationStyleRefex() && cc.isUncommitted())
 						{
-							ExtendedAppContext.getDataStore().commit(cc);
+							ExtendedAppContext.getDataStore().commit();
 						}
 					}
 				}

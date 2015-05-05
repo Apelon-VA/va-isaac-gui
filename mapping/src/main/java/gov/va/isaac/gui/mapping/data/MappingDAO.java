@@ -75,7 +75,7 @@ public abstract class MappingDAO
 
 				AppContext.getRuntimeGlobals().disableAllCommitListeners();
 				ExtendedAppContext.getDataStore().addUncommitted(concept);
-				ExtendedAppContext.getDataStore().commit(concept);
+				ExtendedAppContext.getDataStore().commit(/* concept */);
 			}
 		}
 		catch (InvalidCAB | ContradictionException e)
@@ -106,7 +106,7 @@ public abstract class MappingDAO
 
 				ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
 				ExtendedAppContext.getDataStore().addUncommitted(cc);
-				ExtendedAppContext.getDataStore().commit(cc);
+				ExtendedAppContext.getDataStore().commit(/* cc */);
 			}
 		}
 		catch (InvalidCAB | ContradictionException e)

@@ -366,7 +366,7 @@ public class ListBatchViewController
 					{
 						try
 						{
-							OTFUtility.commit(row.getItem().getNid());
+							ExtendedAppContext.getDataStore().commit(/* row.getItem().getNid() */);
 							updateTableItem(row.getItem(), false);
 						}
 						catch (IOException ex)
@@ -472,7 +472,7 @@ public class ListBatchViewController
 			{
 				try
 				{
-					OTFUtility.commit();
+					ExtendedAppContext.getDataStore().commit();
 					uncommitAllTableItems();
 				}
 				catch (IOException ex)
@@ -1018,7 +1018,7 @@ public class ListBatchViewController
 		if (isUncommitted) {
 			try
 			{
-				OTFUtility.addUncommitted(con);
+				ExtendedAppContext.getDataStore().addUncommitted(con);
 				newCon.setUncommitted(true);
 				
 				if (isUncommitted && (!oldCon.isUncommitted() || idx < 0)) {

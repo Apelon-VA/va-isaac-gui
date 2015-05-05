@@ -1,13 +1,17 @@
 package gov.va.isaac.gui.enhancedsearchview.resulthandler;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+
 import java.beans.PropertyVetoException;
 import java.io.IOException;
+
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -40,15 +44,15 @@ public class ResultsToRefset {
 				OTFUtility.getBuilder().construct(refexBlueprint);
 				
 				if (prompt.getAnnot().isSelected()) {
-					OTFUtility.addUncommitted(con.getContainingConcept());
+					ExtendedAppContext.getDataStore().addUncommitted(con.getContainingConcept());
 				} 
 			}
 			
 			if (!prompt.getAnnot().isSelected()) {
-				OTFUtility.addUncommitted(refset.getRefexUsageDescriptorNid());
+				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(refset.getRefexUsageDescriptorNid()));
 			}
 			
-			OTFUtility.commit();
+			ExtendedAppContext.getDataStore().commit();
 			
 			return prompt.getNameTextField().getText();
 		}
