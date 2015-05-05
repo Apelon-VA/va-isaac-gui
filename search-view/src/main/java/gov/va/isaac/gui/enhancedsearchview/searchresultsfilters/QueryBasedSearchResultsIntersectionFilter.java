@@ -32,16 +32,22 @@ import gov.va.isaac.gui.enhancedsearchview.filters.NonSearchTypeFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
+
 import org.ihtsdo.otf.query.implementation.Clause;
+import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
+import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.nid.IntSet;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.slf4j.Logger;
@@ -79,7 +85,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 	{
 		SearchResultsFilterHelper.validateFilters(filters);
 		
-		List<CompositeSearchResult> filteredResults = new ArrayList<>(results.size());
+		final List<CompositeSearchResult> filteredResults = new ArrayList<>(results.size());
 
 		// If no filters, pass all results straight through
 		if (filters.size() == 0) {
@@ -87,24 +93,20 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 			
 			return filteredResults;
 		}
-		
-		NativeIdSetBI inputNids = new IntSet();
+
+		// TODO OTF Replacement NEEDS TESTING
+		final Set<UUID> forSetCustomCollection = new HashSet<>();
 
 		for (CompositeSearchResult result : results) {
-			inputNids.add(result.getContainingConcept().getNid());
+			forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
 		}
 
-		final NativeIdSetBI finalInputNids = inputNids;
+		final ForSetSpecification forSetSpecification = new ForSetSpecification(ComponentCollectionTypes.CUSTOM_SET);
+		forSetSpecification.setCustomCollection(forSetCustomCollection);
 
 		Query q = null;
 
 		q = new Query() {
-			// TODO For() method's functionality must be replaced for QueryBasedSearchResultsIntersectionFilter to work
-//			@Override
-//			protected NativeIdSetBI For() throws IOException {
-//				return finalInputNids;
-//			}
-
 			@Override
 			public void Let() throws IOException {
 				for (NonSearchTypeFilter<?> filter : filters) {
@@ -183,20 +185,18 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 			}
 
 			@Override
-			protected org.ihtsdo.otf.query.implementation.ForSetSpecification ForSetSpecification() throws IOException
-			{
-				// TODO OCHRE issue
-				return null;
+			protected ForSetSpecification ForSetSpecification() throws IOException {
+				return forSetSpecification;
 			}
 		};
 
 		NativeIdSetBI outputNids = null;
 		try {
-			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + finalInputNids.size() + " nids");
+			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + forSetCustomCollection.size() + " uuids");
 
 			outputNids = q.compute();
 			
-			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + finalInputNids + " nids");
+			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection + " uuids");
 		} catch (Exception e) {
 			String msg = "Failed calling Query.compute() for " + filters.size() + " filters: " + Arrays.toString(filters.toArray());
 			LOG.error(msg);
