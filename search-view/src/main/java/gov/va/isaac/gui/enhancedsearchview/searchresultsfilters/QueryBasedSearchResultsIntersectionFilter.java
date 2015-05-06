@@ -196,7 +196,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 
 			outputNids = q.compute();
 			
-			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection + " uuids");
+			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection.size() + " uuids");
 		} catch (Exception e) {
 			String msg = "Failed calling Query.compute() for " + filters.size() + " filters: " + Arrays.toString(filters.toArray());
 			LOG.error(msg);

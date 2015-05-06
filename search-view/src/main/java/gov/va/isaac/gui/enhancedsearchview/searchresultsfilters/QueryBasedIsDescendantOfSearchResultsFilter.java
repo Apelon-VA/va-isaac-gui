@@ -99,7 +99,7 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 
 			outputNids = q.compute();
 			
-			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after filtering a total of " + forSetCustomCollection + " uuids");
+			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after filtering a total of " + forSetCustomCollection.size() + " uuids");
 		} catch (Exception e) {
 			throw new SearchResultsFilterException(this, "Failed calling Query.compute()", e);
 		}
