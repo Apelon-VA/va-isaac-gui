@@ -64,6 +64,8 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 		for (CompositeSearchResult result : results) {
 			forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
 		}
+		
+		SearchResultsFilterHelper.LOG.debug("Building Query to filter " + forSetCustomCollection.size() + " search results");
 
 		final ConceptVersionBI concept = OTFUtility.getConceptVersion(filter.getNid());
 		final ForSetSpecification forSetSpecification = new ForSetSpecification(ComponentCollectionTypes.CUSTOM_SET);
