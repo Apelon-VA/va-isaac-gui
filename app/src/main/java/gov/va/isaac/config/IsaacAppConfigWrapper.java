@@ -292,7 +292,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 							p.load(new FileReader(visitFile));
 
 							scmUrl = p.getProperty("scm.url");
-							isaacVersion = p.getProperty("isaac.version");
+							isaacVersion = p.getProperty("va-isaac-gui.version");
 							version = p.getProperty("project.version");
 							readAppMetadata.set(true);
 							return FileVisitResult.TERMINATE;
