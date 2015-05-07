@@ -18,14 +18,14 @@
  */
 package gov.va.isaac.util;
 
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.util.WorkExecutors;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,42 +37,22 @@ import java.util.concurrent.TimeUnit;
  */
 public class Utility {
 
-    private static final ThreadPoolExecutor EXECUTOR = buildExecutor();
     private static final ScheduledExecutorService scheduledExecutor_ = Executors.newScheduledThreadPool(1, new BackgroundThreadFactory());
 
-    private static ThreadPoolExecutor buildExecutor() {
-
-        // Thread pool settings.
-        int corePoolSize = 10;
-        int maximumPoolSize = 30;
-        int keepAliveTime = 60;
-        TimeUnit timeUnit = TimeUnit.SECONDS;
-        LinkedBlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
-        BackgroundThreadFactory threadFactory = new BackgroundThreadFactory();
-
-        return new ThreadPoolExecutor(
-                corePoolSize,
-                maximumPoolSize,
-                keepAliveTime,
-                timeUnit,
-                workQueue,
-                threadFactory);
-    }
-
     public static void execute(Runnable command) {
-        EXECUTOR.execute(command);
+        LookupService.getService(WorkExecutors.class).getExecutor().execute(command);
     }
     
     public static <T> Future<T> submit(Callable<T> task) {
-        return EXECUTOR.submit(task);
+        return LookupService.getService(WorkExecutors.class).getExecutor().submit(task);
     }
     
     public static Future<?> submit(Runnable task) {
-        return EXECUTOR.submit(task);
+        return LookupService.getService(WorkExecutors.class).getExecutor().submit(task);
     }
     
     public static <T> Future<?> submit(Runnable task, T result) {
-        return EXECUTOR.submit(task, result);
+        return LookupService.getService(WorkExecutors.class).getExecutor().submit(task, result);
     }
     
     public static ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
@@ -129,7 +109,6 @@ public class Utility {
     
     public static void shutdownThreadPools()
     {
-        EXECUTOR.shutdownNow();
         scheduledExecutor_.shutdownNow();
     }
 }
