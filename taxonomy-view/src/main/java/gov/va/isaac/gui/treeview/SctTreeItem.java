@@ -309,6 +309,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
      * Initialize the {@link #childFetcherService} and {@link #conceptFetcherService}.
      */
     private static void initExecutorPools() {
+        //TODO stop using our own thread pools - use the shared one!
         childFetcherService = Executors.newFixedThreadPool(Math.min(6,
                 Runtime.getRuntime().availableProcessors() + 1), new NamedThreadFactory(sctTreeItemThreadGroup,
                 "SctTreeItem child fetcher"));
