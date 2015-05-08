@@ -24,13 +24,11 @@ import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.util.OTFUtility;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
@@ -46,8 +44,8 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -246,8 +244,7 @@ public class FindAndReplaceController
 		
 		try
 		{
-			//84a0b03b-220c-3d69-8487-2e019c933687 Language type reference set
-			for (ConceptVersionBI c : OTFUtility.getAllChildrenOfConcept(OTFUtility.getConceptVersion(UUID.fromString("84a0b03b-220c-3d69-8487-2e019c933687")).getNid()
+			for (ConceptVersionBI c : OTFUtility.getAllChildrenOfConcept(OTFUtility.getConceptVersion(Snomed.LANGUAGE_REFEX.getPrimodialUuid()).getNid()
 					, true))
 			{
 				SimpleDisplayConcept sdc = new SimpleDisplayConcept(c);

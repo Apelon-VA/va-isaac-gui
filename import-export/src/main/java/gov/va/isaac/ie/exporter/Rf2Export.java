@@ -49,6 +49,7 @@ import org.ihtsdo.otf.tcc.api.country.COUNTRY_CODE;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
+import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
@@ -449,9 +450,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
 
     // Collect children and grandchildren of the ancestor metadata concept for
     // language refsets
-    ConceptSpec langRefexParent =
-        new ConceptSpec("Language type reference set",
-            UUID.fromString("84a0b03b-220c-3d69-8487-2e019c933687"));
+    ConceptSpec langRefexParent = Snomed.LANGUAGE_REFEX;
     Set<ConceptVersionBI> descs =
         OTFUtility.getAllChildrenOfConcept(
             langRefexParent.getLenient().getNid(), true);

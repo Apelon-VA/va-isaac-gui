@@ -59,9 +59,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedRelType;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
@@ -97,9 +94,9 @@ import org.slf4j.LoggerFactory;
 public class OTFUtility {
 	private static final Logger LOG = LoggerFactory.getLogger(OTFUtility.class);
 
-	private static final UUID FSN_UUID = SnomedMetadataRf2.FULLY_SPECIFIED_NAME_RF2.getUuids()[0];
-	private static final UUID PREFERRED_UUID = SnomedMetadataRf2.PREFERRED_RF2.getUuids()[0];
-	private static final UUID SYNONYM_UUID = SnomedMetadataRf2.SYNONYM_RF2.getUuids()[0];
+	private static final UUID FSN_UUID = IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getPrimodialUuid();
+	private static final UUID PREFERRED_UUID = IsaacMetadataAuxiliaryBinding.PREFERRED.getPrimodialUuid();
+	private static final UUID SYNONYM_UUID = IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid();
 
 	private static Integer fsnNid = null;
 	private static Integer preferredNid = null;
@@ -180,7 +177,7 @@ public class OTFUtility {
 			if (pathUuid != null && (pathChronicle = dataStore.getConcept(pathUuid)) != null) {
 				pathNid = pathChronicle.getNid();
 			} else {
-				pathNid = TermAux.WB_AUX_PATH.getLenient().getConceptNid();
+				pathNid = IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid();
 				pathChronicle = dataStore.getConcept(pathNid);
 				pathUuid = pathChronicle.getPrimordialUuid();
 			}
@@ -438,7 +435,7 @@ public class OTFUtility {
 		
 		if (Utility.isLong(localIdentifier))
 		{
-			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(TermAux.SNOMED_IDENTIFIER.getUuids()[0], localIdentifier);
+			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
 			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
 			ConceptVersionBI cv = getConceptVersion(alternateUUID);
 			if (cv != null)
@@ -928,7 +925,7 @@ public class OTFUtility {
 	
 	public static ConceptCB createNewConceptBlueprint(ConceptChronicleBI parent, String fsn, String prefTerm) throws ValidationException, IOException, InvalidCAB, ContradictionException {
 		LanguageCode lc = LanguageCode.EN_US;
-		UUID isA = Snomed.IS_A.getUuids()[0];
+		UUID isA = IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid();
 		IdDirective idDir = IdDirective.GENERATE_HASH;
 		UUID module = Snomed.CORE_MODULE.getLenient().getPrimordialUuid();
 		UUID parentUUIDs[] = new UUID[1];
@@ -996,7 +993,7 @@ public class OTFUtility {
 	}
 		
 	public static void createNewDescription(int conNid, String term) throws IOException, InvalidCAB, ContradictionException {
-		DescriptionCAB newDesc = new DescriptionCAB(conNid, SnomedMetadataRf2.SYNONYM_RF2.getNid(), LanguageCode.EN_US, term, false, IdDirective.GENERATE_HASH); 
+		DescriptionCAB newDesc = new DescriptionCAB(conNid, IsaacMetadataAuxiliaryBinding.SYNONYM.getNid(), LanguageCode.EN_US, term, false, IdDirective.GENERATE_HASH); 
 
 		getBuilder().construct(newDesc);
 		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
@@ -1010,7 +1007,7 @@ public class OTFUtility {
 	}
 
 	public static void createNewParent(int conNid, int targetNid) throws ValidationException, IOException, InvalidCAB, ContradictionException {
-		RelationshipCAB newRel = new RelationshipCAB(conNid, SnomedRelType.IS_A.getNid(), targetNid, 0, RelationshipType.STATED_HIERARCHY, IdDirective.GENERATE_HASH);
+		RelationshipCAB newRel = new RelationshipCAB(conNid, IsaacMetadataAuxiliaryBinding.IS_A.getNid(), targetNid, 0, RelationshipType.STATED_HIERARCHY, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
 		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
@@ -1018,7 +1015,7 @@ public class OTFUtility {
 	
 	public static List<ConceptChronicleBI> getPathConcepts() throws ValidationException, IOException, ContradictionException {
 		ConceptChronicleBI pathRefset =
-				dataStore.getConcept(TermAux.PATH_REFSET.getLenient().getPrimordialUuid());
+				dataStore.getConcept(IsaacMetadataAuxiliaryBinding.PATHS.getLenient().getPrimordialUuid());
 			Collection<? extends RefexChronicleBI<?>> members = pathRefset.getRefsetMembers();
 			List<ConceptChronicleBI> pathConcepts = new ArrayList<>();
 			for (RefexChronicleBI<?> member : members) {
