@@ -734,7 +734,7 @@ public class ListBatchViewController
 			}
 		});
 
-		// TODO getUncommittedConcepts() is unsupported.  This button should be removed.
+		addUncommittedListButton.setDisable(true); // TODO OCHRE getUncommittedConcepts() is unsupported
 		addUncommittedListButton.setOnAction(new EventHandler<ActionEvent>()
 		{
 			@Override
