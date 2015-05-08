@@ -731,6 +731,7 @@ public class OTFUtility {
 		return null;
 	}
 
+	// TODO getUncommittedConcepts() is unsupported.  This method should be removed.
 	public static boolean isUncommittened(ConceptVersionBI con) {
 		return dataStore.getUncommittedConcepts().contains(con.getChronicle());
 	}

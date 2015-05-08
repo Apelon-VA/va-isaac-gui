@@ -269,6 +269,7 @@ public class EnhancedConceptViewController {
 	}
 
 	private void updateCommitButton() {
+		// TODO getUncommittedConcepts() is unsupported.  This button should be removed.
 		boolean isUncommitted = OTFUtility.isUncommittened(concept);
 		commitButton.setDisable(!isUncommitted);
 		cancelButton.setDisable(!isUncommitted);
