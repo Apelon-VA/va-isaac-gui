@@ -78,6 +78,7 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.refex.RefexChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.type_comp.RefexCompVersionDdo;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
+import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1019,10 +1020,23 @@ public class OTFUtility {
 			Collection<? extends RefexChronicleBI<?>> members = pathRefset.getRefsetMembers();
 			List<ConceptChronicleBI> pathConcepts = new ArrayList<>();
 			for (RefexChronicleBI<?> member : members) {
-				int memberNid = ((NidMember)member).getC1Nid();
-				ConceptChronicleBI pathConcept = dataStore.getConcept(memberNid);
-				pathConcepts.add(pathConcept);
+				if (member instanceof MembershipMember) {
+					MembershipMember membershipMember = (MembershipMember)member;
+					int pathNid = membershipMember.getReferencedComponentNid();
+					ConceptChronicleBI pathConcept = dataStore.getConcept(pathNid);
+					pathConcepts.add(pathConcept);
+				}
+				else {
+					LOG.warn("While loading paths expecting MembershipMember but encountered {}: {}", member.getClass().getName(), member);
+				}
 			}
+			
+			if (pathConcepts.size() == 0) {
+				LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS);
+			} else {
+				LOG.debug("Loaded {} paths: {}", pathConcepts.size(), pathConcepts);
+			}
+			
 			return pathConcepts;
 	}
 
