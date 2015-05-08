@@ -23,6 +23,7 @@ import gov.va.isaac.config.generated.IsaacAppConfig;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.interfaces.config.IsaacAppConfigI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import java.io.File;
 import java.io.FileReader;
@@ -382,7 +383,15 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	 */
 	@Override
 	public UUID getDefaultWorkflowPromotionPathUuidAsUUID() {
-		return IsaacAppConfigI.getUuidForString(getDefaultWorkflowPromotionPathUuid());
+		UUID temp = IsaacAppConfigI.getUuidForString(getWorkflowPromotionPathUuid());
+		if (temp == null)
+		{
+			return IsaacMetadataAuxiliaryBinding.MASTER.getPrimodialUuid();
+		}
+		else
+		{
+			return temp;
+		}
 	}
 
 	/*
@@ -499,7 +508,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	@Override
 	public String getDefaultWorkflowPromotionPathName()
 	{
-		return getWorkflowPromotionPathName();
+		return OTFUtility.getDescriptionIfConceptExists(getDefaultWorkflowPromotionPathUuidAsUUID());
 	}
 
 	/**
@@ -517,7 +526,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	@Override
 	public String getDefaultWorkflowPromotionPathUuid()
 	{
-		return getWorkflowPromotionPathUuid();
+		return getDefaultWorkflowPromotionPathUuidAsUUID().toString();
 	}
 
 	/**
