@@ -6,7 +6,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class CommonMenusServices {
+	private static final Logger LOG = LoggerFactory.getLogger(CommonMenusServices.class);
 
 	// Interface for service call lambda expressions
 	static interface ServiceCall<T> {
@@ -32,7 +36,16 @@ class CommonMenusServices {
 			if (getServiceCall(item) == null) {
 				serviceAvailabilityCache.put(item, false);
 			} else {
-				serviceAvailabilityCache.put(item, getServiceCall(item).executeServiceCall() != null);
+				try {
+					Object service = getServiceCall(item).executeServiceCall();
+					
+					serviceAvailabilityCache.put(item, service != null);
+				} catch (Exception e) {
+					serviceAvailabilityCache.put(item, false);
+					
+					LOG.error("isServiceAvailable() disabling service because failed invoking service call.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+					e.printStackTrace();
+				}
 			}
 		}
 

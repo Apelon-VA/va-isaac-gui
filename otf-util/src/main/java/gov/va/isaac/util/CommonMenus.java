@@ -431,169 +431,211 @@ public class CommonMenus
 		final CommonMenusNIdProvider commonMenusNIdProvider = tmpCommonMenusNIdProvider;
 		
 		// Menu item to show concept details.
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW)) {
-			MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
-					CommonMenuItem.CONCEPT_VIEW,
-					builder, 
-					() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-					() -> { // onHandlable
-						LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
-								+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW)) {
+				MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
+						CommonMenuItem.CONCEPT_VIEW,
+						builder, 
+						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						() -> { // onHandlable
+							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
+									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-						PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW).executeServiceCall();
-						cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
-						cv.showView(null);
-					},
-					() -> { // onNotHandlable
-						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
-					});
-			if (enhancedConceptViewMenuItem != null)
-			{
-				menuItems.add(enhancedConceptViewMenuItem);
+							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW).executeServiceCall();
+							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+							cv.showView(null);
+						},
+						() -> { // onNotHandlable
+							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
+						});
+				if (enhancedConceptViewMenuItem != null)
+				{
+					menuItems.add(enhancedConceptViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to show concept details. (legacy)
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY)) {
-			MenuItem legacyConceptViewMenuItem = createNewMenuItem(
-					CommonMenuItem.CONCEPT_VIEW_LEGACY,
-					builder,
-					() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-					() -> {
-						LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
-								+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY)) {
+				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
+						CommonMenuItem.CONCEPT_VIEW_LEGACY,
+						builder,
+						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						() -> {
+							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
+									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-						PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW_LEGACY).executeServiceCall();
-						cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW_LEGACY).executeServiceCall();
+							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 
-						cv.showView(null);
-					},
-					() -> {
-						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
-					}
-					);
-			if (legacyConceptViewMenuItem != null)
-			{
-				menuItems.add(legacyConceptViewMenuItem);
+							cv.showView(null);
+						},
+						() -> {
+							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
+						}
+						);
+				if (legacyConceptViewMenuItem != null)
+				{
+					menuItems.add(legacyConceptViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW_LEGACY.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to find concept in tree.
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW)) {
-			MenuItem findInTaxonomyViewMenuItem = createNewMenuItem(
-					CommonMenuItem.TAXONOMY_VIEW,
-					builder,
-					() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-					// onHandlable
-					() -> { ((TaxonomyViewI)CommonMenusServices.getServiceCall(CommonMenuItem.TAXONOMY_VIEW).executeServiceCall()).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
-					// onNotHandlable
-					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't locate an invalid concept");});
-			if (findInTaxonomyViewMenuItem != null)
-			{
-				menuItems.add(findInTaxonomyViewMenuItem);
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW)) {
+				MenuItem findInTaxonomyViewMenuItem = createNewMenuItem(
+						CommonMenuItem.TAXONOMY_VIEW,
+						builder,
+						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						// onHandlable
+						() -> { ((TaxonomyViewI)CommonMenusServices.getServiceCall(CommonMenuItem.TAXONOMY_VIEW).executeServiceCall()).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
+						// onNotHandlable
+						() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't locate an invalid concept");});
+				if (findInTaxonomyViewMenuItem != null)
+				{
+					menuItems.add(findInTaxonomyViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.TAXONOMY_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to find concept in tree.
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW)) {
-			MenuItem openTaskViewMenuItem = createNewMenuItem(
-					CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW,
-					builder,
-					() -> {
-						return taskIdProvider.getObservableTaskIdCount().get() == 1;
-					}, // canHandle
-					taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
-					// onHandlable
-					() -> {
-						WorkflowTaskDetailsViewI view = (WorkflowTaskDetailsViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW).executeServiceCall();
-						view.setTask(taskIdProvider.getTaskIds().iterator().next());
-						view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-					},
-					// onNotHandlable
-					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-			if (openTaskViewMenuItem != null)
-			{
-				menuItems.add(openTaskViewMenuItem);
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW)) {
+				MenuItem openTaskViewMenuItem = createNewMenuItem(
+						CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW,
+						builder,
+						() -> {
+							return taskIdProvider.getObservableTaskIdCount().get() == 1;
+						}, // canHandle
+						taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
+						// onHandlable
+						() -> {
+							WorkflowTaskDetailsViewI view = (WorkflowTaskDetailsViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW).executeServiceCall();
+							view.setTask(taskIdProvider.getTaskIds().iterator().next());
+							view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+				if (openTaskViewMenuItem != null)
+				{
+					menuItems.add(openTaskViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to perform a USCRS content request
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW)) {
-			MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
-					CommonMenuItem.USCRS_REQUEST_VIEW,
-					builder,
-					() -> {
-						return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-					}, // canHandle
-					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
-					// onHandlable
-					() -> {
-						ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.USCRS_REQUEST_VIEW).executeServiceCall();
-						handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
-						handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-					},
-					// onNotHandlable
-					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-			if (uscrsRequestViewMenuItem != null)
-			{
-				menuItems.add(uscrsRequestViewMenuItem);
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW)) {
+				MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
+						CommonMenuItem.USCRS_REQUEST_VIEW,
+						builder,
+						() -> {
+							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+						}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						// onHandlable
+						() -> {
+							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.USCRS_REQUEST_VIEW).executeServiceCall();
+							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+				if (uscrsRequestViewMenuItem != null)
+				{
+					menuItems.add(uscrsRequestViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.USCRS_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to perform a LOINC content request
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW)) {
-			MenuItem loincRequestViewMenuItem = createNewMenuItem(
-					CommonMenuItem.LOINC_REQUEST_VIEW,
-					builder,
-					() -> {
-						return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-					}, // canHandle
-					commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
-					// onHandlable
-					() -> {
-						ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.LOINC_REQUEST_VIEW).executeServiceCall();
-						handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
-						handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-					},
-					// onNotHandlable
-					() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
-			if (loincRequestViewMenuItem != null)
-			{
-				menuItems.add(loincRequestViewMenuItem);
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW)) {
+				MenuItem loincRequestViewMenuItem = createNewMenuItem(
+						CommonMenuItem.LOINC_REQUEST_VIEW,
+						builder,
+						() -> {
+							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+						}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						// onHandlable
+						() -> {
+							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.LOINC_REQUEST_VIEW).executeServiceCall();
+							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Task", "Can't locate an invalid task");});
+				if (loincRequestViewMenuItem != null)
+				{
+					menuItems.add(loincRequestViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOINC_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
-			MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
-					CommonMenuItem.RELEASE_WORKFLOW_TASK,
-					builder,
-					() -> {
-						return taskIdProvider.getObservableTaskIdCount().get() == 1;
-					}, // canHandle
-					taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
-					() -> { // onHandlable
-						try
-						{
-							ComponentWorkflowServiceI wfEngine = (ComponentWorkflowServiceI)CommonMenusServices.getServiceCall(CommonMenuItem.RELEASE_WORKFLOW_TASK).executeServiceCall();
-							wfEngine.releaseTask(taskIdProvider.getTaskIds().iterator().next());
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
+				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
+						CommonMenuItem.RELEASE_WORKFLOW_TASK,
+						builder,
+						() -> {
+							return taskIdProvider.getObservableTaskIdCount().get() == 1;
+						}, // canHandle
+						taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
+						() -> { // onHandlable
+							try
+							{
+								ComponentWorkflowServiceI wfEngine = (ComponentWorkflowServiceI)CommonMenusServices.getServiceCall(CommonMenuItem.RELEASE_WORKFLOW_TASK).executeServiceCall();
+								wfEngine.releaseTask(taskIdProvider.getTaskIds().iterator().next());
+							}
+							catch (IOException e)
+							{
+								LOG.error("Problem releasing task");
+								AppContext.getCommonDialogs().showErrorDialog("problem releasing task", e);
+							}
+						},
+						() -> { // onNotHandlable
+							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or invalid number of Concepts selected", "Selection must be of exactly one valid Concept");
 						}
-						catch (IOException e)
-						{
-							LOG.error("Problem releasing task");
-							AppContext.getCommonDialogs().showErrorDialog("problem releasing task", e);
-						}
-					},
-					() -> { // onNotHandlable
-						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or invalid number of Concepts selected", "Selection must be of exactly one valid Concept");
-					}
-					);
-			if (newReleaseWorkflowTaskItem != null)
-			{
-				menuItems.add(newReleaseWorkflowTaskItem);
+						);
+				if (newReleaseWorkflowTaskItem != null)
+				{
+					menuItems.add(newReleaseWorkflowTaskItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.RELEASE_WORKFLOW_TASK.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// get Send-To menu items
@@ -604,9 +646,18 @@ public class CommonMenus
 			
 			@Override
 			protected List<MenuItem> call() throws Exception {
-				items = getSendToMenuItems(builder, dataProvider, commonMenusNIdProvider, taskIdProvider);
-
+				try {
+					items = getSendToMenuItems(builder, dataProvider, commonMenusNIdProvider, taskIdProvider);
+				} catch (Exception e) {
+					LOG.error("call() failed running getSendToMenuItems(). Caught {} {}", e.getClass().getName(), e.getLocalizedMessage()); 
+					throw e;
+				}
 				return items;
+			}
+
+			@Override
+			protected void failed() {
+				LOG.error("call() failed to run getSendToMenuItems()");
 			}
 
 			@Override
@@ -682,63 +733,75 @@ public class CommonMenus
 
 		List<MenuItem> menuItems = new ArrayList<>();
 
-		// Menu item to send Concept to ListView
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW)) {
-			MenuItem listViewMenuItem = createNewMenuItem(
-					CommonMenuItem.LIST_VIEW,
-					builder,
-					() -> {return nids.getObservableNidCount().get() > 0;}, // canHandle
-					nids.getObservableNidCount().greaterThan(0),				//make visible
-					() -> { // onHandlable
-						ArrayList<Integer> nidList = new ArrayList<>();
-						for (int i : nids.getNIds())
-						{
-							nidList.add(getComponentParentConceptNid(i));
+			// Menu item to send Concept to ListView
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW)) {
+				MenuItem listViewMenuItem = createNewMenuItem(
+						CommonMenuItem.LIST_VIEW,
+						builder,
+						() -> {return nids.getObservableNidCount().get() > 0;}, // canHandle
+						nids.getObservableNidCount().greaterThan(0),				//make visible
+						() -> { // onHandlable
+							ArrayList<Integer> nidList = new ArrayList<>();
+							for (int i : nids.getNIds())
+							{
+								nidList.add(getComponentParentConceptNid(i));
+							}
+							LOG.debug("Using \"" + CommonMenuItem.LIST_VIEW.getText() + "\" menu item to list concept(s) with id(s) \"" 
+									+ Arrays.toString(nidList.toArray()) + "\"");
+
+							ListBatchViewI lv = (ListBatchViewI)CommonMenusServices.getServiceCall(CommonMenuItem.LIST_VIEW).executeServiceCall();
+
+							AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
+
+							lv.addConcepts(nidList);		
+						},
+						() -> {	 // onNotHandlable
+							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or no concept selected", "Can only list valid concept(s)");
 						}
-						LOG.debug("Using \"" + CommonMenuItem.LIST_VIEW.getText() + "\" menu item to list concept(s) with id(s) \"" 
-								+ Arrays.toString(nidList.toArray()) + "\"");
-
-						ListBatchViewI lv = (ListBatchViewI)CommonMenusServices.getServiceCall(CommonMenuItem.LIST_VIEW).executeServiceCall();
-
-						AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
-
-						lv.addConcepts(nidList);		
-					},
-					() -> {	 // onNotHandlable
-						AppContext.getCommonDialogs().showInformationDialog("Invalid Concept or no concept selected", "Can only list valid concept(s)");
-					}
-					);
-			if (listViewMenuItem != null)
-			{
-				menuItems.add(listViewMenuItem);
+						);
+				if (listViewMenuItem != null)
+				{
+					menuItems.add(listViewMenuItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getSendToMenuItems() failed adding CommonMenuItem.LIST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to generate New Workflow Instance.
-		if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW)) {
-			MenuItem newWorkflowInstanceInitializationItem = createNewMenuItem(
-					CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW,
-					builder,
-					() -> {
-						return nids.getObservableNidCount().get() == 1;
-					}, // canHandle
-					nids.getObservableNidCount().isEqualTo(1),				//make visible
-					() -> { // onHandlable
-						WorkflowInitiationViewI view = (WorkflowInitiationViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW).executeServiceCall();
-						if (view == null) {
-							LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
+		try {
+			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW)) {
+				MenuItem newWorkflowInstanceInitializationItem = createNewMenuItem(
+						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW,
+						builder,
+						() -> {
+							return nids.getObservableNidCount().get() == 1;
+						}, // canHandle
+						nids.getObservableNidCount().isEqualTo(1),				//make visible
+						() -> { // onHandlable
+							WorkflowInitiationViewI view = (WorkflowInitiationViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW).executeServiceCall();
+							if (view == null) {
+								LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
+							}
+							view.setComponent(nids.getNIds().iterator().next());
+							view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						() -> { // onNotHandlable
+							AppContext.getCommonDialogs().showInformationDialog("Invalid Component or invalid number of Components selected", "Selection must be of exactly one valid Component");
 						}
-						view.setComponent(nids.getNIds().iterator().next());
-						view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-					},
-					() -> { // onNotHandlable
-						AppContext.getCommonDialogs().showInformationDialog("Invalid Component or invalid number of Components selected", "Selection must be of exactly one valid Component");
-					}
-					);
-			if (newWorkflowInstanceInitializationItem != null)
-			{
-				menuItems.add(newWorkflowInstanceInitializationItem);
+						);
+				if (newWorkflowInstanceInitializationItem != null)
+				{
+					menuItems.add(newWorkflowInstanceInitializationItem);
+				}
+			} else {
+				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW) returned false");
 			}
+		} catch (Exception e) {
+			LOG.error("getSendToMenuItems() failed adding CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		return menuItems;
