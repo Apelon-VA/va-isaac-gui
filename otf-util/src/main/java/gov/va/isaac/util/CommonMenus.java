@@ -31,7 +31,6 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationV
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
-import gov.vha.isaac.ochre.api.LookupService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -118,15 +117,15 @@ public class CommonMenus
 	
 	// Initialize service call cache
 	static {
-		CommonMenusServices.setServiceCall(CommonMenuItem.CONCEPT_VIEW, () -> LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE));
-		CommonMenusServices.setServiceCall(CommonMenuItem.CONCEPT_VIEW_LEGACY, () -> LookupService.getService(PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE));
-		CommonMenusServices.setServiceCall(CommonMenuItem.TAXONOMY_VIEW, () -> LookupService.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED));
-		CommonMenusServices.setServiceCall(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW, () -> AppContext.getService(WorkflowTaskDetailsViewI.class));
-		CommonMenusServices.setServiceCall(CommonMenuItem.USCRS_REQUEST_VIEW, () -> LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.USCRS));
-		CommonMenusServices.setServiceCall(CommonMenuItem.LOINC_REQUEST_VIEW, () -> LookupService.getService(ContentRequestHandlerI.class, SharedServiceNames.LOINC));
-		CommonMenusServices.setServiceCall(CommonMenuItem.LIST_VIEW, () -> LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED));
-		CommonMenusServices.setServiceCall(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, () -> AppContext.getService(WorkflowInitiationViewI.class));
-		CommonMenusServices.setServiceCall(CommonMenuItem.RELEASE_WORKFLOW_TASK, () -> AppContext.getService(ComponentWorkflowServiceI.class));
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW, PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW_LEGACY, PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.TAXONOMY_VIEW, TaxonomyViewI.class, SharedServiceNames.DOCKED);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW, WorkflowTaskDetailsViewI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.USCRS_REQUEST_VIEW, ContentRequestHandlerI.class, SharedServiceNames.USCRS);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LOINC_REQUEST_VIEW, ContentRequestHandlerI.class, SharedServiceNames.LOINC);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LIST_VIEW, ListBatchViewI.class, SharedServiceNames.DOCKED);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, WorkflowInitiationViewI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.RELEASE_WORKFLOW_TASK, ComponentWorkflowServiceI.class);
 	}
 
 	public static class ObjectContainer {
@@ -432,7 +431,7 @@ public class CommonMenus
 		
 		// Menu item to show concept details.
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_VIEW)) {
 				MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
 						CommonMenuItem.CONCEPT_VIEW,
 						builder, 
@@ -442,7 +441,7 @@ public class CommonMenus
 							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
 									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW).executeServiceCall();
+							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getService(CommonMenuItem.CONCEPT_VIEW);
 							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 							cv.showView(null);
 						},
@@ -462,7 +461,7 @@ public class CommonMenus
 
 		// Menu item to show concept details. (legacy)
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_VIEW_LEGACY)) {
 				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
 						CommonMenuItem.CONCEPT_VIEW_LEGACY,
 						builder,
@@ -472,7 +471,7 @@ public class CommonMenus
 							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
 									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getServiceCall(CommonMenuItem.CONCEPT_VIEW_LEGACY).executeServiceCall();
+							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getService(CommonMenuItem.CONCEPT_VIEW_LEGACY);
 							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 
 							cv.showView(null);
@@ -494,14 +493,14 @@ public class CommonMenus
 
 		// Menu item to find concept in tree.
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.TAXONOMY_VIEW)) {
 				MenuItem findInTaxonomyViewMenuItem = createNewMenuItem(
 						CommonMenuItem.TAXONOMY_VIEW,
 						builder,
 						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
 						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
 						// onHandlable
-						() -> { ((TaxonomyViewI)CommonMenusServices.getServiceCall(CommonMenuItem.TAXONOMY_VIEW).executeServiceCall()).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
+						() -> { ((TaxonomyViewI)CommonMenusServices.getService(CommonMenuItem.TAXONOMY_VIEW)).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
 						// onNotHandlable
 						() -> { AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't locate an invalid concept");});
 				if (findInTaxonomyViewMenuItem != null)
@@ -517,7 +516,7 @@ public class CommonMenus
 
 		// Menu item to find concept in tree.
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW)) {
 				MenuItem openTaskViewMenuItem = createNewMenuItem(
 						CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW,
 						builder,
@@ -527,7 +526,7 @@ public class CommonMenus
 						taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
 						// onHandlable
 						() -> {
-							WorkflowTaskDetailsViewI view = (WorkflowTaskDetailsViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW).executeServiceCall();
+							WorkflowTaskDetailsViewI view = (WorkflowTaskDetailsViewI)CommonMenusServices.getService(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW);
 							view.setTask(taskIdProvider.getTaskIds().iterator().next());
 							view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 						},
@@ -546,7 +545,7 @@ public class CommonMenus
 
 		// Menu item to perform a USCRS content request
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.USCRS_REQUEST_VIEW)) {
 				MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
 						CommonMenuItem.USCRS_REQUEST_VIEW,
 						builder,
@@ -556,7 +555,7 @@ public class CommonMenus
 						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
 						// onHandlable
 						() -> {
-							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.USCRS_REQUEST_VIEW).executeServiceCall();
+							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getService(CommonMenuItem.USCRS_REQUEST_VIEW);
 							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
 							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 						},
@@ -575,7 +574,7 @@ public class CommonMenus
 
 		// Menu item to perform a LOINC content request
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.LOINC_REQUEST_VIEW)) {
 				MenuItem loincRequestViewMenuItem = createNewMenuItem(
 						CommonMenuItem.LOINC_REQUEST_VIEW,
 						builder,
@@ -585,7 +584,7 @@ public class CommonMenus
 						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
 						// onHandlable
 						() -> {
-							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getServiceCall(CommonMenuItem.LOINC_REQUEST_VIEW).executeServiceCall();
+							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getService(CommonMenuItem.LOINC_REQUEST_VIEW);
 							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
 							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 						},
@@ -603,7 +602,7 @@ public class CommonMenus
 		}
 
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
 				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
 						CommonMenuItem.RELEASE_WORKFLOW_TASK,
 						builder,
@@ -614,7 +613,7 @@ public class CommonMenus
 						() -> { // onHandlable
 							try
 							{
-								ComponentWorkflowServiceI wfEngine = (ComponentWorkflowServiceI)CommonMenusServices.getServiceCall(CommonMenuItem.RELEASE_WORKFLOW_TASK).executeServiceCall();
+								ComponentWorkflowServiceI wfEngine = (ComponentWorkflowServiceI)CommonMenusServices.getService(CommonMenuItem.RELEASE_WORKFLOW_TASK);
 								wfEngine.releaseTask(taskIdProvider.getTaskIds().iterator().next());
 							}
 							catch (IOException e)
@@ -735,7 +734,7 @@ public class CommonMenus
 
 			// Menu item to send Concept to ListView
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.LIST_VIEW)) {
 				MenuItem listViewMenuItem = createNewMenuItem(
 						CommonMenuItem.LIST_VIEW,
 						builder,
@@ -750,7 +749,7 @@ public class CommonMenus
 							LOG.debug("Using \"" + CommonMenuItem.LIST_VIEW.getText() + "\" menu item to list concept(s) with id(s) \"" 
 									+ Arrays.toString(nidList.toArray()) + "\"");
 
-							ListBatchViewI lv = (ListBatchViewI)CommonMenusServices.getServiceCall(CommonMenuItem.LIST_VIEW).executeServiceCall();
+							ListBatchViewI lv = (ListBatchViewI)CommonMenusServices.getService(CommonMenuItem.LIST_VIEW);
 
 							AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
 
@@ -773,7 +772,7 @@ public class CommonMenus
 
 		// Menu item to generate New Workflow Instance.
 		try {
-			if (CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW)) {
 				MenuItem newWorkflowInstanceInitializationItem = createNewMenuItem(
 						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW,
 						builder,
@@ -782,7 +781,7 @@ public class CommonMenus
 						}, // canHandle
 						nids.getObservableNidCount().isEqualTo(1),				//make visible
 						() -> { // onHandlable
-							WorkflowInitiationViewI view = (WorkflowInitiationViewI)CommonMenusServices.getServiceCall(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW).executeServiceCall();
+							WorkflowInitiationViewI view = (WorkflowInitiationViewI)CommonMenusServices.getService(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
 							if (view == null) {
 								LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
 							}
