@@ -52,18 +52,8 @@
 		</dependency>
 		
 		<!-- Needed to support Profile Sync (using GIT) -->
-		<dependency>
-			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>sync-git</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
 		
 		<!-- Needed to support Profile Sync (using SVN) -->
-		<dependency>
-			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>sync-svn</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
 		
 		<!-- dependencies to annotations -->
 		<dependency>

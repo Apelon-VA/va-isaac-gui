@@ -21,9 +21,10 @@ package gov.va.isaac.mojos.profileSync;
 import gov.va.isaac.config.IsaacAppConfigWrapper;
 import gov.va.isaac.config.generated.ChangeSetSCMType;
 import gov.va.isaac.config.generated.IsaacAppConfig;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
-import gov.va.isaac.sync.git.SyncServiceGIT;
-import gov.va.isaac.sync.svn.SyncServiceSVN;
+import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
@@ -36,7 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import javax.xml.bind.JAXBException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -161,11 +164,15 @@ public abstract class ProfilesMojoBase extends AbstractMojo
 	{
 		if (config_.getChangeSetUrlType() == ChangeSetSCMType.GIT)
 		{
-			return new SyncServiceGIT(userProfileFolderLocation);
+			ProfileSyncI svc = LookupService.getService(ProfileSyncI.class, SharedServiceNames.GIT);
+			svc.setRootLocation(userProfileFolderLocation);
+			return svc;
 		}
 		else if (config_.getChangeSetUrlType() == ChangeSetSCMType.SVN)
 		{
-			return new SyncServiceSVN(userProfileFolderLocation);
+			ProfileSyncI svc = LookupService.getService(ProfileSyncI.class, SharedServiceNames.SVN);
+			svc.setRootLocation(userProfileFolderLocation);
+			return svc;
 		}
 		else
 		{

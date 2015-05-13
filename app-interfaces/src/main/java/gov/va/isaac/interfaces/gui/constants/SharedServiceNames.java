@@ -34,4 +34,6 @@ public class SharedServiceNames
 	public static final String LEGACY_STYLE = "LegacyStyle";
     public static final String USCRS = "USCRS";
     public static final String LOINC = "LOINC";
+    public static final String GIT = "GIT";
+    public static final String SVN = "SVN";
 }
