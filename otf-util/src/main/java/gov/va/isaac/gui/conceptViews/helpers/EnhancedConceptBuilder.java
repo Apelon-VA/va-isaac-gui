@@ -295,18 +295,22 @@ public class EnhancedConceptBuilder {
 			}
 		});
 
-		MenuItem newWorkflowItem = new MenuItem("Send Concept to Workflow Initiation");
-		newWorkflowItem.setOnAction(new EventHandler<ActionEvent>()
-		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
+		MenuItem newWorkflowItem = null;
+		if (LookupService.hasService(WorkflowInitiationViewI.class)) {
+			newWorkflowItem = new MenuItem("Send Concept to Workflow Initiation");
+			newWorkflowItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event)
+				{
+					WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
 
-				view.setComponent(con.getNid());
-				view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-			}
-		});
+					view.setComponent(con.getNid());
+					view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+				}
+			});
+		} else {
+			LOG.debug("Not adding Initiate Workflow (WorkflowInitiationViewI) menu item. Service not available.");
+		}
 
 		MenuItem listViewItem = new MenuItem("Send Concept to List View");
 		listViewItem.setOnAction(new EventHandler<ActionEvent>()
@@ -337,7 +341,12 @@ public class EnhancedConceptBuilder {
 		Menu modifyComponentMenu = labelHelper.addModifyMenus(ConceptViewerHelper.getConceptAttributes(con), ComponentType.CONCEPT);
 		Menu createComponentMenu = labelHelper.addCreateNewComponent();
 
-		rtClickMenu.getItems().addAll(refexDynamicItem, newWorkflowItem, listViewItem, taxonomyViewItem, prefAccModificationMenu, copyIdMenu, modifyComponentMenu, createComponentMenu);
+		MenuItem[] items = new MenuItem[] { refexDynamicItem, newWorkflowItem, listViewItem, taxonomyViewItem, prefAccModificationMenu, copyIdMenu, modifyComponentMenu, createComponentMenu };
+		for (MenuItem item : items) {
+			if (item != null) {
+				rtClickMenu.getItems().add(item);
+			}
+		}
 
 		BorderPane bp = (BorderPane)enhancedConceptPane.getChildren().get(0);
 		bp.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {  

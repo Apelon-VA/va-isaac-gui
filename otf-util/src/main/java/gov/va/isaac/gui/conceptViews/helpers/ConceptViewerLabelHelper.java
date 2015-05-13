@@ -33,8 +33,11 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.IOException;
 import java.util.Collection;
+
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -53,6 +56,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -249,27 +253,31 @@ public class ConceptViewerLabelHelper {
 		}
 
 		if (comp != null) {
-			MenuItem initiateWorkflowItem = new MenuItem("Initiate Workflow on " + type);
-			initiateWorkflowItem.setGraphic(Images.INBOX.createImageView());
-			initiateWorkflowItem.setOnAction(new EventHandler<ActionEvent>()
-			{
-				@Override
-				public void handle(ActionEvent event)
-				{
-					WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
-					if (view == null) {
-						LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
+			if (LookupService.hasService(WorkflowInitiationViewI.class)) {
+				MenuItem initiateWorkflowItem = new MenuItem("Initiate Workflow on " + type);
+				initiateWorkflowItem.setGraphic(Images.INBOX.createImageView());
+				initiateWorkflowItem.setOnAction(new EventHandler<ActionEvent>()
+						{
+					@Override
+					public void handle(ActionEvent event)
+					{
+						WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
+						if (view == null) {
+							LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
+						}
+						if (type == ComponentType.CONCEPT) {
+							view.setComponent(comp.getConceptNid());
+						} else {
+							view.setComponent(comp.getNid());
+						}
+						view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 					}
-					if (type == ComponentType.CONCEPT) {
-						view.setComponent(comp.getConceptNid());
-					} else {
-						view.setComponent(comp.getNid());
-					}
-					view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-				}
-			});
-			
-			rtClickMenu.getItems().add(0, initiateWorkflowItem);
+						});
+
+				rtClickMenu.getItems().add(0, initiateWorkflowItem);
+			} else {
+				LOG.debug("Not adding Initiate Workflow (WorkflowInitiationViewI) menu item. Service not available.");
+			}
 		}
 		
 		
