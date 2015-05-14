@@ -32,7 +32,6 @@ import gov.va.isaac.gui.querybuilder.node.RefsetContainsConcept;
 import gov.va.isaac.gui.querybuilder.node.RefsetContainsKindOfConcept;
 import gov.va.isaac.gui.querybuilder.node.RefsetContainsString;
 import gov.va.isaac.gui.querybuilder.node.RelRestriction;
-import gov.va.isaac.gui.querybuilder.node.RelType;
 import gov.va.isaac.gui.querybuilder.node.SingleConceptAssertionNode;
 import gov.va.isaac.gui.querybuilder.node.SingleStringAssertionNode;
 import gov.va.isaac.util.OTFUtility;
