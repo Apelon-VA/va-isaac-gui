@@ -283,8 +283,10 @@ public class OTFUtility {
 		}
 		// If we get here, we didn't find what they were looking for. Pick
 		// something....
-		return (fsn != null ? fsn : (preferred != null ? preferred
+		String returnValue = (fsn != null ? fsn : (preferred != null ? preferred
 				: (bestFound != null ? bestFound : concept.toUserString())));
+		
+		return returnValue;
 	}
 	public static String getFullySpecifiedName(ConceptChronicleBI concept) {
 		try {
@@ -414,9 +416,9 @@ public class OTFUtility {
 
 	/**
 	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
+	 * Next, if no hit, if the passed in value is parseable as a int < 0, calls {@link #getConceptVersion(int)}
 	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
 	 * then calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int, calls {@link #getConceptVersion(int)}
 	 */
 	public static ConceptVersionBI lookupIdentifier(String identifier)
 	{
@@ -434,6 +436,11 @@ public class OTFUtility {
 			return getConceptVersion(uuid);
 		}
 		
+		Integer nid = Utility.getNID(localIdentifier);
+		if (nid != null) {
+			return getConceptVersion(nid);
+		}
+
 		if (Utility.isLong(localIdentifier))
 		{
 			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
@@ -444,12 +451,7 @@ public class OTFUtility {
 				return cv;
 			}
 		}
-		
-		Integer i = Utility.getInt(localIdentifier);
-		if (i != null)
-		{
-			return getConceptVersion(i);
-		}
+
 		return null;
 	}
 	
@@ -1109,19 +1111,31 @@ public class OTFUtility {
 		retSet.add(conceptWithComp);
 		
 		for(DescriptionChronicleBI desc : conceptWithComp.getDescriptions()) {
-			retSet.add(desc.getVersion(conceptWithComp.getViewCoordinate()));
+			DescriptionVersionBI<?> dv = desc.getVersion(conceptWithComp.getViewCoordinate());
+			if (dv != null) {
+				retSet.add(dv);
+			}
 		}
 
 		for(RelationshipChronicleBI rel : conceptWithComp.getRelationshipsOutgoing()) {
-			retSet.add(rel.getVersion(conceptWithComp.getViewCoordinate()));
+			RelationshipVersionBI<?> rv = rel.getVersion(conceptWithComp.getViewCoordinate());
+			if (rv != null) {
+				retSet.add(rv);
+			}
 		}
 
 		for(RefexChronicleBI<?> refsetMember : conceptWithComp.getRefsetMembers()) {
-			retSet.add(refsetMember.getVersion(conceptWithComp.getViewCoordinate()));
+			RefexVersionBI<?> rv = refsetMember.getVersion(conceptWithComp.getViewCoordinate());
+			if (rv != null) {
+				retSet.add(rv);
+			}
 		}
 
 		for(RefexDynamicChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
-			retSet.add(dynRef.getVersion(conceptWithComp.getViewCoordinate()));
+			RefexDynamicVersionBI<?> rdv = dynRef.getVersion(conceptWithComp.getViewCoordinate());
+			if (rdv != null) {
+				retSet.add(rdv);
+			}
 		}
 
 		return retSet;

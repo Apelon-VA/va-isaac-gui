@@ -94,6 +94,12 @@ public class Utility {
             return false;
         }
     }
+
+    public static Integer getNID(String string) {
+    	Integer possibleInt = getInt(string);
+    	
+    	return possibleInt != null && possibleInt.intValue() < 0 ? possibleInt : null;
+    }
     
     public static boolean isInt(String string) {
         return (getInt(string) != null);
