@@ -9,7 +9,7 @@
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>Sprint_21-SNAPSHOT</version>
+	<version>Sprint_23-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
@@ -106,7 +106,6 @@
 				<artifactId>controlsfx</artifactId>
 				<version>8.0.5</version>
 			</dependency>
-
 		</dependencies>
 	</dependencyManagement>
 	

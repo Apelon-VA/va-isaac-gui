@@ -643,13 +643,7 @@ public class QueryBuilderHelper {
 			throw new RuntimeException(error);
 		}
 
-		ViewCoordinate viewCoordinate = null;
-		try {
-			viewCoordinate = ViewCoordinates.getDevelopmentInferredLatest();
-		} catch (IOException ex) {
-			logger.error("Failed getting default ViewCoordinate. Caught {} \"{}\"", ex.getClass().getName(), ex.getLocalizedMessage());
-		}
-
+		ViewCoordinate viewCoordinate = OTFUtility.getViewCoordinate();
 		Query syntheticQuery = new Query(viewCoordinate) {
 			
 			// TODO test change made to conform with new Query OCHRE interface
