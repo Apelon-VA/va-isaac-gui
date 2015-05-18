@@ -25,6 +25,8 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -33,6 +35,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -76,9 +79,9 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicle
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.RefexChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.type_comp.RefexCompVersionDdo;
+import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
-import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -416,9 +419,14 @@ public class OTFUtility {
 
 	/**
 	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int < 0, calls {@link #getConceptVersion(int)}
-	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
-	 * then calls {@link #getConceptVersion(UUID)}
+	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
+	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
+	 * a SCTID and converts that to UUID and then calls {@link #getConceptVersion(UUID)}.  Note that is is possible for some 
+	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - then a 
+	 * runtime exception is thrown.
+	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
+	 * 
+	 * 
 	 */
 	public static ConceptVersionBI lookupIdentifier(String identifier)
 	{
@@ -436,22 +444,41 @@ public class OTFUtility {
 			return getConceptVersion(uuid);
 		}
 		
-		Integer nid = Utility.getNID(localIdentifier);
-		if (nid != null) {
-			return getConceptVersion(nid);
+		//if it is a negative integer, assume nid
+		Optional<Integer> nid = Utility.getNID(localIdentifier);
+		if (nid.isPresent()) {
+			return getConceptVersion(nid.get());
 		}
-
-		if (Utility.isLong(localIdentifier))
+		
+		if (SctId.isValidSctId(localIdentifier))
 		{
+			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
 			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
 			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
 			ConceptVersionBI cv = getConceptVersion(alternateUUID);
 			if (cv != null)
 			{
+				//sanity check:
+				if (Utility.isInt(localIdentifier))
+				{
+					int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+					if (nidFromSequence != 0)
+					{
+						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
+					}
+				}
 				return cv;
 			}
 		}
-
+		else if (Utility.isInt(localIdentifier))
+		{
+			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
+			int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+			if (nidFromSequence != 0)
+			{
+				return getConceptVersion(nidFromSequence);
+			}
+		}
 		return null;
 	}
 	

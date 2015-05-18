@@ -20,6 +20,7 @@ package gov.va.isaac.util;
 
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.util.WorkExecutors;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -95,10 +96,14 @@ public class Utility {
         }
     }
 
-    public static Integer getNID(String string) {
-    	Integer possibleInt = getInt(string);
-    	
-    	return possibleInt != null && possibleInt.intValue() < 0 ? possibleInt : null;
+    /**
+     * Same as isInt / getInt - however - only returns a value if the parsed integer is negative.
+     * @param string
+     * @return
+     */
+    public static Optional<Integer> getNID(String string) {
+        Integer possibleInt = getInt(string);
+        return possibleInt != null && possibleInt.intValue() < 0 ? Optional.of(possibleInt) : Optional.empty();
     }
     
     public static boolean isInt(String string) {
