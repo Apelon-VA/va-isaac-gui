@@ -70,11 +70,16 @@ class CommonMenusServices {
 		}
 	}
 	private static <T> T _getService(ServiceCallParameters<T> params) {
+		T service = null;
 		if (params.serviceName != null) {
-			return LookupService.getService(params.getServiceClass(), params.getServiceName());
+			service = LookupService.getService(params.getServiceClass(), params.getServiceName());
 		} else {
-			return LookupService.getService(params.getServiceClass());
+			service = LookupService.getService(params.getServiceClass());
 		}
+		
+		LOG.debug("CommonMenusServices returning {} for {} with name={}", (service != null ? service.getClass().getName() : null), params.serviceClass.getName(), params.serviceName);
+
+		return service;
 	}
 
 	private static final Map<CommonMenus.CommonMenuItem, ServiceCallParameters<?>> _serviceCallParametersCache = Collections.synchronizedMap(new HashMap<>());
