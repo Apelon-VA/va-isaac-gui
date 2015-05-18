@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.gui.treeview;
 
+import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,7 +34,7 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersion
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
-import org.ihtsdo.otf.tcc.ddo.store.FxTerminologySnapshotDI;
+import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren) {
         this(treeItem, addChildren, VersionPolicy.ACTIVE_VERSIONS,
-                RefexPolicy.ANNOTATION_MEMBERS, RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
+                RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
     }
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren,
@@ -99,8 +100,8 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
     
-            FxTerminologySnapshotDI dataStore = LookupService.getService(FxTerminologySnapshotDI.class);
-            concept = dataStore.getFxConcept(reference, refexPolicy, relationshipPolicy);
+            FxTerminologyStoreDI dataStore = LookupService.getService(FxTerminologyStoreDI.class);
+            concept = dataStore.getFxConcept(reference, OTFUtility.getViewCoordinate(), versionPolicy, refexPolicy, relationshipPolicy);
     
             if ((concept.getConceptAttributes() == null)
                     || concept.getConceptAttributes().getVersions().isEmpty()
