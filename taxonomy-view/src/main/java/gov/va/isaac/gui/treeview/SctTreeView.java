@@ -633,7 +633,7 @@ class SctTreeView {
                 snapshot,
                 wbConcept,
                 VersionPolicy.ACTIVE_VERSIONS,
-                RefexPolicy.REFEX_MEMBERS,
+                RefexPolicy.NONE,
                 RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
     }
 
