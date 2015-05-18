@@ -292,7 +292,7 @@ class SctTreeView {
                         rootConcept,
                         OTFUtility.getViewCoordinate(),
                         VersionPolicy.ACTIVE_VERSIONS,
-                        RefexPolicy.REFEX_MEMBERS,
+                        RefexPolicy.NONE,
                         RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
                 LOG.debug("Finished loading root concept");
                 

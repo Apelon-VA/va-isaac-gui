@@ -99,7 +99,7 @@ public class ConceptView implements PopupConceptViewI {
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
 				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(conceptUUID, OTFUtility.getViewCoordinateAllowInactive(),
-						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.REFEX_MEMBERS, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
 				 LOG.info("Finished loading concept with UUID " + conceptUUID);
 
 				return concept;
