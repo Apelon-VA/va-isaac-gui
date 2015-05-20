@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
-		<version>23.0-SNAPSHOT</version>
+		<version>23.0</version>
 	</parent>
 	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>list-view</artifactId>
