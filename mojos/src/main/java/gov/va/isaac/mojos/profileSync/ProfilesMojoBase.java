@@ -165,12 +165,22 @@ public abstract class ProfilesMojoBase extends AbstractMojo
 		if (config_.getChangeSetUrlType() == ChangeSetSCMType.GIT)
 		{
 			ProfileSyncI svc = LookupService.getService(ProfileSyncI.class, SharedServiceNames.GIT);
+			if (svc == null)
+			{
+				throw new MojoExecutionException("Unable to load the GIT implementation of the ProfileSyncI interface." + 
+						"  Is gov.vha.isaac.gui.modules.sync-git listed as a dependency for the mojo execution?");
+			}
 			svc.setRootLocation(userProfileFolderLocation);
 			return svc;
 		}
 		else if (config_.getChangeSetUrlType() == ChangeSetSCMType.SVN)
 		{
 			ProfileSyncI svc = LookupService.getService(ProfileSyncI.class, SharedServiceNames.SVN);
+			if (svc == null)
+			{
+				throw new MojoExecutionException("Unable to load the SVN implementation of the ProfileSyncI interface." + 
+						"  Is gov.vha.isaac.gui.modules.sync-svn listed as a dependency for the mojo execution?");
+			}
 			svc.setRootLocation(userProfileFolderLocation);
 			return svc;
 		}
