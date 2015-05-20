@@ -90,7 +90,7 @@ public class IsKindOfEvaluatorDefinition extends IsaacBaseEvaluatorDefinition im
 				}
 				ViewCoordinate coordinate = possibleKind.getViewCoordinate();
 				coordinate.setRelationshipAssertionType(RelAssertionType.STATED);
-				possibleKind = possibleKind.getVersion(coordinate);
+				possibleKind = possibleKind.getVersion(coordinate).get();
 				ConceptVersionBI parentKind = null;
 
 				if (ConceptVersionBI.class.isAssignableFrom(value2.getClass()))

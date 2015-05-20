@@ -8,6 +8,7 @@ import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
@@ -70,7 +71,8 @@ public class MappingItemCommentDAO extends MappingDAO
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
 			ExtendedAppContext.getDataStore().commit(/* cc */);
 
-			return new MappingItemComment((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), rdc.getPrimordialUuid()));
+			return new MappingItemComment((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore()
+					.getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), rdc.getPrimordialUuid()).get());
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{
@@ -97,17 +99,17 @@ public class MappingItemCommentDAO extends MappingDAO
 			int mappingNid = ExtendedAppContext.getDataStore().getNidForUuids(mappingUUID);
 			for (SearchResult sr : search(ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid()))
 			{
-				RefexDynamicVersionBI<?> rc = (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().
+				Optional<RefexDynamicVersionBI<?>> rc = (Optional<RefexDynamicVersionBI<?>>) ExtendedAppContext.getDataStore().
 						getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
-				if (rc != null)
+				if (rc.isPresent())
 				{
-					if (activeOnly && !rc.isActive())
+					if (activeOnly && !rc.get().isActive())
 					{
 						continue;
 					}
-					if (rc.getReferencedComponentNid() == mappingNid)
+					if (rc.get().getReferencedComponentNid() == mappingNid)
 					{
-						comments.add(new MappingItemComment(rc));
+						comments.add(new MappingItemComment(rc.get()));
 					}
 				}
 			}

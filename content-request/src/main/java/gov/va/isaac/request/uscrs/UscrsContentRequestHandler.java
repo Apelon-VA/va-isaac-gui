@@ -86,14 +86,14 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 		descVersion = null;
 		for (DescriptionChronicleBI desc : concept.getDescriptions())
 		{
-			descVersion = desc.getVersion(OTFUtility.getViewCoordinate());
+			descVersion = desc.getVersion(OTFUtility.getViewCoordinate()).get();
 			break;
 
 		}
 		RelationshipVersionBI<?> thisRel = null;
 		for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing())
 		{
-			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 			if(relVersion != null) {
 				if (relVersion.isActive() && (relVersion.getTypeNid() != Snomed.IS_A.getLenient().getNid()))
 				{
@@ -158,7 +158,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 		int count = 0;
 		for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing())
 		{
-			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 			if ((relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid()) && relVersion.isActive())
 			{
 				int relDestNid = relVersion.getDestinationNid();
@@ -179,7 +179,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 		List<String> synonyms = new ArrayList<>();
 		for (DescriptionChronicleBI desc : concept.getDescriptions())
 		{
-			DescriptionVersionBI<?> descVersion = desc.getVersion(OTFUtility.getViewCoordinate());
+			DescriptionVersionBI<?> descVersion = desc.getVersion(OTFUtility.getViewCoordinate()).get();
 			// Synonyms: find active, non FSN descriptions not matching the preferred name
 			if (descVersion.isActive() && (descVersion.getTypeNid() != Snomed.FULLY_SPECIFIED_DESCRIPTION_TYPE.getLenient().getNid())
 					&& !descVersion.getText().equals(OTFUtility.getConPrefTerm(concept.getNid())))
@@ -271,7 +271,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 					//sb.append("SCT ID:" + this.getSct(-2143244556));
 					
 					
-					if (concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinate()).isDefined())
+					if (concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinate()).get().isDefined())
 					{
 						sb.append("NOTE: this concept is fully defined. ");
 					}
@@ -557,7 +557,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 		
 		int descIdAttempt = 0, relIdAttempt = 0;
 		try {
-			descIdAttempt = Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate())));
+			descIdAttempt = Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate()).get()));
 		} catch(Exception e) {
 			//Eat it
 			//TODO - no - you shouldn't be taking an error here.  the poorly written ConceptViewerHelper is going to return the String "Unreleased" if it 
@@ -576,7 +576,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 			//TODO get rid of these sysouts - put in log statements if you want debug output
 			if(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate()) != null && descIdAttempt != 0) { //Description
 				System.out.println("Fetching SCT of a Description");
-				return Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate())));
+				return Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate()).get()));
 				
 			} else if(OTFUtility.getComponentVersion(nid) != null && relIdAttempt != 0) { //Relationship
 				System.out.println("Fetching SCT of a Relationship");

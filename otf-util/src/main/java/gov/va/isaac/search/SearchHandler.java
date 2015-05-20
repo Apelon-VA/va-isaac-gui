@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -332,19 +333,19 @@ public class SearchHandler
 									}
 
 									// Get the description object.
-									ComponentVersionBI cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
+									Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
 
 									// normalize the scores between 0 and 1
 									float normScore = (searchResult.getScore() / maxScore);
-									CompositeSearchResult csr = (cc == null ? new CompositeSearchResult(searchResult.getNid(), normScore) : 
-										new CompositeSearchResult(cc, normScore));
+									CompositeSearchResult csr = (cc.isPresent() ? new CompositeSearchResult(cc.get(), normScore) : 
+										new CompositeSearchResult(searchResult.getNid(), normScore));
 									initialSearchResults.add(csr);
 									
 
 									// add one to the scores when we are doing a prefix search, and it hits.
-									if (prefixSearch && csr.getBestScore() <= 1.0f && cc instanceof DescriptionAnalogBI)
+									if (prefixSearch && csr.getBestScore() <= 1.0f && cc.isPresent() && cc.get() instanceof DescriptionAnalogBI)
 									{
-										String matchingString = ((DescriptionAnalogBI<?>) cc).getText();
+										String matchingString = ((DescriptionAnalogBI<?>) cc.get()).getText();
 										float adjustValue = 0f;
 
 										if (matchingString.toLowerCase().equals(localQuery.trim().toLowerCase()))
@@ -465,12 +466,12 @@ public class SearchHandler
 								}
 
 								// Get the match object.
-								ComponentVersionBI cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
+								Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
 
 								// normalize the scores between 0 and 1
 								float normScore = (searchResult.getScore() / maxScore);
-								CompositeSearchResult csr = (cc == null ? new CompositeSearchResult(searchResult.getNid(), normScore) : 
-									new CompositeSearchResult(cc, normScore));
+								CompositeSearchResult csr = (cc.isPresent() ? new CompositeSearchResult(cc.get(), normScore) :
+									new CompositeSearchResult(searchResult.getNid(), normScore));
 								initialSearchResults.add(csr);
 							}
 						}

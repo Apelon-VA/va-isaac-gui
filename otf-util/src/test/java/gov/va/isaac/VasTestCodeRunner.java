@@ -160,10 +160,9 @@ public class VasTestCodeRunner {
 				int versionCount = desc.getVersions().size();
 				DescriptionVersionBI<?> descVer = desc.getVersions().toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
 
-				DescriptionVersionBI descriptionVersion = desc.getVersion(this.viewCoordinate);
+				DescriptionVersionBI descriptionVersion = desc.getVersion(this.viewCoordinate).get();
 				
 				if(descriptionVersion.getTypeNid() == Snomed.FULLY_SPECIFIED_DESCRIPTION_TYPE.getNid()) {
-//					|| descVer.getTypeNid() == OTFUtility.getFsnRf1Nid()) {
 					return descriptionVersion.getText();
 				}
 			}
@@ -187,18 +186,16 @@ public class VasTestCodeRunner {
 		String infarctionResult = null;
 		int descriptionTypeNid = 0;
 		int snomedFsnNid = Snomed.FULLY_SPECIFIED_DESCRIPTION_TYPE.getNid();
-//		int snomedFsnNid2 = OTFUtility.getFsnRf1Nid();
 		int snomedSynonymNid = Snomed.SYNONYM_DESCRIPTION_TYPE.getNid();
 		
 		// 3 types of descriptions: FSN, Synonym, Definition	
 		for (DescriptionChronicleBI desc : concept.getDescriptions()) {
-			DescriptionVersionBI<?> descVersion = desc.getVersion(this.viewCoordinate);
+			DescriptionVersionBI<?> descVersion = desc.getVersion(this.viewCoordinate).get();
 			
 			if(descVersion != null) {
 			descriptionTypeNid = descVersion.getTypeNid();
 			//1F
 				if(descriptionTypeNid == snomedFsnNid) {
-//					|| descriptionTypeNid == snomedFsnNid2) {
 
 					fsnResult	= Boolean.toString(descVersion.isInitialCaseSignificant());
 					sb.append("FSN - isInitialCaseSignificant: " + fsnResult);
@@ -252,7 +249,7 @@ public class VasTestCodeRunner {
 	int count = 1;
 	List<String> parentIds = new ArrayList<>();
 	for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
-		RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+		RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 		
 		sb.append("Relationship " + count++ + ": " + rel.toString());
 		sb.append("\r\n");
@@ -265,7 +262,7 @@ public class VasTestCodeRunner {
 		StringBuilder sb = new StringBuilder();
 		int count = 1;
 		for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
-			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 			
 			if(relVersion != null) {
 				sb.append("Relationship Type " + count++ + ": " + OTFUtility.getDescription(relVersion.getTypeNid()));
@@ -281,7 +278,7 @@ public class VasTestCodeRunner {
 		StringBuilder sb = new StringBuilder();
 			
 		for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
-			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 			
 			if(relVersion != null) {
 				if(relVersion.getTypeNid() == Snomed.IS_A.getNid()) {
@@ -298,7 +295,7 @@ public class VasTestCodeRunner {
 	 StringBuilder sb = new StringBuilder();
 	 int count = 1;
 	 for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
-		 RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+		 RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 		 
 		 if(relVersion != null) {
 			 if(relVersion.getTypeNid() == Snomed.FINDING_SITE.getNid()) {
@@ -315,14 +312,14 @@ public class VasTestCodeRunner {
 	 StringBuilder sb = new StringBuilder();
 	 finished:
 	 for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
-		 RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate());
+		 RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 
 		 ConceptChronicleBI versionConcept = OTFUtility.getConceptVersion(relVersion.getDestinationNid());
 
 		 Collection<? extends DescriptionChronicleBI> descriptions = versionConcept.getDescriptions(); // Get current, don't itterate versions of desc
 		 for(DescriptionChronicleBI desc : descriptions) {
 			 
-			 DescriptionVersionBI<?> thisVersion = (DescriptionVersionBI<?>) desc.getVersion(OTFUtility.getViewCoordinate());
+			 DescriptionVersionBI<?> thisVersion = (DescriptionVersionBI<?>) desc.getVersion(OTFUtility.getViewCoordinate()).get();
 			 DescriptionVersionBI<?> descVersion = thisVersion;
 			 
 			 if(descVersion.getText().equals("Infarct")) {

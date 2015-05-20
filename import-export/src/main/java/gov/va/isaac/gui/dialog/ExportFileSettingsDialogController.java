@@ -132,7 +132,7 @@ public class ExportFileSettingsDialogController {
             @Override
             public boolean apply(ConceptChronicleBI arg0) {
               try {
-                return arg0.getVersion(OTFUtility.getViewCoordinate())
+                return arg0.getVersion(OTFUtility.getViewCoordinate()).get()
                     .getPreferredDescription().getText()
                     .startsWith(TermAux.SNOMED_CORE.getDescription() + " ");
               } catch (IOException e) {

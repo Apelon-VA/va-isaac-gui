@@ -22,8 +22,9 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.UpdateableBooleanBinding;
+import java.util.Optional;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -120,23 +121,31 @@ public class RelationshipModelingPopup extends ModelingPopup
 
 		try {
 			ComponentChronicleBI<?> chronicle = rel.getChronicle();
-			RelationshipVersionBI<?> displayVersion = (RelationshipVersionBI<?>) chronicle.getVersion(OTFUtility.getViewCoordinate());
+			Optional<RelationshipVersionBI<?>> displayVersion;
 
 			if (chronicle.isUncommitted()) {
-				displayVersion = (RelationshipVersionBI<?>) OTFUtility.getLastCommittedVersion(chronicle);
-
+				displayVersion = Optional.of((RelationshipVersionBI<?>) OTFUtility.getLastCommittedVersion(chronicle));
+			}
+			else
+			{
+				displayVersion = (Optional<RelationshipVersionBI<?>>) chronicle.getVersion(OTFUtility.getViewCoordinate());
+			}
+			
+			if (!displayVersion.isPresent())
+			{
+				throw new RuntimeException("Relationship not on Path!");
 			}
 
 			// TODO: Needs to reference previous commit, not component as-is before panel opened
 			if (isDestination) {
-				createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getOriginNid()).getPreferredDescription().getText());
+				createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.get().getOriginNid()).getPreferredDescription().getText());
 			} else {
-				createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getDestinationNid()).getPreferredDescription().getText());
+				createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.get().getDestinationNid()).getPreferredDescription().getText());
 			}
-			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getTypeNid()).getPreferredDescription().getText());
-			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getRefinabilityNid()).getPreferredDescription().getText());
-			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getCharacteristicNid()).getPreferredDescription().getText());
-			createOriginalLabel(String.valueOf(displayVersion.getGroup()));
+			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.get().getTypeNid()).getPreferredDescription().getText());
+			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.get().getRefinabilityNid()).getPreferredDescription().getText());
+			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.get().getCharacteristicNid()).getPreferredDescription().getText());
+			createOriginalLabel(String.valueOf(displayVersion.get().getGroup()));
 		} catch (Exception e) {
 			logger.error("Cannot access Pref Term for attributes of relationship: "  + rel.getPrimordialUuid(), e);
 		}
@@ -400,9 +409,13 @@ public class RelationshipModelingPopup extends ModelingPopup
 				}
 			
 				if (!isDestination) {
-					dcab = new RelationshipCAB((rel != null) ? rel.getOriginNid() : conceptNid, typeConNid, otherEndConNid, group, RelationshipType.getRelationshipType(refNid, charNid), rel, OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+					dcab = new RelationshipCAB((rel != null) ? rel.getOriginNid() : conceptNid, typeConNid, otherEndConNid, group, 
+							RelationshipType.getRelationshipType(refNid, charNid), Optional.of(rel), Optional.of(OTFUtility.getViewCoordinate()),
+							IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 				} else {
-					dcab = new RelationshipCAB(otherEndConNid, typeConNid, (rel != null) ? rel.getDestinationNid() : conceptNid, group, RelationshipType.getRelationshipType(refNid, charNid), rel, OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+					dcab = new RelationshipCAB(otherEndConNid, typeConNid, (rel != null) ? rel.getDestinationNid() : conceptNid, group, 
+							RelationshipType.getRelationshipType(refNid, charNid), Optional.of(rel), Optional.of(OTFUtility.getViewCoordinate()), 
+							IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 				}
 	
 				OTFUtility.getBuilder().constructIfNotCurrent(dcab);

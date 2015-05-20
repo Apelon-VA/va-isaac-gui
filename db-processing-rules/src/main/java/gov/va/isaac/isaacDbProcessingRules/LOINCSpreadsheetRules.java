@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,7 +72,7 @@ import org.jvnet.hk2.annotations.Service;
  */
 @Service
 @Named(value = "LOINC spreadsheet rules")
-public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements TransformConceptIterateI
+public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements TransformConceptIterateI
 {
 	private final UUID LOINC_PATH = UUID.fromString("b2b1cc96-9ca6-5513-aad9-aa21e61ddc29");
 	
@@ -318,18 +319,22 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 	
 	private boolean associationTargetValueIs(UUID type, String matchText, ConceptChronicleBI cc) throws IOException, ContradictionException
 	{
-		for (RelationshipVersionBI<?> rel :  cc.getVersion(vc_).getRelationshipsOutgoingActive())
+		Optional<? extends ConceptVersionBI> cv = cc.getVersion(vc_);
+		if (cv.isPresent())
 		{
-			if (rel.getTypeNid() == getNid(type))
+			for (RelationshipVersionBI<?> rel :  cv.get().getRelationshipsOutgoingActive())
 			{
-				ConceptVersionBI target = ts_.getConceptVersion(vc_, rel.getDestinationNid());
-				for (DescriptionVersionBI<?> d : target.getDescriptionsActive())
+				if (rel.getTypeNid() == getNid(type))
 				{
-					if ((matchText.startsWith("*") && d.getText().endsWith(matchText)) || 
-							(matchText.endsWith("*") && d.getText().startsWith(matchText)) ||
-							d.getText().equals(matchText))
+					ConceptVersionBI target = ts_.getConceptVersion(vc_, rel.getDestinationNid());
+					for (DescriptionVersionBI<?> d : target.getDescriptionsActive())
 					{
-						return true;
+						if ((matchText.startsWith("*") && d.getText().endsWith(matchText)) || 
+								(matchText.endsWith("*") && d.getText().startsWith(matchText)) ||
+								d.getText().equals(matchText))
+						{
+							return true;
+						}
 					}
 				}
 			}

@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
@@ -91,10 +92,10 @@ public class DialectHelper
 					{
 						if (RefexStringVersionBI.class.isAssignableFrom(refex.getClass()))
 						{
-							RefexStringVersionBI<?> variantText = (RefexStringVersionBI<?>) refex.getVersion(vc);
-							if (variantText != null)
+							Optional<RefexStringVersionBI<?>> variantText = (Optional<RefexStringVersionBI<?>>) refex.getVersion(vc);
+							if (variantText.isPresent())
 							{
-								variantSet.add(variantText.getString1());
+								variantSet.add(variantText.get().getString1());
 							}
 						}
 					}
@@ -151,11 +152,14 @@ public class DialectHelper
 		{
 			if (RefexStringVersionBI.class.isAssignableFrom(refex.getClass()))
 			{
-				RefexStringVersionBI<?> dialectText = (RefexStringVersionBI<?>) refex.getVersion(viewCoordinate);
-				if (dialectText != null)
+				Optional<RefexStringVersionBI<?>> dialectText = (Optional<RefexStringVersionBI<?>>) refex.getVersion(viewCoordinate);
+				if (dialectText.isPresent())
 				{
-					RefexStringVersionBI<?> variantText = (RefexStringVersionBI<?>) terminologySnapshot.getComponentVersion(dialectText.getReferencedComponentNid());
-					variantDialectMap.put(variantText.getString1(), dialectText.getString1());
+					Optional<RefexStringVersionBI<?>> variantText = (Optional<RefexStringVersionBI<?>>) terminologySnapshot.getComponentVersion(dialectText.get().getReferencedComponentNid());
+					if (variantText.isPresent())
+					{
+						variantDialectMap.put(variantText.get().getString1(), dialectText.get().getString1());
+					}
 				}
 			}
 		}

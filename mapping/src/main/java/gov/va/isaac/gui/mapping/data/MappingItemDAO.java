@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
@@ -94,15 +95,15 @@ public class MappingItemDAO extends MappingDAO
 			boolean hadError = false;
 			for (SearchResult sr : search(mappingSetID))
 			{
-				RefexDynamicVersionBI<?> rc = (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore()
+				Optional<RefexDynamicVersionBI<?>> rc = (Optional<RefexDynamicVersionBI<?>>) ExtendedAppContext.getDataStore()
 						.getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
 				try
 				{
-					if (rc != null)
+					if (rc.isPresent())
 					{
-						if (rc.isActive() || !activeOnly)
+						if (rc.get().isActive() || !activeOnly)
 						{
-							result.add(new MappingItem(rc));
+							result.add(new MappingItem(rc.get()));
 						}
 					}
 				}

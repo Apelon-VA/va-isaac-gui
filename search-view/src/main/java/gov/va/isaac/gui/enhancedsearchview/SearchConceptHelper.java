@@ -147,7 +147,8 @@ public class SearchConceptHelper {
 
 		try {
 			ConceptChronicleBI searchConcept = OTFUtility.createNewConcept(OTFUtility.getConceptVersion(Search.STORED_QUERIES.getUuids()[0]), saveConceptFSN, saveConceptPT);
-			ConceptAttributeAB conceptAttributeBlueprintAmender = new ConceptAttributeAB(searchConcept.getConceptNid(), searchConcept.getVersion(OTFUtility.getViewCoordinate()).getConceptAttributesActive().isDefined(), RefexDirective.INCLUDE); //bp.getConceptAttributeAB();
+			ConceptAttributeAB conceptAttributeBlueprintAmender = new ConceptAttributeAB(searchConcept.getConceptNid(), 
+					searchConcept.getVersion(OTFUtility.getViewCoordinate()).get().getConceptAttributesActive().get().isDefined(), RefexDirective.INCLUDE); 
 
 			{
 				// Start with Search Global Attributes

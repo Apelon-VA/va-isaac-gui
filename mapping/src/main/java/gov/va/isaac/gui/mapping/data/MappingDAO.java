@@ -53,7 +53,7 @@ public abstract class MappingDAO
 	
 	protected static RefexDynamicVersionBI<?> readCurrentRefex(UUID refexUUID) throws IOException, ContradictionException
 	{
-		return (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), refexUUID);
+		return (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), refexUUID).get();
 	}
 	
 	protected static void setConceptStatus(UUID conceptUUID, Status status) throws IOException
@@ -61,7 +61,7 @@ public abstract class MappingDAO
 		try
 		{
 			ConceptVersionBI concept = ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinateAllowInactive(), conceptUUID);
-			ConceptAttributeVersionBI<?> conAttrib = concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinateAllowInactive());
+			ConceptAttributeVersionBI<?> conAttrib = concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinateAllowInactive()).get();
 			if (conAttrib.getStatus() == status)
 			{
 				LOG.warn("Tried set the status to the value it already has.  Doing nothing");

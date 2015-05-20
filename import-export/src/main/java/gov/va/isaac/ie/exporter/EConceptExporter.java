@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -124,18 +125,18 @@ public class EConceptExporter extends CommonBase implements
   @Override
   public void processUnfetchedConceptData(int cNid, ConceptFetcherBI fetcher)
     throws Exception {
-    ConceptVersionBI concept = fetcher.fetch(vc);
+    Optional<ConceptVersionBI> concept = fetcher.fetch(vc);
     allCount++;
     if (LOG.isDebugEnabled())
     {
-      if (concept.getPrimordialUuid().toString().equals("")){
-        LOG.debug("Found a concept with no primoridial UUID: {}", concept);
+      if (!concept.isPresent()  || concept.get().getPrimordialUuid().toString().equals("")){
+        LOG.debug("Found a null concept or a concept with no primoridial UUID: {}", concept);
         return;
       }
     }
-    if (Exporter.isQualifying(concept.getNid(), pathNid, vc)) {
+    if (Exporter.isQualifying(concept.get().getNid(), pathNid, vc)) {
       count++;
-      TtkConceptChronicle converted = new TtkConceptChronicle(concept);
+      TtkConceptChronicle converted = new TtkConceptChronicle(concept.get());
       converted.writeExternal(dos);
     }
     // Handle progress monitor

@@ -20,19 +20,17 @@ package gov.va.isaac.gui.conceptViews.modeling;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.UpdateableBooleanBinding;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
-
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
@@ -96,16 +94,21 @@ public class DescriptionModelingPopup extends ModelingPopup
 		
 		try {
 			ComponentChronicleBI<?> chronicle = desc.getChronicle();
-			DescriptionVersionBI<?> displayVersion = (DescriptionVersionBI<?>) chronicle.getVersion(OTFUtility.getViewCoordinate());
+			Optional<DescriptionVersionBI<?>> displayVersion = (Optional<DescriptionVersionBI<?>>) chronicle.getVersion(OTFUtility.getViewCoordinate());
 
 			if (chronicle.isUncommitted()) {
-				displayVersion = (DescriptionVersionBI<?>) OTFUtility.getLastCommittedVersion(chronicle);
+				displayVersion =  Optional.of((DescriptionVersionBI<?>) OTFUtility.getLastCommittedVersion(chronicle));
+			}
+			
+			if (!displayVersion.isPresent())
+			{
+				throw new RuntimeException("Description not on path!");
 			}
 
-			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getTypeNid()).getPreferredDescription().getText());
-			createOriginalLabel(displayVersion.getText());
-			createOriginalLabel(displayVersion.getLang());
-			createOriginalLabel((displayVersion.isInitialCaseSignificant()) ? "True" : "False");
+			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.get().getTypeNid()).getPreferredDescription().getText());
+			createOriginalLabel(displayVersion.get().getText());
+			createOriginalLabel(displayVersion.get().getLang());
+			createOriginalLabel((displayVersion.get().isInitialCaseSignificant()) ? "True" : "False");
 		} catch (Exception e) {
 			LOG.error("Cannot access Pref Term for attributes of relationship: "  + desc.getPrimordialUuid(), e);
 		}
@@ -308,7 +311,8 @@ public class DescriptionModelingPopup extends ModelingPopup
 				if (desc.isUncommitted()) {
 					ExtendedAppContext.getDataStore().forget(desc);
 				}
-				DescriptionCAB dcab = new DescriptionCAB((desc != null) ? desc.getConceptNid() : conceptNid, type, LanguageCode.getLangCode(langCode), term, isInitCap, desc, OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+				DescriptionCAB dcab = new DescriptionCAB((desc != null) ? desc.getConceptNid() : conceptNid, type, LanguageCode.getLangCode(langCode), 
+						term, isInitCap, Optional.of(desc), Optional.of(OTFUtility.getViewCoordinate()), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 	
 				DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
 				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(dcbi.getConceptNid()));

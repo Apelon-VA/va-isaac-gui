@@ -58,12 +58,11 @@ public abstract class StampedItem
 	
 	protected void readStampDetails(ComponentVersionBI componentVersion) throws IOException
 	{
-		
 		try
 		{
 			if (componentVersion instanceof ConceptVersionBI)
 			{
-				ConceptAttributeVersionBI<?> ca = ((ConceptVersionBI)componentVersion).getConceptAttributes().getVersion(OTFUtility.getViewCoordinateAllowInactive());
+				ConceptAttributeVersionBI<?> ca = ((ConceptVersionBI)componentVersion).getConceptAttributes().getVersion(OTFUtility.getViewCoordinateAllowInactive()).get();
 				authorNid = ca.getAuthorNid();
 				moduleNid = ca.getModuleNid();
 				pathNid = ca.getPathNid();

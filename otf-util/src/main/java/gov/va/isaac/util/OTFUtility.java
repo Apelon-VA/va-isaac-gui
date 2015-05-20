@@ -624,15 +624,15 @@ public class OTFUtility {
 		{
 			ComponentChronicleBI<?> componentChronicle = getComponentChronicle(nid);
 			
-			ComponentVersionBI componentVersion = componentChronicle.getVersion(getViewCoordinate());
+			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(getViewCoordinate());
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (componentVersion == null || componentVersion.getUUIDs().size() == 0)
+			if (!componentVersion.isPresent() || componentVersion.get().getUuidList().size() == 0)
 			{
 				return null;
 			} else {
-				return componentVersion;
+				return componentVersion.get();
 			}
 		} catch (ContradictionException e) {
 			LOG.error("Trouble getting concept " + nid + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
@@ -653,15 +653,15 @@ public class OTFUtility {
 		{
 			ComponentChronicleBI<?> componentChronicle = getComponentChronicle(uuid);
 			
-			ComponentVersionBI componentVersion = componentChronicle.getVersion(getViewCoordinate());
+			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(getViewCoordinate());
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (componentVersion.getUUIDs().size() == 0)
+			if (!componentVersion.isPresent() || componentVersion.get().getUuidList().size() == 0)
 			{
 				return null;
 			} else {
-				return componentVersion;
+				return componentVersion.get();
 			}
 		} catch (ContradictionException e) {
 			LOG.error("Trouble getting concept " + uuid + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
@@ -731,22 +731,22 @@ public class OTFUtility {
 		}
 	}
 	
-	public static RefexVersionBI<?> getRefsetMember(int nid) {
+	/**
+	 * Returns an empty optional, if the member isn't on the path (or if it is an invalid nid alltogether)
+	 */
+	public static Optional<? extends RefexVersionBI<?>> getRefsetMember(int nid) {
 		try {
 			RefexChronicleBI<?> refexChron = (RefexChronicleBI<?>) dataStore.getComponent(nid);
 
 			if (refexChron != null) {
 				ViewCoordinate tempVc = getViewCoordinate();
 				tempVc.getAllowedStatus().add(Status.INACTIVE);
-				RefexVersionBI<?> refexChronVersion = refexChron.getVersion(tempVc);
-				
-				return refexChronVersion;
+				return refexChron.getVersion(tempVc);
 			}
 		} catch (Exception ex) {
 			LOG.warn("perhaps unexpected?", ex);
 		}
-
-		return null;
+		return Optional.empty();
 	}
 
 	public static RefexChronicleBI<?> getAllVersionsRefsetMember(int nid) {
@@ -1138,31 +1138,19 @@ public class OTFUtility {
 		retSet.add(conceptWithComp);
 		
 		for(DescriptionChronicleBI desc : conceptWithComp.getDescriptions()) {
-			DescriptionVersionBI<?> dv = desc.getVersion(conceptWithComp.getViewCoordinate());
-			if (dv != null) {
-				retSet.add(dv);
-			}
+			desc.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((dv) -> retSet.add(dv));
 		}
 
 		for(RelationshipChronicleBI rel : conceptWithComp.getRelationshipsOutgoing()) {
-			RelationshipVersionBI<?> rv = rel.getVersion(conceptWithComp.getViewCoordinate());
-			if (rv != null) {
-				retSet.add(rv);
-			}
+			rel.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rv) -> retSet.add(rv));
 		}
 
 		for(RefexChronicleBI<?> refsetMember : conceptWithComp.getRefsetMembers()) {
-			RefexVersionBI<?> rv = refsetMember.getVersion(conceptWithComp.getViewCoordinate());
-			if (rv != null) {
-				retSet.add(rv);
-			}
+			refsetMember.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rm) -> retSet.add(rm));
 		}
 
 		for(RefexDynamicChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
-			RefexDynamicVersionBI<?> rdv = dynRef.getVersion(conceptWithComp.getViewCoordinate());
-			if (rdv != null) {
-				retSet.add(rdv);
-			}
+			dynRef.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rdv) -> retSet.add(rdv));
 		}
 
 		return retSet;

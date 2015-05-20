@@ -751,7 +751,7 @@ public class ListBatchViewController
 						{
 							try
 							{
-								SimpleDisplayConcept newCon = new SimpleDisplayConcept(OTFUtility.getDescription(c.getVersion(OTFUtility.getViewCoordinate())), c.getNid());
+								SimpleDisplayConcept newCon = new SimpleDisplayConcept(OTFUtility.getDescription(c.getVersion(OTFUtility.getViewCoordinate()).get()), c.getNid());
 								newCon.setUncommitted(true);
 								concepts.add(newCon);
 							}
