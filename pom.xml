@@ -9,7 +9,7 @@
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>Sprint_23-SNAPSHOT</version>
+	<version>23.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
