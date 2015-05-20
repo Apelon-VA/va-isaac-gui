@@ -21,8 +21,9 @@ package gov.va.isaac.gui.treeview;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemI;
 import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.util.WorkExecutors;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,6 +63,17 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     private int multiParentDepth = 0;
     private boolean secondaryParentOpened = false;
     private SctTreeItemDisplayPolicies displayPolicies;
+    
+    private static WorkExecutors workExecutors_ = null;
+    
+    private static WorkExecutors getWorkExecutors()
+    {
+        if (workExecutors_ == null)
+        {
+            workExecutors_ = LookupService.getService(WorkExecutors.class);
+        }
+        return workExecutors_;
+    }
 
     private static TreeItem<TaxonomyReferenceWithConcept> getTreeRoot(TreeItem<TaxonomyReferenceWithConcept> item) {
         TreeItem<TaxonomyReferenceWithConcept> parent = item.getParent();
@@ -132,8 +144,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
 
             //This loads the childrens children
             for (SctTreeItem child : childrenToProcess) {
-                //TODO switch this to the blocking queue
-                Utility.execute(new GetSctTreeItemConceptCallable(child));
+                getWorkExecutors().getPotentiallyBlockingExecutor().execute(new GetSctTreeItemConceptCallable(child));
             }
         }
     }
@@ -207,8 +218,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
 
             //This loads the childrens children
             for (SctTreeItem childsChild : grandChildrenToProcess) {
-                //TODO switch this to the blocking queue
-                Utility.execute(new GetSctTreeItemConceptCallable(childsChild));
+                getWorkExecutors().getPotentiallyBlockingExecutor().execute(new GetSctTreeItemConceptCallable(childsChild));
             }
         }
     }
