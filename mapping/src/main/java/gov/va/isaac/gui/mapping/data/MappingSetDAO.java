@@ -6,6 +6,7 @@ import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,6 +66,8 @@ public class MappingSetDAO extends MappingDAO
 	{
 		try
 		{
+			AppContext.getRuntimeGlobals().disableAllCommitListeners();
+
 			//We need to create a new concept - which itself is defining a dynamic refex - so set that up here.
 			RefexDynamicUsageDescription rdud = RefexDynamicUsageDescriptionBuilder
 					.createNewRefexDynamicUsageDescriptionConcept(mappingName, mappingName, description, 
@@ -74,17 +77,22 @@ public class MappingSetDAO extends MappingDAO
 								RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
 						new RefexDynamicColumnInfo(2, MappingConstants.MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
 								RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
-					null, true, ComponentType.CONCEPT);
+					null, true, ComponentType.CONCEPT, ViewCoordinates.getMetadataViewCoordinate());
 			
 			Utility.execute(() ->
 			{
 				try
 				{
+					AppContext.getRuntimeGlobals().disableAllCommitListeners();
 					LuceneDynamicRefexIndexerConfiguration.configureColumnsToIndex(rdud.getRefexUsageDescriptorNid(), new Integer[] {0, 1, 2}, true);
 				}
 				catch (Exception e)
 				{
 					LOG.error("Unexpected error enabling the index on newly created mapping set!", e);
+				}
+				finally
+				{
+					AppContext.getRuntimeGlobals().enableAllCommitListeners();
 				}
 			});
 			
@@ -104,13 +112,12 @@ public class MappingSetDAO extends MappingDAO
 					(StringUtils.isBlank(purpose) ? null : new RefexDynamicString(purpose))}, OTFUtility.getViewCoordinateAllowInactive());
 			OTFUtility.getBuilder().construct(mappingAnnotation);
 			
-			RefexDynamicCAB associationAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_REFEX.getNid());
+			RefexDynamicCAB associationAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_SEMEME.getNid());
 			associationAnnotation.setData(new RefexDynamicDataBI[] {}, null);
 			OTFUtility.getBuilder().construct(associationAnnotation);
 			
-			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(createdConcept);
-			ExtendedAppContext.getDataStore().commit(createdConcept);
+			ExtendedAppContext.getDataStore().commit(/* createdConcept */);
 			
 			//Find the constructed dynamic refset
 			return new MappingSet((RefexDynamicVersionBI<?>)ExtendedAppContext.getDataStore().getComponent(mappingAnnotation.getMemberUUID())
@@ -201,7 +208,7 @@ public class MappingSetDAO extends MappingDAO
 
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(mappingConcept);
-			ExtendedAppContext.getDataStore().commit(mappingConcept);
+			ExtendedAppContext.getDataStore().commit(/* mappingConcept */);
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{

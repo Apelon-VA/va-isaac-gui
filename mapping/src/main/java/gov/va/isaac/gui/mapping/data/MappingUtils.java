@@ -28,7 +28,10 @@ import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.SearchStringProcessor;
 import gov.va.isaac.util.TaskCompleteCallback;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,14 +41,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,12 +121,13 @@ public class MappingUtils
 	 * When this parameter is provided, the descriptionType parameter is ignored.
 	 * @param targetCodeSystemPathNid - (optional) Restrict the results to concepts from the specified path. 
 	 * @param memberOfRefsetNid - (optional) Restrict the results to concepts that are members of the specified refset.
+	 * @param kindOfNid - (optional) restrict the results to concepts that are a kind of the specified concept
 	 * @param childOfNid - (optional) restrict the results to concepts that are children of the specified concept
 	 * @return - A handle to the running search.
 	 * @throws IOException
 	 */
 	public static SearchHandle search(String searchString, TaskCompleteCallback callback, LuceneDescriptionType descriptionType, 
-			UUID advancedDescriptionType, Integer targetCodeSystemPathNid, Integer memberOfRefsetNid, Integer childOfNid) throws IOException
+			UUID advancedDescriptionType, Integer targetCodeSystemPathNid, Integer memberOfRefsetNid, Integer kindOfNid) throws IOException
 	{
 		ArrayList<Function<List<CompositeSearchResult>, List<CompositeSearchResult>>> filters = new ArrayList<>();
 		
@@ -182,7 +186,7 @@ public class MappingUtils
 			});
 		}
 		
-		if (childOfNid != null)
+		if (kindOfNid != null)
 		{
 			filters.add(new Function<List<CompositeSearchResult>, List<CompositeSearchResult>>()
 			{
@@ -192,12 +196,12 @@ public class MappingUtils
 					try
 					{
 						ArrayList<CompositeSearchResult> keep = new ArrayList<>();
-						BdbTerminologyStore ds = ExtendedAppContext.getDataStore();
+						TerminologyStoreDI ds = ExtendedAppContext.getDataStore();
 						ViewCoordinate vc = OTFUtility.getViewCoordinate();
 						
 						for (CompositeSearchResult csr : t)
 						{
-							if (ds.isChildOf(csr.getContainingConcept().getNid(), childOfNid, vc))
+							if (ds.isKindOf(csr.getContainingConcept().getNid(), kindOfNid, vc))
 							{
 								keep.add(csr);
 							}
@@ -213,6 +217,11 @@ public class MappingUtils
 		}
 		
 		SearchResultsIntersectionFilter filterSet = (filters.size() > 0 ? new SearchResultsIntersectionFilter(filters) : null);
+		
+		//TODO At some point, Dan needs to update this to avoid the query processor when we are automating the query generation
+		//we also need to more consistently handle characters like [ and ( when they are going into the query parser
+		//but that is a problem bigger than just the usage in mapping.
+		searchString = SearchStringProcessor.prepareSearchString(searchString);
 		
 		if (descriptionType == null && advancedDescriptionType == null)
 		{
@@ -246,7 +255,7 @@ public class MappingUtils
 	 * @throws IOException
 	 */
 	public static SearchHandle search(int sourceConceptNid, TaskCompleteCallback callback, LuceneDescriptionType descriptionType, 
-			UUID advancedDescriptionType, Integer targetCodeSystemPathNid, Integer memberOfRefsetNid, Integer childOfNid) throws IOException
+			UUID advancedDescriptionType, Integer targetCodeSystemPathNid, Integer memberOfRefsetNid, Integer kindOfNid) throws IOException
 	{
 		StringBuilder searchString;
 		try
@@ -257,8 +266,14 @@ public class MappingUtils
 			
 			for (DescriptionVersionBI<?> desc : cv.getDescriptionsActive())
 			{
+				/*
+				 * No need for processing brackets.  SearchStringProcessor function called in main search function deals with them.
+				 * DT 4/30/15
+				 * 
 				//brackets are somewhat common, and choke the query parser
 				searchString.append(desc.getText().replaceAll("\\[", "\\\\[").replaceAll("\\]", "\\\\]"));
+				*/
+				searchString.append(desc.getText());
 				searchString.append(" ");
 			}
 		}
@@ -268,7 +283,7 @@ public class MappingUtils
 			throw new IOException(e);
 		}
 		
-		return search(searchString.toString(), callback, descriptionType, advancedDescriptionType, targetCodeSystemPathNid, memberOfRefsetNid, childOfNid);
+		return search(searchString.toString(), callback, descriptionType, advancedDescriptionType, targetCodeSystemPathNid, memberOfRefsetNid, kindOfNid);
 	}
 	
 	public static List<SimpleDisplayConcept> getExtendedDescriptionTypes() throws IOException
@@ -277,12 +292,10 @@ public class MappingUtils
 		ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
 		try
 		{
-			if (ExtendedAppContext.getDataStore().hasConcept(SnomedMetadataRf2.DESCRIPTION_NAME_IN_SOURCE_TERM_RF2.getPrimodialUuid())) {
-				extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(SnomedMetadataRf2.DESCRIPTION_NAME_IN_SOURCE_TERM_RF2.getNid());
-				for (ConceptVersionBI c : extendedDescriptionTypes)
-				{
-					temp.add(new SimpleDisplayConcept(c));
-				}
+			extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
+			for (ConceptVersionBI c : extendedDescriptionTypes)
+			{
+				temp.add(new SimpleDisplayConcept(c));
 			}
 			Collections.sort(temp);
 			return temp;

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.0</version>
+	</parent>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
+	<artifactId>constants</artifactId>
+	<packaging>jar</packaging>
+
+	<name>ISAAC Constants</name>
+	<description>
+		ISAAC Constants - contains various ConceptSpec style constants for use within ISAAC related tooling.
+	</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>gov.vha.isaac.isaac-metadata.modules</groupId>
+			<artifactId>isaac-metadata-artifacts</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>tcc-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>tcc-model-impl</artifactId>
+		</dependency>
+
+	</dependencies>
+
+</project>

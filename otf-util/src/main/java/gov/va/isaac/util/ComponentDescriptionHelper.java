@@ -24,6 +24,8 @@
  */
 package gov.va.isaac.util;
 
+import gov.va.isaac.ExtendedAppContext;
+import java.io.IOException;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
@@ -44,13 +46,13 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 public class ComponentDescriptionHelper {
 	private ComponentDescriptionHelper() {}
 	
-	public static String getComponentDescription(int nid) {
+	public static String getComponentDescription(int nid) throws IOException {
 		return getComponentDescription(OTFUtility.getComponentVersion(nid));
 	}
-	public static String getComponentDescription(UUID uuid) {
+	public static String getComponentDescription(UUID uuid) throws IOException {
 		return getComponentDescription(OTFUtility.getComponentVersion(uuid));
 	}
-	public static String getComponentDescription(ComponentVersionBI component) {
+	public static String getComponentDescription(ComponentVersionBI component) throws IOException {
 		ComponentType type = ComponentType.getComponentVersionType(component);
 
 		String description = null;
@@ -59,7 +61,7 @@ public class ComponentDescriptionHelper {
 		case CONCEPT: case CONCEPT_ATTRIBUTES: {
 			ConceptChronicleBI concept = null;
 			if (component instanceof ConceptAttributeVersionBI) {
-				concept = ((ConceptAttributeVersionBI<?>) component).getEnclosingConcept();
+				concept = ExtendedAppContext.getDataStore().getConceptForNid(component.getNid());
 			} else if (component instanceof ConceptChronicleBI) {
 				concept = (ConceptChronicleBI)component;
 			}

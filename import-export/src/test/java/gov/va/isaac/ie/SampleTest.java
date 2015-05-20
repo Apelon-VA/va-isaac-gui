@@ -19,24 +19,12 @@
 package gov.va.isaac.ie;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.models.util.ExporterBase;
-import gov.va.isaac.util.OTFUtility;
-
 import java.io.File;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
-import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * Utility class for bootstrapping a test.
@@ -79,18 +67,13 @@ public class SampleTest extends ExporterBase {
    * @throws Exception the exception
    */
   public static void main(String[] args) throws Exception {
-
-    // Set up like ISAAC App.
-    SLF4JBridgeHandler.removeHandlersForRootLogger();
-    SLF4JBridgeHandler.install();
-    AppContext.setup();
-    // TODO OTF fix: this needs to be fixed so I don't have to hack it with
-    // reflection....(https://jira.ihtsdotools.org/browse/OTFISSUE-11)
-    Field f = Hk2Looker.class.getDeclaredField("looker");
-    f.setAccessible(true);
-    f.set(null, AppContext.getServiceLocator());
-    System.setProperty(BdbTerminologyStore.BDB_LOCATION_PROPERTY, new File(
-        "../isaac-app/berkeley-db").getAbsolutePath());
+    Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+    if (dataStoreLocationInitException != null)
+    {
+        System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
+        System.exit(-1);
+    }
+    AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 
     // FHIM Models RS.
     SampleTest tester = new SampleTest();

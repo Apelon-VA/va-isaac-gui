@@ -22,6 +22,8 @@ import gov.va.isaac.interfaces.sync.MergeFailOption;
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
 import java.io.File;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * Goal which pushes the local changes to the server for the profiles SCM.
@@ -33,10 +35,8 @@ import org.apache.maven.plugin.MojoExecutionException;
  * 
  * See the above references for specific details on the behavior of this commit process
  * Keep this in a phase later than GenerateUsersMojo
- * 
- * @goal add-commit-and-push-profile-scm
- * @phase process-resources
  */
+@Mojo (defaultPhase = LifecyclePhase.PROCESS_TEST_RESOURCES, name = "add-commit-and-push-profiles-scm")
 public class AddCommitAndPushProfilesToSCMMojo extends ProfilesMojoBase
 {
 	/**

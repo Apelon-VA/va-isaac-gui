@@ -722,7 +722,6 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			}
 			if (callingView_ != null)
 			{
-				ExtendedAppContext.getDataStore().waitTillWritesFinished();
 				callingView_.setNewComponentHint(componentNid, indexGen);
 				callingView_.refresh();
 			}
@@ -765,7 +764,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		ObservableList<SimpleDisplayConcept> assemblageConcepts = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 		try
 		{
-			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.REFEX_DYNAMIC_IDENTITY.getNid());
+			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getNid());
 			Set<ConceptVersionBI> colCons = OTFUtility.getAllChildrenOfConcept(colCon, false);
 
 			for (ConceptVersionBI col : colCons) {

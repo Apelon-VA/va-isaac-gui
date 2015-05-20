@@ -25,7 +25,9 @@ import org.slf4j.LoggerFactory;
 /**
  * {@link DBLocator}
  * 
- * A utility to help ease the transition from the old paths used for the BDB, to the new paths.
+ * Was previously a utility to help ease the transition from the old paths used for the BDB, to the new paths.
+ * 
+ * With the new ISAAC foundation, the rolw of this class is vastly simplified.
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
@@ -36,14 +38,10 @@ public class DBLocator
 	
 	/**
 	 * Attempts to find the database folder, using the following selection criteria:
-	 * 1) If the passed in folder is named 'berkeley-db' - it is used directly.
-	 * 2) If the passed in folder ends with '*.bdb' then the subfolder "berkeley-db' is used, under the passed in folder.
-	 * 3) Otherwise, we scan the children of the passed in folder, looking for a folder that ends with .bdb, and if we find one, 
-	 * uses a subfolder of that folder named 'berkeley-db'.
-	 * 
-	 * 4) If still not found - it will scan the sibling folders of the passed in folder, looking for a folder that ends with .bdb
-	 * Upon finding one, does 3.
-	 * 5) Finally, if nothing matches, it just returns the input folder. 
+	 * 1) If the passed in folder ends with '.data' and it exists, it is used directly.
+	 * 2) Otherwise, we scan the children of the passed in folder, looking for a folder that ends with .data
+	 * 3) If still not found - it will scan the sibling folders of the passed in folder, looking for a folder that ends with .data
+ 	 * 4) Finally, if nothing matches, it just returns the input folder. 
 	 * @param inputFolder
 	 * @return
 	 */
@@ -51,29 +49,21 @@ public class DBLocator
 	{
 		inputFolder = inputFolder.getAbsoluteFile();
 
-		//If they pass this in - and it exists - just use it.
-		if (inputFolder.getName().equals("berkeley-db") && inputFolder.isDirectory())
+		//If it is a folder with a '.data' at the end of the name, just use it.
+		if (inputFolder.getName().endsWith(".data") && inputFolder.isDirectory())
 		{
-			LOG.info("BDB Location set to " + inputFolder.getAbsolutePath());
+			LOG.info("Data Store Location set to " + inputFolder.getAbsolutePath());
 			return inputFolder;
 		}
-		
-		//If it is a folder with a '.bdb' at the end of the name, then berkeley-db will be in a sub-folder.
-		if (inputFolder.getName().endsWith(".bdb") && inputFolder.isDirectory())
-		{
-			LOG.info("BDB Location set to " + inputFolder.getAbsolutePath());
-			return new File(inputFolder, "berkeley-db");
-		}
-		//Otherwise see if we can find a .bdb folder as a direct child
+		//Otherwise see if we can find a .data folder as a direct child
 		if (inputFolder.isDirectory())
 		{
 			for (File f : inputFolder.listFiles())
 			{
-				//If it is a folder with a '.bdb' at the end of the name, then berkeley-db will be in a sub-folder.
-				if (f.getName().endsWith(".bdb") && f.isDirectory())
+				if (f.getName().endsWith(".data") && f.isDirectory())
 				{
-					LOG.info("BDB Location set to " + f.getAbsolutePath());
-					return new File(f, "berkeley-db");
+					LOG.info("Data Store Location set to " + f.getAbsolutePath());
+					return f;
 				}
 			}
 		}
@@ -84,36 +74,16 @@ public class DBLocator
 			for (File f : inputFolder.getParentFile().listFiles())
 			{
 				//If it is a folder with a '.bdb' at the end of the name, then berkeley-db will be in a sub-folder.
-				if (f.getName().endsWith(".bdb") && f.isDirectory())
+				if (f.getName().endsWith(".data") && f.isDirectory())
 				{
-					File berkeley = new File(f, "berkeley-db"); 
-					LOG.info("BDB Location set to " + berkeley.getAbsolutePath());
-					return berkeley;
+					LOG.info("Data Store Location set to " + f.getAbsolutePath());
+					return f;
 				}
 			}
 		}
 
 		//can't match an expected pattern... just return the input.
-		LOG.info("BDB Location set to " + inputFolder.getAbsolutePath());
+		LOG.info("Data Store Location set to " + inputFolder.getAbsolutePath());
 		return inputFolder;
-	}
-	
-	public static File findLuceneIndexFolder(File dbLocation)
-	{
-		dbLocation = dbLocation.getAbsoluteFile();
-		//old style - we had the db inside the berkeley-db folder - so if it already exists - use it.
-		File lucene = new File(dbLocation, "lucene");
-		if (lucene.isDirectory())
-		{
-			//But, we have to return the parent folder, because the lucene code adds on its own "lucene" subdirectory.... sigh.
-			lucene = dbLocation;
-			LOG.info("Lucene index location set to " + lucene.getAbsolutePath());
-			return lucene;
-		}
-		//If it doesn't yet exist (we are setting up a new DB) then put it as a sibling to the dbLocation folder (and no 'lucene' 
-		//subfolder -  it will make that on its own)
-		lucene = dbLocation.getParentFile();
-		LOG.info("Lucene index location set to " + lucene.getAbsolutePath());
-		return lucene;
 	}
 }

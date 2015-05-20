@@ -1,6 +1,5 @@
 package gov.va.isaac.gui.conceptViews.modeling;
 
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
@@ -165,7 +164,6 @@ public abstract class ModelingPopup extends Stage implements PopupViewI {
 	
 			if (callingView_ != null)
 			{
-				ExtendedAppContext.getDataStore().waitTillWritesFinished();
 				callingView_.setConcept(conceptNid);
 			}
 			close();

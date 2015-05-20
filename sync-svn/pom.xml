@@ -2,11 +2,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>gov.va.isaac</groupId>
-		<artifactId>isaac-parent</artifactId>
-		<version>Sprint_20.1</version>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.0</version>
 	</parent>
-	<groupId>gov.va.isaac.modules</groupId>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>sync-svn</artifactId>
 	<packaging>jar</packaging>
 
@@ -17,15 +17,15 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
-			<artifactId>isaac-app-interfaces</artifactId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>app-interfaces</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.tmatesoft.svnkit</groupId>
 			<artifactId>svnkit</artifactId>
-			<version>1.8.5</version>
+			<version>1.8.7</version>
 		</dependency>
 	</dependencies>
 </project>

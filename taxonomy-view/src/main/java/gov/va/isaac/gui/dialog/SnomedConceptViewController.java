@@ -35,6 +35,7 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.RefexViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -187,7 +188,6 @@ public class SnomedConceptViewController {
 			}
 		});
 		
-		
 		ConceptVersionBI conceptVersionBI = OTFUtility.getConceptVersion(concept.getPrimordialUuid());
 		AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersionBI));
 
@@ -238,10 +238,7 @@ public class SnomedConceptViewController {
 			ImageView taxonomyStated = Images.TAXONOMY_STATED.createImageView();
 			taxonomyStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(StatedInferredOptions.STATED));
 			Tooltip.install(taxonomyStated, new Tooltip("Displaying the Stated view- click to display the Inferred view"));
-			ImageView taxonomyInferredThenStated = Images.TAXONOMY_INFERRED_THEN_STATED.createImageView();
-			taxonomyInferredThenStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(StatedInferredOptions.INFERRED_THEN_STATED));
-			Tooltip.install(taxonomyInferredThenStated, new Tooltip("Displaying the Inferred then Stated view- click to display the Stated view"));
-			taxonomyViewMode.setGraphic(new StackPane(taxonomyInferred, taxonomyStated, taxonomyInferredThenStated));
+			taxonomyViewMode.setGraphic(new StackPane(taxonomyInferred, taxonomyStated));
 			taxonomyViewMode.setOnAction(new EventHandler<ActionEvent>()
 			{
 				@Override
@@ -256,10 +253,6 @@ public class SnomedConceptViewController {
 							sip = StatedInferredOptions.INFERRED;
 						}
 						else if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == StatedInferredOptions.INFERRED)
-						{
-							sip = StatedInferredOptions.INFERRED_THEN_STATED;
-						}
-						else if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == StatedInferredOptions.INFERRED_THEN_STATED)
 						{
 							sip = StatedInferredOptions.STATED;
 						}
@@ -344,7 +337,7 @@ public class SnomedConceptViewController {
 			descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring descriptions view"));
 		}
 		
-		RefexViewI v = AppContext.getService(RefexViewI.class, "DynamicRefexView");
+		RefexViewI v = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
 		v.setComponent(conceptVersionBI.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
 		v.getView().setMinHeight(100.0);
 		VBox.setVgrow(v.getView(), Priority.ALWAYS);
@@ -410,5 +403,13 @@ public class SnomedConceptViewController {
 		}
 		
 		return conceptNid;
+	}
+
+	/**
+	 * See  {@link SctTreeViewIsaacView#cancelOperations()}
+	 */
+	public void stopOperations()
+	{
+		sctTree.cancelOperations();
 	}
 }

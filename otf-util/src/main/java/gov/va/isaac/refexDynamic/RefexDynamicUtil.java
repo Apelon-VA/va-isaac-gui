@@ -113,7 +113,7 @@ public class RefexDynamicUtil
 
 		try {
 			LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-			List<SearchResult> refexes = indexer.queryAssemblageUsage(RefexDynamic.REFEX_DYNAMIC_DEFINITION_DESCRIPTION.getNid(), 1000, Long.MAX_VALUE);
+			List<SearchResult> refexes = indexer.queryAssemblageUsage(RefexDynamic.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getNid(), 1000, Long.MAX_VALUE);
 			for (SearchResult sr : refexes) {
 				RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
 				if (rc == null) {
@@ -122,7 +122,7 @@ public class RefexDynamicUtil
 				}
 				//These are nested refex references - it returns a description component - concept we want is the parent of that.
 				allRefexDefinitions.add(new SimpleDisplayConcept(
-						ExtendedAppContext.getDataStore().getComponent(rc.getReferencedComponentNid()).getEnclosingConcept(), null));
+						ExtendedAppContext.getDataStore().getConceptForNid(rc.getReferencedComponentNid()), null));
 			}
 		} catch (Exception e) {
 			throw new IOException(e);

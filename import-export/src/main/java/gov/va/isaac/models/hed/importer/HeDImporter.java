@@ -29,7 +29,7 @@ import gov.va.isaac.models.hed.HeDInformationModel;
 import gov.va.isaac.models.hed.HeDXmlUtils;
 import gov.va.isaac.models.util.ImporterBase;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -39,12 +39,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-
 import org.hl7.cdsdt.r2.CD;
 import org.hl7.knowledgeartifact.r1.ActionBase;
 import org.hl7.knowledgeartifact.r1.ActionGroup;
@@ -352,7 +350,7 @@ public class HeDImporter extends ImporterBase implements ImportHandler {
 							RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(value, value, enumerationDesc.toString(), 
 																											 new RefexDynamicColumnInfo[] {},
 																											 InformationModels.HED_ENUMERATIONS.getUuids()[0], 
-																											 false, null);
+																											 false, null, ViewCoordinates.getMetadataViewCoordinate());
 						} catch (IOException | ContradictionException | InvalidCAB
 								| PropertyVetoException e) {
 							LOG.error("Unable to create HED Enumeration for " + value);

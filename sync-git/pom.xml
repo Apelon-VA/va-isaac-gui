@@ -2,11 +2,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>gov.va.isaac</groupId>
-		<artifactId>isaac-parent</artifactId>
-		<version>Sprint_20.1</version>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.0</version>
 	</parent>
-	<groupId>gov.va.isaac.modules</groupId>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>sync-git</artifactId>
 	<packaging>jar</packaging>
 
@@ -17,15 +17,15 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
-			<artifactId>isaac-app-interfaces</artifactId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>app-interfaces</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>3.5.1.201410131835-r</version>
+			<version>3.7.0.201502260915-r</version>
 		</dependency>
 	</dependencies>
 </project>

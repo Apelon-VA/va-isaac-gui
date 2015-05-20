@@ -37,7 +37,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -543,8 +542,6 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 			UUID snomedCtInternational = Snomed.CORE_MODULE.getUuids()[0];
 			if(pathUUID.equals(snomedCtInternational) 
 					|| pathNid == TermAux.SNOMED_CORE.getLenient().getNid()
-					|| OTFUtility.getConceptVersion(pathNid).getPrimordialUuid().toString()
-							.equals(AppContext.getAppConfiguration().getDefaultEditPathUuid())
 					) {
 				return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();
 			} else {
@@ -596,8 +593,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 			
 		} catch(Exception e) 
 		{ 
-			Log.error("We could not get the SCT from the Given NID");
-			e.printStackTrace();  //TODO nope
+			LOG.error("We could not get the SCT from the Given NID", e);
 			return 0;  //document the failure behavior - is 0 an appropriate thing to return if no sctid could be found?
 		}
 		
@@ -949,14 +945,13 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 
 		try
 		{
-			if ((concept.getPathNid() != TermAux.SNOMED_CORE.getLenient().getNid())
-					&& !OTFUtility.getConceptVersion(concept.getPathNid()).getPrimordialUuid().toString()
-							.equals(AppContext.getAppConfiguration().getDefaultEditPathUuid()))
+			//TODO OCHRE change this to module checking
+			if ((concept.getPathNid() != TermAux.SNOMED_CORE.getLenient().getNid()))
 			{
 				DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog(
 						"USCRS Content Request",
-						"The concept path is neither Snomed CORE nor " + AppContext.getAppConfiguration().getDefaultEditPathName()
-								+ ". It is recommended that you only submit " + "concepts edited on one of these paths to USCRS.\n\n" + "Do you want to continue?");
+						"The concept path is not Snomed CORE. It is recommended that you only submit " 
+						+ "concepts edited on one of these paths to USCRS.\n\n" + "Do you want to continue?");
 				if (response == DialogResponse.NO)
 				{
 					return;

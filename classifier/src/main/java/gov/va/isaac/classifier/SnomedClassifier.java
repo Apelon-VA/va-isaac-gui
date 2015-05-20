@@ -50,7 +50,7 @@ public class SnomedClassifier implements ProcessUnfetchedConceptDataBI {
    * private static UUID CONCEPT_ATTRIBUTE =
    * UUID.fromString("6155818b-09ed-388e-82ce-caa143423e99");
    * 
-   * private static BdbTerminologyStore dataStore = ExtendedAppContext
+   * private static TerminologyStoreDI dataStore = ExtendedAppContext
    * .getDataStore();
    * 
    * private Map<String, Concept> concepts = new HashMap<String, Concept>();

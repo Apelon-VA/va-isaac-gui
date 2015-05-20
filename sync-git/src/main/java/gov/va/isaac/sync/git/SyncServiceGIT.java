@@ -89,7 +89,7 @@ import com.jcraft.jsch.Session;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-@Service(name = "GIT")
+@Service(name = gov.va.isaac.interfaces.gui.constants.SharedServiceNames.GIT)
 @PerLookup
 public class SyncServiceGIT implements ProfileSyncI
 {
@@ -104,12 +104,6 @@ public class SyncServiceGIT implements ProfileSyncI
 	
 	private File localFolder = null;
 	private String readMeFileContent_ = DEFAULT_README_CONTENT;
-	
-	public SyncServiceGIT(File localFolder)
-	{	
-		this();
-		setRootLocation(localFolder);
-	}
 
 	private SyncServiceGIT()
 	{

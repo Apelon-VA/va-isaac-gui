@@ -24,7 +24,6 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.OTFUtility;
-import java.util.UUID;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -42,11 +41,11 @@ import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRfx;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -59,6 +58,8 @@ import org.jvnet.hk2.annotations.Service;
 @PerLookup
 public class RelationshipModelingPopup extends ModelingPopup
 {
+	private Logger logger = LoggerFactory.getLogger(RelationshipModelingPopup.class);
+	
 	private ConceptNode otherEndCon;
 	private ConceptNode typeCon;
 	private TextField groupNum;
@@ -137,7 +138,7 @@ public class RelationshipModelingPopup extends ModelingPopup
 			createOriginalLabel(OTFUtility.getConceptVersion(displayVersion.getCharacteristicNid()).getPreferredDescription().getText());
 			createOriginalLabel(String.valueOf(displayVersion.getGroup()));
 		} catch (Exception e) {
-			Log.error("Cannot access Pref Term for attributes of relationship: "  + rel.getPrimordialUuid(), e);
+			logger.error("Cannot access Pref Term for attributes of relationship: "  + rel.getPrimordialUuid(), e);
 		}
 
 		setupGridPaneConstraints();
@@ -407,9 +408,9 @@ public class RelationshipModelingPopup extends ModelingPopup
 				OTFUtility.getBuilder().constructIfNotCurrent(dcab);
 				
 				if (!isDestination) {
-					OTFUtility.addUncommitted(rel.getOriginNid());
+					ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rel.getOriginNid()));
 				} else {
-					OTFUtility.addUncommitted(otherEndConNid);
+					ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(otherEndConNid));
 				}
 			}
 		}

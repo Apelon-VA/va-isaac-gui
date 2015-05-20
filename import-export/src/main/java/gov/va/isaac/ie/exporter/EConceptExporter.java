@@ -1,31 +1,24 @@
 package gov.va.isaac.ie.exporter;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.models.util.CommonBase;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
-import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
-import org.ihtsdo.otf.tcc.dto.ChronicleConverter;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +42,7 @@ public class EConceptExporter extends CommonBase implements
       .getLogger(EConceptExporter.class);
 
   /** The data store. */
-  private static BdbTerminologyStore dataStore = ExtendedAppContext
+  private static TerminologyStoreDI dataStore = ExtendedAppContext
       .getDataStore();
 
   /** The dos. */
@@ -142,7 +135,7 @@ public class EConceptExporter extends CommonBase implements
     }
     if (Exporter.isQualifying(concept.getNid(), pathNid, vc)) {
       count++;
-      TtkConceptChronicle converted = ChronicleConverter.convert(concept);
+      TtkConceptChronicle converted = new TtkConceptChronicle(concept);
       converted.writeExternal(dos);
     }
     // Handle progress monitor
@@ -155,7 +148,7 @@ public class EConceptExporter extends CommonBase implements
 	public static ViewCoordinate makeViewCoordinate(int pathInput) {
 		ViewCoordinate vc = null;
 		try {
-			vc = StandardViewCoordinates.getSnomedInferredThenStatedLatest();
+			vc = ViewCoordinates.getDevelopmentInferredLatest();
 
 			//LOG.info("Using {} policy for view coordinate", policy);
 

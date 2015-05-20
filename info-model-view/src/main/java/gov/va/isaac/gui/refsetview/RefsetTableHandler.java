@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.refsetview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.CEMCompositRefestInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.NidExtRefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.NidStrExtRefsetInstance;
@@ -211,7 +212,7 @@ public class RefsetTableHandler {
 							}
 							refCompCon.addAnnotation(newMemChron);
 							
-							OTFUtility.addUncommitted(instance.getRefCompConNid());
+							ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(instance.getRefCompConNid()));
 							rvc_.reloadData();
 							return;
 						} else {
@@ -318,7 +319,7 @@ public class RefsetTableHandler {
 									}
 									refCompCon.addAnnotation(newMemChron);
 									
-									OTFUtility.addUncommitted(instance.getRefCompConNid());
+									ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(instance.getRefCompConNid()));
 									rvc_.reloadData();
 									return;
 								} else {
@@ -495,9 +496,9 @@ public class RefsetTableHandler {
 		
 		//TODO retest this... the old impl was quite wrong, not sure how it ever worked, when it called addUncommitted on the wrong things.
 		OTFUtility.getBuilder().constructIfNotCurrent(member);
-		OTFUtility.addUncommitted(OTFUtility.getConceptVersion(refex.getAssemblageNid()));
+		ExtendedAppContext.getDataStore().addUncommitted(OTFUtility.getConceptVersion(refex.getAssemblageNid()));
 		if (isAnnotation) {
-			OTFUtility.addUncommitted(OTFUtility.getConceptVersion(refex.getReferencedComponentNid()));
+			ExtendedAppContext.getDataStore().addUncommitted(OTFUtility.getConceptVersion(refex.getReferencedComponentNid()));
 		}
 	}
 }

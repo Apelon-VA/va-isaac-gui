@@ -48,6 +48,7 @@ import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
+import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,8 +129,8 @@ public class EnhancedConceptView implements PopupConceptViewI {
 			protected ConceptChronicleDdo call() throws Exception
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
-				ConceptChronicleDdo concept = ExtendedAppContext.getDataStore().getFxConcept(conceptUUID, OTFUtility.getViewCoordinate(),
-						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.REFEX_MEMBERS, RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
+				ConceptChronicleDdo concept = AppContext.getService(FxTerminologyStoreDI.class).getFxConcept(conceptUUID, OTFUtility.getViewCoordinate(),
+						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
 				 LOG.info("Finished loading concept with UUID " + conceptUUID);
 
 				return concept;

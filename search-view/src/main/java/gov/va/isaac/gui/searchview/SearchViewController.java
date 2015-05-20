@@ -26,6 +26,7 @@ import gov.va.isaac.gui.IndexStatusListener;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
+import gov.va.isaac.gui.enhancedsearchview.model.SearchTypeModel;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.refexDynamic.RefexDynamicUtil;
 import gov.va.isaac.search.CompositeSearchResult;
@@ -41,10 +42,12 @@ import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -95,9 +98,6 @@ import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
@@ -105,7 +105,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -265,7 +264,10 @@ public class SearchViewController implements TaskCompleteCallback
 									searchInColumnsHolder.getChildren().add(cbStack);
 									indexNumber++;
 								}
-								optionsContentVBox.getChildren().add(searchInColumnsHolder);
+								if (!optionsContentVBox.getChildren().contains(searchInColumnsHolder))
+								{
+									optionsContentVBox.getChildren().add(searchInColumnsHolder);
+								}
 							}
 							else
 							{
@@ -279,6 +281,7 @@ public class SearchViewController implements TaskCompleteCallback
 					{
 						searchInRefex.isValid().setInvalid("Sememe searches can only be limited to valid Dynamic Sememe Assemblage concept types."
 								+ "  The current value is not a Dynamic Sememe Assemblage concept.");
+						LOG.debug("Exception while checking is sememe concept field in search box was a dynamic sememe", e1);
 						displayIndexConfigMenu_.set(false);
 						currentlyEnteredAssemblageNid = null;
 						optionsContentVBox.getChildren().remove(searchInColumnsHolder);
@@ -663,11 +666,21 @@ public class SearchViewController implements TaskCompleteCallback
 			{
 				if (!ssh.isCancelled())
 				{
-					searchResults.getItems().addAll(ssh.getResults());
+					//Remove off path results
+					Collection<CompositeSearchResult> results = ssh.getResults();
+					int offPathResults = SearchTypeModel.removeNullResults(results);
+					
+					searchResults.getItems().addAll(results);
+					//searchResults.getItems().addAll(ssh.getResults());
 					long time = System.currentTimeMillis() - ssh.getSearchStartTime();
 					float inSeconds = (float)time / 1000f;
 					inSeconds = ((float)((int)(inSeconds * 100f)) / 100f);
-					statusLabel.setText(ssh.getHitCount() + " in " + inSeconds + " seconds");
+					
+					String statusMsg = ssh.getHitCount() + " in " + inSeconds + " seconds";
+					if (offPathResults > 0) {
+						statusMsg += "; " + offPathResults + " off-path entries ignored";
+					}
+					statusLabel.setText(statusMsg);
 				}
 				else
 				{
@@ -871,7 +884,7 @@ public class SearchViewController implements TaskCompleteCallback
 		{
 			try
 			{
-				Set<ConceptVersionBI> extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(SnomedMetadataRf2.DESCRIPTION_NAME_IN_SOURCE_TERM_RF2.getNid());
+				Set<ConceptVersionBI> extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
 				ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
 				for (ConceptVersionBI c : extendedDescriptionTypes)
 				{

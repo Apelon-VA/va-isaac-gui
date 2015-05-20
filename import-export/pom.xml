@@ -2,11 +2,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>gov.va.isaac</groupId>
-        <artifactId>isaac-parent</artifactId>
-        <version>Sprint_20.1</version>
+        <groupId>gov.vha.isaac.gui</groupId>
+        <artifactId>isaac-gui-parent</artifactId>
+        <version>23.0</version>
     </parent>
-    <groupId>gov.va.isaac.modules</groupId>
+    <groupId>gov.vha.isaac.gui.modules</groupId>
     <artifactId>import-export</artifactId>
     <packaging>jar</packaging>
 
@@ -19,28 +19,34 @@
     
         <!-- ISAAC App Utils. -->
         <dependency>
-            <groupId>gov.va.isaac.modules</groupId>
+            <groupId>gov.vha.isaac.gui.modules</groupId>
             <artifactId>gui-util</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
             
         <!-- ISAAC OTF Utils. -->
         <dependency>
-            <groupId>gov.va.isaac.modules</groupId>
+            <groupId>gov.vha.isaac.gui.modules</groupId>
             <artifactId>otf-util</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         
         <!-- ISAAC Data Model. -->
         <dependency>
-            <groupId>gov.va.isaac.modules</groupId>
+            <groupId>gov.vha.isaac.gui.modules</groupId>
             <artifactId>data-model</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         
         <dependency>
-            <groupId>org.ihtsdo.otf</groupId>
-            <artifactId>tcc-datastore</artifactId>
+            <groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
+            <artifactId>newtons-cradle</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>18.0</version>
         </dependency>
         
         <!-- Eclipse EMF/UML2. -->
@@ -92,8 +98,8 @@
             <artifactId>org.eclipse.emf.common</artifactId>
             <version>2.9.1-v20130827-0309</version>
         </dependency>
-		
-		<dependency>
+        
+        <dependency>
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-distribution</artifactId>
             <version>3.5.0</version>
@@ -109,17 +115,6 @@
             <version>1.0.0-v20070606</version>
         </dependency>
 
-        <!-- Redirects Java logging into logback -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-        </dependency>
-
-        <!-- Redirects log4j into logback - note - we must not include log4j in our classpath... -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

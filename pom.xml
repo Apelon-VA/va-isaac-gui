@@ -1,455 +1,199 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    
-    <groupId>gov.va.isaac</groupId>
-    <artifactId>isaac-parent</artifactId>
-    <version>Sprint_20.1</version>
-    <packaging>pom</packaging>
-    
-    <name>ISAAC Modules Parent</name>
-    <url>https://csfe.aceworkspace.net/sf/projects/veterans_administration_project/</url>
-    
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-            <comments>Copyright Notice
-                This is a work of the U.S. Government and is not subject to copyright
-                protection in the United States. Foreign copyrights may apply.
-            </comments>
-        </license>
-    </licenses>
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>gov.vha.isaac</groupId>
+		<artifactId>isaac-parent</artifactId>
+		<version>1.6</version>
+	</parent>
+	
+	<groupId>gov.vha.isaac.gui</groupId>
+	<artifactId>isaac-gui-parent</artifactId>
+	<version>23.0</version>
+	<packaging>pom</packaging>
+	
+	<name>ISAAC Modules Parent</name>
+	
+	<description>
+		The Maven Parent POM file for all known ISAAC GUI related modules.  
+		Declares shared dependencies, sets up the build.
+	</description>
 
-    <description>
-        The Maven Parent POM file for all known ISAAC modules.  Declares shared dependencies, sets up the build.
-    </description>
+	<scm>
+		<url>https://github.com/Apelon-VA/va-isaac-gui.git</url>
+	</scm>
+	
+	<!-- This is only used for publishing the site -->
+	<distributionManagement>
+		<site>
+			<id>site</id>
+			<url>scm:git:git@github.com:Apelon-VA/va-isaac-gui.git</url>
+		</site>
+	</distributionManagement>
 
-    <scm>
-        <url>https://github.com/Apelon-VA/ISAAC</url>
-    </scm>
-    <distributionManagement>
-        <site>
-            <id>site</id>
-            <url>scm:git:git@github.com:Apelon-VA/ISAAC.git</url>
-        </site>
-    </distributionManagement>
+	<properties>
+		<query.version>2.12</query.version>
+		<ochre.version>2.27</ochre.version>
+		<isaac-mojo.version>1.6</isaac-mojo.version>
+		<isaac-metadata.version>1.29</isaac-metadata.version>
+		<newtons-cradle.version>1.17</newtons-cradle.version>
+		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
+		<apache.poi.version>3.11</apache.poi.version>
+	</properties>
+	
+	<dependencyManagement>
+		<!-- The dependencies that we expect child modules may need to depend on - with the versions and 
+		scopes set to reasonable defaults. -->
+		<dependencies>
+			<dependency>
+				<groupId>gov.vha.isaac.isaac-metadata.modules</groupId>
+				<artifactId>isaac-metadata-artifacts</artifactId>
+				<version>${isaac-metadata.version}</version>
+				<type>jar</type>
+			</dependency>
+		
+			<dependency>
+				<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
+				<artifactId>newtons-cradle</artifactId>
+				<version>${newtons-cradle.version}</version>
+				<type>jar</type>
+			</dependency>
+			
+			<dependency>
+				<groupId>gov.vha.isaac.ochre.modules</groupId>
+				<artifactId>tcc-api</artifactId>
+				<version>${ochre.version}</version>
+				<type>jar</type>
+			</dependency>
+			
+			<dependency>
+				<groupId>gov.vha.isaac</groupId>
+				<artifactId>isaac-mojo</artifactId>
+				<version>${isaac-mojo.version}</version>
+				<type>jar</type>
+			</dependency>
+			
+			<dependency>
+				<groupId>gov.vha.isaac.ochre.modules</groupId>
+				<artifactId>tcc-model-impl</artifactId>
+				<version>${ochre.version}</version>
+				<type>jar</type>
+			</dependency>
+			
+			<dependency>
+				<groupId>gov.vha.isaac.query-service.modules</groupId>
+				<artifactId>query-implementation</artifactId>
+				<version>${query.version}</version>
+				<type>jar</type>
+			</dependency>
+			
+			<!-- Apache POI -->
+			<dependency>
+				<groupId>org.apache.poi</groupId>
+				<artifactId>poi</artifactId>
+				<version>${apache.poi.version}</version>
+			</dependency>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <otf-query.version>1.1-va-1.13</otf-query.version>
-        <otf-versioning.version>1.1-va-1.13</otf-versioning.version>
-        <kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
-    </properties>
-    
-    <dependencyManagement>
-        <!-- The dependencies that we expect child modules may need to depend on - with the versions and 
-        scopes set to reasonable defaults. -->
-        <dependencies>
-            <!-- OTF.  Includes JavaFX 2.2.45. -->
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>tcc-datastore</artifactId>
-                <version>${otf-versioning.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <!-- Make sure sub-projects that only pull in API don't get JavaFX -->
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>tcc-api</artifactId>
-                <version>${otf-versioning.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <!-- Make sure sub-projects that only pull in mojo don't get JavaFX -->
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>tcc-mojo</artifactId>
-                <version>${otf-versioning.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>tcc-model-impl</artifactId>
-                <version>${otf-versioning.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>query-implementation</artifactId>
-                <version>${otf-query.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.ihtsdo.otf</groupId>
-                <artifactId>query-jaxb-objects</artifactId>
-                <version>${otf-query.version}</version>
-                <type>jar</type>
-                <!-- Exclude JavaFX 2.2.45 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.javafx</groupId>
-                        <artifactId>jfxrt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <!-- The native logback implementation (note, the logback api comes from parent) -->
-            <dependency> 
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>1.1.2</version>
-                <!-- Default to test scope - only the Parent app should need them at normal scope.   -->
-                <!-- Code should be written against the slf4j-api - which is included below for all decendents.-->
-                <scope>test</scope>  
-            </dependency>
+			<dependency>
+				<groupId>org.apache.poi</groupId>
+				<artifactId>poi-ooxml</artifactId>
+				<version>${apache.poi.version}</version>
+			</dependency>
+			
+			<!-- TODO get rid of this dependency... we only use one thing from it... -->
+			<dependency>
+				<groupId>org.controlsfx</groupId>
+				<artifactId>controlsfx</artifactId>
+				<version>8.0.5</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.jvnet.jaxb2.maven2</groupId>
+					<artifactId>maven-jaxb2-plugin</artifactId>
+					<version>0.12.3</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-descriptor</id>
+						<goals>
+							<goal>attach-descriptor</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>stage-for-scm-publish</id>
+						<phase>post-site</phase>
+						<goals>
+							<goal>stage</goal>
+						</goals>
+						<configuration>
+							<skipDeploy>false</skipDeploy>
+						</configuration>
+					</execution>
+				</executions>
+				<configuration>
+					<skipDeploy>true</skipDeploy>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-scm-publish-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>scm-publish</id>
+						<phase>site-deploy</phase>
+						<goals>
+							<goal>publish-scm</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
-            <!-- Redirects Java logging into logback -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>1.7.7</version>
-                <!-- Default to test scope - only the Parent app should need them at normal scope.   -->
-                <!-- Code should be written against the slf4j-api - which is included below for all decendents.-->
-                <scope>test</scope>
-            </dependency>
-            
-            <!-- Redirects log4j into logback - note - we must not include log4j in our classpath... -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>log4j-over-slf4j</artifactId>
-                <version>1.7.7</version>
-                <!-- Default to test scope - only the Parent app should need them at normal scope.   -->
-                <!-- Code should be written against the slf4j-api - which is included below for all decendents.-->
-                <scope>test</scope>
-            </dependency>
+	<dependencies>
+		<!-- TODO replace this with LOG4j 2 -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.12</version>
+		</dependency>
+	</dependencies>
 
-            <!-- Apache POI -->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi</artifactId>
-                <version>3.7</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>3.7</version>
-            </dependency>
-            
-            <!-- Classifier -->
-            <dependency>
-                <groupId>au.csiro</groupId>
-                <artifactId>snorocket-snapi</artifactId>
-                <version>1.1.20</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-configuration</groupId>
-                <artifactId>commons-configuration</artifactId>
-                <version>1.6</version>
-            </dependency>
-
-        </dependencies>
-    </dependencyManagement>
-    
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>2.2.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.7</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10.1</version>
-                    <configuration>
-                        <additionalparam>-Xdoclint:none</additionalparam>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-        
-        <plugins>
-            <!-- Java version 1.8 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            
-            <!-- Only way to get JUnit failures on Maestrodev at the moment -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.17</version>
-                <configuration>
-                    <useFile>false</useFile>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.8</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.bcel</groupId>
-                        <artifactId>bcel</artifactId>
-                        <version>6.0-S</version>  <!-- This is a SNAPSHOT version that Dan installed on our Archiva server to provide Java 8 support -->
-                        <!-- See https://csfe.aceworkspace.net/sf/tracker/do/viewArtifact/projects.informatics_architecture/tracker.4_defects/artf232420 -->
-                    </dependency>
-                </dependencies>
-            </plugin>
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>3.4</version>
-                <executions>
-                <execution>
-                    <id>attach-descriptor</id>
-                    <goals>
-                        <goal>attach-descriptor</goal>
-                    </goals>
-                </execution>
-                <execution>
-                    <id>stage-for-scm-publish</id>
-                    <phase>post-site</phase>
-                    <goals>
-                        <goal>stage</goal>
-                    </goals>
-                    <configuration>
-                        <skipDeploy>false</skipDeploy>
-                    </configuration>
-                </execution>
-                </executions>
-                <configuration>
-                    <skipDeploy>true</skipDeploy>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-scm-publish-plugin</artifactId>
-                <version>1.1</version>
-                <configuration>
-                    <scmBranch>gh-pages</scmBranch>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>scm-publish</id>
-                        <phase>site-deploy</phase>
-                        <goals>
-                            <goal>publish-scm</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>external.atlassian.jgitflow</groupId>
-                <artifactId>jgitflow-maven-plugin</artifactId>
-                <version>1.0-m4.3</version>
-                <configuration>
-                    <pushReleases>true</pushReleases>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <scmCommentPrefix>[jgitflow-plugin]</scmCommentPrefix>
-                    <enableSshAgent>true</enableSshAgent>
-                    <allowSnapshots>true</allowSnapshots>
-                    <enableFeatureVersions>true</enableFeatureVersions>
-                    <flowInitContext>
-                        <masterBranchName>master</masterBranchName>
-                        <developBranchName>develop</developBranchName>
-                        <featureBranchPrefix>feature-</featureBranchPrefix>
-                        <releaseBranchPrefix>release-</releaseBranchPrefix>
-                        <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
-                    </flowInitContext>
-                </configuration>
-            </plugin>
-            
-        </plugins>
-    </build>
-
-    <dependencies>
-        <!-- The dependencies that we give to all child modules by default.  Note - most of these are test scope only -->
-        <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.7</version>
-        </dependency>
-        
-        <!-- JUnit (test scope only by default) -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.11</version>
-            <scope>test</scope>
-        </dependency>
-        
-         <!-- The native logback implementation (test scope only by default) -->
-        <dependency> 
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
-
-        <!-- Redirects Java logging into logback (test scope only by default) -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-        </dependency>
-        
-        <!-- Redirects log4j into logback - note - we must not include log4j in our classpath. (test scope only by default) -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-        </dependency>
-        
-    </dependencies>
-
-    <modules>
-        <module>isaac-app-interfaces</module>
-        <module>gui-util</module>
-        <module>otf-util</module>
-        <module>data-model</module>
-        <module>import-export</module>
-        <module>content-request</module>
-        <module>classifier</module>
-        <module>taxonomy-view</module>
-        <module>lego-view</module>
-        <module>search-view</module>
-        <module>isaac-app</module>
-        <module>isaac-workflow</module>
-        <module>info-model-view</module>
-        <module>list-view</module>
-        <module>mojos</module>
-        <module>refex-view</module>
-        <module>concept-wizard-view</module>
-        <module>isaac-constants</module>
-        <module>isaac-drools</module>
-        <module>sync-view</module>
-        <module>sync-git</module>
-        <module>sync-svn</module>
-        <module>isaac-db-processing-rules</module>
-        <module>mapping</module>
-    </modules>
-
-    <reporting>
-        <excludeDefaults>true</excludeDefaults>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.8</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>index</report>
-                            <report>license</report>
-                            <report>dependencies</report>
-                            <report>dependency-convergence</report>
-                            <report>plugin-management</report>
-                            <report>scm</report>
-                            <report>summary</report>
-                            <!-- Not currently useful with POM metadata
-                            <report>project-team</report>
-                            <report>mailing-list</report>
-                            <report>cim</report>
-                            <report>issue-tracking</report>-->
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.1</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <notimestamp>true</notimestamp>
-                    <additionalparam>-Xdoclint:none</additionalparam>
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <version>2.5</version>
-                <inherited>false</inherited>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jdepend-maven-plugin</artifactId>
-                <version>2.0</version>
-            </plugin>
-        </plugins>
-    </reporting>
+	<modules>
+		<module>app-interfaces</module>
+		<module>gui-util</module>
+		<module>otf-util</module>
+		<module>data-model</module>
+		<module>import-export</module>
+		<module>content-request</module>
+		<module>classifier</module>
+		<module>taxonomy-view</module>
+		<module>lego-view</module>
+		<module>search-view</module>
+		<module>app</module>
+		<module>workflow</module>
+		<module>info-model-view</module>
+		<module>list-view</module>
+		<module>mojos</module>
+		<module>refex-view</module>
+		<module>concept-wizard-view</module>
+		<module>constants</module>
+		<module>drools</module>
+		<module>sync-view</module>
+		<module>sync-git</module>
+		<module>sync-svn</module>
+		<module>db-processing-rules</module>
+		<module>mapping</module>
+	</modules>
 </project>

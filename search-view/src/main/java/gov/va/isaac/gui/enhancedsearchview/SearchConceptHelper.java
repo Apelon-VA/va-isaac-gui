@@ -42,7 +42,7 @@ import gov.va.isaac.gui.enhancedsearchview.model.type.sememe.SememeSearchTypeMod
 import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -54,9 +54,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-
 import javax.naming.InvalidNameException;
-
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
@@ -65,7 +63,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
@@ -149,12 +146,12 @@ public class SearchConceptHelper {
 		//
 
 		try {
-			ConceptChronicleBI searchConcept = OTFUtility.createNewConcept(OTFUtility.getConceptVersion(Search.SEARCH_PERSISTABLE.getUuids()[0]), saveConceptFSN, saveConceptPT);
+			ConceptChronicleBI searchConcept = OTFUtility.createNewConcept(OTFUtility.getConceptVersion(Search.STORED_QUERIES.getUuids()[0]), saveConceptFSN, saveConceptPT);
 			ConceptAttributeAB conceptAttributeBlueprintAmender = new ConceptAttributeAB(searchConcept.getConceptNid(), searchConcept.getVersion(OTFUtility.getViewCoordinate()).getConceptAttributesActive().isDefined(), RefexDirective.INCLUDE); //bp.getConceptAttributeAB();
 
 			{
 				// Start with Search Global Attributes
-				RefexDynamicUsageDescription searchGlobalAttributesRDUD = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(Search.SEARCH_GLOBAL_ATTRIBUTES.getNid());
+				RefexDynamicUsageDescription searchGlobalAttributesRDUD = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getNid());
 
 				// Add View Coordinate byte[]
 				RefexDynamicData[] searchGlobalAttributesData = new RefexDynamicData[searchGlobalAttributesRDUD.getColumnInfo().length];
@@ -181,7 +178,7 @@ public class SearchConceptHelper {
 				//{
 
 				// Creates new refex
-				globalAttributesCAB = new RefexDynamicCAB(searchConcept.getPrimordialUuid(), Search.SEARCH_GLOBAL_ATTRIBUTES.getUuids()[0]);
+				globalAttributesCAB = new RefexDynamicCAB(searchConcept.getPrimordialUuid(), Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getUuids()[0]);
 				//}
 				//else
 				//{
@@ -382,7 +379,8 @@ public class SearchConceptHelper {
 		    try
 			{
 				AppContext.getRuntimeGlobals().disableAllCommitListeners();
-				ExtendedAppContext.getDataStore().commit(searchConcept);
+				// TODO OCHRE add add confirm to alert user that all uncommitted concepts will be committed on persist of save criteria
+				ExtendedAppContext.getDataStore().commit(/* searchConcept */);
 			} catch (Exception e) {
 				LOG.error("Coudn't Disable WF Init & Commit Creation of Search Concept", e);
 			}
@@ -509,8 +507,10 @@ public class SearchConceptHelper {
 				try {
 					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" all refexes: " +  matchingConcept.getRefexes().size());
 					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" all dynamic sememes: " +  matchingConcept.getRefexesDynamic().size());
-					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (StandardViewCoordinates.getWbAuxiliary()): " +  matchingConcept.getRefexesDynamicActive(StandardViewCoordinates.getWbAuxiliary()).size());
-					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (OTFUtility.getViewCoordinate()): " +  matchingConcept.getRefexesDynamicActive(OTFUtility.getViewCoordinate()).size());
+					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (StandardViewCoordinates.getWbAuxiliary()): " 
+							+  matchingConcept.getRefexesDynamicActive(ViewCoordinates.getMetadataViewCoordinate()).size());
+					LOG.debug("loadSavedSearch(): concept \"" + displayConcept + "\" active dynamic sememes (OTFUtility.getViewCoordinate()): " 
+							+  matchingConcept.getRefexesDynamicActive(OTFUtility.getViewCoordinate()).size());
 			
 					LOG.debug("Displaying newly loaded save concept refexes");
 					DynamicRefexHelper.displayDynamicRefexes(matchingConcept);
@@ -538,7 +538,7 @@ public class SearchConceptHelper {
 					if (SearchModel.getSearchTypeSelector().getCurrentType() == SearchType.TEXT) {
 						TextSearchTypeModel compModel = (TextSearchTypeModel)SearchModel.getSearchTypeSelector().getTypeSpecificModel();
 						
-						if (dud.getRefexName().equals(Search.SEARCH_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
+						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
 							// handle "Search Global Attributes"
 	
 							LOG.debug("Loading data into model from Search Global Attributes sememe");
@@ -648,7 +648,7 @@ public class SearchConceptHelper {
 					} else if (SearchModel.getSearchTypeSelector().getCurrentType() == SearchType.SEMEME) {
 						SememeSearchTypeModel compModel = (SememeSearchTypeModel)SearchModel.getSearchTypeSelector().getTypeSpecificModel();
 						
-						if (dud.getRefexName().equals(Search.SEARCH_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
+						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
 							// handle "Search Global Attributes"
 	
 							LOG.debug("Loading data into model from Search Global Attributes sememe");

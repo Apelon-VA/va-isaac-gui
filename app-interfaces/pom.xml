@@ -1,0 +1,69 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.0</version>
+	</parent>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
+	<artifactId>app-interfaces</artifactId>
+	<packaging>jar</packaging>
+
+	<name>ISAAC App Interfaces</name>
+	<description>
+		ISAAC Application Interfaces.  Modules implement these to provide a compatible module to the app.
+	</description>
+	
+	<dependencies>
+	
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>ochre-api</artifactId>
+			<version>${ochre.version}</version>
+		</dependency>
+		
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>docbook</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<executions>
+							<execution>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+								<phase>package</phase>
+								<id>docbook</id>
+							</execution>
+						</executions>
+						<configuration>
+							<doclet>org.dbdoclet.doclet.docbook.DocBookDoclet</doclet>
+							<docletArtifact>
+								<groupId>org.dbdoclet</groupId>
+								<artifactId>dbdoclet</artifactId>
+								<version>8.0.0</version>
+							</docletArtifact>
+							<additionalparam>-profile ${basedir}/src/docbook/docbook-javadoc.profile</additionalparam>
+							<useStandardDocletOptions>false</useStandardDocletOptions>
+							<doctitle>ISAAC Contract Interfaces</doctitle>
+							<subpackages>gov.va.isaac.interfaces.gui</subpackages>
+							<classifier>docbook</classifier>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

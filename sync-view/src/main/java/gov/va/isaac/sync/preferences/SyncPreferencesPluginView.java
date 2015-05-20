@@ -68,7 +68,7 @@ public class SyncPreferencesPluginView extends AbstractPreferencesPluginView {
 		properties.add(syncUserProperty);
 
 		PreferencesPluginTextFieldProperty changeSetUrlProperty = 
-				new PreferencesPluginTextFieldProperty("ChangeSet URL") {
+				new PreferencesPluginTextFieldProperty("ChangeSet URL", true) {
 			@Override
 			public String readFromPersistedPreferences() {
 				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();

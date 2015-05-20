@@ -21,9 +21,10 @@ package gov.va.isaac.mojos.profileSync;
 import gov.va.isaac.config.IsaacAppConfigWrapper;
 import gov.va.isaac.config.generated.ChangeSetSCMType;
 import gov.va.isaac.config.generated.IsaacAppConfig;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
-import gov.va.isaac.sync.git.SyncServiceGIT;
-import gov.va.isaac.sync.svn.SyncServiceSVN;
+import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
@@ -36,10 +37,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import javax.xml.bind.JAXBException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.xml.sax.SAXException;
 
 /**
@@ -80,30 +84,26 @@ public abstract class ProfilesMojoBase extends AbstractMojo
 	
 	/**
 	 * The location of the (already existing) profiles folder which should be shared via SCM.
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File userProfileFolderLocation = null;
 	
 	/**
 	 * The location of the (already existing) app.xml file which contains the SCM connection information.
-	 * @parameter
-	 * @required
 	 */
+	@Parameter (required = true)
 	File appXMLFile = null;
 	
 	/**
 	 * The username to use for remote operations
-	 * @parameter
-	 * @optional
 	 */
+	@Parameter (required = false)
 	private String profileSyncUsername = null;
 	
 	/**
 	 * The password to use for remote operations
-	 * @parameter
-	 * @optional
 	 */
+	@Parameter (required = false)
 	private String profileSyncPassword = null;
 	
 	private IsaacAppConfig config_;
@@ -164,11 +164,25 @@ public abstract class ProfilesMojoBase extends AbstractMojo
 	{
 		if (config_.getChangeSetUrlType() == ChangeSetSCMType.GIT)
 		{
-			return new SyncServiceGIT(userProfileFolderLocation);
+			ProfileSyncI svc = LookupService.getService(ProfileSyncI.class, SharedServiceNames.GIT);
+			if (svc == null)
+			{
+				throw new MojoExecutionException("Unable to load the GIT implementation of the ProfileSyncI interface." + 
+						"  Is gov.vha.isaac.gui.modules.sync-git listed as a dependency for the mojo execution?");
+			}
+			svc.setRootLocation(userProfileFolderLocation);
+			return svc;
 		}
 		else if (config_.getChangeSetUrlType() == ChangeSetSCMType.SVN)
 		{
-			return new SyncServiceSVN(userProfileFolderLocation);
+			ProfileSyncI svc = LookupService.getService(ProfileSyncI.class, SharedServiceNames.SVN);
+			if (svc == null)
+			{
+				throw new MojoExecutionException("Unable to load the SVN implementation of the ProfileSyncI interface." + 
+						"  Is gov.vha.isaac.gui.modules.sync-svn listed as a dependency for the mojo execution?");
+			}
+			svc.setRootLocation(userProfileFolderLocation);
+			return svc;
 		}
 		else
 		{

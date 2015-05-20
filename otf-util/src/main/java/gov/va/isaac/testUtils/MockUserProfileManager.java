@@ -25,6 +25,7 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import java.io.IOException;
 import javafx.collections.ObservableList;
+import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -35,6 +36,7 @@ import org.jvnet.hk2.annotations.Service;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @Service (name = "mock")
+@Rank (value = -50)
 public class MockUserProfileManager extends UserProfileManager
 {
 	private UserProfile user;

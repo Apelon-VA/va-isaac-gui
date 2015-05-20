@@ -20,6 +20,8 @@ package gov.va.isaac.mojos.profileSync;
 
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * Goal which reads a app.xml file to find the specified SCM URL and type for the profiles / changeset
@@ -30,10 +32,8 @@ import org.apache.maven.plugin.MojoExecutionException;
  * 
  * See {@link ProfilesMojoBase} for details on how credentials are handled.
  * Keep this in a phase earlier than GenerateUsersMojo
- * 
- * @goal get-and-link-profile-scm
- * @phase generate-sources
  */
+@Mojo (defaultPhase = LifecyclePhase.GENERATE_RESOURCES, name = "get-and-link-profiles-scm")
 public class LinkProfilesToSCMMojo extends ProfilesMojoBase
 {
 	/**

@@ -314,7 +314,6 @@ public class DynamicRefexView implements RefexViewI
 									ExtendedAppContext.getDataStore().addUncommitted(assemblage);
 								}
 							}
-							ExtendedAppContext.getDataStore().waitTillWritesFinished();
 							refresh();
 						}
 					}
@@ -360,7 +359,7 @@ public class DynamicRefexView implements RefexViewI
 					ConceptChronicleBI c;
 					if (setFromType_.getComponentBI() instanceof ComponentChronicleBI)
 					{
-						c = ((ComponentChronicleBI<?>) setFromType_.getComponentBI()).getEnclosingConcept();
+						c = ExtendedAppContext.getDataStore().getConceptForNid(((ComponentChronicleBI<?>) setFromType_.getComponentBI()).getNid());
 					}
 					else if (setFromType_.getComponentBI() instanceof ConceptChronicleBI)
 					{
@@ -543,7 +542,6 @@ public class DynamicRefexView implements RefexViewI
 							cv.cancel();
 						}
 					}
-					ExtendedAppContext.getDataStore().waitTillWritesFinished();
 				}
 				catch (Exception e)
 				{
@@ -568,7 +566,7 @@ public class DynamicRefexView implements RefexViewI
 						ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConceptForNid(i);
 						if (cc.isUncommitted() || cc.getConceptAttributes().isUncommitted())
 						{
-							ExtendedAppContext.getDataStore().commit(cc);
+							ExtendedAppContext.getDataStore().commit(/* cc */);
 						}
 					}
 					
@@ -578,10 +576,9 @@ public class DynamicRefexView implements RefexViewI
 						ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(i);
 						if (!cc.isAnnotationStyleRefex() && cc.isUncommitted())
 						{
-							ExtendedAppContext.getDataStore().commit(cc);
+							ExtendedAppContext.getDataStore().commit();
 						}
 					}
-					ExtendedAppContext.getDataStore().waitTillWritesFinished();
 				}
 				catch (Exception e)
 				{

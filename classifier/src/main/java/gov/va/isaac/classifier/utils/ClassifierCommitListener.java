@@ -27,22 +27,16 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.interfaces.utility.CommitListenerI;
 import gov.va.isaac.interfaces.utility.ServicesToPreloadI;
 import gov.va.isaac.util.OTFUtility;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
 import javafx.application.Platform;
-
 import javax.inject.Named;
 import javax.inject.Singleton;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.nid.IntSet;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyDI.CONCEPT_EVENT;
-import org.ihtsdo.otf.tcc.model.cc.attributes.ConceptAttributes;
 import org.ihtsdo.otf.tcc.model.cc.concept.ConceptChronicle;
-import org.ihtsdo.otf.tcc.model.cc.relationship.Relationship;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +45,6 @@ import org.slf4j.LoggerFactory;
  * Commit listener for incremental classification.
  * @author bcarlsenca
  */
-@SuppressWarnings("restriction")
 @Service
 @Singleton
 @Named(value = "Classifier")
@@ -105,7 +98,8 @@ public class ClassifierCommitListener implements PropertyChangeListener,
       LOG.info("Disabling the classifier commit listener");
       // TODO file yet another OTF bug - this doesn't work. We still get
       // property change notifications after calling remove...
-      ExtendedAppContext.getDataStore().removePropertyChangeListener(this);
+      //TODO OCHRE this doesn't exist yet.
+      //ExtendedAppContext.getDataStore().removePropertyChangeListener(this);
       enabled = false;
     }
   }
@@ -121,10 +115,11 @@ public class ClassifierCommitListener implements PropertyChangeListener,
     if (!enabled && loggedIn != null
         && loggedIn.isLaunchWorkflowForEachCommit()) {
       LOG.info("Enabling the classifier commit listener");
-      ExtendedAppContext.getDataStore().addPropertyChangeListener(
-          CONCEPT_EVENT.PRE_COMMIT, this);
-      ExtendedAppContext.getDataStore().addPropertyChangeListener(
-          CONCEPT_EVENT.POST_COMMIT, this);
+    //TODO OCHRE this doesn't exist yet.
+//      ExtendedAppContext.getDataStore().addPropertyChangeListener(
+//          CONCEPT_EVENT.PRE_COMMIT, this);
+//      ExtendedAppContext.getDataStore().addPropertyChangeListener(
+ //         CONCEPT_EVENT.POST_COMMIT, this);
       enabled = true;
     }
   }
@@ -158,12 +153,13 @@ public class ClassifierCommitListener implements PropertyChangeListener,
             if (!component.isActive()) {
               // This is really awful, but there's no other way I can
               // see to ask about the type of a component.
-              if (component instanceof ConceptAttributes.Version ||
-                  component instanceof Relationship.Version) {
-                LOG.debug("  INCLUDES RETIREMENTS");
-                includesRetirements = true;
-                break;
-              }
+            	//TODO OCHRE no idea what is going on here - but doesn't compile
+//              if (component instanceof ConceptAttributes.Version ||
+//                  component instanceof Relationship.Version) {
+//                LOG.debug("  INCLUDES RETIREMENTS");
+//                includesRetirements = true;
+//                break;
+//              }
             }
             // if a retired concept or relationship set includesRetirements to true
           }

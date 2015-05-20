@@ -22,7 +22,6 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.interfaces.sync.MergeFailOption;
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
 import java.io.File;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * {@link SyncTesting}
@@ -33,9 +32,8 @@ public class SyncTesting
 {
 	public static void main(String[] args) throws Exception
 	{
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
-		AppContext.setup();
+		//Configure Java logging into log4j2
+		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
 		ProfileSyncI ssg = AppContext.getService(SyncServiceSVN.class);
 		File localFolder = new File("/mnt/SSD/scratch/svnTest1/svnTestRepo");
 		ssg.setRootLocation(localFolder);

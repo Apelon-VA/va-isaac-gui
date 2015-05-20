@@ -294,8 +294,7 @@ public class RefsetSpecSearchTypeModel  extends SearchTypeModel {
 				//,QueryNodeType.DESCRIPTION_REGEX_MATCH
 		
 		addNewNodeSubMenu(menu, ownerNode, "New Relationship Assertion",
-				QueryNodeType.REL_RESTRICTION,
-				QueryNodeType.REL_TYPE);
+				QueryNodeType.REL_RESTRICTION);
 	}
 	private void addNewNodeSubMenu(ContextMenu menu, Node ownerNode, String subMenuName, QueryNodeType...nodeTypes) {
 		Menu subMenu = new Menu(subMenuName);
@@ -474,11 +473,16 @@ public class RefsetSpecSearchTypeModel  extends SearchTypeModel {
 		try {
 			QueryBuilderHelper.executeQuery(QueryBuilderHelper.generateQuery(queryNodeTreeView), queryNodeTreeView);
 
+			setResults(QueryBuilderHelper.getResults());
+			
+			/*
 			SearchModel.getSearchResultsTable().getResults().setItems(FXCollections.observableArrayList(QueryBuilderHelper.getResults()));
 			
 			if (splitPane.getItems().contains(taxonomyPane)) {
 				ResultsToTaxonomy.resultsToSearchTaxonomy();
 			}
+			*/
+			
 		} catch (Exception e) {
 			logger.error("Failed executing query.  Caught {} {}.", e.getClass().getName(), e.getLocalizedMessage());
 

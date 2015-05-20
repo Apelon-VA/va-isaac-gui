@@ -42,6 +42,7 @@ import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,15 +64,15 @@ import javafx.scene.control.TreeView;
 import javafx.scene.layout.GridPane;
 
 import org.ihtsdo.otf.query.implementation.Clause;
+import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
+import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetItrBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
-import org.jfree.util.Log;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +85,7 @@ import org.slf4j.LoggerFactory;
 public class QueryBuilderHelper {
 	private final static Logger logger = LoggerFactory.getLogger(QueryBuilderHelper.class);
 	
-	private final static BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+	private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static NativeIdSetBI results;
 
@@ -160,7 +161,7 @@ public class QueryBuilderHelper {
 
 		if (draggableNode == null) {
 			String error = "populateNodeEditorGridPane() passed null node";
-			Log.warn(error);
+			logger.warn(error);
 		} else {
 			if (draggableNode instanceof LogicalNode) {
 				LogicalNode logicalNode = (LogicalNode)draggableNode;
@@ -598,7 +599,7 @@ public class QueryBuilderHelper {
 		}
 	}
 	
-	public static String getDescription(int nid) {
+	public static String getDescription(int nid) throws IOException {
 		String componentDescription = null;
 		ComponentVersionBI component = OTFUtility.getComponentVersion(nid);
 		if (component != null) {
@@ -642,19 +643,14 @@ public class QueryBuilderHelper {
 			throw new RuntimeException(error);
 		}
 
-		ViewCoordinate viewCoordinate = null;
-		try {
-			viewCoordinate = StandardViewCoordinates.getSnomedInferredLatest();
-		} catch (IOException ex) {
-			logger.error("Failed getting default ViewCoordinate. Caught {} \"{}\"", ex.getClass().getName(), ex.getLocalizedMessage());
-		}
-
+		ViewCoordinate viewCoordinate = OTFUtility.getViewCoordinate();
 		Query syntheticQuery = new Query(viewCoordinate) {
 			
-			@Override
-			protected NativeIdSetBI For() throws IOException {
-				return dataStore.getAllConceptNids();
-			}
+			// TODO test change made to conform with new Query OCHRE interface
+//			@Override
+//			protected NativeIdSetBI For() throws IOException {
+//				return dataStore.getAllConceptNids();
+//			}
 
 			@Override
 			public void Let() throws IOException {
@@ -664,6 +660,11 @@ public class QueryBuilderHelper {
 			public Clause Where() {
 				return ClauseFactory.createClause(this, tree.getRoot());
 			}
+
+			@Override
+            protected ForSetSpecification ForSetSpecification() {
+                return new ForSetSpecification(ComponentCollectionTypes.ALL_CONCEPTS);
+            }
 		};
 		
 		return syntheticQuery;
@@ -674,14 +675,14 @@ public class QueryBuilderHelper {
 		
 		if (results != null) {
 			NativeIdSetItrBI itr = results.getSetBitIterator();
-            while (itr.next()) {
-            	int nid = itr.nid();
-            	ConceptVersionBI con = OTFUtility.getConceptVersion(nid);
+			while (itr.next()) {
+				int nid = itr.nid();
+				ConceptVersionBI con = OTFUtility.getConceptVersion(nid);
 				CompositeSearchResult nidResult = new CompositeSearchResult(con, 0);
 				collection.add(nidResult);
 			}
-        }
+		}
 
-        return collection;
+		return collection;
 	}
 }

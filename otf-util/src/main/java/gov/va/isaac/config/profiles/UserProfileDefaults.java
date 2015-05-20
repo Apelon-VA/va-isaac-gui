@@ -27,6 +27,7 @@ package gov.va.isaac.config.profiles;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.util.UUID;
 
 /**
@@ -39,7 +40,7 @@ public final class UserProfileDefaults {
 	private UserProfileDefaults() {}
 	
 	public static StatedInferredOptions getDefaultStatedInferredPolicy() {
-		return StatedInferredOptions.INFERRED_THEN_STATED;
+		return StatedInferredOptions.STATED;
 	}
 
 	public static boolean getDefaultDisplayFSN() { 
@@ -67,12 +68,14 @@ public final class UserProfileDefaults {
 		return Long.MAX_VALUE;
 	}
 	
+	//TODO OCHRE paths questions
 	public static UUID getDefaultViewCoordinatePath() {
-		return UUID.fromString(AppContext.getAppConfiguration().getDefaultViewPathUuid());
+		return IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid();
 	}
 
+	//TODO OCHRE paths questions
 	public static UUID getDefaultEditCoordinatePath() {
-		return UUID.fromString(AppContext.getAppConfiguration().getDefaultEditPathUuid());
+		return IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid();
 	}
 
 	public static UUID getDefaultWorkflowPromotionPath() {

@@ -16,6 +16,7 @@ import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -294,18 +295,22 @@ public class EnhancedConceptBuilder {
 			}
 		});
 
-		MenuItem newWorkflowItem = new MenuItem("Send Concept to Workflow Initiation");
-		newWorkflowItem.setOnAction(new EventHandler<ActionEvent>()
-		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
+		MenuItem newWorkflowItem = null;
+		if (LookupService.hasService(WorkflowInitiationViewI.class)) {
+			newWorkflowItem = new MenuItem("Send Concept to Workflow Initiation");
+			newWorkflowItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event)
+				{
+					WorkflowInitiationViewI view = AppContext.getService(WorkflowInitiationViewI.class);
 
-				view.setComponent(con.getNid());
-				view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-			}
-		});
+					view.setComponent(con.getNid());
+					view.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+				}
+			});
+		} else {
+			LOG.debug("Not adding Initiate Workflow (WorkflowInitiationViewI) menu item. Service not available.");
+		}
 
 		MenuItem listViewItem = new MenuItem("Send Concept to List View");
 		listViewItem.setOnAction(new EventHandler<ActionEvent>()
@@ -313,7 +318,7 @@ public class EnhancedConceptBuilder {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				ListBatchViewI lv = AppContext.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
+				ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
 				AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
 				List<Integer> nidList = new ArrayList<>();
 				nidList.add(con.getNid());
@@ -327,7 +332,7 @@ public class EnhancedConceptBuilder {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				AppContext.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(con.getNid(), null);			
+				LookupService.getService(TaxonomyViewI.class, SharedServiceNames.DOCKED).locateConcept(con.getNid(), null);
 			}
 		});
 
@@ -336,7 +341,12 @@ public class EnhancedConceptBuilder {
 		Menu modifyComponentMenu = labelHelper.addModifyMenus(ConceptViewerHelper.getConceptAttributes(con), ComponentType.CONCEPT);
 		Menu createComponentMenu = labelHelper.addCreateNewComponent();
 
-		rtClickMenu.getItems().addAll(refexDynamicItem, newWorkflowItem, listViewItem, taxonomyViewItem, prefAccModificationMenu, copyIdMenu, modifyComponentMenu, createComponentMenu);
+		MenuItem[] items = new MenuItem[] { refexDynamicItem, newWorkflowItem, listViewItem, taxonomyViewItem, prefAccModificationMenu, copyIdMenu, modifyComponentMenu, createComponentMenu };
+		for (MenuItem item : items) {
+			if (item != null) {
+				rtClickMenu.getItems().add(item);
+			}
+		}
 
 		BorderPane bp = (BorderPane)enhancedConceptPane.getChildren().get(0);
 		bp.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {  

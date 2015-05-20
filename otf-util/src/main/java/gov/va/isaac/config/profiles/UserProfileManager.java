@@ -39,9 +39,9 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javax.inject.Singleton;
+import org.glassfish.hk2.api.Rank;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.jfree.util.Log;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
  */
 @Service
 @Singleton
+@Rank (value = 10)
 public class UserProfileManager implements ServicesToPreloadI
 {
 	private Logger logger = LoggerFactory.getLogger(UserProfileManager.class);
@@ -500,7 +501,7 @@ public class UserProfileManager implements ServicesToPreloadI
 		loggedInUser_ = up;
 		AppContext.getService(UserProfileBindings.class).update(loggedInUser_);
 		userNamesWithProfiles_.add(up.getUserLogonName());
-		Log.info("User Profile Manager automation mode enabled!");
+		logger.info("User Profile Manager automation mode enabled!");
 	}
 	
 	public boolean isAutomationModeEnabled()

@@ -20,7 +20,7 @@ package gov.va.isaac;
 
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 /**
  * 
@@ -39,9 +39,9 @@ public class ExtendedAppContext extends AppContext
 	//I tweak this with reflection....
 	private static Class<UserProfileManager> userProfileManagerClass = UserProfileManager.class;
 	
-	public static BdbTerminologyStore getDataStore()
+	public static TerminologyStoreDI getDataStore()
 	{
-		return getService(BdbTerminologyStore.class);
+		return getService(TerminologyStoreDI.class);
 	}
 	
 	/**

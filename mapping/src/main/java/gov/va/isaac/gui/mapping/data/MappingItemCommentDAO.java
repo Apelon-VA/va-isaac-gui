@@ -68,7 +68,7 @@ public class MappingItemCommentDAO extends MappingDAO
 			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
-			ExtendedAppContext.getDataStore().commit(cc);
+			ExtendedAppContext.getDataStore().commit(/* cc */);
 
 			return new MappingItemComment((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), rdc.getPrimordialUuid()));
 		}
@@ -157,7 +157,7 @@ public class MappingItemCommentDAO extends MappingDAO
 			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
-			ExtendedAppContext.getDataStore().commit(cc);
+			ExtendedAppContext.getDataStore().commit(/* cc */);
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{

@@ -20,6 +20,7 @@ package gov.va.isaac.testUtils;
 
 import java.net.URL;
 import java.util.UUID;
+import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 import gov.va.isaac.interfaces.config.IsaacAppConfigI;
 
@@ -32,6 +33,7 @@ import gov.va.isaac.interfaces.config.IsaacAppConfigI;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @Service (name = "mock")
+@Rank (value = -50)
 public class MockIsaacAppConfig implements IsaacAppConfigI
 {
 	
@@ -213,38 +215,6 @@ public class MockIsaacAppConfig implements IsaacAppConfigI
 	 */
 	@Override
 	public String getDbClassifier() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultEditPathName()
-	 */
-	@Override
-	public String getDefaultEditPathName() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultEditPathUuid()
-	 */
-	@Override
-	public String getDefaultEditPathUuid() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultViewPathName()
-	 */
-	@Override
-	public String getDefaultViewPathName() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.config.IsaacAppConfigI#getDefaultViewPathUuid()
-	 */
-	@Override
-	public String getDefaultViewPathUuid() {
 		return null;
 	}
 

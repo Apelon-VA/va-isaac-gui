@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Singleton;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
 import org.ihtsdo.otf.tcc.model.cs.ChangeSetReader;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -84,7 +83,8 @@ public class ChangesetProcessor implements ServicesToPreloadI
 	{
 		try
 		{
-			AppContext.getService(BdbTerminologyStore.class).suspendChangeNotifications();
+			//TODO OCHRE reenable these when they are implemented
+			//AppContext.getService(TerminologyStoreDI.class).suspendChangeNotifications();
 			Files.walkFileTree(rootFolder.toPath(), new SimpleFileVisitor<Path>()
 			{
 				/**
@@ -123,7 +123,8 @@ public class ChangesetProcessor implements ServicesToPreloadI
 		}
 		finally
 		{
-			AppContext.getService(BdbTerminologyStore.class).resumeChangeNotifications();
+			//TODO OCHRE reenable these when they are implemented
+			//AppContext.getService(TerminologyStoreDI.class).resumeChangeNotifications();
 		}
 	}
 }

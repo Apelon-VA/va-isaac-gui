@@ -53,7 +53,7 @@ public class AssociationUtilities
 	{
 		if (associationNid == Integer.MIN_VALUE)
 		{
-			associationNid = ISAAC.ASSOCIATION_REFEX.getNid();
+			associationNid = ISAAC.ASSOCIATION_SEMEME.getNid();
 		}
 		return associationNid;
 	}
@@ -142,10 +142,10 @@ public class AssociationUtilities
 		{
 			throw new RuntimeException("Required index is not available");
 		}
-		List<SearchResult> refexes = indexer.queryAssemblageUsage(ISAAC.ASSOCIATION_REFEX.getNid(), Integer.MAX_VALUE, null);
+		List<SearchResult> refexes = indexer.queryAssemblageUsage(ISAAC.ASSOCIATION_SEMEME.getNid(), Integer.MAX_VALUE, null);
 		for (SearchResult sr : refexes)
 		{
-			result.add(ExtendedAppContext.getDataStore().getComponent(sr.getNid()).getEnclosingConcept());
+			result.add(ExtendedAppContext.getDataStore().getConceptForNid(sr.getNid()));
 		}
 		return result;
 	}

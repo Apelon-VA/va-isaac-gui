@@ -170,7 +170,7 @@ public class EnhancedConceptViewController {
 			public void handle(ActionEvent arg0) {
 				try
 				{
-					OTFUtility.commit(concept);
+					ExtendedAppContext.getDataStore().commit(/* concept */);
 					clearContents();
 					commitButton.setDisable(true);
 					cancelButton.setDisable(true);
@@ -269,9 +269,14 @@ public class EnhancedConceptViewController {
 	}
 
 	private void updateCommitButton() {
-		boolean isUncommitted = OTFUtility.isUncommittened(concept);
-		commitButton.setDisable(!isUncommitted);
-		cancelButton.setDisable(!isUncommitted);
+		// TODO OCHRE getUncommittedConcepts() is unsupported, so never disable commit and cancel buttons
+	
+		//boolean isUncommitted = OTFUtility.isUncommittened(concept);
+		//commitButton.setDisable(!isUncommitted);
+		//cancelButton.setDisable(!isUncommitted);
+		
+		commitButton.setDisable(false);
+		cancelButton.setDisable(false);
 	}
 
 	public void setModeType(ConceptViewMode mode) {

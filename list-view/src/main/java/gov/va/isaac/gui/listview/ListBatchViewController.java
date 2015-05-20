@@ -37,6 +37,7 @@ import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.UpdateableDoubleBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -187,7 +188,7 @@ public class ListBatchViewController
 	@FXML
 	public void initialize()
 	{
-		conceptView = AppContext.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		conceptView = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 		
 		operationsList.getChildren().add(new OperationNode(this));
 
@@ -365,7 +366,7 @@ public class ListBatchViewController
 					{
 						try
 						{
-							OTFUtility.commit(row.getItem().getNid());
+							ExtendedAppContext.getDataStore().commit(/* row.getItem().getNid() */);
 							updateTableItem(row.getItem(), false);
 						}
 						catch (IOException ex)
@@ -471,7 +472,7 @@ public class ListBatchViewController
 			{
 				try
 				{
-					OTFUtility.commit();
+					ExtendedAppContext.getDataStore().commit();
 					uncommitAllTableItems();
 				}
 				catch (IOException ex)
@@ -487,8 +488,16 @@ public class ListBatchViewController
 			@Override
 			public void handle(ActionEvent event)
 			{
-				OTFUtility.cancel();
-				uncommitAllTableItems();
+				try
+				{
+					OTFUtility.cancel();
+					uncommitAllTableItems();
+				}
+				catch (IOException e)
+				{
+					// TODO OCHRE
+					e.printStackTrace();
+				}
 			}
 		});
 
@@ -725,6 +734,7 @@ public class ListBatchViewController
 			}
 		});
 
+		addUncommittedListButton.setDisable(true); // TODO OCHRE getUncommittedConcepts() is unsupported
 		addUncommittedListButton.setOnAction(new EventHandler<ActionEvent>()
 		{
 			@Override
@@ -1009,7 +1019,7 @@ public class ListBatchViewController
 		if (isUncommitted) {
 			try
 			{
-				OTFUtility.addUncommitted(con);
+				ExtendedAppContext.getDataStore().addUncommitted(con);
 				newCon.setUncommitted(true);
 				
 				if (isUncommitted && (!oldCon.isUncommitted() || idx < 0)) {

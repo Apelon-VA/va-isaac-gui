@@ -2,11 +2,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>gov.va.isaac</groupId>
-		<artifactId>isaac-parent</artifactId>
-		<version>Sprint_20.1</version>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.0</version>
 	</parent>
-	<groupId>gov.va.isaac.modules</groupId>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>content-request</artifactId>
 	<packaging>jar</packaging>
 
@@ -17,21 +17,21 @@
 
 		<!-- ISAAC App Utils. -->
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
 			<artifactId>gui-util</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 
 		<!-- ISAAC OTF Utils. -->
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
 			<artifactId>otf-util</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 
 		<!-- ISAAC Data Model. -->
 		<dependency>
-			<groupId>gov.va.isaac.modules</groupId>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
 			<artifactId>data-model</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
@@ -47,17 +47,6 @@
 			<artifactId>poi-ooxml</artifactId>
 		</dependency>
 
-		<!-- Redirects Java logging into logback -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-
-		<!-- Redirects log4j into logback - note - we must not include log4j in our classpath... -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>log4j-over-slf4j</artifactId>
-		</dependency>
 	</dependencies>
 
 </project>

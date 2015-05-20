@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.refexDynamic;
 
+import gov.va.isaac.ExtendedAppContext;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -32,7 +33,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.Bdb;
 /**
  * 
  * {@link RefexAnnotationSearcher}
@@ -51,7 +51,7 @@ public class RefexAnnotationSearcher implements ProcessUnfetchedConceptDataBI
 	public RefexAnnotationSearcher(Function<RefexDynamicChronicleBI<?>, Boolean> matchFunction, ProgressIndicator indicatorToUpdate) throws IOException
 	{
 		matchFunction_ = matchFunction;
-		totalToProcess_ = Bdb.getConceptDb().getCount();
+		totalToProcess_ = ExtendedAppContext.getDataStore().getConceptCount();
 		progressIndicator_ = indicatorToUpdate;
 	}
 	

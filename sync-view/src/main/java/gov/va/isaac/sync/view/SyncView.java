@@ -33,6 +33,7 @@ import gov.va.isaac.interfaces.sync.MergeFailOption;
 import gov.va.isaac.interfaces.sync.MergeFailure;
 import gov.va.isaac.interfaces.sync.ProfileSyncI;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ import javax.inject.Singleton;
 import javax.naming.AuthenticationException;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cs.ChangeSetReader;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -429,7 +430,8 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 			StringBuilder errorsDuringProcess = new StringBuilder();
 			try
 			{
-				AppContext.getService(BdbTerminologyStore.class).suspendChangeNotifications();
+				//TODO OCHRE this doesn't exist yet.
+				//AppContext.getService(TerminologyStoreDI.class).suspendChangeNotifications();
 				for (String s : changedFiles)
 				{
 					log.debug("Post processing {} after change during sync", s);
@@ -476,7 +478,8 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 			}
 			finally
 			{
-				AppContext.getService(BdbTerminologyStore.class).resumeChangeNotifications();
+				//TODO OCHRE this doesn't exist yet.
+//				AppContext.getService(TerminologyStoreDI.class).resumeChangeNotifications();
 			}
 			if (errorsDuringProcess.length() > 0)
 			{
@@ -637,7 +640,7 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 			}
 			else
 			{
-				syncService_ = AppContext.getService(ProfileSyncI.class, urlType);
+				syncService_ = LookupService.getService(ProfileSyncI.class, urlType);
 				
 				if (syncService_ == null)
 				{

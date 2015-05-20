@@ -37,7 +37,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +97,7 @@ public class AddUserDialogController
 			{
 				if (uuid.getText().length() == 0 || Utility.isUUID(uuid.getText()))
 				{
-					if (uuid.getText().length() > 0 && AppContext.getService(BdbTerminologyStore.class).hasUuid(UUID.fromString(uuid.getText())))
+					if (uuid.getText().length() > 0 && AppContext.getService(TerminologyStoreDI.class).hasUuid(UUID.fromString(uuid.getText())))
 					{
 						setInvalidReason("If a UUID is specified, it must be unique");
 						return false;
@@ -171,7 +171,7 @@ public class AddUserDialogController
 						userUuid = GenerateUsers.calculateUserUUID(fullNameUnique.getText());
 					}
 					
-					if (AppContext.getService(BdbTerminologyStore.class).hasUuid(userUuid))
+					if (AppContext.getService(TerminologyStoreDI.class).hasUuid(userUuid))
 					{
 						setInvalidReason("The full name must be unique");
 						return false;

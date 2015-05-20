@@ -73,7 +73,7 @@ import org.tmatesoft.svn.core.wc.SVNWCClient;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-@Service(name = "SVN")
+@Service(name = gov.va.isaac.interfaces.gui.constants.SharedServiceNames.SVN)
 @PerLookup
 public class SyncServiceSVN implements ProfileSyncI
 {
@@ -85,12 +85,6 @@ public class SyncServiceSVN implements ProfileSyncI
 	
 	private File localFolder_ = null;
 	private SVNClientManager scm_;
-
-	public SyncServiceSVN(File localFolder)
-	{
-		this();
-		setRootLocation(localFolder);
-	}
 
 	private SyncServiceSVN()
 	{

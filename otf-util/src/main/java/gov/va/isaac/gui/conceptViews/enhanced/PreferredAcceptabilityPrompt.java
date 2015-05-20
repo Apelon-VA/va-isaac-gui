@@ -1,6 +1,7 @@
 package gov.va.isaac.gui.conceptViews.enhanced;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.conceptViews.helpers.EnhancedConceptBuilder;
 import gov.va.isaac.util.OTFUtility;
@@ -46,7 +47,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.type_nid.RefexNidVersionBI;
-import org.ihtsdo.otf.tcc.model.cc.ReferenceConcepts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,62 +75,62 @@ public class PreferredAcceptabilityPrompt {
 	static class Prompt extends Stage {
 	
 		public Prompt( String title, Stage owner, Scene scene) {
-		    setTitle( title );
-		    initStyle( StageStyle.UTILITY );
-		    initModality( Modality.APPLICATION_MODAL );
-		    initOwner( owner );
-		    setResizable( false );
-		    setScene( scene );
+			setTitle( title );
+			initStyle( StageStyle.UTILITY );
+			initModality( Modality.APPLICATION_MODAL );
+			initOwner( owner );
+			setResizable( false );
+			setScene( scene );
 		}
 		public void showDialog() {
-		    sizeToScene();
-		    centerOnScreen();
-		    showAndWait();
+			sizeToScene();
+			centerOnScreen();
+			showAndWait();
 		}
 	}
 
 	public static void definePrefAcceptConcept(Stage owner, String title, ConceptVersionBI con) {
-	    VBox vb = new VBox(15);
-	    vb.setAlignment(Pos.CENTER);
-	    vb.setPadding( new Insets(10,10,10,10) );
-	    vb.setSpacing( 10 );
+		VBox vb = new VBox(15);
+		vb.setAlignment(Pos.CENTER);
+		vb.setPadding( new Insets(10,10,10,10) );
+		vb.setSpacing( 10 );
 
-	    Scene scene = new Scene( vb );
-	    final Prompt prompt = new Prompt( title, owner, scene);
+		Scene scene = new Scene( vb );
+		final Prompt prompt = new Prompt( title, owner, scene);
 
-	    HBox languageSelectionHBox = setupLangugaeSelection();
+		HBox languageSelectionHBox = setupLangugaeSelection();
 
-	    GridPane gp = createGridPane(con);
+		GridPane gp = createGridPane(con);
 
-	    HBox buttonHBox = setupButtons(prompt, con);
-	    
-	    vb.getChildren().addAll(languageSelectionHBox, gp, buttonHBox);
-	    prompt.showDialog();
+		HBox buttonHBox = setupButtons(prompt, con);
+		
+		vb.getChildren().addAll(languageSelectionHBox, gp, buttonHBox);
+		prompt.showDialog();
 	}
 
 	private static HBox setupButtons(Prompt prompt, ConceptVersionBI con) {
-	    Button commitButton = new Button( "Commit" );
-	    commitButton.setOnAction((e) -> {
-            prompt.close();
-            try {
+		Button commitButton = new Button( "Commit" );
+		commitButton.setOnAction((e) -> {
+			prompt.close();
+			try {
 				commitChanges(con);
 			} catch (Exception e1) {
 				LOG.error("Failure to commit selected changes", e);
 			}
-            buttonSelected = PrefAcceptResponse.COMMIT;
-	    } );
+			buttonSelected = PrefAcceptResponse.COMMIT;
+		} );
 
-	    Button cancelButton = new Button( "Cancel" );
-	    cancelButton.setOnAction((e) -> {
-	            prompt.close();
-	            buttonSelected = PrefAcceptResponse.CANCEL;
-	    } );
-	    
-	    HBox buttonHBox = new HBox(15);
-	    buttonHBox.setPadding(new Insets(15));
-	    buttonHBox.setAlignment( Pos.CENTER );
-	    buttonHBox.getChildren().addAll(commitButton, cancelButton);
-	    
+		Button cancelButton = new Button( "Cancel" );
+		cancelButton.setOnAction((e) -> {
+				prompt.close();
+				buttonSelected = PrefAcceptResponse.CANCEL;
+		} );
+		
+		HBox buttonHBox = new HBox(15);
+		buttonHBox.setPadding(new Insets(15));
+		buttonHBox.setAlignment( Pos.CENTER );
+		buttonHBox.getChildren().addAll(commitButton, cancelButton);
+		
 		return buttonHBox;
 	}
 
@@ -171,12 +171,12 @@ public class PreferredAcceptabilityPrompt {
 		}
 
 		try {
-	        AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			OTFUtility.commit();
+			AppContext.getRuntimeGlobals().disableAllCommitListeners();
+			ExtendedAppContext.getDataStore().commit();
 		} catch (Exception e) {
-	        LOG.error("Coudn't commit selected preferred/acceptability changes", e);
+			LOG.error("Coudn't commit selected preferred/acceptability changes", e);
 		} finally {
-	        AppContext.getRuntimeGlobals().enableAllCommitListeners();
+			AppContext.getRuntimeGlobals().enableAllCommitListeners();
 		}
 	}
 
@@ -191,7 +191,7 @@ public class PreferredAcceptabilityPrompt {
 			OTFUtility.getBuilder().constructIfNotCurrent(bp);
 			ConceptVersionBI refCon = OTFUtility.getConceptVersion(member.getConceptNid());
 	
-			OTFUtility.addUncommitted(refCon);
+			ExtendedAppContext.getDataStore().addUncommitted(refCon);
 		} catch (Exception e) {
 			AppContext.getCommonDialogs().showErrorDialog("Failed to retire member: " + member, e);
 		}
@@ -206,30 +206,30 @@ public class PreferredAcceptabilityPrompt {
 		
 		 OTFUtility.getBuilder().construct(newMember);
 
-		OTFUtility.addUncommitted(description.getConceptNid());
+		 ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(description.getConceptNid()));
 	}
 	private static HBox setupLangugaeSelection() {
-	    HBox languageSelectionHBox = new HBox(10);
-	    Label langSelect = createLabel("Select Language Dialect to Define");
-	    
-	    ObservableList<SimpleDisplayConcept> langConsList = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+		HBox languageSelectionHBox = new HBox(10);
+		Label langSelect = createLabel("Select Language Dialect to Define");
+		
+		ObservableList<SimpleDisplayConcept> langConsList = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
 
-	    try {
-		    //bca0a686-3516-3daf-8fcf-fe396d13cfad is US Eng Language type reference set
-	    	usLangRefex = OTFUtility.getConceptVersion(UUID.fromString("bca0a686-3516-3daf-8fcf-fe396d13cfad"));
-	    	String desc = usLangRefex.getFullySpecifiedDescription().getText();
+		try {
+			//bca0a686-3516-3daf-8fcf-fe396d13cfad is US Eng Language type reference set
+			usLangRefex = OTFUtility.getConceptVersion(UUID.fromString("bca0a686-3516-3daf-8fcf-fe396d13cfad"));
+			String desc = usLangRefex.getFullySpecifiedDescription().getText();
 			int endIdx = desc.indexOf("language reference set");
 			String displayStr = desc.substring(0, endIdx).trim();
 			SimpleDisplayConcept sdc = new SimpleDisplayConcept(displayStr, usLangRefex.getNid());
 			langConsList.add(sdc);
-	    } catch (Exception e) {
-	    	LOG.error("Unable to identify the available languages", e);
-	    }
-	    langDropDown.setItems(langConsList);
-	    langDropDown.getSelectionModel().select(0);
-	    
-	    languageSelectionHBox.getChildren().addAll(langSelect, langDropDown);
-	    
+		} catch (Exception e) {
+			LOG.error("Unable to identify the available languages", e);
+		}
+		langDropDown.setItems(langConsList);
+		langDropDown.getSelectionModel().select(0);
+		
+		languageSelectionHBox.getChildren().addAll(langSelect, langDropDown);
+		
 		return languageSelectionHBox;
 	}
 
@@ -245,16 +245,16 @@ public class PreferredAcceptabilityPrompt {
 		Label accept = createLabel("Acceptability");
 
 		String maxDesc = "";
-	    try {
+		try {
 			for (DescriptionVersionBI<?> d : con.getDescriptionsActive()) {
 				if (maxDesc.length() < d.getText().length()) {
 					maxDesc = d.getText();
 				}
 			}
 			
-			gp.setConstraints(new Label(maxDesc),  0,  0,  1,  1,  HPos.LEFT,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
-			gp.setConstraints(preferred,  1,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
-			gp.setConstraints(accept,  2,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
+			GridPane.setConstraints(new Label(maxDesc),  0,  0,  1,  1,  HPos.LEFT,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
+			GridPane.setConstraints(preferred,  1,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
+			GridPane.setConstraints(accept,  2,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
 	
 			gp.addRow(0, desc, preferred, accept);
 			
@@ -264,7 +264,7 @@ public class PreferredAcceptabilityPrompt {
 			for (DescriptionVersionBI<?> d : con.getDescriptionsActive()) {
 				if (d.getNid() != con.getFullySpecifiedDescription().getNid()) {
 					CheckBox cb = new CheckBox();
-				    
+					
 					RadioButton rb = new RadioButton();
 					rb.setToggleGroup(prefTermGroup);
 					GridPane.setHalignment(cb, HPos.CENTER);
@@ -293,49 +293,47 @@ public class PreferredAcceptabilityPrompt {
 					gp.addRow(++i, new Label(d.getText()), rb, cb);
 				}
 			}
-	    } catch (Exception e) {
-	    	LOG.error("Unable to identify all languages", e);
-	    }
-	    
+		} catch (Exception e) {
+			LOG.error("Unable to identify all languages", e);
+		}
+		
 		return gp ;
 	}
 
 
 	private static boolean isAcceptableTerm(DescriptionVersionBI<?> d) {
 		try {
-	        for (RefexVersionBI<?> refex : d.getRefexMembersActive(OTFUtility.getViewCoordinate())) {
-	            if (refex.getAssemblageNid() == langDropDown.getSelectionModel().getSelectedItem().getNid()) {
-	                RefexNidVersionBI<?> langRefex = (RefexNidVersionBI<?>) refex;
+			for (RefexVersionBI<?> refex : d.getRefexMembersActive(OTFUtility.getViewCoordinate())) {
+				if (refex.getAssemblageNid() == langDropDown.getSelectionModel().getSelectedItem().getNid()) {
+					RefexNidVersionBI<?> langRefex = (RefexNidVersionBI<?>) refex;
 	
-	                if ((langRefex.getNid1() == ReferenceConcepts.ACCEPTABLE_ACCEPTABILITY.getNid()) || 
-	            		(langRefex.getNid1() == SnomedMetadataRf2.ACCEPTABLE_RF2.getNid())) {
+					if (langRefex.getNid1() == SnomedMetadataRf2.ACCEPTABLE_RF2.getNid()) {
 						acceptRefexMap .put(d.getNid(), langRefex);
-	                	return true;
-	                }
-	            }
-	        }
+						return true;
+					}
+				}
+			}
 		} catch (Exception e) {
 			AppContext.getCommonDialogs().showErrorDialog("Can't identify Preferred/Acceptable value for description: " + d.getText(), e);
 		}
-        return false;
+		return false;
 	}
 
 	private static RefexNidVersionBI<?> gertPrefMember(DescriptionVersionBI<?> d) {
 		try {
-	        for (RefexVersionBI<?> refex : d.getRefexMembersActive(OTFUtility.getViewCoordinate())) {
-	            if (refex.getAssemblageNid() == langDropDown.getSelectionModel().getSelectedItem().getNid()) {
-	                RefexNidVersionBI<?> langRefex = (RefexNidVersionBI<?>) refex;
+			for (RefexVersionBI<?> refex : d.getRefexMembersActive(OTFUtility.getViewCoordinate())) {
+				if (refex.getAssemblageNid() == langDropDown.getSelectionModel().getSelectedItem().getNid()) {
+					RefexNidVersionBI<?> langRefex = (RefexNidVersionBI<?>) refex;
 	
-	                if ((langRefex.getNid1() == ReferenceConcepts.PREFERRED_ACCEPTABILITY_RF1.getNid()) || 
-	            		(langRefex.getNid1() == SnomedMetadataRf2.PREFERRED_RF2.getNid())) {
-	                	return langRefex;
-	                }
-	            }
-	        }
+					if (langRefex.getNid1() == SnomedMetadataRf2.PREFERRED_RF2.getNid()) {
+						return langRefex;
+					}
+				}
+			}
 		} catch (Exception e) {
 			AppContext.getCommonDialogs().showErrorDialog("Can't identify Preferred/Acceptable value for description: " + d.getText(), e);
 		}
-        return null;
+		return null;
 	}
 
 	private static Label createLabel(String str) {

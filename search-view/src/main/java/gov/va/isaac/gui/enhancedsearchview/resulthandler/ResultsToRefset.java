@@ -1,8 +1,10 @@
 package gov.va.isaac.gui.enhancedsearchview.resulthandler;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 
 import java.beans.PropertyVetoException;
 import java.io.IOException;
@@ -34,22 +36,23 @@ public class ResultsToRefset {
 																									 new RefexDynamicColumnInfo[] {},
 																									 prompt.getParentConcept().getConcept().getPrimordialUuid(),
 																									 prompt.getAnnot().isSelected(),
-																									 null);
+																									 null,
+																									 ViewCoordinates.getMetadataViewCoordinate());
 		    // Create a dynamic refex CAB for each result
 			for (CompositeSearchResult con : tableView.getItems()) {
 				RefexDynamicCAB refexBlueprint = new RefexDynamicCAB(con.getContainingConcept().getNid(), refset.getRefexUsageDescriptorNid());
 				OTFUtility.getBuilder().construct(refexBlueprint);
 				
 				if (prompt.getAnnot().isSelected()) {
-					OTFUtility.addUncommitted(con.getContainingConcept());
+					ExtendedAppContext.getDataStore().addUncommitted(con.getContainingConcept());
 				} 
 			}
 			
 			if (!prompt.getAnnot().isSelected()) {
-				OTFUtility.addUncommitted(refset.getRefexUsageDescriptorNid());
+				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(refset.getRefexUsageDescriptorNid()));
 			}
 			
-			OTFUtility.commit();
+			ExtendedAppContext.getDataStore().commit();
 			
 			return prompt.getNameTextField().getText();
 		}

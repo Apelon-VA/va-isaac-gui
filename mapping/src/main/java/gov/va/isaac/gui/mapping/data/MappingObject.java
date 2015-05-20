@@ -4,10 +4,11 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -19,7 +20,7 @@ public class MappingObject extends StampedItem {
 	protected final SimpleStringProperty editorStatusConceptProperty = new SimpleStringProperty();
 	protected HashMap<UUID, String> cachedValues = new HashMap<>();
 	
-	protected static BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+	protected static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 	
 	/**
 	 * @return the editorStatusConcept
@@ -48,6 +49,10 @@ public class MappingObject extends StampedItem {
 		return editorStatusConceptProperty;
 	}
 
+	public String getEditorStatusName() {
+		return editorStatusConceptProperty.get();
+	}
+	
 	protected void propertyLookup(UUID uuid, SimpleStringProperty property)	{
 		if (uuid == null) {
 			property.set(null);
@@ -71,4 +76,13 @@ public class MappingObject extends StampedItem {
 	public static int getNidForUuidSafe(UUID uuid) {
 		return (uuid == null)? 0 : dataStore.getNidForUuids(new UUID[] { uuid });
 	}
+
+	public static final Comparator<MappingObject> editorStatusComparator = new Comparator<MappingObject>() {
+		@Override
+		public int compare(MappingObject o1, MappingObject o2) {
+			return Utility.compareStringsIgnoreCase(o1.getEditorStatusName(), o2.getEditorStatusName());
+		}
+	};
+	
+
 }

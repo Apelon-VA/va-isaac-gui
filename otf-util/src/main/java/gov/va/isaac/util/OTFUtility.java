@@ -22,6 +22,11 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
+import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -30,6 +35,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -49,8 +55,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
-import org.ihtsdo.otf.tcc.api.coordinate.Position;
-import org.ihtsdo.otf.tcc.api.coordinate.StandardViewCoordinates;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
@@ -58,10 +62,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf1;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedRelType;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
@@ -72,15 +72,16 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.uuid.UuidFactory;
-import org.ihtsdo.otf.tcc.datastore.BdbTermBuilder;
-import org.ihtsdo.otf.tcc.datastore.BdbTerminologyStore;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.RefexChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.type_comp.RefexCompVersionDdo;
+import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
+import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,32 +98,26 @@ import org.slf4j.LoggerFactory;
 public class OTFUtility {
 	private static final Logger LOG = LoggerFactory.getLogger(OTFUtility.class);
 
-	private static final UUID FSN_UUID = SnomedMetadataRf2.FULLY_SPECIFIED_NAME_RF2.getUuids()[0];
-	private static final UUID PREFERRED_UUID = SnomedMetadataRf2.PREFERRED_RF2.getUuids()[0];
-	private static final UUID SYNONYM_UUID = SnomedMetadataRf2.SYNONYM_RF2.getUuids()[0];
-	private static final UUID FSN_RF1_UUID = SnomedMetadataRf1.FULLY_SPECIFIED_DESCRIPTION_TYPE.getUuids()[0];
-	private static final UUID PREFERRED_RF1_UUID = SnomedMetadataRf1.PREFERRED_TERM_DESCRIPTION_TYPE_RF1.getUuids()[0];
-	private static final UUID SYNONYM_RF1_UUID = SnomedMetadataRf1.SYNOMYM_DESCRIPTION_TYPE_RF1.getUuids()[0];
+	private static final UUID FSN_UUID = IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getPrimodialUuid();
+	private static final UUID PREFERRED_UUID = IsaacMetadataAuxiliaryBinding.PREFERRED.getPrimodialUuid();
+	private static final UUID SYNONYM_UUID = IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid();
 
 	private static Integer fsnNid = null;
 	private static Integer preferredNid = null;
 	private static Integer synonymNid = null;
-	private static Integer fsnRf1Nid = null;
-	private static Integer preferredRf1Nid = null;
-	private static Integer synonymRf1Nid = null;
 	private static Integer langTypeNid = null;
 	
-	private static BdbTerminologyStore dataStore = ExtendedAppContext.getDataStore();
+	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static final Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
 
 	private static Set<UUID> rootNodeList = null;
 
 	public static TerminologyBuilderBI getBuilder() {
-		return new BdbTermBuilder(getEditCoordinate(), getViewCoordinateAllowInactive());
+		return new Builder(getEditCoordinate(), getViewCoordinateAllowInactive(), AppContext.getService(PersistentStoreI.class));
 	}
 	public static TerminologyBuilderBI getBuilder(EditCoordinate ec, ViewCoordinate vc) {
-		return new BdbTermBuilder(ec, vc);
+		return new Builder(ec, vc, AppContext.getService(PersistentStoreI.class));
 	}
 	
 	public static ViewCoordinate getViewCoordinate() {
@@ -132,30 +127,28 @@ public class OTFUtility {
 			StatedInferredOptions policy = userProfile.getStatedInferredPolicy();
 			switch(policy) {
 			case STATED:
-				vc = StandardViewCoordinates.getSnomedStatedLatest();
+				vc = ViewCoordinates.getDevelopmentStatedLatest();
 				break;
 			case INFERRED:
-				vc = StandardViewCoordinates.getSnomedInferredLatest();
-				break;
-			case INFERRED_THEN_STATED:
-				vc = StandardViewCoordinates.getSnomedInferredThenStatedLatest();
+				vc = ViewCoordinates.getDevelopmentInferredLatest();
 				break;
 			default: // Should never happen unless a new policy has been coded
 				throw new RuntimeException("Unsupported StatedInferredOptions policy " + policy);
 			}
 
+			//TODO OCHRE this is all different now
 			//LOG.info("Using {} policy for view coordinate", policy);
+//
+//			final UUID pathUuid = userProfile.getViewCoordinatePath();
+//			final Long time = userProfile.getViewCoordinateTime();
+//			final ConceptChronicleBI pathChronicle = dataStore.getConcept(pathUuid);
+//			final int pathNid = pathChronicle.getNid();
+//
+//			// Start with standard view coordinate and override the path setting to
+//			// use the preferred path
+//			Position position = dataStore.newPosition(dataStore.getPath(pathNid), time);
 
-			final UUID pathUuid = userProfile.getViewCoordinatePath();
-			final Long time = userProfile.getViewCoordinateTime();
-			final ConceptChronicleBI pathChronicle = dataStore.getConcept(pathUuid);
-			final int pathNid = pathChronicle.getNid();
-
-			// Start with standard view coordinate and override the path setting to
-			// use the preferred path
-			Position position = dataStore.newPosition(dataStore.getPath(pathNid), time);
-
-			vc.setViewPosition(position);
+//			vc.setViewPosition(position);
 
 			//LOG.info("Using ViewCoordinate policy={}, path nid={}, uuid={}, desc={}", policy, pathNid, pathUuid, OTFUtility.getDescription(pathChronicle));
 		} catch (NullPointerException e) {
@@ -188,7 +181,7 @@ public class OTFUtility {
 			if (pathUuid != null && (pathChronicle = dataStore.getConcept(pathUuid)) != null) {
 				pathNid = pathChronicle.getNid();
 			} else {
-				pathNid = TermAux.WB_AUX_PATH.getLenient().getConceptNid();
+				pathNid = IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid();
 				pathChronicle = dataStore.getConcept(pathNid);
 				pathUuid = pathChronicle.getPrimordialUuid();
 			}
@@ -263,7 +256,7 @@ public class OTFUtility {
 					DescriptionVersionBI<?> descVer = desc.getVersions()
 							.toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
 
-					if (descVer.getTypeNid() == getFSNNid() || descVer.getTypeNid() == getFsnRf1Nid()) {
+					if (descVer.getTypeNid() == getFSNNid()) {
 						if (descVer.getStatus() == Status.ACTIVE) {
 							if (ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
 								return descVer.getText();
@@ -274,7 +267,7 @@ public class OTFUtility {
 						} else {
 							bestFound = descVer.getText();
 						}
-					} else if ((descVer.getTypeNid() == getSynonymTypeNid() || descVer.getTypeNid() == getSynonymRf1TypeNid()) && 
+					} else if ((descVer.getTypeNid() == getSynonymTypeNid()) && 
 							isPreferred(descVer.getAnnotations())) {
 						if (descVer.getStatus() == Status.ACTIVE) {
 							if (!ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
@@ -293,8 +286,10 @@ public class OTFUtility {
 		}
 		// If we get here, we didn't find what they were looking for. Pick
 		// something....
-		return (fsn != null ? fsn : (preferred != null ? preferred
+		String returnValue = (fsn != null ? fsn : (preferred != null ? preferred
 				: (bestFound != null ? bestFound : concept.toUserString())));
+		
+		return returnValue;
 	}
 	public static String getFullySpecifiedName(ConceptChronicleBI concept) {
 		try {
@@ -304,7 +299,7 @@ public class OTFUtility {
 					DescriptionVersionBI<?> descVer = desc.getVersions()
 							.toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
 
-					if (descVer.getTypeNid() == getFSNNid() || descVer.getTypeNid() == getFsnRf1Nid()) {
+					if (descVer.getTypeNid() == getFSNNid()) {
 						if (descVer.getStatus() == Status.ACTIVE) {
 								return descVer.getText();
 						}
@@ -325,13 +320,6 @@ public class OTFUtility {
 		return fsnNid;
 	}
 
-	private static int getFsnRf1Nid() {
-		if (fsnRf1Nid == null) {
-			fsnRf1Nid = dataStore.getNidForUuids(FSN_RF1_UUID);
-		}
-		return fsnRf1Nid;
-	}
-
 	private static int getSynonymTypeNid() {
 		// Lazily load.
 		if (synonymNid == null) {
@@ -340,14 +328,6 @@ public class OTFUtility {
 		return synonymNid;
 	}
 
-	private static int getSynonymRf1TypeNid() {
-		// Lazily load.
-		if (synonymRf1Nid == null) {
-			synonymRf1Nid = dataStore.getNidForUuids(SYNONYM_RF1_UUID);
-		}
-		return synonymRf1Nid;
-	}
-	
 	public static int getLangTypeNid() {
 		// Lazily load.
 		if (langTypeNid == null) {
@@ -364,14 +344,6 @@ public class OTFUtility {
 		return preferredNid;
 	}
 
-	private static int getPreferredRf1TypeNid() {
-		// Lazily load.
-		if (preferredRf1Nid == null) {
-			preferredRf1Nid = dataStore.getNidForUuids(PREFERRED_RF1_UUID);
-		}
-		return preferredRf1Nid;
-	}
-
 	/**
 	 * Pass in the annotations on a description component to determine if one of the 
 	 * annotations is the isPreferred annotation
@@ -380,7 +352,7 @@ public class OTFUtility {
 		for (RefexChronicleBI<?> rc : collection) {
 			if (rc.getRefexType() == RefexType.CID) {
 				int nid1 = ((NidMember) rc).getNid1();  // RefexType.CID means NidMember.
-				if (nid1 == getPreferredTypeNid() || nid1 == getPreferredRf1TypeNid()) {
+				if (nid1 == getPreferredTypeNid()) {
 					return true;
 				}
 			}
@@ -404,7 +376,7 @@ public class OTFUtility {
 		String bestFound = null;
 		for (DescriptionChronicleDdo d : concept.getDescriptions()) {
 			DescriptionVersionDdo dv = d.getVersions().get(d.getVersions().size() - 1);
-			if (dv.getTypeReference().getUuid().equals(FSN_UUID) || dv.getTypeReference().getUuid().equals(FSN_RF1_UUID)) {
+			if (dv.getTypeReference().getUuid().equals(FSN_UUID) ) {
 				if (dv.getStatus() == Status.ACTIVE) {
 					if (ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
 						return dv.getText();
@@ -414,7 +386,7 @@ public class OTFUtility {
 				} else {
 					bestFound = dv.getText();
 				}
-			} else if (dv.getTypeReference().getUuid().equals(SYNONYM_UUID) || dv.getTypeReference().getUuid().equals(SYNONYM_RF1_UUID)) {
+			} else if (dv.getTypeReference().getUuid().equals(SYNONYM_UUID)) {
 				if ((dv.getStatus() == Status.ACTIVE) && isPreferred(dv.getAnnotations())) {
 					if (!ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
 						return dv.getText();
@@ -438,7 +410,7 @@ public class OTFUtility {
 			for (Object version : frc.getVersions()) {
 				if (version instanceof RefexCompVersionDdo) {
 					UUID uuid = ((RefexCompVersionDdo<?, ?>) version).getComp1Ref().getUuid();
-					return uuid.equals(PREFERRED_UUID) || uuid.equals(PREFERRED_RF1_UUID);
+					return uuid.equals(PREFERRED_UUID);
 				}
 			}
 		}
@@ -447,9 +419,14 @@ public class OTFUtility {
 
 	/**
 	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
-	 * then calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int, calls {@link #getConceptVersion(int)}
+	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
+	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
+	 * a SCTID and converts that to UUID and then calls {@link #getConceptVersion(UUID)}.  Note that is is possible for some 
+	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - then a 
+	 * runtime exception is thrown.
+	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
+	 * 
+	 * 
 	 */
 	public static ConceptVersionBI lookupIdentifier(String identifier)
 	{
@@ -467,21 +444,40 @@ public class OTFUtility {
 			return getConceptVersion(uuid);
 		}
 		
-		if (Utility.isLong(localIdentifier))
+		//if it is a negative integer, assume nid
+		Optional<Integer> nid = Utility.getNID(localIdentifier);
+		if (nid.isPresent()) {
+			return getConceptVersion(nid.get());
+		}
+		
+		if (SctId.isValidSctId(localIdentifier))
 		{
-			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(TermAux.SNOMED_IDENTIFIER.getUuids()[0], localIdentifier);
+			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
+			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
 			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
 			ConceptVersionBI cv = getConceptVersion(alternateUUID);
 			if (cv != null)
 			{
+				//sanity check:
+				if (Utility.isInt(localIdentifier))
+				{
+					int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+					if (nidFromSequence != 0)
+					{
+						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
+					}
+				}
 				return cv;
 			}
 		}
-		
-		Integer i = Utility.getInt(localIdentifier);
-		if (i != null)
+		else if (Utility.isInt(localIdentifier))
 		{
-			return getConceptVersion(i);
+			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
+			int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+			if (nidFromSequence != 0)
+			{
+				return getConceptVersion(nidFromSequence);
+			}
 		}
 		return null;
 	}
@@ -764,34 +760,9 @@ public class OTFUtility {
 		return null;
 	}
 
+	// TODO OCHRE getUncommittedConcepts() is unsupported so isUncommittened(con) will always throw exception
 	public static boolean isUncommittened(ConceptVersionBI con) {
 		return dataStore.getUncommittedConcepts().contains(con.getChronicle());
-	}
-	
-	public static boolean commit(ConceptVersionBI con) throws IOException {
-		return dataStore.commit(con);
-	}
-
-	public static boolean commit() throws IOException {
-		return dataStore.commit();
-	}
-
-	public static void addUncommitted(ConceptChronicleBI newCon) throws IOException {
-		dataStore.addUncommitted(newCon);
-	}
-
-	public static void addUncommitted(ConceptVersionBI newCon) throws IOException {
-		dataStore.addUncommitted(newCon);
-	}
-
-	public static void addUncommitted(int nid) throws IOException {
-		ConceptVersionBI con = getConceptVersion(nid);
-		dataStore.addUncommitted(con);
-	}
-
-	public static void addUncommitted(UUID uuid) throws IOException {
-		ConceptVersionBI con = getConceptVersion(uuid);
-		dataStore.addUncommitted(con);
 	}
 	
 	/**
@@ -977,28 +948,29 @@ public class OTFUtility {
 
 		ConceptChronicleBI newCon = getBuilder().construct(newConCB);
 
-		addUncommitted(newCon);
-		commit();
+		ExtendedAppContext.getDataStore().addUncommitted(newCon);
+		ExtendedAppContext.getDataStore().commit();
 
 		return newCon;
 	}
 	
 	public static ConceptCB createNewConceptBlueprint(ConceptChronicleBI parent, String fsn, String prefTerm) throws ValidationException, IOException, InvalidCAB, ContradictionException {
 		LanguageCode lc = LanguageCode.EN_US;
-		UUID isA = Snomed.IS_A.getUuids()[0];
+		UUID isA = IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid();
 		IdDirective idDir = IdDirective.GENERATE_HASH;
 		UUID module = Snomed.CORE_MODULE.getLenient().getPrimordialUuid();
 		UUID parentUUIDs[] = new UUID[1];
 		parentUUIDs[0] = parent.getPrimordialUuid();
-		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, parentUUIDs);
+		//TODO OCHRE deal with path
+		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
 	}
 
-	public static boolean commit(int nid) throws IOException {
-		ConceptVersionBI con = getConceptVersion(nid);
-		return commit(con);
-	}
+//	public static void commit(int nid) throws IOException {
+//		ConceptVersionBI con = getConceptVersion(nid);
+//		commit(/* con */);
+//	}
 
-	public static void cancel() {
+	public static void cancel() throws IOException {
 		dataStore.cancel();
 	}
 
@@ -1041,51 +1013,60 @@ public class OTFUtility {
 		DescriptionCAB newDesc = new DescriptionCAB(conNid, typeNid, lang, term, isInitial, IdDirective.GENERATE_HASH); 
 
 		getBuilder().construct(newDesc);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 
 	public static void createNewRelationship(int conNid, int typeNid, int targetNid, int group, RelationshipType type) throws IOException, InvalidCAB, ContradictionException {
 		RelationshipCAB newRel = new RelationshipCAB(conNid, typeNid, targetNid, group, type, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 		
 	public static void createNewDescription(int conNid, String term) throws IOException, InvalidCAB, ContradictionException {
-		DescriptionCAB newDesc = new DescriptionCAB(conNid, SnomedMetadataRf2.SYNONYM_RF2.getNid(), LanguageCode.EN_US, term, false, IdDirective.GENERATE_HASH); 
+		DescriptionCAB newDesc = new DescriptionCAB(conNid, IsaacMetadataAuxiliaryBinding.SYNONYM.getNid(), LanguageCode.EN_US, term, false, IdDirective.GENERATE_HASH); 
 
 		getBuilder().construct(newDesc);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 
 	public static void createNewRole(int conNid, int typeNid, int targetNid) throws IOException, InvalidCAB, ContradictionException {
 		RelationshipCAB newRel = new RelationshipCAB(conNid, typeNid, targetNid, 0, RelationshipType.STATED_ROLE, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
-		addUncommitted(conNid);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 
 	public static void createNewParent(int conNid, int targetNid) throws ValidationException, IOException, InvalidCAB, ContradictionException {
-		RelationshipCAB newRel = new RelationshipCAB(conNid, SnomedRelType.IS_A.getNid(), targetNid, 0, RelationshipType.STATED_HIERARCHY, IdDirective.GENERATE_HASH);
+		RelationshipCAB newRel = new RelationshipCAB(conNid, IsaacMetadataAuxiliaryBinding.IS_A.getNid(), targetNid, 0, RelationshipType.STATED_HIERARCHY, IdDirective.GENERATE_HASH);
 		
 		getBuilder().construct(newRel);
-		addUncommitted(conNid);
-	}
-
-	public static void addUncommittedNoChecks(ConceptChronicleBI con) throws IOException {
-		dataStore.addUncommittedNoChecks(con);
+		dataStore.addUncommitted(dataStore.getConceptForNid(conNid));
 	}
 	
 	public static List<ConceptChronicleBI> getPathConcepts() throws ValidationException, IOException, ContradictionException {
 		ConceptChronicleBI pathRefset =
-				dataStore.getConcept(TermAux.PATH_REFSET.getLenient().getPrimordialUuid());
+				dataStore.getConcept(IsaacMetadataAuxiliaryBinding.PATHS.getLenient().getPrimordialUuid());
 			Collection<? extends RefexChronicleBI<?>> members = pathRefset.getRefsetMembers();
 			List<ConceptChronicleBI> pathConcepts = new ArrayList<>();
 			for (RefexChronicleBI<?> member : members) {
-				int memberNid = ((NidMember)member).getC1Nid();
-				ConceptChronicleBI pathConcept = dataStore.getConcept(memberNid);
-				pathConcepts.add(pathConcept);
+				if (member instanceof MembershipMember) {
+					MembershipMember membershipMember = (MembershipMember)member;
+					int pathNid = membershipMember.getReferencedComponentNid();
+					ConceptChronicleBI pathConcept = dataStore.getConcept(pathNid);
+					pathConcepts.add(pathConcept);
+				}
+				else {
+					LOG.warn("While loading paths expecting MembershipMember but encountered {}: {}", member.getClass().getName(), member);
+				}
 			}
+			
+			if (pathConcepts.size() == 0) {
+				LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS);
+			} else {
+				LOG.debug("Loaded {} paths: {}", pathConcepts.size(), pathConcepts);
+			}
+			
 			return pathConcepts;
 	}
 
@@ -1119,7 +1100,7 @@ public class OTFUtility {
 		ConceptVersionBI conceptWithComp = OTFUtility.getConceptVersion(getComponentVersion(compUuid).getConceptNid());
 		Set<ComponentVersionBI> componentsInConcept = getConceptComponents(conceptWithComp);
 
-		int devPathNid = ExtendedAppContext.getDataStore().getNidForUuids(UUID.fromString(AppContext.getAppConfiguration().getDefaultEditPathUuid()));
+		int devPathNid = IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getNid();
 		
 		for (ComponentVersionBI comp : componentsInConcept) {
 			if (comp.getPathNid() == devPathNid) {
@@ -1146,7 +1127,7 @@ public class OTFUtility {
 			}	
 		}
 		
-		commit(conceptWithComp.getVersion(getViewCoordinate()));
+		ExtendedAppContext.getDataStore().commit(/* conceptWithComp.getVersion(getViewCoordinate()) */);
 	}
 	
 	
@@ -1157,19 +1138,31 @@ public class OTFUtility {
 		retSet.add(conceptWithComp);
 		
 		for(DescriptionChronicleBI desc : conceptWithComp.getDescriptions()) {
-			retSet.add(desc.getVersion(conceptWithComp.getViewCoordinate()));
+			DescriptionVersionBI<?> dv = desc.getVersion(conceptWithComp.getViewCoordinate());
+			if (dv != null) {
+				retSet.add(dv);
+			}
 		}
 
 		for(RelationshipChronicleBI rel : conceptWithComp.getRelationshipsOutgoing()) {
-			retSet.add(rel.getVersion(conceptWithComp.getViewCoordinate()));
+			RelationshipVersionBI<?> rv = rel.getVersion(conceptWithComp.getViewCoordinate());
+			if (rv != null) {
+				retSet.add(rv);
+			}
 		}
 
 		for(RefexChronicleBI<?> refsetMember : conceptWithComp.getRefsetMembers()) {
-			retSet.add(refsetMember.getVersion(conceptWithComp.getViewCoordinate()));
+			RefexVersionBI<?> rv = refsetMember.getVersion(conceptWithComp.getViewCoordinate());
+			if (rv != null) {
+				retSet.add(rv);
+			}
 		}
 
 		for(RefexDynamicChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
-			retSet.add(dynRef.getVersion(conceptWithComp.getViewCoordinate()));
+			RefexDynamicVersionBI<?> rdv = dynRef.getVersion(conceptWithComp.getViewCoordinate());
+			if (rdv != null) {
+				retSet.add(rdv);
+			}
 		}
 
 		return retSet;

@@ -28,16 +28,22 @@ import gov.va.isaac.gui.enhancedsearchview.filters.IsDescendantOfFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
+
 import org.ihtsdo.otf.query.implementation.Clause;
+import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.nid.IntSet;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
+import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 
 class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<CompositeSearchResult>, List<CompositeSearchResult>>  {
 	private final IsDescendantOfFilter filter;
@@ -52,21 +58,20 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 	@Override
 	public List<CompositeSearchResult> apply(List<CompositeSearchResult> results)
 	{
-		NativeIdSetBI inputNids = new IntSet();
-
+		// TODO OTF Replacement NEEDS TESTING
+		final Set<UUID> forSetCustomCollection = new HashSet<>();
+		
 		for (CompositeSearchResult result : results) {
-			inputNids.add(result.getContainingConcept().getNid());
+			forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
 		}
+		
+		SearchResultsFilterHelper.LOG.debug("Building Query to filter " + forSetCustomCollection.size() + " search results");
 
-		final NativeIdSetBI finalInputNids = inputNids;
 		final ConceptVersionBI concept = OTFUtility.getConceptVersion(filter.getNid());
+		final ForSetSpecification forSetSpecification = new ForSetSpecification(ComponentCollectionTypes.CUSTOM_SET);
+		forSetSpecification.setCustomCollection(forSetCustomCollection);
 
 		Query q = new Query() {
-			@Override
-			protected NativeIdSetBI For() throws IOException {
-				return finalInputNids;
-			}
-
 			@Override
 			public void Let() throws IOException {
 				let(concept.getPrimordialUuid().toString(), new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
@@ -83,15 +88,20 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 					return ConceptIsDescendentOf(concept.getPrimordialUuid().toString());
 				}
 			}
+
+			@Override
+			protected ForSetSpecification ForSetSpecification() throws IOException {
+				return forSetSpecification;
+			}
 		};
 
 		NativeIdSetBI outputNids = null;
 		try {
-			SearchResultsFilterHelper.LOG.debug("Applying " + (filter.getInvert() ? "Not(ConceptIsDescendentOf())" : "ConceptIsDescendentOf()") + filter + " to " + finalInputNids.size() + " nids");
+			SearchResultsFilterHelper.LOG.debug("Applying " + (filter.getInvert() ? "Not(ConceptIsDescendentOf())" : "ConceptIsDescendentOf()") + filter + " to " + forSetCustomCollection.size() + " uuids");
 
 			outputNids = q.compute();
 			
-			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after filtering a total of " + finalInputNids + " nids");
+			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after filtering a total of " + forSetCustomCollection.size() + " uuids");
 		} catch (Exception e) {
 			throw new SearchResultsFilterException(this, "Failed calling Query.compute()", e);
 		}

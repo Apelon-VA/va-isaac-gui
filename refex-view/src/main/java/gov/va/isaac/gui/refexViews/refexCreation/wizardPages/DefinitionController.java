@@ -113,7 +113,7 @@ public class DefinitionController implements PanelControllersI {
 		
 		parentConcept = new ConceptNode(null, true);
 		//this will cause it to look it up in a background thread...
-		parentConcept.set(new SimpleDisplayConcept(RefexDynamic.REFEX_DYNAMIC_IDENTITY.getUuids()[0].toString()));
+		parentConcept.set(new SimpleDisplayConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getUuids()[0].toString()));
 		
 		parentConceptHBox.getChildren().add(parentConcept.getNode());
 		HBox.setHgrow(parentConcept.getNode(), Priority.ALWAYS);
@@ -286,7 +286,7 @@ public class DefinitionController implements PanelControllersI {
 	public boolean checkParentHierarchy() {
 		try 
 		{
-			if (!parentConcept.getConcept().isKindOf(OTFUtility.getConceptVersion(RefexDynamic.REFEX_DYNAMIC_IDENTITY.getNid()))) 
+			if (!parentConcept.getConcept().isKindOf(OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getNid()))) 
 			{
 				YesNoDialog yn = new YesNoDialog(refsetCreationPane.getScene().getWindow());
 				DialogResponse r = yn.showYesNoDialog("Continue?", "The parent concept you selected is not a descendent of the concept 'Dynamic Sememes'.\n"

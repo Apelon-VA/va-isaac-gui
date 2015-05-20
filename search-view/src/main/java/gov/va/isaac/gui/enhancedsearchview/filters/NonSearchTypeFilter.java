@@ -26,15 +26,13 @@ package gov.va.isaac.gui.enhancedsearchview.filters;
 
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
-
 import java.util.HashSet;
 import java.util.Set;
-
 import javafx.beans.property.IntegerProperty;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
-import org.jfree.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * NonSearchTypeFilter
@@ -43,6 +41,9 @@ import org.jfree.util.Log;
  *
  */
 public abstract class NonSearchTypeFilter<T extends NonSearchTypeFilter<T>> implements Filter<T> {
+	
+	Logger logger = LoggerFactory.getLogger(NonSearchTypeFilter.class);
+	
 	public abstract Set<Integer> gatherNoSearchTermCaseList(Set<Integer> startList);
 	abstract IntegerProperty getSingleNid();
 
@@ -67,7 +68,7 @@ public abstract class NonSearchTypeFilter<T extends NonSearchTypeFilter<T>> impl
 				mergedSet.addAll(searcher.getResults());
 			}
 		} catch (Exception e) {
-			Log.error("Cannot find calculate the NoSearchTermCaseList", e);
+			logger.error("Cannot find calculate the NoSearchTermCaseList", e);
 		}
 
 		return mergedSet;

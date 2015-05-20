@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.gui.listview.operations;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.listview.operations.FindAndReplaceController.DescriptionType;
 import gov.va.isaac.util.OTFUtility;
@@ -35,7 +36,7 @@ import javafx.beans.binding.BooleanExpression;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
@@ -251,7 +252,7 @@ public class FindAndReplace extends Operation
 				DescriptionCAB dcab = desc.makeBlueprint(OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.INCLUDE);
 				dcab.setText(newTxt);
 				DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
-				OTFUtility.addUncommitted(dcbi.getEnclosingConcept());
+				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(dcbi.getConceptNid()));
 			}
 
 			private Set<DescriptionVersionBI<?>> getDescsToChange(ConceptVersionBI con) {

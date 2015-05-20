@@ -48,6 +48,7 @@ import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
+import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,8 +89,9 @@ public class ConceptView implements PopupConceptViewI {
 	@Override
 	public void setConcept(UUID conceptUUID)
 	{
-		// TODO (artf231883) this needs to be rewritten so that the dialog displays immediately
+		// TODO (artf231886) this needs to be rewritten so that the dialog displays immediately
 		//but with a progress indicator while we wait for the concept to be found..
+		//Also need to make sure that errors are properly handled
 		Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>()
 		{
 
@@ -97,8 +99,8 @@ public class ConceptView implements PopupConceptViewI {
 			protected ConceptChronicleDdo call() throws Exception
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
-				ConceptChronicleDdo concept = ExtendedAppContext.getDataStore().getFxConcept(conceptUUID, OTFUtility.getViewCoordinateAllowInactive(),
-						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.REFEX_MEMBERS, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(conceptUUID, OTFUtility.getViewCoordinateAllowInactive(),
+						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
 				 LOG.info("Finished loading concept with UUID " + conceptUUID);
 
 				return concept;
@@ -135,9 +137,6 @@ public class ConceptView implements PopupConceptViewI {
 		Utility.execute(task);
 	}
 
-	//TODO (artf231884) concept-view-tree is not stopping background threaded operations when this window is closed....
-	//TODO (artf231885) concept-view-tree also seems to fall into infinite loops at times...
-	
 	/**
 	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptViewI#setConcept(int)
 	 */
@@ -182,6 +181,7 @@ public class ConceptView implements PopupConceptViewI {
 		
 		s.onHiddenProperty().set((eventHandler) ->
 		{
+			controller.stopOperations();
 			s.setScene(null);
 			//No other way to force a timely release of all of the bindings that would still fire / still recalculate data..
 			try
