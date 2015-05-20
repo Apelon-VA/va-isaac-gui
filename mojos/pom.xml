@@ -51,10 +51,6 @@
 			<version>${project.parent.version}</version>
 		</dependency>
 		
-		<!-- Needed to support Profile Sync (using GIT) -->
-		
-		<!-- Needed to support Profile Sync (using SVN) -->
-		
 		<!-- dependencies to annotations -->
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>
