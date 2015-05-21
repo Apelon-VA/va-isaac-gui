@@ -217,11 +217,6 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 							setStyle = true;
 						}
 					}
-					else
-					{
-						logger_.warn("NID {} not on view path", nid);
-						text= "-Not on view path-";
-					}
 				}
 				catch (Exception e)
 				{
