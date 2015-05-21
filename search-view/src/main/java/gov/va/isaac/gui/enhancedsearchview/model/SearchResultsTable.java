@@ -461,6 +461,9 @@ public class SearchResultsTable  {
 								public Set<Integer> getNIds() {
 									Set<Integer> nids = new HashSet<>();
 									for (CompositeSearchResult r : (ObservableList<CompositeSearchResult>)c.getTableView().getSelectionModel().getSelectedItems()) {
+										// In response to tracker artf231416 
+										// Unconditionally use containing concept's nid.  Do not use description nid
+										/*
 										if (resultsType == ResultsType.CONCEPT) {
 											nids.add(r.getContainingConcept().getNid());
 										} else if (resultsType == ResultsType.DESCRIPTION) {
@@ -469,6 +472,8 @@ public class SearchResultsTable  {
 											LOG.error("Unexpected AggregationType value " + resultsType);
 											nids.add(r.getContainingConcept().getNid());
 										}
+										*/
+										nids.add(r.getContainingConcept().getNid());
 									}
 
 									// TODO: determine why we are getting here multiple (2 or 3) times for each selection
