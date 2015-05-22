@@ -15,8 +15,14 @@
 	<dependencies>
 		
 		<dependency>
+			<groupId>gov.vha.isaac</groupId>
+			<artifactId>isaac-mojo</artifactId>
+			<version>${isaac-mojo.version}</version>
+		</dependency>
+		
+		<dependency>
 			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>mojos</artifactId>
+			<artifactId>otf-util</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		

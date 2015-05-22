@@ -25,8 +25,9 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
-import gov.va.isaac.mojos.datastore.transforms.TransformConceptIterateI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -56,8 +57,6 @@ import org.jvnet.hk2.annotations.Service;
 @Named(value = "RxNorm spreadsheet rules")
 public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements TransformConceptIterateI 
 {
-	private final UUID RXNORM_PATH = UUID.fromString("763c21ad-55e3-5bb3-af1e-3e4fb475de44");
-
 	private final UUID RXCUI = UUID.fromString("da3a2dc0-8d17-57a2-b894-ba3086904aa3");
 	private final UUID RxNormDescType = UUID.fromString("3599879d-78c6-5b1e-b442-9ef08eaedd3c");
 	private final UUID IN = UUID.fromString("17114d54-ed48-5f0a-a865-4ecec3e31cdc");
@@ -74,7 +73,7 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts) throws IOException
 	{
-		configure("/SOLOR RxNorm Rules.xlsx", RXNORM_PATH, ts);
+		super.configure("/SOLOR RxNorm Rules.xlsx", ts);
 	}
 	
 
@@ -88,14 +87,14 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	{
 		examinedConcepts.incrementAndGet();
 		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersions());
-		if (latest.getPathNid() == getNid(RXNORM_PATH))
+		if (latest.getModuleNid() == getNid(IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid()))
 		{
 			//Rule for all other rules:
 			if (ttyIs(IN, cc))
 			{
 				boolean commitRequired = false;
 				
-				for (RuleDefinition rd : rules)
+				for (RuleDefinition rd : rules_)
 				{
 					try
 					{
@@ -166,7 +165,7 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 		switch (rd.getAction())
 		{
 			case CHILD_OF:
-				addRel(cc, sctTargetConcept, RXNORM_PATH);
+				addRel(cc, sctTargetConcept);
 				generatedRels.get(rd.getId()).getAndIncrement();
 				break;
 			default :
@@ -229,9 +228,8 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
 		RxNormSpreadsheetRules lsr = new RxNormSpreadsheetRules();
-		lsr.configure(null, ExtendedAppContext.getDataStore());
+		lsr.configure((File)null, ExtendedAppContext.getDataStore());
 		lsr.transform(ExtendedAppContext.getDataStore(), ExtendedAppContext.getDataStore().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
 		System.out.println(lsr.getWorkResultSummary());
-		System.out.println(lsr.getWorkResultDocBookTable());
 	}
 }

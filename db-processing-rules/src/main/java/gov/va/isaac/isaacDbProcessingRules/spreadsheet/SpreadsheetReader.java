@@ -142,6 +142,7 @@ public class SpreadsheetReader
 			rd.criteria = criteria;
 			result.add(rd);
 		}
+		ss.close();
 		return result;
 	}
 	
@@ -284,7 +285,7 @@ public class SpreadsheetReader
 	
 	public static void main(String[] args) throws IOException
 	{
-		for (RuleDefinition rd : new SpreadsheetReader().readSpreadSheet(SpreadsheetReader.class.getResourceAsStream("/rules.xlsx")))
+		for (RuleDefinition rd : new SpreadsheetReader().readSpreadSheet(SpreadsheetReader.class.getResourceAsStream("/rules_.xlsx")))
 		{
 			System.out.println(rd);
 		}

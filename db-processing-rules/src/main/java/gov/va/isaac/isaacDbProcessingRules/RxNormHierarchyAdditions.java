@@ -18,9 +18,10 @@
  */
 package gov.va.isaac.isaacDbProcessingRules;
 
-import gov.va.isaac.mojos.datastore.transforms.TransformArbitraryI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.mojo.termstore.transforms.TransformArbitraryI;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -28,15 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
-import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
@@ -69,11 +66,11 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	
 	private final UUID penicillinProduct = UUID.fromString("fdca98cf-8720-3dbe-bb72-3377d658a85c");//Penicillin -class of antibiotic- (product)
 	private final UUID termTypeIN = UUID.fromString("17114d54-ed48-5f0a-a865-4ecec3e31cdc"); //Name for an Ingredient     // IN
-	private final UUID rxNormHPath = UUID.fromString("763c21ad-55e3-5bb3-af1e-3e4fb475de44"); //RxNormH Path
+	private final UUID rxNormModule= IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid();
 	private final UUID rxNormDescType = UUID.fromString("3599879d-78c6-5b1e-b442-9ef08eaedd3c");// "RxNorm Description Type" - refex that carries ingredient linkage
 
 	/**
-	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getName()
+	 * @see gov.vha.isaac.mojo.termstore.transforms.TransformI#getName()
 	 */
 	@Override
 	public String getName()
@@ -82,7 +79,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	}
 	
 	/**
-	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#configure(java.io.File, org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
+	 * @see gov.vha.isaac.mojo.termstore.transforms.TransformI#configure(java.io.File, org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
 	 */
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts)
@@ -92,31 +89,23 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 
 	/**
 	 * @throws Exception
-	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#transform(org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
+	 * @see gov.vha.isaac.mojo.termstore.transforms.TransformI#transform(org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI)
 	 */
 	@Override
 	public void transform(TerminologyStoreDI ts) throws Exception
 	{
-		int rxNormPathNid = ts.getNidForUuids(rxNormHPath);
+		int rxNormModuleNid = ts.getNidForUuids(rxNormModule);
 		int rxNormDescTypeAssemblageNid = ts.getNidForUuids(rxNormDescType);
-		ts.iterateConceptDataInParallel(new ProcessUnfetchedConceptDataBI()
+		ts.getParallelConceptStream().forEach((cc) -> 
 		{
-			@Override
-			public boolean continueWork()
+			try
 			{
-				return true;
-			}
-
-			@Override
-			public void processUnfetchedConceptData(int cNid, ConceptFetcherBI fetcher) throws Exception
-			{
-				ConceptChronicleBI cc = fetcher.fetch();
 				examinedConcepts.getAndIncrement();
 				
 				boolean isRxNormPath = false;
 				for (int stampNid : cc.getConceptAttributes().getAllStamps())
 				{
-					if (ts.getPathNidForStamp(stampNid) == rxNormPathNid)
+					if (ts.getModuleNidForStamp(stampNid) == rxNormModuleNid)
 					{
 						isRxNormPath = true;
 						break;
@@ -167,8 +156,8 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 					RelationshipCAB rCab = new RelationshipCAB(cc.getPrimordialUuid(), Snomed.IS_A.getUuids()[0], penicillinProduct,
 							0, RelationshipType.STATED_ROLE, IdDirective.GENERATE_HASH);
 					
-					ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), TermAux.UNSPECIFIED_MODULE.getLenient().getNid(), 
-							rxNormPathNid), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
+					ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
+							IsaacMetadataAuxiliaryBinding.MASTER.getNid()), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
 					ts.addUncommitted(cc);
 					
 					int last = addedRels.getAndIncrement();
@@ -178,30 +167,16 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 					}
 				}
 			}
-
-			@Override
-			public String getTitle()
+			catch (Exception e)
 			{
-				return "RxNorm Hierachy Creator";
-			}
-
-			@Override
-			public NativeIdSetBI getNidSet() throws IOException
-			{
-				return null;
-			}
-
-			@Override
-			public boolean allowCancel()
-			{
-				return false;
+				throw new RuntimeException(e);
 			}
 		});
 		ts.commit();
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getDescription()
+	 * @see gov.vha.isaac.mojo.termstore.transforms.TransformI#getDescription()
 	 */
 	@Override
 	public String getDescription()
@@ -210,20 +185,17 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	}
 
 	/**
-	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getWorkResultSummary()
+	 * @see gov.vha.isaac.mojo.termstore.transforms.TransformI#getWorkResultSummary()
 	 */
 	@Override
 	public String getWorkResultSummary()
 	{
 		return "Examined " + examinedConcepts.get() + " concepts and generated " + addedRels.get() + " new relationships";
 	}
-	
-	/**
-	 * @see gov.va.isaac.mojos.datastore.transforms.TransformI#getWorkResultDocBookTable()
-	 */
+
 	@Override
-	public String getWorkResultDocBookTable()
+	public void writeSummaryFile(File outputFolder) throws IOException
 	{
-		return "Not yet created";
+		// noop
 	}
 }

@@ -25,9 +25,10 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
-import gov.va.isaac.mojos.datastore.transforms.TransformConceptIterateI;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -40,22 +41,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Named;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
@@ -74,8 +67,6 @@ import org.jvnet.hk2.annotations.Service;
 @Named(value = "LOINC spreadsheet rules")
 public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements TransformConceptIterateI
 {
-	private final UUID LOINC_PATH = UUID.fromString("b2b1cc96-9ca6-5513-aad9-aa21e61ddc29");
-	
 	private final UUID LOINC_NUM = UUID.fromString("ee19b536-ca30-52ce-91a0-f1089e710f9c");
 
 	//CLASSTYPE
@@ -106,7 +97,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts) throws IOException
 	{
-		configure("/SOLOR LOINC Rules.xlsx", LOINC_PATH, ts);
+		super.configure("/SOLOR LOINC Rules.xlsx", ts);
 	}
 	
 
@@ -120,14 +111,14 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	{
 		examinedConcepts.incrementAndGet();
 		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersions());
-		if (latest.getPathNid() == getNid(LOINC_PATH))
+		if (latest.getModuleNid() == getNid(IsaacMetadataAuxiliaryBinding.LOINC.getPrimodialUuid()))
 		{
 			//Rule for all other rules:
 			if (classTypeIs("1", cc) && (orderIs("Order", cc) || orderIs("Both", cc)))
 			{
 				boolean commitRequired = false;
 				
-				for (RuleDefinition rd : rules)
+				for (RuleDefinition rd : rules_)
 				{
 					try
 					{
@@ -213,11 +204,11 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 		switch (rd.getAction())
 		{
 			case CHILD_OF:
-				addRel(cc, sctTargetConcept, LOINC_PATH);
+				addRel(cc, sctTargetConcept);
 				generatedRels.get(rd.getId()).getAndIncrement();
 				break;
 			case SAME_AS:
-				mergeConcepts(cc, sctTargetConcept, LOINC_PATH);
+				mergeConcepts(cc, sctTargetConcept, IsaacMetadataAuxiliaryBinding.LOINC.getPrimodialUuid());
 				mergedConcepts.get(rd.getId()).incrementAndGet();
 				break;
 			default :
@@ -362,9 +353,8 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
 		LOINCSpreadsheetRules lsr = new LOINCSpreadsheetRules();
-		lsr.configure(null, ExtendedAppContext.getDataStore());
+		lsr.configure((File)null, ExtendedAppContext.getDataStore());
 		lsr.transform(ExtendedAppContext.getDataStore(), ExtendedAppContext.getDataStore().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
 		System.out.println(lsr.getWorkResultSummary());
-		System.out.println(lsr.getWorkResultDocBookTable());
 	}
 }
