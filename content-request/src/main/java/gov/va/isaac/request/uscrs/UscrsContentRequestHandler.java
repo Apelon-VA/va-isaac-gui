@@ -945,8 +945,7 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 
 		try
 		{
-			//TODO OCHRE change this to module checking
-			if ((concept.getPathNid() != TermAux.SNOMED_CORE.getLenient().getNid()))
+			if ((concept.getModuleNid() != Snomed.CORE_MODULE.getLenient().getNid()))
 			{
 				DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog(
 						"USCRS Content Request",
@@ -960,7 +959,8 @@ public class UscrsContentRequestHandler implements ContentRequestHandler, Conten
 		}
 		catch (IOException e)
 		{
-			AppContext.getCommonDialogs().showErrorDialog("USCRS Content Request", "Unable to load concepts for path comparison.", "This should never happen");
+			LOG.error("Error constructing UCSRS request", e);
+			AppContext.getCommonDialogs().showErrorDialog("USCRS Content Request", "Unable to load concepts for path comparison.", e.toString());
 			return;
 		}
 
