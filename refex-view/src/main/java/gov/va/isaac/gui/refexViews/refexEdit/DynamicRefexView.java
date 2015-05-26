@@ -35,7 +35,6 @@ import gov.va.isaac.refexDynamic.RefexAnnotationSearcher;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +51,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -60,8 +58,6 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
@@ -88,9 +84,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-
 import javax.inject.Named;
-
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
@@ -112,7 +106,6 @@ import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.collections.ObservableMapWrapper;
 import com.sun.javafx.tk.Toolkit;
 
@@ -187,13 +180,6 @@ public class DynamicRefexView implements RefexViewI
 			}
 		}
 	};
-	private void clearAllFilters() {
-		removeFilterCacheListeners();
-		for (HeaderNode.Filter<?> filter : filterCache_.values()) {
-			filter.getFilterValues().clear();
-		}
-		refresh();
-	}
 	private void addFilterCacheListeners() {
 		removeFilterCacheListeners();
 		filterCache_.addListener(filterCacheListener_);
@@ -239,19 +225,13 @@ public class DynamicRefexView implements RefexViewI
 			ToolBar t = new ToolBar();
 			
 			clearColumnHeaderNodesButton_.setOnAction(event -> {
-				clearAllFilters();
+				removeFilterCacheListeners();
+				for (HeaderNode.Filter<?> filter : filterCache_.values()) {
+					filter.getFilterValues().clear();
+				}
+				refresh();
 			});
 			t.getItems().add(clearColumnHeaderNodesButton_);
-			
-			ReadOnlyBooleanProperty displayFsnProperty = AppContext.getService(UserProfileBindings.class).getDisplayFSN();
-			displayFsnProperty.addListener(new ChangeListener<Object>() {
-				@Override
-				public void changed(ObservableValue<? extends Object> observable, Object oldValue, Object newValue)
-				{
-					logger_.debug("Clearing column filters because {} property changed from {} to {}", displayFsnProperty.getName(), oldValue, newValue);
-					clearAllFilters();
-				}
-			});
 			
 			currentRowSelected_ = new UpdateableBooleanBinding()
 			{
