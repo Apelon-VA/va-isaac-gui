@@ -67,22 +67,27 @@ import org.jvnet.hk2.annotations.Service;
 @Named(value = "LOINC spreadsheet rules")
 public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements TransformConceptIterateI
 {
-	private final UUID LOINC_NUM = UUID.fromString("ee19b536-ca30-52ce-91a0-f1089e710f9c");
+	private final UUID LOINC_NUM = UUID.fromString("55bfceaf-b07b-5eef-8435-ad6aa5e9f082");
+	
+	//CODE
+	private final UUID CODE = UUID.fromString("209638ed-b5fa-5ca4-89ab-57c02431fb98");
 
 	//CLASSTYPE
-	private final UUID CLASSTYPE = UUID.fromString("537869e6-a36e-5bd5-8e5b-dad90e9f4015");
+	private final UUID CLASSTYPE = UUID.fromString("ba410aa1-5617-51ed-85fc-788be361a596");
 	
 	//ORDER_OBS
-	private final UUID ORDER_OBS = UUID.fromString("a77932ee-55ea-56c6-9c7d-e93ccf6620a7");
+	private final UUID ORDER_OBS = UUID.fromString("a8b10d09-f098-52d2-8393-375eb72a3d96");
 	
 	//has_COMPONENT
-	private final UUID HAS_COMPONENT = UUID.fromString("481bb791-103a-5216-946c-b630aa95d322");
+	private final UUID HAS_COMPONENT = UUID.fromString("c557b176-b1fa-58f1-9e8c-764035e57f3d");
 	
 	//has_SYSTEM
-	private final UUID HAS_SYSTEM = UUID.fromString("c901d71a-381a-560e-967c-c2b2dfebdabc");
+	private final UUID HAS_SYSTEM = UUID.fromString("01d328ed-7952-5b4f-852d-792f4327af39");
 	
 	//has_METHOD_TYP
-	private final UUID HAS_METHOD_TYPE = UUID.fromString("a0e9ca70-0c0e-5cc8-ad2f-442fff44be6f");
+	private final UUID HAS_METHOD_TYPE = UUID.fromString("7343f21a-048d-5200-8de2-febf9cd065e1");
+	
+	
 	
 	
 	private LOINCSpreadsheetRules()
@@ -169,7 +174,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 					passed = systemIs(sc.getValue(), cc);
 					break;
 				default :
-					throw new RuntimeException("Unhandeled type");
+					throw new RuntimeException("Unhandled type");
 			}
 			if (invert)
 			{
@@ -235,11 +240,11 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 				{
 					throw new RuntimeException("No sememe indexer found, aborting.");
 				}
-				List<SearchResult> searchResults = refexIndexer.query(new RefexDynamicString("\"" + sc.getValueId() + "\""), getNid(LOINC_NUM), false, 
-						new Integer[] {0}, 5, null);
+				List<SearchResult> searchResults = refexIndexer.query(new RefexDynamicString("\"" + sc.getValueId().replaceAll("-", "\\\\-") + "\""), 
+						getNid(sc.getValueId().startsWith("LP") ? CODE : LOINC_NUM), false, new Integer[] {0}, 5, null);
 				if (searchResults.size() != 1)
 				{
-					throw new RuntimeException("Unexpected - multiple hits on ID " + sc.getValueId());
+					throw new RuntimeException("Unexpected - " + searchResults.size() + " hits on ID " + sc.getValueId());
 				}
 				else
 				{

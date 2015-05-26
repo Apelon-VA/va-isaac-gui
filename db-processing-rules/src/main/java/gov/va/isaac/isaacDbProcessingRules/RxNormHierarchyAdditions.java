@@ -65,9 +65,9 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 	private AtomicInteger examinedConcepts = new AtomicInteger();
 	
 	private final UUID penicillinProduct = UUID.fromString("fdca98cf-8720-3dbe-bb72-3377d658a85c");//Penicillin -class of antibiotic- (product)
-	private final UUID termTypeIN = UUID.fromString("17114d54-ed48-5f0a-a865-4ecec3e31cdc"); //Name for an Ingredient     // IN
+	private final UUID termTypeIN = UUID.fromString("92cd011b-629f-5514-a545-37e946337962"); //Name for an Ingredient     // IN
 	private final UUID rxNormModule= IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid();
-	private final UUID rxNormDescType = UUID.fromString("3599879d-78c6-5b1e-b442-9ef08eaedd3c");// "RxNorm Description Type" - refex that carries ingredient linkage
+	private final UUID rxNormDescType = UUID.fromString("7476a06a-c653-5ca5-bddb-42c441305521");// "RxNorm Description Type" - refex that carries ingredient linkage
 
 	/**
 	 * @see gov.vha.isaac.mojo.termstore.transforms.TransformI#getName()

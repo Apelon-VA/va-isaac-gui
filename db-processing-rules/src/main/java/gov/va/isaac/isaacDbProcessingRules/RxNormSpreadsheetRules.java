@@ -57,9 +57,9 @@ import org.jvnet.hk2.annotations.Service;
 @Named(value = "RxNorm spreadsheet rules")
 public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements TransformConceptIterateI 
 {
-	private final UUID RXCUI = UUID.fromString("da3a2dc0-8d17-57a2-b894-ba3086904aa3");
-	private final UUID RxNormDescType = UUID.fromString("3599879d-78c6-5b1e-b442-9ef08eaedd3c");
-	private final UUID IN = UUID.fromString("17114d54-ed48-5f0a-a865-4ecec3e31cdc");
+	private final UUID RXCUI = UUID.fromString("55598b28-5ffd-5746-820b-d90b73fb20b3");  //RXCUI
+	private final UUID RxNormDescType = UUID.fromString("7476a06a-c653-5ca5-bddb-42c441305521");// "RxNorm Description Type" - refex that carries ingredient linkage
+	private final UUID IN = UUID.fromString("92cd011b-629f-5514-a545-37e946337962"); //Name for an Ingredient     // IN
 
 	private RxNormSpreadsheetRules()
 	{
