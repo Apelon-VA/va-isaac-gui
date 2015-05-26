@@ -150,10 +150,15 @@ public class DynamicRefexView implements RefexViewI
 	private final Object dialogThreadBlock_ = new Object();
 	private AtomicInteger noRefresh_ = new AtomicInteger(0);
 	
+	// Display refreshes on change of UserProfileBindings.getViewCoordinatePath() or UserProfileBindings.getDisplayFSN()
 	@SuppressWarnings("unused")
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 
 	private final ObservableMap<ColumnId, Filter<?>> filterCache_ = new ObservableMapWrapper<>(new WeakHashMap<>());
+	// Display refreshes on change of UserProfileBindings.getDisplayFSN().
+	// If UserProfileBindings.getDisplayFSN() at time of refresh has changed since last refresh
+	// then all filters must be cleared, because they may contain outdated display text values
+	private boolean filterCacheLastBuildDisplayFSNValue_ = AppContext.getService(UserProfileBindings.class).getDisplayFSN().get();
 	
 	private final MapChangeListener<ColumnId, Filter<?>> filterCacheListener_ = new MapChangeListener<ColumnId, Filter<?>>() {
 		@Override
@@ -783,7 +788,7 @@ public class DynamicRefexView implements RefexViewI
 		{
 			try
 			{
-				loadRealData();
+				loadRealData(); // calls addFilterCacheListeners()
 			}
 			catch (Exception e)
 			{
@@ -1247,6 +1252,18 @@ public class DynamicRefexView implements RefexViewI
 	
 	private synchronized void loadRealData() throws IOException, ContradictionException, NumberFormatException, InterruptedException, ParseException
 	{
+		// If UserProfileBindings.getDisplayFSN() has changed since last data load
+		// then clear all filters, because they may contain outdated display text values
+		boolean currentDisplayFSNPreferenceValue = AppContext.getService(UserProfileBindings.class).getDisplayFSN().get();
+		if (currentDisplayFSNPreferenceValue != filterCacheLastBuildDisplayFSNValue_) {
+			logger_.debug("Clearing header node filter cache during refresh because displayFSN preference value changed to {}", currentDisplayFSNPreferenceValue);
+			filterCacheLastBuildDisplayFSNValue_ = currentDisplayFSNPreferenceValue;
+			removeFilterCacheListeners();
+			for (HeaderNode.Filter<?> filter : filterCache_.values()) {
+				filter.getFilterValues().clear();
+			}
+		}
+
 		//Now add the data
 		ArrayList<TreeItem<RefexDynamicGUI>> rowData;
 		if (setFromType_.getComponentNid() != null)
