@@ -23,6 +23,8 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,8 +39,10 @@ import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
@@ -58,6 +62,25 @@ import org.slf4j.LoggerFactory;
 public class SearchHandler
 {
 	private static final Logger LOG = LoggerFactory.getLogger(SearchHandler.class);
+	
+	private static ViewCoordinate vc_;
+	
+	private static ViewCoordinate getViewCoordinate()
+	{
+		if (vc_ == null)
+		{
+			try
+			{
+				vc_ = ViewCoordinates.getDevelopmentStatedLatest();
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Unexpected", e);
+			}
+		}
+		return vc_;
+	}
+	
 
 	/**
 	 * Execute a Query against the description indexes in a background thread, hand back a handle to the search object which will 
@@ -333,7 +356,8 @@ public class SearchHandler
 									}
 
 									// Get the description object.
-									Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
+									//TODO figure out how we handle view coordinate for search
+									Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(ViewCoordinates.getDevelopmentStatedLatest());
 
 									// normalize the scores between 0 and 1
 									float normScore = (searchResult.getScore() / maxScore);
@@ -466,11 +490,30 @@ public class SearchHandler
 								}
 
 								// Get the match object.
-								Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
+								ComponentChronicleBI<?> cc = dataStore.getComponent(searchResult.getNid());
+								if (cc == null)
+								{
+									//TODO OCHRE this code should be unecessary - the getComponent call above 
+									//currently isn't working correctly.  Wait for fix from Keith...
+									cc = dataStore.getRefex(searchResult.getNid());
+									if (cc == null)
+									{
+										cc = dataStore.getDynamicRefex(searchResult.getNid());
+									}
+								}
+								Optional<? extends ComponentVersionBI> cv;
+								if (cc != null)
+								{
+									cv = cc.getVersion(getViewCoordinate());
+								}
+								else
+								{
+									cv = Optional.empty();
+								}
 
 								// normalize the scores between 0 and 1
 								float normScore = (searchResult.getScore() / maxScore);
-								CompositeSearchResult csr = (cc.isPresent() ? new CompositeSearchResult(cc.get(), normScore) :
+								CompositeSearchResult csr = (cv.isPresent() ? new CompositeSearchResult(cv.get(), normScore) :
 									new CompositeSearchResult(searchResult.getNid(), normScore));
 								initialSearchResults.add(csr);
 							}

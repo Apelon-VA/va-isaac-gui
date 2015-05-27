@@ -19,6 +19,8 @@
 package gov.va.isaac.search;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
 
 /**
@@ -40,8 +43,20 @@ public class CompositeSearchResult {
 
 	private ConceptVersionBI containingConcept = null;
 	private final Set<ComponentVersionBI> matchingComponents = new HashSet<>();
-	private int matchingComponentNid;
+	private int matchingComponentNid_;
 	private float bestScore; // best score, rather than score, as multiple matches may go into a SearchResult
+	
+	private static ViewCoordinate vc;
+	{
+		try
+		{
+			vc = ViewCoordinates.getDevelopmentStatedLatest();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
 
 	public CompositeSearchResult(ComponentVersionBI matchingComponent, float score) {
 		this.matchingComponents.add(matchingComponent);
@@ -51,13 +66,15 @@ public class CompositeSearchResult {
 		{
 			throw new RuntimeException("Please call the constructor that takes a nid, if matchingComponent is null...");
 		}
-		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid());
+		//TODO - we need to evaluate / design proper behavior for how view coordinate should work with search
+		//default back to just using this for the moment, rather than what OTFUtility says.
+		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid(), vc);
 	}
 	public CompositeSearchResult(int matchingComponentNid, float score) {
 		this.bestScore = score;
 		//matchingComponent may be null, if the match is not on our view path...
 		this.containingConcept = null;
-		this.matchingComponentNid = matchingComponentNid;
+		this.matchingComponentNid_ = matchingComponentNid;
 		
 	}
 	
@@ -85,7 +102,7 @@ public class CompositeSearchResult {
 		{
 			if (containingConcept == null)
 			{
-				strings.add("Match to NID (not on path):" + matchingComponentNid);
+				strings.add("Match to NID (not on path):" + matchingComponentNid_);
 			}
 			else
 			{
