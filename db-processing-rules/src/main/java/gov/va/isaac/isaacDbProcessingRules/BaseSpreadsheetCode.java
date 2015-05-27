@@ -100,7 +100,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		startTime = System.currentTimeMillis();
 		//TODO pass in the spreadsheet?  But then where to store it?
 		ts_ = ts;
-		vc_ = ViewCoordinates.getMasterStatedLatest();
+		vc_ = ViewCoordinates.getDevelopmentStatedLatest();
 		
 		rules_ = new SpreadsheetReader().readSpreadSheet(SpreadsheetReader.class.getResourceAsStream(spreadsheetFileName));
 		for (RuleDefinition rd : rules_)
@@ -135,11 +135,11 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 	
 	protected void addRel(ConceptChronicleBI source, UUID target) throws ValidationException, IOException, InvalidCAB, ContradictionException
 	{
-		RelationshipCAB rCab = new RelationshipCAB(source.getPrimordialUuid(), Snomed.IS_A.getUuids()[0], target, 0, RelationshipType.STATED_ROLE, 
+		RelationshipCAB rCab = new RelationshipCAB(source.getPrimordialUuid(), Snomed.IS_A.getUuids()[0], target, 0, RelationshipType.STATED_HIERARCHY, 
 				IdDirective.GENERATE_HASH);
 		
 		ts_.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
-				getNid(IsaacMetadataAuxiliaryBinding.MASTER.getPrimodialUuid())), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
+				getNid(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid())), vc_).construct(rCab);
 		ts_.addUncommitted(source);
 	}
 	
