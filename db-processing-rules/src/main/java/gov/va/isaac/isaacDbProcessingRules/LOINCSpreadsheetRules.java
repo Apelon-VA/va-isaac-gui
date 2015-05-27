@@ -33,6 +33,7 @@ import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -88,6 +89,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	private final UUID HAS_METHOD_TYPE = UUID.fromString("7343f21a-048d-5200-8de2-febf9cd065e1");
 	
 	
+	private HashMap<String, Integer> loincIdToNidCache_ = new HashMap<>();
 	
 	
 	private LOINCSpreadsheetRules()
@@ -227,6 +229,12 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	{
 		if (sc.getValueId() != null && sc.getValueId().length() > 0)
 		{
+			Integer cache = loincIdToNidCache_.get(sc.getValueId());
+			if (cache != null)
+			{
+				return cache;
+			}
+			
 			ConceptChronicleBI cc;
 			if (Utility.isUUID(sc.getValueId()))
 			{
@@ -257,6 +265,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 				{
 					if (dv.getText().equals(sc.getValue()))
 					{
+						loincIdToNidCache_.put(sc.getValueId(), cc.getNid());
 						return cc.getNid();
 					}
 				}
@@ -265,6 +274,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 			System.err.println("ERROR -------------------");
 			System.err.println("ERROR - The concept '" + cc + "' did not have a description that matched the expected value of '" + sc.getValue() + "' from the spreadsheet");
 			System.err.println("ERROR -------------------");
+			loincIdToNidCache_.put(sc.getValueId(), cc.getNid());
 			return cc.getNid();
 		}
 		else
