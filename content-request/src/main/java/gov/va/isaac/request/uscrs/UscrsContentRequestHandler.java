@@ -159,52 +159,46 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					e.printStackTrace();
 				}
 				
+				//Check if concept fits this criteria
+				//First check if the concept is valid
+				// If the date was passed in, we check if this is on that date
+				// Look at all the components of the concept, and all the versions of 
+				//		the concept. If any versions of the concept are newer than the date, t
+				//		then we export. We also go throug the descriptions to see if the desc
+				//		is newer than the date then we export that.
+				//	Also look at the relationships of the concept to see if any newer than the 
+				//		date passed in. If yes then export.
+				// If a description has been edited, then edited again, we are not sure if we
+				// 		put both in the export  or if we just want to export the latest version.
+				
 				conceptStream
 					.forEach( nid -> {
-						if(prop.equals("none")) {
-							//Modify this based on what options are passed in above
-							if(count % 50 == 0) {
-								updateTitle("Uscrs Content Request Exported " + count + " components");
-							}
+						if(count % 50 == 0) { //TODO: Modify this based on what options are passed in above
+							updateTitle("Uscrs Content Request Exported " + count + " components");
 						}
-						
-						
 						if(isCancelled()) {
 							LOG.info("User canceled Uscrs Export Operation");
 							throw new RuntimeException("User canceled operation");
 						}
 						
+						
 						ConceptChronicleBI concept = OTFUtility.getConceptVersion(nid); 
 						
 						ArrayList<RelationshipVersionBI> exportRels = null;
+						ArrayList<RelationshipVersionBI> exportRelsUnFiltered = null;
 						try {
-							exportRels.addAll(handleNewConcept(concept, bt));
+							exportRelsUnFiltered.addAll(handleNewConcept(concept, bt));
 							
-						} catch (Exception e1) {
+						} catch (Exception e) {
 							LOG.error("Could not export concept " + nid);
-							e1.printStackTrace();
+							e.printStackTrace();
 						} 
-						
-						//Check if concept fits this criteria
-						//First check if the concept is valid
-						// If the date was passed in, we check if this is on that date
-						// Look at all the components of the concept, and all the versions of 
-						//		the concept. If any versions of the concept are newer than the date, t
-						//		then we export. We also go throug the descriptions to see if the desc
-						//		is newer than the date then we export that.
-						//	Also look at the relationships of the concept to see if any newer than the 
-						//		date passed in. If yes then export.
-						// If a description has been edited, then edited again, we are not sure if we
-						// 		put both in the export  or if we just want to export the latest version.
-						
-						
 						
 						if(filter) {
 							try {
 								Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
 								for(DescriptionChronicleBI d : descriptions) {
 									if(previousReleaseTime != null) {
-										
 										DescriptionVersionBI<?> dvLatest = d.getVersion(OTFUtility.getViewCoordinate()).get();
 										
 										ViewCoordinate vc = new ViewCoordinate();
@@ -213,6 +207,12 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 										Optional<? extends DescriptionVersionBI> dvInitial = d.getVersion(vc);
 										
 										if(dvInitial.isPresent()) {
+											if(!dvInitial.equals(dvLatest)) {
+												
+											} else {
+												
+											}
+											
 											//TODO VAS - this is the point where you need to compare dvLatest with dvInitial, and see
 											//if they are the same.  If they are not the same, you need to export dvLatest.  If they 
 											//ARE the same, whatever changes happened between dvInitial and dvLatest were essentially a 
@@ -241,7 +241,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 							}
 						}
 						
-
 						
 						try {
 							handleNewParent(exportRels, bt);
