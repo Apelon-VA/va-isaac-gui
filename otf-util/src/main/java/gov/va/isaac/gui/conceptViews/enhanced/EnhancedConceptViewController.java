@@ -11,9 +11,13 @@ import gov.va.isaac.interfaces.gui.constants.ConceptViewMode;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.va.isaac.util.Utility;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
+
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
@@ -23,12 +27,15 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,11 +131,20 @@ public class EnhancedConceptViewController {
 
 			initializeWindow(conceptHistoryStack, mode);
 		}
-		concept = OTFUtility.getConceptVersion(currentCon);
-		labelHelper.setConcept(concept.getNid());
+		
 		clearContents();
-		updateCommitButton();
-		creator.setConceptValues(concept, mode);
+		
+		// TODO bg thread
+		Utility.execute(() -> {
+			concept = OTFUtility.getConceptVersion(currentCon);
+
+			Platform.runLater(() -> {
+				labelHelper.setConcept(concept.getNid());
+				updateCommitButton();
+				populateContents(concept, mode);
+				//creator.setConceptValues(concept, mode);
+			});
+		});
 	}
 	
 	void setConcept(UUID currentCon, ConceptViewMode mode) {
@@ -137,10 +153,18 @@ public class EnhancedConceptViewController {
 			intializePane(mode);
 		}
 		
-		concept = OTFUtility.getConceptVersion(currentCon);
-		labelHelper.setConcept(concept.getNid());
 		clearContents();
-		creator.setConceptValues(concept, mode);
+
+		// TODO bg thread
+		Utility.execute(() -> {
+			concept = OTFUtility.getConceptVersion(currentCon);
+
+			Platform.runLater(() -> {
+				labelHelper.setConcept(concept.getNid());
+				populateContents(concept, mode);
+				//creator.setConceptValues(concept, mode);
+			});
+		});
 	}
 
 	void initializeWindow(ObservableList<Integer> conceptHistoryStack, ConceptViewMode view) {
@@ -174,7 +198,8 @@ public class EnhancedConceptViewController {
 					clearContents();
 					commitButton.setDisable(true);
 					cancelButton.setDisable(true);
-					creator.setConceptValues(concept, currentMode);
+					populateContents(concept, currentMode);
+					//creator.setConceptValues(concept, currentMode);
 				}
 				catch (IOException e)
 				{
@@ -193,7 +218,8 @@ public class EnhancedConceptViewController {
 					clearContents();
 					commitButton.setDisable(true);
 					cancelButton.setDisable(true);
-					creator.setConceptValues(concept, currentMode);
+					populateContents(concept, currentMode);
+					//creator.setConceptValues(concept, currentMode);
 				} catch (Exception e) {
 					LOG.error("Unable to cancel concept: " + concept.getNid(), e);
 				}
@@ -249,7 +275,8 @@ public class EnhancedConceptViewController {
 	public void setViewMode(ConceptViewMode mode) {
 		currentMode = mode;
 		clearContents();
-		creator.setConceptValues(concept, mode);
+		populateContents(concept, mode);
+		//creator.setConceptValues(concept, mode);
 	}
 
 	private void commonInit(ConceptViewMode mode) {
@@ -308,5 +335,33 @@ public class EnhancedConceptViewController {
 		relVBox.getChildren().clear();
 		conAnnotVBox.getChildren().clear();
 		fsnAnnotVBox.getChildren().clear();
+		setProgressIndicators(true);
+	}
+	
+	private void populateContents(ConceptVersionBI concept, ConceptViewMode mode) {
+		setProgressIndicators(false);
+		creator.setConceptValues(concept, mode);
+	}
+	
+	private void setProgressIndicators(boolean enable) {
+		if (enable) {
+			releaseIdLabel.setGraphic(new ProgressBar());
+			isPrimLabel.setGraphic(new ProgressBar());
+			fsnLabel.setGraphic(new ProgressBar());
+			termVBox.getChildren().add(new ProgressIndicator());
+			destVBox.getChildren().add(new ProgressIndicator());
+			relVBox.getChildren().add(new ProgressIndicator());
+			conAnnotVBox.getChildren().add(new ProgressIndicator());
+			fsnAnnotVBox.getChildren().add(new ProgressIndicator());
+		} else {
+			releaseIdLabel.setGraphic(null);
+			isPrimLabel.setGraphic(null);
+			fsnLabel.setGraphic(null);
+			termVBox.getChildren().clear();
+			destVBox.getChildren().clear();
+			relVBox.getChildren().clear();
+			conAnnotVBox.getChildren().clear();
+			fsnAnnotVBox.getChildren().clear();
+		}
 	}
 }
