@@ -371,7 +371,7 @@ public class EconceptExportOperation extends Operation
 							} else if(toggleSelected.equalsIgnoreCase("econcept")) {
 								new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).writeExternal(dos_);
 							} else {
-								//new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).toXml(firstValue);
+								new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).toXml();
 								if(firstValue) {
 									firstValue = false;
 								}
