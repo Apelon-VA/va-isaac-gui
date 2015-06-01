@@ -195,6 +195,5 @@
 		<module>sync-svn</module>
 		<module>db-processing-rules</module>
 		<module>mapping</module>
-		<module>agitar-tests</module>
 	</modules>
 </project>
