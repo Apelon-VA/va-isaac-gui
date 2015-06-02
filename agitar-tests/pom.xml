@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>agitar-tests-group</groupId>
+	<artifactId>agitar-tests</artifactId>
+	<version>1.0</version>
+	<name>isaac-gui-agitar-tests</name>
+	<description>Agitar tests for isaac-gui</description>
+
+	<properties>
+		<junit.version>4.12</junit.version>
+	</properties>
+
+	<dependencies>
+		<!-- Begin Agitar -->
+		<dependency>
+			<groupId>com.agitar.maven</groupId>
+			<artifactId>agitar-test-lib</artifactId>
+			<version>6.1.0</version>
+			<type>pom</type>
+			<scope>test</scope>
+		</dependency>
+		<!-- End Agitar -->
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.18.1</version>
+				<dependencies>
+					<dependency>
+						<groupId>com.agitar.maven</groupId>
+						<artifactId>surefire-agitar</artifactId>
+						<version>6.1.0</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.9.1</version>
+				<executions>
+					<execution>
+						<id>add-test-source</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>add-test-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>agitar/test</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Can use this whole pom with these fake properties provided only using 
+				clean goal from project plugin mvn -Declipse.install.dir=/ -Dagitar.tasks.defined=true 
+				clean -->
+			<plugin>
+				<groupId>com.agitar.maven</groupId>
+				<artifactId>agitar-project-maven-plugin</artifactId>
+				<version>6.1.0</version>
+				<executions>
+					<execution>
+						<id>agitar-clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+				<version>2.7.2</version>
+			</plugin>
+		</plugins>
+	</reporting>
+</project>
