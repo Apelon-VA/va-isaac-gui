@@ -68,6 +68,7 @@ public class AppController {
     private SplitPane mainSplitPane;
     private MenuBar menuBar;
     private BorderPane loadWait;
+    
     private boolean preloadExecuted = false;
 
 
@@ -101,7 +102,6 @@ public class AppController {
         mainSplitPane.getItems().add(loadWait);
         mainSplitPane.setMaxWidth(Double.MAX_VALUE);
         mainSplitPane.setMaxHeight(Double.MAX_VALUE);
-        
         
         menuBar = new MenuBar();
         for (ApplicationMenus menu : ApplicationMenus.values())
@@ -348,5 +348,12 @@ public class AppController {
                 service.shutdown();
             }
         }
+    }
+    
+    public void showExitWait() {
+        BorderPane exitWait = new BorderPane();
+        exitWait.setCenter(LightWeightDialogs.buildLoadingDialog());
+        mainSplitPane.getItems().clear();
+        mainSplitPane.getItems().add(exitWait);
     }
 }
