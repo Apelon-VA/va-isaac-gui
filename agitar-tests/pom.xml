@@ -98,6 +98,22 @@
 				<artifactId>maven-surefire-report-plugin</artifactId>
 				<version>2.7.2</version>
 			</plugin>
+			<!-- OPTION 2
+			<plugin>
+				<groupId>com.agitar.maven</groupId>
+				<artifactId>agitar-project-maven-coverage-report</artifactId> 
+				<version>6.1.0</version>
+				<configuration>
+					<classCoverageTarget>90</classCoverageTarget> 
+				</configuration>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>agitar-coverage-report</report> 
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin> -->
 		</plugins>
 	</reporting>
 </project>
