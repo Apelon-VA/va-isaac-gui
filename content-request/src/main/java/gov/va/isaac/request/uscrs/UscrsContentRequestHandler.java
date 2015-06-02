@@ -32,12 +32,14 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Semantic_Tag;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
 import gov.va.isaac.util.OTFUtility;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,11 +48,17 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+
 import javafx.concurrent.Task;
+
 import javax.inject.Named;
+
 import org.glassfish.hk2.api.PerLookup;
+import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeChronicleBI;
+import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
@@ -100,8 +108,10 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		if(prop.containsKey("date")) { 
 			filter = true; 
 			previousReleaseTime = Long.parseLong(prop.getProperty("date")); 
+		} else {
+			filter = false;
+			previousReleaseTime = (long) -1;
 		}
-//		if(!prop.get("mode").equals("none")) { filter = true; }
 		
 	}
 
@@ -118,13 +128,15 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	/** The request id counter. */
 	private static AtomicInteger globalRequestCounter = new AtomicInteger(1);
 
-	/** The Constant LOG. */
-	private static final Logger LOG = LoggerFactory.getLogger(UscrsContentRequestHandler.class);
+	/** The Constant logger. */
+	private static final Logger logger = LoggerFactory.getLogger(UscrsContentRequestHandler.class);
 	
 	private int currentRequestId;
 	private LinkedHashMap<UUID, Integer> currentRequestUuidMap = new LinkedHashMap<UUID, Integer>();
 	private USCRSBatchTemplate bt = null;
 	private int count = 0;
+	private ViewCoordinate vcPreviousRelease;
+	private ViewCoordinate viewCoordinate;
 	
 	private IntStream conceptStream;
 	
@@ -158,14 +170,13 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				vcPreviousRelease = new ViewCoordinate();
+				vcPreviousRelease.getViewPosition().setTime(previousReleaseTime);
+				vcPreviousRelease.setAllowedStatus(EnumSet.of(Status.ACTIVE));
+				viewCoordinate = new ViewCoordinate();
+				viewCoordinate.setAllowedStatus(EnumSet.of(Status.ACTIVE));
+				viewCoordinate.setRelationshipAssertionType(RelAssertionType.STATED);
 				
-				//Check if concept fits this criteria
-				//First check if the concept is valid
-				// If the date was passed in, we check if this is on that date
-				// Look at all the components of the concept, and all the versions of 
-				//		the concept. If any versions of the concept are newer than the date, t
-				//		then we export. We also go throug the descriptions to see if the desc
-				//		is newer than the date then we export that.
 				//	Also look at the relationships of the concept to see if any newer than the 
 				//		date passed in. If yes then export.
 				// If a description has been edited, then edited again, we are not sure if we
@@ -177,71 +188,161 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 							updateTitle("Uscrs Content Request Exported " + count + " components");
 						}
 						if(isCancelled()) {
-							LOG.info("User canceled Uscrs Export Operation");
+							logger.info("User canceled Uscrs Export Operation");
 							throw new RuntimeException("User canceled operation");
 						}
 						
-						
 						ConceptChronicleBI concept = OTFUtility.getConceptVersion(nid); 
 						
-						ArrayList<RelationshipVersionBI> exportRels = null;
-						ArrayList<RelationshipVersionBI> exportRelsUnFiltered = null;
-						try {
-							exportRelsUnFiltered.addAll(handleNewConcept(concept, bt));
-							
-						} catch (Exception e) {
-							LOG.error("Could not export concept " + nid);
-							e.printStackTrace();
-						} 
+						ArrayList<RelationshipVersionBI<?>> exportRels = new ArrayList<RelationshipVersionBI<?>>();
+						ArrayList<RelationshipVersionBI<?>> exportRelsUnFiltered = new ArrayList<RelationshipVersionBI<?>>();
 						
+						//TODO: Start breaking this code up into sub-methods. Because we will be adding more filters, so break up code.
 						if(filter) {
-							try {
-								Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
-								for(DescriptionChronicleBI d : descriptions) {
-									if(previousReleaseTime != null) {
-										DescriptionVersionBI<?> dvLatest = d.getVersion(OTFUtility.getViewCoordinate()).get();
+							if(prop.containsKey("date") && previousReleaseTime > 0) { 
+								boolean conceptCreated = false;
+								try {
+									Collection<? extends ConceptAttributeChronicleBI> attributes = (Collection<? extends ConceptAttributeChronicleBI>) concept.getConceptAttributes();
+									for(ConceptAttributeChronicleBI cac : attributes) {
+										Optional<? extends ConceptAttributeVersionBI> caLatest = cac.getVersion(viewCoordinate);
+										Optional<? extends ConceptAttributeVersionBI> caInitial = cac.getVersion(vcPreviousRelease);
 										
-										ViewCoordinate vc = new ViewCoordinate();
-										vc.getViewPosition().setTime(previousReleaseTime);
-										
-										Optional<? extends DescriptionVersionBI> dvInitial = d.getVersion(vc);
-										
-										if(dvInitial.isPresent()) {
-											if(!dvInitial.equals(dvLatest)) {
+										if(caInitial.isPresent()) {
+											if(caLatest.isPresent()) {
+												ConceptAttributeVersionBI thisCaLatest = caLatest.get();
+												ConceptAttributeVersionBI thisCaInitial = caInitial.get();
 												
+												boolean conceptIsChanged = false;
+												if(thisCaInitial.isDefined() != thisCaLatest.isDefined()) {
+													conceptIsChanged = true;
+												}
+												
+												if(conceptIsChanged) {
+													//TODO: handleChangeConcept() Method
+													//exportRelsUnFiltered.addAll(caLatest.get()), bt));
+													//exportRelsUnFiltered.addAll(handleNewConcept(OTFUtility.getComponentChronicle(caLatest.get().getConceptNid()), bt));
+													conceptCreated = true;
+												} else {
+													//noop
+												}
 											} else {
+												handleRetireConcept(concept, bt);
+											}
+										} else {
+											if(caLatest.isPresent()) {
+												ViewCoordinate vcPrActiveInactive = vcPreviousRelease;
+												vcPrActiveInactive.setAllowedStatus(EnumSet.of(Status.INACTIVE, Status.ACTIVE));
 												
+												Optional<? extends ConceptAttributeVersionBI> cavRetiredCheck = cac.getVersion(vcPrActiveInactive);
+												if(cavRetiredCheck.isPresent()) {
+													// Place in the edit concept tab (un-retired)
+												} else {
+													exportRelsUnFiltered.addAll(handleNewConcept(concept, bt));
+													conceptCreated = true;
+												}
+											} else {
+												//noop
 											}
 											
-											//TODO VAS - this is the point where you need to compare dvLatest with dvInitial, and see
-											//if they are the same.  If they are not the same, you need to export dvLatest.  If they 
-											//ARE the same, whatever changes happened between dvInitial and dvLatest were essentially a 
-											//noop, and you do NOT need to export dvLatest.
 										}
 									}
-								
+									
+								} catch (Exception e) {
+									logger.error("Error getting concept " + nid + " attributes for date / time comparison: " + e.getMessage());
+									e.printStackTrace();
 								}
 								
-							} catch (Exception e) {
-								LOG.error("Error retreiving the descriptions: " + e.getMessage());
-								e.printStackTrace();
-							}
+								//Export Descriptions
+								if(!conceptCreated){ //TODO DAN Question: Do we not do this if we created a new concept
+									try {
+										Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
+										for(DescriptionChronicleBI d : descriptions) {
+											//TODO: Suppress generic type inferment warnings of entire call(). Do last
+											Optional<? extends DescriptionVersionBI> dvLatest = d.getVersion(viewCoordinate);
+											Optional<? extends DescriptionVersionBI> dvInitial = d.getVersion(vcPreviousRelease);
+											
+											if(dvInitial.isPresent()) {
+												if(dvLatest.isPresent()){
+													DescriptionVersionBI<?> thisDvLatest = dvLatest.get();
+													DescriptionVersionBI<?> thisDvInitial = dvInitial.get();
+													
+													boolean hasChange = false;
+													if(!thisDvLatest.getLang().equals(thisDvInitial.getLang())) {
+														hasChange = true;
+													} else if(!thisDvLatest.getText().equals(thisDvInitial.getText())) {
+														hasChange = true;
+													} else if (thisDvLatest.isInitialCaseSignificant() != thisDvInitial.isInitialCaseSignificant()) {
+														hasChange = true;
+													}
+													if(hasChange) {
+														handleChangeDesc(thisDvLatest, bt);
+													}
+												} else {
+													ArrayList<DescriptionVersionBI<?>> retiredDescs = new ArrayList<DescriptionVersionBI<?>>();
+													retiredDescs.add(dvInitial.get());
+												}
+											} else {
+												if(dvLatest.isPresent()) {
+													ViewCoordinate vcPrActiveInactive = vcPreviousRelease;
+													vcPrActiveInactive.setAllowedStatus(EnumSet.of(Status.INACTIVE, Status.ACTIVE));
+													
+													Optional<? extends DescriptionVersionBI> dvCheckRetired = d.getVersion(vcPrActiveInactive);
+													if(dvCheckRetired.isPresent()) {
+														handleChangeDesc(dvCheckRetired.get(), bt);
+													} else {
+														handleNewSyn(dvLatest.get(), bt);
+													}
+												} else {
+													//noop
+												}
+											}
+										}
+									} catch (Exception e) {
+										logger.error("Description Export Error: " + e.getMessage());
+										e.printStackTrace();
+									}
+								}
 								
-							try {
-								Collection<? extends RelationshipChronicleBI> relsIncoming = concept.getRelationshipsIncoming();
-							} catch (Exception e) {
-								LOG.error("Error retreiving the incoming relationshios: " + e.getMessage());
-								e.printStackTrace();
+								if(!conceptCreated) {
+									if(exportRelsUnFiltered.size() < 1){
+										try {
+											//Collection<? extends RelationshipChronicleBI> outgoingRels = concept.getRelationshipsOutgoing().stream().forEach(r -> { exportRelsUnFiltered.add(r.getVersion(viewCoordinate); } ));;
+//											for
+										} catch (Exception e) {
+											logger.error("Error retreiving the incoming relationshios: " + e.getMessage());
+											e.printStackTrace();
+										}
+										
+									}
+									
+								} else {
+									
+								}
+	
+							} else {
+								//No date filter, process everything that way
 							}
+							
 							try {
-								Collection<? extends RelationshipChronicleBI> relsOutgoing = concept.getRelationshipsOutgoing();
+								handleNewParent(exportRelsUnFiltered, bt);
+								handleNewRels(exportRelsUnFiltered, bt);
+								//handleChangeDesc(descVersion, bt); Implement this
 							} catch (Exception e) {
-								LOG.error("Error retreiving the incoming relationshios: " + e.getMessage());
+								logger.error("Could not export concept " + nid);
 								e.printStackTrace();
-							}
+							} 
+						} else {
+							try {
+								exportRelsUnFiltered.addAll(handleNewConcept(concept, bt));
+								handleNewParent(exportRelsUnFiltered, bt);
+								handleNewRels(exportRelsUnFiltered, bt);
+							} catch (Exception e) {
+								logger.error("Could not export concept " + nid);
+								e.printStackTrace();
+							} 
+							
 						}
-						
-						
+
 						try {
 							handleNewParent(exportRels, bt);
 							handleNewRels(exportRels, bt);
@@ -252,7 +353,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 								handleNewSyn(thisDesc, bt); 
 							}
 						} catch(Exception e) {
-							LOG.error(e.getMessage());
+							logger.error(e.getMessage());
 							throw new RuntimeException("Export failed on component nid " + nid);//isnt that bad?
 						}
 						count++;
@@ -266,7 +367,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				
 				//info.setName(OTFUtility.getConPrefTerm(concept.getNid()));
 				
-				LOG.info("  file = " + file);
+				logger.info("  file = " + file);
 				if (file != null)
 				{
 					bt.saveFile(file.toFile());
@@ -274,7 +375,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				}
 				else
 				{ 
-					LOG.error("File object is null, could not proceed");
+					logger.error("File object is null, could not proceed");
 					throw new RuntimeException("The Operation could not be completed because the file is null");
 				}
 				return count;
@@ -284,16 +385,17 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	
 
 	/**
-	 * Handle new concept spreadsheet tab.
+	 * Creates a new row in the "New Concept" tab of the workbook passed in. It returns the ISA relationships
+	 * if there are more than 3.It also returns all non ISA relationships
 	 *
 	 * @param concept the concept
 	 * @param bt the wb
-	 * @return extra relationships (if more than 3)
+	 * @return ArrayList<RelationshipVersionBI> extra relationships (if more than 3 ISA, those are returned), plus all non ISA
 	 * @throws Exception the exception
 	 */
-	private ArrayList<RelationshipVersionBI> handleNewConcept(ConceptChronicleBI concept, USCRSBatchTemplate bt) throws Exception
+	private ArrayList<RelationshipVersionBI<?>> handleNewConcept(ConceptChronicleBI concept, USCRSBatchTemplate bt) throws Exception
 	{
-		ArrayList<RelationshipVersionBI> extraRels = new ArrayList<RelationshipVersionBI>();
+		ArrayList<RelationshipVersionBI<?>> extraRels = new ArrayList<RelationshipVersionBI<?>>();
 		// PARENTS
 		LinkedList<Integer> parentsSct = new LinkedList<Integer>();
 		LinkedList<Integer> parentsPathNid = new LinkedList<Integer>();
@@ -640,7 +742,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception the exception
 	 */
 	@SuppressWarnings("rawtypes")
-	public void handleNewRels(ArrayList<RelationshipVersionBI> extraRels, USCRSBatchTemplate bt) throws Exception {
+	public void handleNewRels(ArrayList<RelationshipVersionBI<?>> extraRels, USCRSBatchTemplate bt) throws Exception {
 		bt.selectSheet(SHEET.New_Relationship);
 		for(RelationshipVersionBI rel : extraRels) {
 			if (rel.isActive() && (rel.getTypeNid() != Snomed.IS_A.getLenient().getNid())) 
@@ -702,7 +804,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					) {
 				return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();
 			} else {
-				LOG.error("Terminology Lib Error - NOT Snomed CT Core");
+				logger.error("Terminology Lib Error - NOT Snomed CT Core");
 				return "Not SNOMED CT Core";
 				//throw new RuntimeException("TERMINOLOGY LIB ERROR - NOT SNOMED CT CORE");
 			}
@@ -752,7 +854,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			
 		} catch(Exception e) 
 		{ 
-			LOG.error("We could not get the SCT from the Given NID", e);
+			logger.error("We could not get the SCT from the Given NID", e);
 			return 0;  //document the failure behavior - is 0 an appropriate thing to return if no sctid could be found?
 		}
 		
@@ -819,13 +921,14 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	}
 	
 	/**
-	 * Handle Change Description spreadsheet tab
+	 * Pass in an ArrayList of description versions and a workbook and a new row will be created for each description 
+	 * in the corresponding notebook
 	 *
-	 * @param concept the concept
+	 * @param ArrayList<DescriptionVersionBI<?>> descVersion an ArrayList of DescriptionVersions that will be added
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleChangeDesc(DescriptionVersionBI<?> descVersion, USCRSBatchTemplate bt) throws Exception
+	private void handleChangeDesc(DescriptionVersionBI<?> d, USCRSBatchTemplate bt) throws Exception
 	{
 		bt.selectSheet(SHEET.Change_Description);
 		bt.addRow();
@@ -837,20 +940,20 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, "");
 					break;
 				case Terminology:
-					bt.addStringCell(column, this.getTerminology(descVersion.getPathNid()));
+					bt.addStringCell(column, this.getTerminology(d.getPathNid()));
 					break;
 				case Concept_Id:
-					bt.addNumericCell(column, this.getSct(descVersion.getConceptNid()));
+					bt.addNumericCell(column, this.getSct(d.getConceptNid()));
 					break;
 				case Description_Id:
-					bt.addNumericCell(column, this.getSct(descVersion.getNid()));
+					bt.addNumericCell(column, this.getSct(d.getNid()));
 					break;
 				case Term: 
 					//TODO nope - can't use OTF Utility to get this - you need to get the text from the description version passed in
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(descVersion.getConceptNid()));
+					bt.addStringCell(column, OTFUtility.getConPrefTerm(d.getConceptNid()));
 					break;
 				case Case_Significance:
-					bt.addStringCell(column, this.getCaseSig(descVersion.isInitialCaseSignificant()));
+					bt.addStringCell(column, this.getCaseSig(d.isInitialCaseSignificant()));
 					break;
 				case Justification:
 					bt.addStringCell(column, "");
@@ -862,7 +965,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Change_Description);
 			}
 		}
-
 	}
 	
 	/**
@@ -914,40 +1016,41 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleRetireDescription(DescriptionVersionBI<?> descVersion, USCRSBatchTemplate bt) throws Exception
+	private void handleRetireDescription(ArrayList<DescriptionVersionBI<?>> descVersions, USCRSBatchTemplate bt) throws Exception
 	{
 		bt.selectSheet(SHEET.Retire_Description);
-		bt.addRow();
-		ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(descVersion.getConceptNid());
-		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Description))
-		{
-			switch (column)
+		for(DescriptionVersionBI<?> d : descVersions) {
+			bt.addRow();
+			ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(d.getConceptNid());
+			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Description))
 			{
-				case Topic:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				case Terminology:
-					bt.addStringCell(column, this.getTerminology(conceptVersion.getPathNid()));
-					break;
-				case Concept_Id:
-					bt.addNumericCell(column, this.getSct(conceptVersion.getNid()));
-					break;
-				case Description_Id:
-					bt.addNumericCell(column, this.getSct(descVersion.getNid()));
-					break;
-				case Change_Description_Status_To:  //TODO talk to Jaqui / NLM - same status question as above
-					break;
-				case Justification:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				case Note:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				default :
-					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Retire_Description);
+				switch (column)
+				{
+					case Topic:
+						bt.addStringCell(column, ""); //User Input
+						break;
+					case Terminology:
+						bt.addStringCell(column, this.getTerminology(conceptVersion.getPathNid()));
+						break;
+					case Concept_Id:
+						bt.addNumericCell(column, this.getSct(conceptVersion.getNid()));
+						break;
+					case Description_Id:
+						bt.addNumericCell(column, this.getSct(d.getNid()));
+						break;
+					case Change_Description_Status_To:  //TODO talk to Jaqui / NLM - same status question as above
+						break;
+					case Justification:
+						bt.addStringCell(column, ""); //User Input
+						break;
+					case Note:
+						bt.addStringCell(column, ""); //User Input
+						break;
+					default :
+						throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Retire_Description);
+				}
 			}
 		}
-
 	}
 
 	/**
@@ -1009,7 +1112,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleNewParent(ArrayList<RelationshipVersionBI> extraRels, USCRSBatchTemplate bt) throws Exception
+	private void handleNewParent(ArrayList<RelationshipVersionBI<?>> extraRels, USCRSBatchTemplate bt) throws Exception
 	{
 		bt.selectSheet(SHEET.Add_Parent);
 		for(RelationshipVersionBI rel : extraRels) {
