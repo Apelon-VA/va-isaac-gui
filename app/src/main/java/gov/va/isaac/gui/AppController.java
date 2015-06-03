@@ -350,10 +350,4 @@ public class AppController {
         }
     }
     
-    public void showExitWait() {
-        BorderPane exitWait = new BorderPane();
-        exitWait.setCenter(LightWeightDialogs.buildLoadingDialog());
-        mainSplitPane.getItems().clear();
-        mainSplitPane.getItems().add(exitWait);
-    }
 }

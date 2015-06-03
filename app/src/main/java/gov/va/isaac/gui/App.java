@@ -25,20 +25,37 @@ import gov.va.isaac.gui.download.DownloadDialog;
 import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.ApplicationWindowI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
+import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Consumer;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
@@ -86,10 +103,42 @@ public class App extends Application implements ApplicationWindowI{
         // Handle window close event.
         primaryStage.setOnHiding(new EventHandler<WindowEvent>() {
 
+            /*
             @Override
             public void handle(WindowEvent event) {
                 shutdown();
             }
+			*/
+
+        	@Override
+            public void handle(WindowEvent event) {
+				final Stage dialog = new Stage(StageStyle.UNDECORATED);
+				dialog.initModality(Modality.APPLICATION_MODAL);
+				dialog.setAlwaysOnTop(true);
+				
+				Label label =new Label("Please wait while ISAAC closes");
+				ProgressBar pb = new ProgressBar();
+				pb.setPrefWidth(300);
+				
+				VBox vBox = new VBox(10);
+				vBox.setAlignment(Pos.CENTER);
+				vBox.setPadding(new Insets(10, 40, 10, 40));
+				vBox.setStyle("-fx-border-color: black;");
+
+				vBox.getChildren().addAll(label, pb);
+				Scene scene1 = new Scene(vBox);
+				dialog.setScene(scene1);
+				dialog.show();
+
+				Utility.execute(() -> {
+	                shutdown();
+	                Platform.runLater(() -> {
+	                    dialog.close();
+	                });
+				});
+
+        	}
+        
         });
 
         primaryStage.show();
@@ -199,7 +248,6 @@ public class App extends Application implements ApplicationWindowI{
 
 
     protected void shutdown() {
-    	controller.showExitWait();
         LOG.info("Shutting down");
         shutdown = true;
         if (primaryStage_.isShowing())
