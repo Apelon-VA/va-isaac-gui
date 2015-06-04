@@ -191,7 +191,7 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
     throws IOException, ContradictionException {
     for (DescriptionChronicleBI desc : concept.getDescriptions()) {
       DescriptionVersionBI<?> descVersion =
-          desc.getVersion(OTFUtility.getViewCoordinate());
+          desc.getVersion(OTFUtility.getViewCoordinate()).get();
       // WARNING:
       // LOINC is created using FSN and not PT for this, the
       // metadata concepts do not have PTs.
@@ -218,7 +218,7 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
     throws Exception {
     for (RefexChronicleBI<?> refex : concept.getAnnotations()) {
       RefexVersionBI<?> refexVersion =
-          refex.getVersion(OTFUtility.getViewCoordinate());
+          refex.getVersion(OTFUtility.getViewCoordinate()).get();
       // WARNING:
       // LOINC is created using FSN and not PT for this, the
       // metadata concepts do not have PTs.
@@ -245,7 +245,7 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
     throws Exception {
     for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
       RelationshipVersionBI<?> relVersion =
-          rel.getVersion(OTFUtility.getViewCoordinate());
+          rel.getVersion(OTFUtility.getViewCoordinate()).get();
       String prefName = OTFUtility.getConPrefTerm(relVersion.getTypeNid());
       if (relVersion.isActive() && prefName.equals(type)) {
         return OTFUtility.getConPrefTerm(relVersion.getDestinationNid());

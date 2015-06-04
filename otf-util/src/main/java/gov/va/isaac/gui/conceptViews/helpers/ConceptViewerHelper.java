@@ -1,11 +1,11 @@
 package gov.va.isaac.gui.conceptViews.helpers;
 
 import gov.va.isaac.util.OTFUtility;
-
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -93,16 +93,21 @@ public class ConceptViewerHelper {
 
 	public static ConceptAttributeVersionBI<?> getConceptAttributes(ConceptVersionBI con) {
 		try {
-			ConceptAttributeVersionBI<?> attr = con.getConceptAttributesActive();
-			if (attr == null) {
+			Optional<? extends ConceptAttributeVersionBI> attr = con.getConceptAttributesActive();
+			if (!attr.isPresent()) {
 				attr = con.getConceptAttributes().getVersion(OTFUtility.getViewCoordinate());
-				if (attr == null) {
+				if (!attr.isPresent()) {
 					// handle Unhandled functionality
-					attr = (ConceptAttributeVersionBI<?>) con.getConceptAttributes().getVersions().toArray()[con.getConceptAttributes().getVersions().size() - 1];
+					//TODO what on earth is this method doing?  why would we display arbitrary attributes, if nothign is available on the path?
+					List<? extends ConceptAttributeVersionBI> x = con.getConceptAttributes().getVersions();
+					if (x.size() > 0)
+					{
+						attr = Optional.of(x.toArray(new ConceptAttributeVersionBI[x.size()])[x.size() - 1]);
+					}
 				}
 			}
 		
-			return attr;
+			return attr.orElse(null);
 		} catch (Exception e) {
 			LOG.debug("Cannot access concept's attributes for concept: " + con.getNid(), e);
 			return null;

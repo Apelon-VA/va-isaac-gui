@@ -25,6 +25,7 @@ import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
@@ -98,10 +99,10 @@ public class AssociationUtilities
 			for (SearchResult sr : refexes)
 			{
 				RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
-				RefexDynamicVersionBI<?> rv = rc.getVersion(vc);
-				if (rv != null)
+				Optional<? extends RefexDynamicVersionBI<?>> rv = rc.getVersion(vc);
+				if (rv.isPresent())
 				{
-					result.add(new Association(rv));
+					result.add(new Association(rv.get()));
 				}
 			}
 		}
@@ -123,10 +124,10 @@ public class AssociationUtilities
 		for (SearchResult sr : refexes)
 		{
 			RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
-			RefexDynamicVersionBI<?> rv = rc.getVersion(vc);
-			if (rv != null)
+			Optional<? extends RefexDynamicVersionBI<?>> rv = rc.getVersion(vc);
+			if (rv.isPresent())
 			{
-				result.add(new Association(rv));
+				result.add(new Association(rv.get()));
 			}
 		}
 

@@ -199,6 +199,7 @@ public class App extends Application implements ApplicationWindowI{
 
 
     protected void shutdown() {
+    	controller.showExitWait();
         LOG.info("Shutting down");
         shutdown = true;
         if (primaryStage_.isShowing())

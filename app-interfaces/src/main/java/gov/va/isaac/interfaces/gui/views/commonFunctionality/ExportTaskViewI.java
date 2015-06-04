@@ -16,44 +16,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.datastore.transforms;
+package gov.va.isaac.interfaces.gui.views.commonFunctionality;
 
-import java.io.File;
+import gov.va.isaac.interfaces.gui.views.PopupViewI;
+
+import java.util.stream.IntStream;
+
+import javafx.stage.Window;
+
+import org.jvnet.hk2.annotations.Contract;
 
 /**
- * {@link Transform}
+ * {@link ContentRequestHandlerI}
  * 
- * A class to allow for the configuration of Transforms.
- * 
- * Should look like:
- * <pre>
- * <Transform>
- *     <name>The name of the transform code - will be looked up using HK2 using this name</name>
- *     <configFile>The file path to the Configuration File for this transform (optional)</configFile>
- * </Transform>
- * </pre>
+ * An interface that represents data Exports GUI.
  *
- * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
+* @author <a href="mailto:vkaloidis@apelon.com">Vas Kaloidis</a>
  */
-public class Transform
-{
-	private String name;
-	private File configFile;
+@Contract
+public interface ExportTaskViewI extends PopupViewI {
 	
-	/**
-	 * @return the name
-	 */
-	public String getName()
-	{
-		return name;
-	}
-	/**
-	 * @return the configFile
-	 */
-	public File getConfigFile()
-	{
-		return configFile;
-	}
-	
+	public void showView(Window parent);
 
+	public IntStream getConcepts();
+	
+	public void setConcepts(IntStream conceptInput);
+	
+	
 }

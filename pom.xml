@@ -9,7 +9,7 @@
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>23.0</version>
+	<version>23.1</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
@@ -32,11 +32,11 @@
 	</distributionManagement>
 
 	<properties>
-		<query.version>2.12</query.version>
-		<ochre.version>2.27</ochre.version>
-		<isaac-mojo.version>1.6</isaac-mojo.version>
-		<isaac-metadata.version>1.29</isaac-metadata.version>
-		<newtons-cradle.version>1.17</newtons-cradle.version>
+		<query.version>2.13</query.version>
+		<ochre.version>2.28</ochre.version>
+		<isaac-mojo.version>1.7</isaac-mojo.version>
+		<isaac-metadata.version>1.30</isaac-metadata.version>
+		<newtons-cradle.version>1.18</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>
@@ -120,6 +120,25 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
+		
+            <plugin>
+                <groupId>external.atlassian.jgitflow</groupId>
+                <artifactId>jgitflow-maven-plugin</artifactId>
+                <version>1.0-m4.3</version>
+                <configuration>
+                    <pushReleases>true</pushReleases>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <scmCommentPrefix>[jgitflow-plugin]</scmCommentPrefix>
+                    <enableSshAgent>true</enableSshAgent>
+                    <allowSnapshots>false</allowSnapshots>
+                    <enableFeatureVersions>true</enableFeatureVersions>
+                  	<flowInitContext>
+                  		<developBranchName>develop-2</developBranchName>
+                  	</flowInitContext>
+                    
+                </configuration>
+            </plugin>
+		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>

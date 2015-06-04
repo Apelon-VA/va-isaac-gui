@@ -65,13 +65,15 @@ public class SpreadsheetReader
 		{
 			Row r = sheet.getRow(i);
 			
-			ArrayList<Cell> values = new ArrayList<>();
-			
-			for (int col = 0; col < columnHeaders.size(); col++)
+			if (r != null)
 			{
-				values.add(r.getCell(col));
+				ArrayList<Cell> values = new ArrayList<>();
+				for (int col = 0; col < columnHeaders.size(); col++)
+				{
+					values.add(r.getCell(col));
+				}
+				data.add(values);
 			}
-			data.add(values);
 		}
 
 		//Have read the entire spreadsheet - now process into our 'rule' format
@@ -142,6 +144,7 @@ public class SpreadsheetReader
 			rd.criteria = criteria;
 			result.add(rd);
 		}
+		ss.close();
 		return result;
 	}
 	
@@ -284,7 +287,7 @@ public class SpreadsheetReader
 	
 	public static void main(String[] args) throws IOException
 	{
-		for (RuleDefinition rd : new SpreadsheetReader().readSpreadSheet(SpreadsheetReader.class.getResourceAsStream("/rules.xlsx")))
+		for (RuleDefinition rd : new SpreadsheetReader().readSpreadSheet(SpreadsheetReader.class.getResourceAsStream("/rules_.xlsx")))
 		{
 			System.out.println(rd);
 		}

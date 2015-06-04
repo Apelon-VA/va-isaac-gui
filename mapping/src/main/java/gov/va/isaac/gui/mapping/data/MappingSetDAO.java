@@ -11,6 +11,7 @@ import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
@@ -121,7 +122,7 @@ public class MappingSetDAO extends MappingDAO
 			
 			//Find the constructed dynamic refset
 			return new MappingSet((RefexDynamicVersionBI<?>)ExtendedAppContext.getDataStore().getComponent(mappingAnnotation.getMemberUUID())
-					.getVersion(OTFUtility.getViewCoordinateAllowInactive()));
+					.getVersion(OTFUtility.getViewCoordinateAllowInactive()).get());
 		
 		}
 		catch (ContradictionException | InvalidCAB | PropertyVetoException e)
@@ -184,7 +185,7 @@ public class MappingSetDAO extends MappingDAO
 				}
 			}
 			
-			RefexDynamicVersionBI<?> mappingRefex = null;
+			Optional<? extends RefexDynamicVersionBI<?>> mappingRefex = null;
 			for (RefexDynamicChronicleBI<?> refex : mappingConcept.getRefexDynamicAnnotations())
 			{
 				if (refex.getAssemblageNid() == MappingConstants.MAPPING_SEMEME_TYPE.getNid())
@@ -194,13 +195,13 @@ public class MappingSetDAO extends MappingDAO
 				}
 			}
 			
-			if (mappingRefex == null)
+			if (!mappingRefex.isPresent())
 			{
 				LOG.error("Couldn't find mapping refex?");
 				throw new IOException("internal error");
 			}
 			
-			RefexDynamicCAB mappingRefexCab = mappingRefex.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+			RefexDynamicCAB mappingRefexCab = mappingRefex.get().makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 			mappingRefexCab.setData(new RefexDynamicDataBI[] {
 					(mappingSet.getEditorStatusConcept() == null ? null : new RefexDynamicUUID(mappingSet.getEditorStatusConcept())),
 					(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new RefexDynamicString(mappingSet.getPurpose()))}, OTFUtility.getViewCoordinateAllowInactive());
@@ -228,16 +229,14 @@ public class MappingSetDAO extends MappingDAO
 			ArrayList<MappingSet> result = new ArrayList<>();
 			for (SearchResult sr : search(MappingConstants.MAPPING_SEMEME_TYPE.getPrimodialUuid()))
 			{
-				RefexDynamicVersionBI<?> rc = (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().
+				Optional<RefexDynamicVersionBI<?>> rc = (Optional<RefexDynamicVersionBI<?>>) ExtendedAppContext.getDataStore().
 						getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
-				if (rc != null)
+				if (rc.isPresent())
 				{
-					MappingSet mappingSet = new MappingSet(rc);
-					//ConceptVersionBI mappingConcept = getMappingConcept(rc);
+					MappingSet mappingSet = new MappingSet(rc.get());
 					if (mappingSet.isActive() || !activeOnly)
 					{
 						result.add(mappingSet);
-						//result.add(new MappingSet(rc));
 					}
 				}
 			}

@@ -25,36 +25,31 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
-import gov.va.isaac.mojos.datastore.transforms.TransformConceptIterateI;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Named;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
@@ -71,26 +66,30 @@ import org.jvnet.hk2.annotations.Service;
  */
 @Service
 @Named(value = "LOINC spreadsheet rules")
-public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements TransformConceptIterateI
+public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements TransformConceptIterateI
 {
-	private final UUID LOINC_PATH = UUID.fromString("b2b1cc96-9ca6-5513-aad9-aa21e61ddc29");
+	private final UUID LOINC_NUM = UUID.fromString("55bfceaf-b07b-5eef-8435-ad6aa5e9f082");
 	
-	private final UUID LOINC_NUM = UUID.fromString("ee19b536-ca30-52ce-91a0-f1089e710f9c");
+	//CODE
+	private final UUID CODE = UUID.fromString("209638ed-b5fa-5ca4-89ab-57c02431fb98");
 
 	//CLASSTYPE
-	private final UUID CLASSTYPE = UUID.fromString("537869e6-a36e-5bd5-8e5b-dad90e9f4015");
+	private final UUID CLASSTYPE = UUID.fromString("ba410aa1-5617-51ed-85fc-788be361a596");
 	
 	//ORDER_OBS
-	private final UUID ORDER_OBS = UUID.fromString("a77932ee-55ea-56c6-9c7d-e93ccf6620a7");
+	private final UUID ORDER_OBS = UUID.fromString("a8b10d09-f098-52d2-8393-375eb72a3d96");
 	
 	//has_COMPONENT
-	private final UUID HAS_COMPONENT = UUID.fromString("481bb791-103a-5216-946c-b630aa95d322");
+	private final UUID HAS_COMPONENT = UUID.fromString("c557b176-b1fa-58f1-9e8c-764035e57f3d");
 	
 	//has_SYSTEM
-	private final UUID HAS_SYSTEM = UUID.fromString("c901d71a-381a-560e-967c-c2b2dfebdabc");
+	private final UUID HAS_SYSTEM = UUID.fromString("01d328ed-7952-5b4f-852d-792f4327af39");
 	
 	//has_METHOD_TYP
-	private final UUID HAS_METHOD_TYPE = UUID.fromString("a0e9ca70-0c0e-5cc8-ad2f-442fff44be6f");
+	private final UUID HAS_METHOD_TYPE = UUID.fromString("7343f21a-048d-5200-8de2-febf9cd065e1");
+	
+	
+	private HashMap<String, Integer> loincIdToNidCache_ = new HashMap<>();
 	
 	
 	private LOINCSpreadsheetRules()
@@ -105,7 +104,7 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts) throws IOException
 	{
-		configure("/SOLOR LOINC Rules.xlsx", LOINC_PATH, ts);
+		super.configure("/SOLOR LOINC Rules.xlsx", ts);
 	}
 	
 
@@ -119,14 +118,14 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 	{
 		examinedConcepts.incrementAndGet();
 		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersions());
-		if (latest.getPathNid() == getNid(LOINC_PATH))
+		if (latest.getModuleNid() == getNid(IsaacMetadataAuxiliaryBinding.LOINC.getPrimodialUuid()))
 		{
 			//Rule for all other rules:
 			if (classTypeIs("1", cc) && (orderIs("Order", cc) || orderIs("Both", cc)))
 			{
 				boolean commitRequired = false;
 				
-				for (RuleDefinition rd : rules)
+				for (RuleDefinition rd : rules_)
 				{
 					try
 					{
@@ -177,7 +176,7 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 					passed = systemIs(sc.getValue(), cc);
 					break;
 				default :
-					throw new RuntimeException("Unhandeled type");
+					throw new RuntimeException("Unhandled type");
 			}
 			if (invert)
 			{
@@ -212,11 +211,11 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 		switch (rd.getAction())
 		{
 			case CHILD_OF:
-				addRel(cc, sctTargetConcept, LOINC_PATH);
+				addRel(cc, sctTargetConcept);
 				generatedRels.get(rd.getId()).getAndIncrement();
 				break;
 			case SAME_AS:
-				mergeConcepts(cc, sctTargetConcept, LOINC_PATH);
+				mergeConcepts(cc, sctTargetConcept, IsaacMetadataAuxiliaryBinding.LOINC.getPrimodialUuid());
 				mergedConcepts.get(rd.getId()).incrementAndGet();
 				break;
 			default :
@@ -230,6 +229,12 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 	{
 		if (sc.getValueId() != null && sc.getValueId().length() > 0)
 		{
+			Integer cache = loincIdToNidCache_.get(sc.getValueId());
+			if (cache != null)
+			{
+				return cache;
+			}
+			
 			ConceptChronicleBI cc;
 			if (Utility.isUUID(sc.getValueId()))
 			{
@@ -243,11 +248,11 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 				{
 					throw new RuntimeException("No sememe indexer found, aborting.");
 				}
-				List<SearchResult> searchResults = refexIndexer.query(new RefexDynamicString("\"" + sc.getValueId() + "\""), getNid(LOINC_NUM), false, 
-						new Integer[] {0}, 5, null);
+				List<SearchResult> searchResults = refexIndexer.query(new RefexDynamicString("\"" + sc.getValueId().replaceAll("-", "\\\\-") + "\""), 
+						getNid(sc.getValueId().startsWith("LP") ? CODE : LOINC_NUM), false, new Integer[] {0}, 5, null);
 				if (searchResults.size() != 1)
 				{
-					throw new RuntimeException("Unexpected - multiple hits on ID " + sc.getValueId());
+					throw new RuntimeException("Unexpected - " + searchResults.size() + " hits on ID " + sc.getValueId());
 				}
 				else
 				{
@@ -260,6 +265,7 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 				{
 					if (dv.getText().equals(sc.getValue()))
 					{
+						loincIdToNidCache_.put(sc.getValueId(), cc.getNid());
 						return cc.getNid();
 					}
 				}
@@ -268,6 +274,7 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 			System.err.println("ERROR -------------------");
 			System.err.println("ERROR - The concept '" + cc + "' did not have a description that matched the expected value of '" + sc.getValue() + "' from the spreadsheet");
 			System.err.println("ERROR -------------------");
+			loincIdToNidCache_.put(sc.getValueId(), cc.getNid());
 			return cc.getNid();
 		}
 		else
@@ -318,18 +325,22 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 	
 	private boolean associationTargetValueIs(UUID type, String matchText, ConceptChronicleBI cc) throws IOException, ContradictionException
 	{
-		for (RelationshipVersionBI<?> rel :  cc.getVersion(vc_).getRelationshipsOutgoingActive())
+		Optional<? extends ConceptVersionBI> cv = cc.getVersion(vc_);
+		if (cv.isPresent())
 		{
-			if (rel.getTypeNid() == getNid(type))
+			for (RelationshipVersionBI<?> rel :  cv.get().getRelationshipsOutgoingActive())
 			{
-				ConceptVersionBI target = ts_.getConceptVersion(vc_, rel.getDestinationNid());
-				for (DescriptionVersionBI<?> d : target.getDescriptionsActive())
+				if (rel.getTypeNid() == getNid(type))
 				{
-					if ((matchText.startsWith("*") && d.getText().endsWith(matchText)) || 
-							(matchText.endsWith("*") && d.getText().startsWith(matchText)) ||
-							d.getText().equals(matchText))
+					ConceptVersionBI target = ts_.getConceptVersion(vc_, rel.getDestinationNid());
+					for (DescriptionVersionBI<?> d : target.getDescriptionsActive())
 					{
-						return true;
+						if ((matchText.startsWith("*") && d.getText().endsWith(matchText)) || 
+								(matchText.endsWith("*") && d.getText().startsWith(matchText)) ||
+								d.getText().equals(matchText))
+						{
+							return true;
+						}
 					}
 				}
 			}
@@ -357,9 +368,8 @@ public class LOINCSpreadsheetRules  extends BaseSpreadsheetCode implements Trans
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
 		LOINCSpreadsheetRules lsr = new LOINCSpreadsheetRules();
-		lsr.configure(null, ExtendedAppContext.getDataStore());
+		lsr.configure((File)null, ExtendedAppContext.getDataStore());
 		lsr.transform(ExtendedAppContext.getDataStore(), ExtendedAppContext.getDataStore().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
 		System.out.println(lsr.getWorkResultSummary());
-		System.out.println(lsr.getWorkResultDocBookTable());
 	}
 }

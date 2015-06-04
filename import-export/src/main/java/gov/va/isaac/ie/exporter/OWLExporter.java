@@ -6,7 +6,6 @@ import gov.va.isaac.models.util.CommonBase;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.OTFUtility;
-
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -14,11 +13,11 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
@@ -253,17 +252,20 @@ public class OWLExporter extends CommonBase implements Exporter,
     throws Exception {
     if (Thread.currentThread().isInterrupted())
       throw new InterruptedException();
-    ConceptVersionBI concept = fetcher.fetch(OTFUtility.getViewCoordinate());
-    LOG.debug("Process concept " + concept.getPrimordialUuid());
-    allCount++;
-    if (Exporter.isQualifying(concept.getNid(), pathNid)) {
-      count++;
-      convertToOWLObjects(concept);
-    }
-    // Handle progress monitor
-    if ((int) ((allCount * 100) / progressMax) > progress) {
-      progress = (allCount * 100) / progressMax;
-      fireProgressEvent(progress, progress + " % finished");
+    Optional<ConceptVersionBI> concept = fetcher.fetch(OTFUtility.getViewCoordinate());
+    if (concept.isPresent())
+    {
+        LOG.debug("Process concept " + concept.get().getPrimordialUuid());
+        allCount++;
+        if (Exporter.isQualifying(concept.get().getNid(), pathNid)) {
+          count++;
+          convertToOWLObjects(concept.get());
+        }
+        // Handle progress monitor
+        if ((int) ((allCount * 100) / progressMax) > progress) {
+          progress = (allCount * 100) / progressMax;
+          fireProgressEvent(progress, progress + " % finished");
+        }
     }
   }
 
@@ -432,7 +434,7 @@ public class OWLExporter extends CommonBase implements Exporter,
 
     if (owlRelationships != null) {
       if (currentConcept.getConceptAttributes()
-          .getVersion(OTFUtility.getViewCoordinate()).isDefined()) {
+          .getVersion(OTFUtility.getViewCoordinate()).get().isDefined()) {
         setOfAxioms.add(factory.getOWLEquivalentClassesAxiom(
             currentConceptClass, owlRelationships));
       } else {

@@ -24,15 +24,14 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.CEMCompositRefestInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.RefsetInstance;
 import gov.va.isaac.util.OTFUtility;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -44,7 +43,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Font;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
@@ -173,10 +171,10 @@ public class RefsetViewController {
 				List<RefexVersionBI<?>> memberVersion = new ArrayList<>();
 				if (activeOnly_)
 				{
-					RefexVersionBI<?> version = memChron.getVersion(OTFUtility.getViewCoordinate());
+					Optional<? extends RefexVersionBI> version = memChron.getVersion(OTFUtility.getViewCoordinate());
 					
-					if (version.isActive()) {
-						memberVersion.add(version);
+					if (version.isPresent() && version.get().isActive()) {
+						memberVersion.add(version.get());
 					}
 				}
 				else
@@ -248,9 +246,9 @@ public class RefsetViewController {
 			List<RefexVersionBI<?>> annotVersions = new ArrayList<>();
 			if (activeOnly_)
 			{
-				RefexVersionBI<?> version = (RefexVersionBI<?>) annot.getVersion(OTFUtility.getViewCoordinate());
-				if (version.isActive()) {
-					annotVersions.add(version);
+				Optional<? extends RefexVersionBI> version = annot.getVersion(OTFUtility.getViewCoordinate());
+				if (version.isPresent() && version.get().isActive()) {
+					annotVersions.add(version.get());
 				}
 			}
 			else {

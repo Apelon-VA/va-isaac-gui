@@ -34,10 +34,9 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.LookupService;
-
 import java.io.IOException;
 import java.util.Collection;
-
+import java.util.Optional;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -56,7 +55,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -389,7 +387,7 @@ public class ConceptViewerLabelHelper {
 								OTFUtility.createNewParent(conceptNid, retirementConceptNid);
 
 								// Retire Con
-								ConceptAttributeAB cab = new ConceptAttributeAB(con.getConceptNid(), con.getConceptAttributesActive().isDefined(), RefexDirective.EXCLUDE);
+								ConceptAttributeAB cab = new ConceptAttributeAB(con.getConceptNid(), con.getConceptAttributesActive().get().isDefined(), RefexDirective.EXCLUDE);
 								cab.setStatus(Status.INACTIVE);
 								
 								ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
@@ -431,7 +429,9 @@ public class ConceptViewerLabelHelper {
 			}
 
 			private void retireRelationship(RelationshipVersionBI<?> rel) throws ValidationException, IOException, InvalidCAB, ContradictionException {
-				RelationshipCAB rcab = new RelationshipCAB(rel.getConceptNid(), rel.getTypeNid(), rel.getDestinationNid(), rel.getGroup(), RelationshipType.getRelationshipType(rel.getRefinabilityNid(), rel.getCharacteristicNid()), rel, OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+				RelationshipCAB rcab = new RelationshipCAB(rel.getConceptNid(), rel.getTypeNid(), rel.getDestinationNid(), rel.getGroup(), 
+						RelationshipType.getRelationshipType(rel.getRefinabilityNid(), rel.getCharacteristicNid()), Optional.of(rel), 
+						Optional.of(OTFUtility.getViewCoordinate()), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 
 				rcab.setStatus(Status.INACTIVE);
 				

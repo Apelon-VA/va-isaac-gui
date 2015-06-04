@@ -4,19 +4,16 @@
 	<parent>
 		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
-		<version>23.0</version>
+		<version>23.1</version>
 	</parent>
 	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>list-view</artifactId>
 	<packaging>jar</packaging>
 
 	<name>ISAAC List View</name>
-	<description>
-		A List / Batch view implementation for ISAAC
-	</description>
+	<description>A List / Batch view implementation for ISAAC</description>
 
 	<dependencies>
-	
 		<!-- OTF Query Implementation. -->
 		<dependency>
 			<groupId>gov.vha.isaac.query-service.modules</groupId>
@@ -36,12 +33,24 @@
 			<version>2.3</version>
 		</dependency>
 		
+		<!--  TODO get rid of the following dependencies, add dependency injection + an interface -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>content-request</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>import-export</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
 		<!-- TODO get rid of this dependency... we only use one thing from it... -->
 		<dependency>
 			<groupId>org.controlsfx</groupId>
 			<artifactId>controlsfx</artifactId>
 		</dependency>
-
 	</dependencies>
 
 </project>

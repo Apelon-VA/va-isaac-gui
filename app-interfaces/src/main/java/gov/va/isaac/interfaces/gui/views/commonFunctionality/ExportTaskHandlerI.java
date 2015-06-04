@@ -16,22 +16,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.mojos.datastore.transforms;
+package gov.va.isaac.interfaces.gui.views.commonFunctionality;
 
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import java.nio.file.Path;
+import java.util.Properties;
+import java.util.stream.IntStream;
+
+import javafx.concurrent.Task;
+
 import org.jvnet.hk2.annotations.Contract;
 
-/**
- * {@link TransformArbitraryI}
- *
- * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
- */
 @Contract
-public interface TransformArbitraryI extends TransformI
-{
+public interface ExportTaskHandlerI {
+	
 	/**
-	 * Execute the transform
-	 * @throws Exception 
+	 * Set the configuration properties for this specific exporter 
+	 * 
+	 * @param options
 	 */
-	public void transform(TerminologyStoreDI ts) throws Exception;
+	public void setOptions(Properties options);
+	
+	/**
+	 * Exporter Title
+	 * 
+	 * @return String the title
+	 */
+	public String getTitle();
+	
+	// protected void conceptListChanged(); - possibly not
+		
+	public String getDescription();
+	
+	/**
+	 * The integer returned should equal the number of components exported.
+	 * 
+	 * @param nidList
+	 * @param filePath
+	 * @return
+	 */
+	public Task<Integer> createTask(IntStream nidList, Path file);
+	
+
 }

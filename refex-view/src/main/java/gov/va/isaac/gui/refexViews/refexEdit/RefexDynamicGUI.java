@@ -27,6 +27,7 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.function.ToIntFunction;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -392,44 +393,44 @@ public class RefexDynamicGUI
 			if (c == null) 
 			{
 				//This may be a different component - like a description, or another refex... need to handle.
-				ComponentVersionBI cv = ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
-				if (cv == null)
+				Optional<? extends ComponentVersionBI> cv = ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
+				if (!cv.isPresent())
 				{
-					text = "[NID] " + nid;
+					text = "[NID] " + nid + " not on path";
 				}
 				
-				else if (cv instanceof DescriptionVersionBI<?>)
+				else if (cv.get() instanceof DescriptionVersionBI<?>)
 				{
-					DescriptionVersionBI<?> dv = (DescriptionVersionBI<?>) cv;
+					DescriptionVersionBI<?> dv = (DescriptionVersionBI<?>) cv.get();
 					text = "Description: " + dv.getText();
 				}
-				else if (cv instanceof RelationshipVersionBI<?>)
+				else if (cv.get() instanceof RelationshipVersionBI<?>)
 				{
-					RelationshipVersionBI<?> rv = (RelationshipVersionBI<?>) cv;
+					RelationshipVersionBI<?> rv = (RelationshipVersionBI<?>) cv.get();
 					text = "Relationship: " + OTFUtility.getDescription(rv.getOriginNid()) + "->" 
 							+ OTFUtility.getDescription(rv.getTypeNid()) + "->"
 							+ OTFUtility.getDescription(rv.getDestinationNid());
 				}
-				else if (cv instanceof RefexDynamicVersionBI<?>)
+				else if (cv.get() instanceof RefexDynamicVersionBI<?>)
 				{
-					RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv;
+					RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv.get();
 					text = "Nested Sememe Dynamic: using assemblage " + OTFUtility.getDescription(rdv.getAssemblageNid());
 				}
-				else if (cv instanceof RefexVersionBI<?>)
+				else if (cv.get() instanceof RefexVersionBI<?>)
 				{
-					RefexVersionBI<?> rv = (RefexVersionBI<?>) cv;
+					RefexVersionBI<?> rv = (RefexVersionBI<?>) cv.get();
 					text = "Nested Sememe: using assemblage " + OTFUtility.getDescription(rv.getAssemblageNid());
 				}
-				else if (cv instanceof MediaVersionBI<?>)
+				else if (cv.get() instanceof MediaVersionBI<?>)
 				{
-					MediaVersionBI<?> mv = (MediaVersionBI<?>) cv;
+					MediaVersionBI<?> mv = (MediaVersionBI<?>) cv.get();
 					text = "Media of format " + mv.getFormat();
 				}
 				else
 				{
 					logger_.warn("The component type " + cv + " is not handled yet!");
 					//Not sure what else there may be?
-					text = cv.toUserString();
+					text = cv.get().toUserString();
 				}
 			}
 			else
