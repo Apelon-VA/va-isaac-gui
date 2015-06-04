@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
-		<version>23.1</version>
+		<version>23.2-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>content-request</artifactId>
