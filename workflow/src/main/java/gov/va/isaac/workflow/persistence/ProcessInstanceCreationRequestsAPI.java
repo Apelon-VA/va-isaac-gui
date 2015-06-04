@@ -59,6 +59,8 @@ public class ProcessInstanceCreationRequestsAPI implements ProcessInstanceServic
     private final Logger log = LoggerFactory.getLogger(ProcessInstanceCreationRequestsAPI.class);
     private DataSource dataSource;
     
+    private volatile boolean schemaCreateInProgress = false;
+    
     private ProcessInstanceCreationRequestsAPI() {
         //For HK2 to construct
         //start the init process
@@ -297,6 +299,17 @@ public class ProcessInstanceCreationRequestsAPI implements ProcessInstanceServic
 
     @Override
     public void createSchema() throws DatastoreException {
+        synchronized (log)
+        {
+            if (schemaCreateInProgress)
+            {
+                return;
+            }
+            else 
+            {
+                schemaCreateInProgress = true;
+            }
+        }
         try (Connection conn = getDataSource().getConnection()){
             log.info("Creating Workflow Process Instance Schema");
             DatabaseMetaData dbmd = conn.getMetaData();
@@ -325,6 +338,10 @@ public class ProcessInstanceCreationRequestsAPI implements ProcessInstanceServic
             conn.commit();
         } catch (SQLException ex) {
             throw new DatastoreException(ex);
+        }
+        synchronized (log)
+        {
+            schemaCreateInProgress = false;
         }
     }
 

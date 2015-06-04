@@ -68,6 +68,8 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     
     private DataSource dataSource;
     
+    private volatile boolean schemaCreateInProgress = false;
+    
     private LocalTasksApi()
     {
         //For HK2 to construct
@@ -445,6 +447,17 @@ public class LocalTasksApi implements LocalTasksServiceBI {
 
     @Override
     public void createSchema() throws DatastoreException {
+        synchronized (log)
+        {
+            if (schemaCreateInProgress)
+            {
+                return;
+            }
+            else 
+            {
+                schemaCreateInProgress = true;
+            }
+        }
         try (Connection conn = getDataSource().getConnection()){
             log.info("Creating Workflow LOCAL_TASKS schema");
             DatabaseMetaData dbmd = conn.getMetaData();
@@ -474,6 +487,10 @@ public class LocalTasksApi implements LocalTasksServiceBI {
             }
         } catch (SQLException ex) {
             throw new DatastoreException(ex);
+        }
+        synchronized (log)
+        {
+            schemaCreateInProgress = false;
         }
     }
 
