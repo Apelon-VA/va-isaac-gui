@@ -132,7 +132,10 @@
                     <enableSshAgent>true</enableSshAgent>
                     <allowSnapshots>false</allowSnapshots>
                     <enableFeatureVersions>true</enableFeatureVersions>
-                    <developBranchName>develop-2</developBranchName>
+                  	<flowInitContext>
+                  		<developBranchName>develop-2</developBranchName>
+                  	</flowInitContext>
+                    
                 </configuration>
             </plugin>
 		
