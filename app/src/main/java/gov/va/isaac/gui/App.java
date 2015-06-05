@@ -114,7 +114,7 @@ public class App extends Application implements ApplicationWindowI{
             public void handle(WindowEvent event) {
 				final Stage dialog = new Stage(StageStyle.UNDECORATED);
 				dialog.initModality(Modality.APPLICATION_MODAL);
-				dialog.setAlwaysOnTop(true);
+				//dialog.setAlwaysOnTop(true);
 				
 				Label label =new Label("Please wait while ISAAC closes");
 				ProgressBar pb = new ProgressBar();
@@ -134,6 +134,7 @@ public class App extends Application implements ApplicationWindowI{
 	                shutdown();
 	                Platform.runLater(() -> {
 	                    dialog.close();
+	                    Platform.exit();
 	                });
 				});
 
@@ -248,6 +249,7 @@ public class App extends Application implements ApplicationWindowI{
 
 
     protected void shutdown() {
+    	
         LOG.info("Shutting down");
         shutdown = true;
         if (primaryStage_.isShowing())
@@ -270,7 +272,6 @@ public class App extends Application implements ApplicationWindowI{
             commonDialog_.showErrorDialog("Oops!", message, ex.getMessage());
         }
         LOG.info("Finished shutting down");
-        Platform.exit();
     }
     
     /**
