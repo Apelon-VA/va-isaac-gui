@@ -130,14 +130,18 @@ public class App extends Application implements ApplicationWindowI{
 				dialog.setScene(scene1);
 				dialog.show();
 
-				Utility.execute(() -> {
+				Runnable shutdownTask = () -> { 
 	                shutdown();
 	                Platform.runLater(() -> {
 	                    dialog.close();
 	                    Platform.exit();
 	                });
-				});
-
+				};
+				
+				Thread shutdownThread = new Thread(shutdownTask);
+				shutdownThread.setDaemon(false);
+				shutdownThread.setName("ISAAC Shutdown");
+				shutdownThread.start();
         	}
         
         });
