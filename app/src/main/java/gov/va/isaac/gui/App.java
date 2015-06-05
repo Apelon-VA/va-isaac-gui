@@ -19,13 +19,11 @@
 package gov.va.isaac.gui;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dialog.CommonDialogs;
 import gov.va.isaac.gui.download.DownloadDialog;
 import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.ApplicationWindowI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
 
@@ -36,19 +34,13 @@ import java.util.function.Consumer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
