@@ -98,7 +98,7 @@ public class AppController {
         root_.setMaxWidth(Double.MAX_VALUE);
         
         loadWait = new BorderPane();
-        loadWait.setCenter(LightWeightDialogs.buildLoadingDialog());
+        loadWait.setCenter(LightWeightDialogs.buildWaitDialog("Loading the database"));
         mainSplitPane.getItems().add(loadWait);
         mainSplitPane.setMaxWidth(Double.MAX_VALUE);
         mainSplitPane.setMaxHeight(Double.MAX_VALUE);

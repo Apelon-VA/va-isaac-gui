@@ -26,28 +26,20 @@ import gov.va.isaac.interfaces.gui.ApplicationWindowI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Consumer;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
-import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
-
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
@@ -100,41 +92,31 @@ public class App extends Application implements ApplicationWindowI{
             public void handle(WindowEvent event) {
                 shutdown();
             }
-			*/
+            */
 
-        	@Override
+            @Override
             public void handle(WindowEvent event) {
-				final Stage dialog = new Stage(StageStyle.UNDECORATED);
-				dialog.initModality(Modality.APPLICATION_MODAL);
-				//dialog.setAlwaysOnTop(true);
-				
-				Label label =new Label("Please wait while ISAAC closes");
-				ProgressBar pb = new ProgressBar();
-				pb.setPrefWidth(300);
-				
-				VBox vBox = new VBox(10);
-				vBox.setAlignment(Pos.CENTER);
-				vBox.setPadding(new Insets(10, 40, 10, 40));
-				vBox.setStyle("-fx-border-color: black;");
+                final Stage dialog = new Stage(StageStyle.UNDECORATED);
+                dialog.initModality(Modality.APPLICATION_MODAL);
 
-				vBox.getChildren().addAll(label, pb);
-				Scene scene1 = new Scene(vBox);
-				dialog.setScene(scene1);
-				dialog.show();
+                dialog.setScene(new Scene(LightWeightDialogs.buildWaitDialog("Closing the ISAAC database")));
+                dialog.getScene().getStylesheets().add(App.class.getResource("/isaac-shared-styles.css").toString());
+                dialog.getScene().getStylesheets().add(App.class.getResource("App.css").toString());
+                dialog.show();
 
-				Runnable shutdownTask = () -> { 
-	                shutdown();
-	                Platform.runLater(() -> {
-	                    dialog.close();
-	                    Platform.exit();
-	                });
-				};
-				
-				Thread shutdownThread = new Thread(shutdownTask);
-				shutdownThread.setDaemon(false);
-				shutdownThread.setName("ISAAC Shutdown");
-				shutdownThread.start();
-        	}
+                Runnable shutdownTask = () -> { 
+                    shutdown();
+                    Platform.runLater(() -> {
+                        dialog.close();
+                        Platform.exit();
+                    });
+                };
+                
+                Thread shutdownThread = new Thread(shutdownTask);
+                shutdownThread.setDaemon(false);
+                shutdownThread.setName("ISAAC Shutdown");
+                shutdownThread.start();
+            }
         
         });
 
@@ -245,7 +227,6 @@ public class App extends Application implements ApplicationWindowI{
 
 
     protected void shutdown() {
-    	
         LOG.info("Shutting down");
         shutdown = true;
         if (primaryStage_.isShowing())
@@ -254,9 +235,6 @@ public class App extends Application implements ApplicationWindowI{
         }
         try {
             Utility.shutdownThreadPools();
-            //TODO OTF fix note - the current BDB access model gives me no way to know if I should call shutdown, as I don't know if it was started.
-            //If it wasn't started, calling shutdown tries to start the DB, because it inits in the constructor call.  https://jira.ihtsdotools.org/browse/OTFISSUE-13
-            //don't bother with shutdown if we know the path was bad... other wise, this actually tries to init the DB.  Sigh.
             if (dataStoreLocationInitException_ == null)
             {
                 LookupService.shutdownIsaac();

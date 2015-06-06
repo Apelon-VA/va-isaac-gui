@@ -193,12 +193,12 @@ public class LightWeightDialogs
 		bp.autosize();
 		return bp;
 	}
-
-	public static Node buildLoadingDialog()
+	
+	public static BorderPane buildWaitDialog(String message)
 	{
 		BorderPane bp = init("Please wait", false);
 
-		bp.setCenter(new Label("Loading the database"));
+		bp.setCenter(new Label(message));
 		ProgressBar pb = new ProgressBar(-1);
 		
 		pb.setMaxWidth(Double.MAX_VALUE);
