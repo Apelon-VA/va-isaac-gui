@@ -22,8 +22,6 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.dialog.CommonDialogs;
 import gov.va.isaac.gui.download.DownloadDialog;
 import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.interfaces.gui.ApplicationWindowI;
-import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
@@ -40,7 +38,6 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,22 +48,33 @@ import org.slf4j.LoggerFactory;
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class App extends Application implements ApplicationWindowI{
 
+public class App extends Application {
+    
     private final Logger LOG = LoggerFactory.getLogger(App.class);
 
-    private AppController controller;
+    protected AppController controller;
     private boolean shutdown = false;
-    private Stage primaryStage_;
-    private CommonDialogs commonDialog_;
+    protected Stage primaryStage_;
     private static Exception dataStoreLocationInitException_ = null;
+    
+    /**
+     * Contructor for JavaFX only
+     */
+    public App()
+    {
+        //install this instance into HK2
+        //ServiceLocatorUtilities.addOneConstant(AppContext.getServiceLocator(), this);
+        //Dan notes - we used to just implement the ApplicationWindowI directly here, and inject it into HK2, per above.
+        //But HK2 broke, so now we have to have an extra class.  https://java.net/jira/browse/HK2-255
+        
+        LookupService.getService(IsaacAppWindow.class).setAppRef(this);
+    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage_ = primaryStage;
-        ServiceLocatorUtilities.addOneConstant(AppContext.getServiceLocator(), this);
-        //Set up the CommonDialogs class (which needs a references to primaryStage_ and gets it via injection)
-        commonDialog_ = AppContext.getServiceLocator().getService(CommonDialogs.class);
+        
 
         this.controller = new AppController();
 
@@ -215,7 +223,7 @@ public class App extends Application implements ApplicationWindowI{
                 String msg = ex.getClass().getName();
                 String details = ex.getMessage();
                 LOG.error(title, ex);
-                commonDialog_.showErrorDialog(title, msg, details);
+                AppContext.getServiceLocator().getService(CommonDialogs.class).showErrorDialog(title, msg, details);
             }
         };
 
@@ -243,37 +251,11 @@ public class App extends Application implements ApplicationWindowI{
         } catch (Throwable ex) {
             String message = "Trouble shutting down";
             LOG.warn(message, ex);
-            commonDialog_.showErrorDialog("Oops!", message, ex.getMessage());
+            AppContext.getServiceLocator().getService(CommonDialogs.class).showErrorDialog("Oops!", message, ex.getMessage());
         }
         LOG.info("Finished shutting down");
     }
     
-    /**
-     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#getPrimaryStage()
-     */
-    @Override
-    public Stage getPrimaryStage()
-    {
-        return primaryStage_;
-    }
-    
-    /**
-     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#ensureDockedViewIsVisble(gov.va.isaac.interfaces.gui.views.DockedViewI)
-     */
-    @Override
-    public void ensureDockedViewIsVisble(DockedViewI view)
-    {
-        controller.ensureDockedViewIsVisible(view);
-    }
-
-    /**
-     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#browseURL(java.lang.String)
-     */
-    @Override
-    public void browseURL(String url)
-    {
-        this.getHostServices().showDocument(url);
-    }
 
     public static void main(String[] args) throws Exception {
         dataStoreLocationInitException_ = SystemInit.doBasicSystemInit(new File(""));

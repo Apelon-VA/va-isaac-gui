@@ -25,8 +25,10 @@ import gov.va.isaac.interfaces.gui.ApplicationWindowI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import java.io.File;
 import javafx.application.Application;
+import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -35,6 +37,7 @@ import org.jvnet.hk2.annotations.Service;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service
+@Rank (value = -50)
 public class ListViewRunner extends Application implements ApplicationWindowI
 {
 	Stage primaryStage_;
@@ -86,6 +89,12 @@ public class ListViewRunner extends Application implements ApplicationWindowI
 	 */
 	@Override
 	public void browseURL(String url)
+	{
+	}
+
+
+	@Override
+	public void addBackgroundTask(Task<?> task)
 	{
 	}
 }
