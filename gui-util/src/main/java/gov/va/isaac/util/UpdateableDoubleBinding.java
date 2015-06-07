@@ -32,7 +32,7 @@ import com.sun.javafx.binding.BindingHelperObserver;
  * (because they nulled themselves after a remove).  Copied code here, fixed to allow individual 
  * removals.
  * 
- * *** WARNING *** - make _sure_ you maintain a reference to your UpdateableBooleanBinding object.
+ * *** WARNING *** - make _sure_ you maintain a reference to your UpdateableDoubleBinding object.
  * Because the addBinding mechanism makes use of WeakReferences - if you don't maintain a reference, 
  * the binding will be dropped at a random point - and you will stop getting invalidation calls!
  * 
@@ -42,6 +42,7 @@ public abstract class UpdateableDoubleBinding extends DoubleBinding
 {
 	private BindingHelperObserver observer;
 	private ObservableList<Observable> listeningTo = FXCollections.observableArrayList();
+	private boolean computeOnInvalidate_ = false;
 	
 	public final void addBinding(Observable... dependencies)
 	{
@@ -99,5 +100,29 @@ public abstract class UpdateableDoubleBinding extends DoubleBinding
 	public ObservableList<?> getDependencies()
 	{
 		return listeningTo;
+	}
+	
+	/**
+	 * @see javafx.beans.binding.BooleanBinding#onInvalidating()
+	 */
+	@Override
+	protected void onInvalidating()
+	{
+		super.onInvalidating();
+		if (computeOnInvalidate_)
+		{
+			get();
+		}
+	}
+
+	/**
+	 * convenience method to let implementers choose to compute on invalidate, 
+	 * rather than on the next request, which is the default behavior.
+	 * @param computeOnInvalidate
+	 */
+	protected void setComputeOnInvalidate(boolean computeOnInvalidate)
+	{
+		computeOnInvalidate_ = computeOnInvalidate;
+		get();
 	}
 }
