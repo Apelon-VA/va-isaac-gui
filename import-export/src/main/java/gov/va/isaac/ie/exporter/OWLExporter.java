@@ -6,6 +6,7 @@ import gov.va.isaac.models.util.CommonBase;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.OTFUtility;
+
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
+
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
@@ -339,10 +341,7 @@ public class OWLExporter extends CommonBase implements Exporter,
     for (RelationshipVersionBI<?> rel : currentConcept
         .getRelationshipsOutgoingActiveIsa()) {
       if (rel.isStated()) {
-        parentClasses.add(factory.getOWLClass(
-            ":"
-                + getSnomedConceptID(OTFUtility.getConceptVersion(rel
-                    .getDestinationNid())), pm));
+        parentClasses.add(factory.getOWLClass(":" + getSnomedConceptID(OTFUtility.getConceptVersion(rel.getDestinationNid())), pm));
       }
     }
 
@@ -504,8 +503,7 @@ public class OWLExporter extends CommonBase implements Exporter,
     ConceptVersionBI conceptVersionBI) throws Exception {
     // Declaration
     OWLObjectProperty owlPropertyClass =
-        factory.getOWLObjectProperty(
-            ":" + getSnomedConceptID(conceptVersionBI), pm);
+        factory.getOWLObjectProperty(":" + getSnomedConceptID(conceptVersionBI), pm);
     OWLDeclarationAxiom declarationAxiom =
         factory.getOWLDeclarationAxiom(owlPropertyClass);
     setOfAxioms.add(declarationAxiom);
@@ -581,13 +579,13 @@ public class OWLExporter extends CommonBase implements Exporter,
    */
   private String getSnomedConceptID(ConceptVersionBI conceptVersionBI)
     throws Exception {
-    String id = ConceptViewerHelper.getSctId(conceptVersionBI).trim();
-    if ("Unreleased".equalsIgnoreCase(id)) {
-      return conceptVersionBI.getPrimordialUuid().toString();
+    
+    if (ConceptViewerHelper.getSctId(conceptVersionBI).isPresent()) {
+    	return ConceptViewerHelper.getSctId(conceptVersionBI).get().toString();
     } else {
-      // do nothing
+    	return conceptVersionBI.getPrimordialUuid().toString();
     }
-    return id;
+   
   }
 
   /**

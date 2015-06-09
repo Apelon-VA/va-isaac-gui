@@ -35,36 +35,32 @@ public class ConceptViewerHelper {
 		return snomedAssemblageNid;
 	}
 
-	public static String getSctId(ComponentVersionBI attr)  {
-		String sctidString = "Unreleased";
+	public static Optional<Long> getSctId(ComponentVersionBI attr)  {
 		// Official approach found int AlternativeIdResource.class
 		
-		boolean found = false;
 		try {
 			for (RefexChronicleBI<?> annotation : attr.getAnnotations()) {
 				if (annotation.getAssemblageNid() == getSnomedAssemblageNid()) {
 					RefexLongVersionBI<?> sctid = (RefexLongVersionBI<?>) annotation.getPrimordialVersion();
-					sctidString = Long.toString(sctid.getLong1());
-					found = true;
+					return Optional.of(sctid.getLong1());
 				}
 			}
 
-			if (!found) {
-				// legacy representation of SCTID for use with older econcepts files
-				for (IdBI id : attr.getAllIds()) {
-					// Identify "SCT" identifiers
-					if (id.getAuthorityNid() == TermAux.SNOMED_IDENTIFIER.getLenient().getNid()) {
-						// Found SCTID, return it
-						sctidString = id.getDenotation().toString();
-					}
+			// legacy representation of SCTID for use with older econcepts files
+			for (IdBI id : attr.getAllIds()) {
+				// Identify "SCT" identifiers
+				if (id.getAuthorityNid() == TermAux.SNOMED_IDENTIFIER.getLenient().getNid()) {
+					// Found SCTID, return it
+					return Optional.of(Long.parseLong(id.getDenotation().toString()));
 				}
 			}
 
 		} catch (Exception e) {
-			LOG.error("Could not access annotations for: " + attr.getPrimordialUuid());
+			LOG.warn("Could not access annotations for: " + attr.getPrimordialUuid(), e);
+			Optional.empty();
 		}
 		
-		return sctidString;
+		return Optional.empty();
 	}
 
 

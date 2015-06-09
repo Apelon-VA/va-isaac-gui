@@ -34,9 +34,11 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
+
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -55,6 +57,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -520,7 +523,13 @@ public class ConceptViewerLabelHelper {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				CustomClipboard.set(ConceptViewerHelper.getSctId(comp));
+				Optional<Long> thisSct = ConceptViewerHelper.getSctId(comp);
+				if(thisSct.isPresent()) {
+					CustomClipboard.set(thisSct.get().toString());
+				} else {
+					LOG.error("Could not fetch an SCT ID");
+				}
+				
 			}
 		});
 

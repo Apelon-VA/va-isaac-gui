@@ -29,6 +29,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.gui.dragAndDrop.ConceptIdProvider;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -41,17 +42,17 @@ public class ConceptIdProviderHelper {
 	private static class ConceptIdProviderBean implements ConceptIdProvider {
 		private final Integer nid;
 		private final UUID uuid;
-		private final String sctId;
+		private final Optional<Long> sctId;
 		
-		private ConceptIdProviderBean(Integer nid, UUID uuid, String sctId) {
+		private ConceptIdProviderBean(Integer nid, UUID uuid, Long sctId) {
 			super();
 			this.nid = nid;
 			this.uuid = uuid;
-			this.sctId = sctId;
+			this.sctId = Optional.of(sctId);
 		}
 
 		@Override
-		public String getSctId() {
+		public Optional<Long> getSctId() {
 			return sctId;
 		}
 		@Override
@@ -66,7 +67,18 @@ public class ConceptIdProviderHelper {
 	public static ConceptIdProvider getPopulatedConceptIdProvider(ConceptIdProvider idProvider) {
 		Integer tmpNid = idProvider != null ? idProvider.getNid() : null;
 		UUID tmpUuid = idProvider != null ? idProvider.getUUID() : null;
-		String tmpSctId = idProvider != null ? idProvider.getSctId() : null;
+		Long tmpSctId = null;
+		
+		if(idProvider != null) {
+			Optional<Long> idProviderSct = idProvider.getSctId();
+			if(idProviderSct.isPresent()) {
+				tmpSctId = idProviderSct.get();
+			} else {
+				tmpSctId = null;
+			}
+		} else {
+			tmpSctId = null;
+		}
 
 		ConceptVersionBI concept = null;
 		if (tmpNid != null) {
@@ -75,7 +87,16 @@ public class ConceptIdProviderHelper {
 				tmpUuid = concept != null ? concept.getPrimordialUuid() : null;
 			}
 			if (tmpSctId == null) {
-				tmpSctId = concept != null ? ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept)).trim() : null;
+				if(concept != null) {
+					Optional<Long> caSctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
+					if(caSctId.isPresent()) {
+						tmpSctId = caSctId.get();
+					} else {
+						tmpSctId = null;
+					}
+				} else {
+					tmpSctId = null;
+				}
 			}
 		} else if (tmpUuid != null) {
 			concept = OTFUtility.getConceptVersion(tmpUuid);
@@ -83,7 +104,16 @@ public class ConceptIdProviderHelper {
 				tmpNid = concept != null ? concept.getConceptNid() : null;
 			}
 			if (tmpSctId == null) {
-				tmpSctId = concept != null ? ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept)).trim() : null;
+				if(concept != null) {
+					Optional<Long> cvSct = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
+					if(cvSct.isPresent()) {
+						tmpSctId =  cvSct.get();
+					} else {
+						tmpSctId = null;
+					}
+				} else {
+					tmpSctId = null;
+				}
 			}
 		}
 
