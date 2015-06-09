@@ -204,7 +204,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                                 ((SctTreeItem)child).childLoadComplete();
                             });
                         }
-                    } else if (child.getValue().getConcept() == null) {
+                    } else if (child.getValue() == null || child.getValue().getConcept() == null) {
                         grandChildrenToProcess.add((SctTreeItem) child);
                     }
                 } else {
