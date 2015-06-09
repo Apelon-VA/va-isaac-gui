@@ -12,11 +12,9 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -35,7 +33,6 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +77,7 @@ public class EnhancedConceptViewController {
 	private EnhancedConceptBuilder creator;
 
 	private boolean initialized = false;
+	private boolean discarded = false;
 	
 	private ArrayList<ChangeListener<?>> changeListeners = new ArrayList<>();
 
@@ -94,6 +92,10 @@ public class EnhancedConceptViewController {
 	}
 
 	void setConcept(UUID currentCon, ConceptViewMode mode, ObservableList<Integer> conceptHistoryStack) {
+		if (discarded)
+		{
+			return;
+		}
 		if (!initialized ) {
 			initialized = true;
 			UserProfileManager userProfileManager = AppContext.getService(UserProfileManager.class);
@@ -363,5 +365,10 @@ public class EnhancedConceptViewController {
 			conAnnotVBox.getChildren().clear();
 			fsnAnnotVBox.getChildren().clear();
 		}
+	}
+	
+	public void viewDiscarded()
+	{
+		discarded = true;
 	}
 }
