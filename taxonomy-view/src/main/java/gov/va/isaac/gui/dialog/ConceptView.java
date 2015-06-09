@@ -68,7 +68,7 @@ public class ConceptView implements PopupConceptViewI {
 		super();
 
 		// Load from FXML.
-		URL resource = this.getClass().getResource("SnomedConceptView.fxml");
+		URL resource = this.getClass().getResource("ConceptView.fxml");
 		FXMLLoader loader = new FXMLLoader(resource);
 		loader.load();
 		controller = loader.getController();
