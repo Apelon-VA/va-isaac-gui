@@ -906,33 +906,6 @@ public class OTFUtility {
 		return results;
 	}
 
-	/**
-	 * Recursively looks at parents until finds a concept without a parent
-	 */
-	public static ConceptVersionBI getRootConcept(ConceptVersionBI concept) throws IOException, ContradictionException
-	{
-		ConceptVersionBI parent = OTFUtility.getConceptVersion(concept.getRelationshipsOutgoingActiveIsa().iterator().next().getDestinationNid());
-
-		//TODO wouldn't it be far safer to just look and see if the parent is ISAAC.ISAAC_ROOT ?
-		//And document the method that way?
-		if (!getRootNodeList().contains(parent.getPrimordialUuid())) {
-			return getRootConcept(parent);
-		} else {
-			return parent;
-		}
-	}
-
-	private static Set<UUID> getRootNodeList() {
-		if (rootNodeList == null) {
-			rootNodeList = new HashSet<UUID>();
-			rootNodeList.add(UUID.fromString("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8")); // SCT
-			rootNodeList.add(UUID.fromString("3958d043-9e8c-508e-bf6d-fd9c83a856da")); // LOINC
-			rootNodeList.add(UUID.fromString("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8"));
-		}
-		
-		return rootNodeList;
-	}
-
 	public static ConceptChronicleBI createNewConcept(ConceptChronicleBI parent, String fsn,
 			String prefTerm) throws IOException, InvalidCAB, ContradictionException {
 		ConceptCB newConCB = createNewConceptBlueprint(parent, fsn, prefTerm);
