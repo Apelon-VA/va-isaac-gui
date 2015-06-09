@@ -22,6 +22,8 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.dialog.CommonDialogs;
 import gov.va.isaac.gui.download.DownloadDialog;
 import gov.va.isaac.init.SystemInit;
+import gov.va.isaac.interfaces.gui.ApplicationWindowI;
+import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
@@ -38,6 +40,8 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import org.glassfish.hk2.api.Rank;
+import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,13 +53,16 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 
-public class App extends Application {
+//Note - do NOT annotate this with @Service, as one normally would - JavaFX must construct this class, not HK2.  
+//HK2 gets confused, and makes an extra one, if this gets an annotation....
+@Rank (value = 100)
+public class App extends Application implements ApplicationWindowI {
     
     private final Logger LOG = LoggerFactory.getLogger(App.class);
 
-    protected AppController controller;
+    private AppController controller;
     private boolean shutdown = false;
-    protected Stage primaryStage_;
+    private Stage primaryStage_;
     private static Exception dataStoreLocationInitException_ = null;
     
     /**
@@ -64,17 +71,12 @@ public class App extends Application {
     public App()
     {
         //install this instance into HK2
-        //ServiceLocatorUtilities.addOneConstant(AppContext.getServiceLocator(), this);
-        //Dan notes - we used to just implement the ApplicationWindowI directly here, and inject it into HK2, per above.
-        //But HK2 broke, so now we have to have an extra class.  https://java.net/jira/browse/HK2-255
-        
-        LookupService.getService(IsaacAppWindow.class).setAppRef(this);
+        ServiceLocatorUtilities.addOneConstant(AppContext.getServiceLocator(), this);
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage_ = primaryStage;
-        
 
         this.controller = new AppController();
 
@@ -187,6 +189,39 @@ public class App extends Application {
             });
         }
     }
+    
+    /**
+     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#getPrimaryStage()
+     */
+    @Override
+    public Stage getPrimaryStage()
+    {
+        return primaryStage_;
+    }
+
+    /**
+     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#ensureDockedViewIsVisble(gov.va.isaac.interfaces.gui.views.DockedViewI)
+     */
+    @Override
+    public void ensureDockedViewIsVisble(DockedViewI view)
+    {
+        controller.ensureDockedViewIsVisible(view);
+    }
+
+    /**
+     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#browseURL(java.lang.String)
+     */
+    @Override
+    public void browseURL(String url)
+    {
+        getHostServices().showDocument(url);
+    }
+
+    @Override
+    public void addBackgroundTask(Task<?> task)
+    {
+        controller.addBackgroundTask(task);
+    }
 
     private void loadDataStore() {
 
@@ -231,8 +266,6 @@ public class App extends Application {
         t.setDaemon(true);
         t.start();
     }
-
-
 
     protected void shutdown() {
         LOG.info("Shutting down");
