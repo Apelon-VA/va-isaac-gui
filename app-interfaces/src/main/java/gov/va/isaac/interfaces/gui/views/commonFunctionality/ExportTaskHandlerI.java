@@ -34,7 +34,7 @@ public interface ExportTaskHandlerI {
 	 * 
 	 * @param options
 	 */
-	public void setOptions(Properties options);
+	public void setOptions(Properties options) throws Exception;
 	
 	/**
 	 * Exporter Title

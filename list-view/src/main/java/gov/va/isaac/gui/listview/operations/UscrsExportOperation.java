@@ -27,14 +27,19 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.IntStream;
+
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -44,6 +49,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -51,6 +57,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -79,6 +86,8 @@ public class UscrsExportOperation extends Operation
 	public File file = null;
 	private String filePath = "";
 	private TextField outputField = new TextField();
+	private DatePicker datePicker = new DatePicker();
+	private CheckBox skipFilterCheckbox = new CheckBox();
 	
 	private ValidBooleanBinding allFieldsValid;
 //	private DataOutputStream dos_;
@@ -201,7 +210,7 @@ public class UscrsExportOperation extends Operation
 			}
 		};
 
-		root.add(openFileChooser, 2, 0); //Path Label - Row 2
+		root.add(openFileChooser, 2, 0); 
 		GridPane.setHalignment(openFileChooser, HPos.LEFT);
 		
 		Label outputLocationLabel = new Label("Output Location");
@@ -212,12 +221,17 @@ public class UscrsExportOperation extends Operation
 		root.add(sp, 1, 0);
 		GridPane.setHalignment(sp, HPos.LEFT);
 		
-		DatePicker datePicker = new DatePicker();
-		
-		Label datePickerLabel = new Label("Export Dates");
-		root.add(datePickerLabel, 0, 1); //Row 3
+		Label datePickerLabel = new Label("Export Date Filter");
+		root.add(datePickerLabel, 0, 1); 
 		GridPane.setHalignment(datePickerLabel, HPos.LEFT);
-		root.add(datePicker, 1, 1); //Row 4
+		root.add(datePicker, 1, 1);
+		
+		Label allDatesLabel = new Label("Export All Concepts");
+		root.add(allDatesLabel, 0, 2);
+		skipFilterCheckbox.setText("Export All Concepts (No Filters)");
+		skipFilterCheckbox.setSelected(false);
+		root.add(skipFilterCheckbox, 1, 2);
+		
 		
 		super.root_ = root;
 	}
@@ -273,6 +287,16 @@ public class UscrsExportOperation extends Operation
 				ExportTaskHandlerI uscrsExporter = LookupService.getService(ExportTaskHandlerI.class, SharedServiceNames.USCRS);
 				int count = 0;
 				if(uscrsExporter != null) {
+					
+					if(!skipFilterCheckbox.isSelected()) {
+						Properties options = new Properties();
+						Instant instant = Instant.from(datePicker.getValue().atStartOfDay(ZoneId.systemDefault()));
+						Long dateSelected = Date.from(instant).getTime();
+						options.setProperty("date", Long.toString(dateSelected));
+						
+						uscrsExporter.setOptions(options);
+					}
+					
 					Task<Integer> task = uscrsExporter.createTask(nidStream, file.toPath());
 					Utility.execute(task);
 					count = task.get();
