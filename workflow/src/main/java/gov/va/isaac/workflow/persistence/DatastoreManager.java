@@ -126,6 +126,9 @@ public final class DatastoreManager implements ServicesToPreloadI
 				cpds.setJdbcUrl(protocol + dbName);
 				cpds.setUser("workflow");
 				cpds.setPassword("workflow");
+				cpds.setInitialPoolSize(1);  //Just don't need all of these threads
+				cpds.setMinPoolSize(1);
+				cpds.setNumHelperThreads(1);
 
 				log.info("Opening the connection pool on the DB folder {}", derbyFolder.getAbsolutePath());
 				
