@@ -13,7 +13,7 @@
 		<VBox alignment="CENTER" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
 			AnchorPane.topAnchor="0.0">
 			<children>
-				<Label fx:id="fsnLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" styleClass="boldLabel" text="FSN" />
+				<Label fx:id="fsnLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" styleClass="boldLabel" text="Loading..." />
 				<GridPane maxWidth="1.7976931348623157E308">
 					<children>
 						<VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.vgrow="NEVER">
@@ -21,7 +21,7 @@
 								<HBox maxWidth="1.7976931348623157E308">
 									<children>
 										<Label styleClass="boldLabel" text="UUID" />
-										<Label fx:id="uuidLabel" text="uuid-value">
+										<Label fx:id="uuidLabel" text="--">
 											<HBox.margin>
 												<Insets left="10.0" />
 											</HBox.margin>
@@ -31,13 +31,13 @@
 								<HBox maxWidth="1.7976931348623157E308" spacing="5.0">
 									<children>
 										<Label styleClass="boldLabel" text="Status" />
-										<Label fx:id="conceptStatusLabel" text="active concept" />
+										<Label fx:id="conceptStatusLabel" text="--" />
 										<Label styleClass="boldLabel" text="Defined">
 											<HBox.margin>
 												<Insets left="10.0" />
 											</HBox.margin>
 										</Label>
-										<Label fx:id="conceptDefinedLabel" text="False" />
+										<Label fx:id="conceptDefinedLabel" text="--" />
 										<ToggleButton fx:id="stampToggle" mnemonicParsing="false" text="T" />
 										<ToggleButton fx:id="historyToggle" mnemonicParsing="false" text="T" />
 										<ToggleButton fx:id="activeOnlyToggle" mnemonicParsing="false" text="T" />

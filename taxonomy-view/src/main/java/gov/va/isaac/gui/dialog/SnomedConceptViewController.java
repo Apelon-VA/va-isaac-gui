@@ -108,51 +108,13 @@ public class SnomedConceptViewController {
 	
 	private UUID conceptUuid;
 	private int conceptNid = 0;
-
-	public Region getRootNode()
+	
+	@FXML
+	void initialize()
 	{
-		return anchorPane;
-	}
-
-	public void setConcept(ConceptChronicleDdo concept) {
-		conceptUuid = concept.getPrimordialUuid();
-		splitPane.setDividerPositions(0.7);
-
-		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty();
-		fsnLabel.setGraphic(new ProgressBar());
-		
-		MenuItem copyFull = new MenuItem("Copy Full Concept");
-		copyFull.setGraphic(Images.COPY.createImageView());
-
-		// Update text of labels.
-		ConceptAttributesChronicleDdo attributeChronicle = concept.getConceptAttributes();
-		final ConceptAttributesVersionDdo conceptAttributes = attributeChronicle.getVersions().get(attributeChronicle.getVersions().size() - 1);
-		conceptDefinedLabel.setText(conceptAttributes.isDefined() + "");
-		conceptStatusLabel.setText(conceptAttributes.getStatus().name());
-		
-		fsnLabel.textProperty().bind(conceptDescriptionSSP);;
-		CopyableLabel.addCopyMenu(fsnLabel);
-		
-		fsnLabel.getContextMenu().getItems().add(copyFull);
-		
-		AppContext.getService(DragRegistry.class).setupDragOnly(fsnLabel, new SingleConceptIdProvider()
-		{
-			@Override
-			public String getConceptId()
-			{
-				return uuidLabel.getText();
-			}
-		});
-		uuidLabel.setText(concept.getPrimordialUuid().toString());
-		AppContext.getService(DragRegistry.class).setupDragOnly(uuidLabel, new SingleConceptIdProvider()
-		{
-			@Override
-			public String getConceptId()
-			{
-				return uuidLabel.getText();
-			}
-		});
-		CopyableLabel.addCopyMenu(uuidLabel);
+		ProgressBar pb = new ProgressBar();
+		pb.setMinWidth(300);
+		fsnLabel.setGraphic(pb);
 		
 		stampToggle.setText("");
 		stampToggle.setGraphic(Images.STAMP.createImageView());
@@ -195,6 +157,50 @@ public class SnomedConceptViewController {
 				}
 			}
 		});
+		
+		splitPane.setDividerPositions(0.7);
+	}
+	
+	public Region getRootNode()
+	{
+		return anchorPane;
+	}
+
+	public void setConcept(ConceptChronicleDdo concept) {
+		conceptUuid = concept.getPrimordialUuid();
+
+		// Update text of labels.
+		ConceptAttributesChronicleDdo attributeChronicle = concept.getConceptAttributes();
+		final ConceptAttributesVersionDdo conceptAttributes = attributeChronicle.getVersions().get(attributeChronicle.getVersions().size() - 1);
+		conceptDefinedLabel.setText(conceptAttributes.isDefined() + "");
+		conceptStatusLabel.setText(conceptAttributes.getStatus().name());
+		
+		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty("Loading...");
+		fsnLabel.textProperty().bind(conceptDescriptionSSP);
+		CopyableLabel.addCopyMenu(fsnLabel);
+		
+		MenuItem copyFull = new MenuItem("Copy Full Concept");
+		copyFull.setGraphic(Images.COPY.createImageView());
+		fsnLabel.getContextMenu().getItems().add(copyFull);
+		
+		AppContext.getService(DragRegistry.class).setupDragOnly(fsnLabel, new SingleConceptIdProvider()
+		{
+			@Override
+			public String getConceptId()
+			{
+				return uuidLabel.getText();
+			}
+		});
+		uuidLabel.setText(concept.getPrimordialUuid().toString());
+		AppContext.getService(DragRegistry.class).setupDragOnly(uuidLabel, new SingleConceptIdProvider()
+		{
+			@Override
+			public String getConceptId()
+			{
+				return uuidLabel.getText();
+			}
+		});
+		CopyableLabel.addCopyMenu(uuidLabel);
 
 		// Add context menu items for additional identifiers.
 		for (final IdentifierDdo id : attributeChronicle.getAdditionalIds()) {
