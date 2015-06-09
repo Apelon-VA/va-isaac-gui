@@ -153,4 +153,9 @@ public class DynamicRefexListView implements DockedViewI
 		return new ArrayList<MenuItemI>();
 	}
 
+	@Override
+	public void viewDiscarded()
+	{
+		//noop for now - this never gets called in the current GUI design for a docked view
+	}
 }

@@ -245,4 +245,11 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 			}
 		}
 	}
+
+	@Override
+	public void viewDiscarded()
+	{
+		// noop - not currently called for a docked view
+		
+	}
 }

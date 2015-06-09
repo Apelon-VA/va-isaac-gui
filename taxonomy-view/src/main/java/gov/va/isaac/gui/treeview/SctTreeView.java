@@ -24,7 +24,6 @@ import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.util.OTFUtility;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -107,8 +105,8 @@ class SctTreeView {
     private TreeView<TaxonomyReferenceWithConcept> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
     
-    @SuppressWarnings("unused")
     private UpdateableBooleanBinding refreshRequiredListenerHack;
+    private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
@@ -227,6 +225,19 @@ class SctTreeView {
     }
 
     public void refresh() {
+        if (refreshInProgress_.get()) {
+            LOG.debug("Skipping refresh due to in-progress refresh");
+            return;
+        }
+        synchronized (refreshInProgress_) {
+            //Check again, because first check was before the sync block.
+            if (refreshInProgress_.get()) {
+                LOG.debug("Skipping refresh due to in-progress refresh");
+                return;
+            }
+            refreshInProgress_.set(true);
+        }
+
         if (initializationCountDownLatch_.getCount() > 1) {
             // called before initial init() run, so run init()
             init();
@@ -244,7 +255,7 @@ class SctTreeView {
             protected void succeeded() {
                 LOG.debug("Succeeded waiting for init() to complete");
 
-             // record which items are expanded
+                // record which items are expanded
                 saveExpanded();
                 
                 LOG.debug("Removing existing children...");
@@ -256,10 +267,16 @@ class SctTreeView {
                 Utility.execute(() -> rootTreeItem.addChildren());
                 restoreExpanded();
                 
+                synchronized (refreshInProgress_) {
+                    refreshInProgress_.set(false);
+                }
             }
 
             @Override
             protected void failed() {
+                synchronized (refreshInProgress_) {
+                    refreshInProgress_.set(false);
+                }
                 Throwable ex = getException();
                 String title = "Unexpected error waiting for init() to complete";
                 String msg = ex.getClass().getName();
@@ -325,7 +342,6 @@ class SctTreeView {
                 refreshRequiredListenerHack = new UpdateableBooleanBinding()
                 {
                     private volatile boolean enabled = false;
-                    private volatile AtomicBoolean refreshQueued = new AtomicBoolean(false);
                     {
                         setComputeOnInvalidate(true);
                         addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(), 
@@ -342,38 +358,8 @@ class SctTreeView {
                             LOG.debug("Skip initial spurious refresh calls");
                             return false;
                         }
-                        synchronized (refreshQueued)
-                        {
-                            if (refreshQueued.get())
-                            {
-                                LOG.info("Skip tree refresh() due to pending refresh");
-                                return false;
-                            }
-                            else
-                            {
-                                refreshQueued.set(true);
-                                LOG.debug("Kicking off tree refresh() due to change of an observed user property");
-                                Utility.schedule(() -> 
-                                {
-                                    Platform.runLater(() -> 
-                                    {
-                                        try
-                                        {
-                                            synchronized (refreshQueued)
-                                            {
-                                                refreshQueued.set(false);
-                                            }
-                                            
-                                            SctTreeView.this.refresh();
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            LOG.error("Unexpected error running refresh", e);
-                                        }
-                                    });
-                                }, 10, TimeUnit.MILLISECONDS);
-                            }
-                        }
+                        LOG.debug("Kicking off tree refresh() due to change of an observed user property");
+                        SctTreeView.this.refresh();
                         return false;
                     }
                 };
@@ -650,6 +636,10 @@ class SctTreeView {
     protected void shutdownInstance()
     {
         LOG.info("Shutdown taxonomy instance");
+        synchronized (refreshInProgress_) {  //hack way to disable future refresh calls
+            refreshInProgress_.set(true);
+        }
+        refreshRequiredListenerHack.clearBindings();
         if (rootTreeItem != null)
         {
             rootTreeItem.clearChildren();  //This recursively cancels any active lookups

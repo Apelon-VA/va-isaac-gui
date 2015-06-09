@@ -205,11 +205,8 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 		return SctTreeView.getDefaultDisplayPolicies();
 	}
 
-	/**
-	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI#cancelOperations()
-	 */
 	@Override
-	public void cancelOperations()
+	public void viewDiscarded()
 	{
 		sctTreeView_.shutdownInstance();
 	}

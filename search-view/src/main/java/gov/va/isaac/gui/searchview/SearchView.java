@@ -134,4 +134,10 @@ public class SearchView implements DockedViewI
 	{
 		return "SOLOR Search";
 	}
+	
+	@Override
+	public void viewDiscarded()
+	{
+		//noop for now - this never gets called in the current GUI design on a dockedView
+	}
 }

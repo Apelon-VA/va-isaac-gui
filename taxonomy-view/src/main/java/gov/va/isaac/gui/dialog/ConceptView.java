@@ -30,8 +30,6 @@ import gov.va.isaac.util.Utility;
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
@@ -43,7 +41,6 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javax.inject.Named;
 import org.glassfish.hk2.api.PerLookup;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
@@ -94,14 +91,13 @@ public class ConceptView implements PopupConceptViewI {
 		//Also need to make sure that errors are properly handled
 		Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>()
 		{
-
 			@Override
 			protected ConceptChronicleDdo call() throws Exception
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
 				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(conceptUUID, OTFUtility.getViewCoordinateAllowInactive(),
 						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
-				 LOG.info("Finished loading concept with UUID " + conceptUUID);
+				LOG.info("Finished loading concept with UUID " + conceptUUID);
 
 				return concept;
 			}
@@ -143,22 +139,54 @@ public class ConceptView implements PopupConceptViewI {
 	@Override
 	public void setConcept(int conceptNid)
 	{
-		//TODO (artf231886) fix threading issues on this too...
-		try
+		Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>()
 		{
-			ConceptChronicleBI concept = ExtendedAppContext.getDataStore().getConcept(conceptNid);
-			if (concept != null)
+			@Override
+			protected ConceptChronicleDdo call() throws Exception
 			{
-				setConcept(concept.getPrimordialUuid());
+				LOG.info("Loading concept with nid " + conceptNid);
+				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(ExtendedAppContext.getDataStore().getUuidPrimordialForNid(conceptNid), 
+						OTFUtility.getViewCoordinateAllowInactive(),
+						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+				LOG.info("Finished loading concept with nid " + conceptNid);
+				return concept;
 			}
-		}
-		catch (IOException e)
-		{
-			String title = "Unexpected error loading concept with nid " + conceptNid;
-			String msg = e.getClass().getName();
-			LOG.error(title, e);
-			AppContext.getCommonDialogs().showErrorDialog(title, msg, e.getMessage());
-		}
+
+			@Override
+			protected void succeeded()
+			{
+				try
+				{
+					ConceptChronicleDdo result = this.getValue();
+					if (result == null)
+					{
+						throw new Exception("Failed to load concept");
+					}
+					else
+					{
+						setConcept(result);
+					}
+				}
+				catch (Exception e)
+				{
+					String title = "Unexpected error loading concept with nid " + conceptNid;
+					String msg = e.getClass().getName();
+					LOG.error(title, e);
+					AppContext.getCommonDialogs().showErrorDialog(title, msg, e.getMessage());
+				}
+			}
+
+			@Override
+			protected void failed()
+			{
+				Throwable ex = getException();
+				String title = "Unexpected error loading concept with nid " + conceptNid;
+				String msg = ex.getClass().getName();
+				LOG.error(title, ex);
+				AppContext.getCommonDialogs().showErrorDialog(title, msg, ex.getMessage());
+			}
+		};
+		Utility.execute(task);
 	}
 
 	/**
@@ -181,17 +209,8 @@ public class ConceptView implements PopupConceptViewI {
 		
 		s.onHiddenProperty().set((eventHandler) ->
 		{
-			controller.stopOperations();
+			controller.viewDiscarded();
 			s.setScene(null);
-			//No other way to force a timely release of all of the bindings that would still fire / still recalculate data..
-			try
-			{
-				Utility.schedule(() -> System.gc(), 250, TimeUnit.MILLISECONDS);
-			}
-			catch (RejectedExecutionException e)
-			{
-				//Probably because the app is shutting down - we don't actually care.
-			}
 		});
 		
 		s.show();
@@ -227,5 +246,11 @@ public class ConceptView implements PopupConceptViewI {
 	public ConceptViewMode getViewMode() {
 		// Not Implemented in ConceptView
 		return null;
+	}
+	
+	@Override
+	public void viewDiscarded()
+	{
+		controller.viewDiscarded();
 	}
 }

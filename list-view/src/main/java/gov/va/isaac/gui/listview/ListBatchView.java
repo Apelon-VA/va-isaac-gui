@@ -198,4 +198,10 @@ public class ListBatchView implements ListBatchViewI, DockedViewI
 			lbvc_.addConcept(nid);
 		}
 	}
+	
+	@Override
+	public void viewDiscarded()
+	{
+		//noop for now - this never gets called in the current GUI design on a dockedView
+	}
 }

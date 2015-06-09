@@ -210,4 +210,10 @@ public class EnhancedConceptView implements PopupConceptViewI {
 	public Region getView() {
 		return controller.getRootNode();
 	}
+	
+	@Override
+	public void viewDiscarded()
+	{
+		controller.viewDiscarded();
+	}
 }

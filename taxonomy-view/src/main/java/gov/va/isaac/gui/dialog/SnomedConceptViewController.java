@@ -37,11 +37,7 @@ import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
-
 import java.util.UUID;
-
-import javax.swing.text.Utilities;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -66,7 +62,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesChronicleDdo;
@@ -107,6 +102,9 @@ public class SnomedConceptViewController {
 	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
 
 	private SctTreeViewIsaacView sctTree;
+	private RefexViewI refexView;
+	private DescriptionTableView dtv;
+	private RelationshipTableView rtv;
 	
 	private UUID conceptUuid;
 	private int conceptNid = 0;
@@ -197,10 +195,6 @@ public class SnomedConceptViewController {
 				}
 			}
 		});
-		
-		// TODOne OTF background - moved above
-		//ConceptVersionBI conceptVersionBI = OTFUtility.getConceptVersion(concept.getPrimordialUuid());
-		//AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersionBI));
 
 		// Add context menu items for additional identifiers.
 		for (final IdentifierDdo id : attributeChronicle.getAdditionalIds()) {
@@ -225,14 +219,14 @@ public class SnomedConceptViewController {
 			idVBox.getChildren().add(hbox);
 		}
 		
-		final DescriptionTableView dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
-		descriptionsTableHolder.getChildren().add(dtv.getNode());
-		VBox.setVgrow(dtv.getNode(), Priority.ALWAYS);
+		dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
+		descriptionsTableHolder.getChildren().add(dtv.getView());
+		VBox.setVgrow(dtv.getView(), Priority.ALWAYS);
 		
 		//rel table section
-		final RelationshipTableView rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
-		relationshipsTableHolder.getChildren().add(rtv.getNode());
-		VBox.setVgrow(rtv.getNode(), Priority.ALWAYS);
+		rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
+		relationshipsTableHolder.getChildren().add(rtv.getView());
+		VBox.setVgrow(rtv.getView(), Priority.ALWAYS);
 
 		try
 		{
@@ -377,14 +371,13 @@ public class SnomedConceptViewController {
 			String conceptDescription = OTFUtility.getDescription(concept);
 			ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(concept.getPrimordialUuid());
 			conceptNid = conceptVersion.getNid();
+			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersion));
 
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);
 				fsnLabel.setGraphic(null);
 
 				copyFull.setOnAction(e -> CustomClipboard.set(conceptVersion.toLongString()));
-
-				AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersion));
 				
 				try {
 					dtv.setConcept(conceptVersion);
@@ -395,25 +388,20 @@ public class SnomedConceptViewController {
 				
 				try {
 					rtv.setConcept(conceptVersion);
-					
 				} catch (Exception e) {
 					LOG.error("Error configuring relationship view", e);
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring relationships view"));
 				}
 
-				RefexViewI v = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
-				v.setComponent(conceptVersion.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
-				v.getView().setMinHeight(100.0);
-				VBox.setVgrow(v.getView(), Priority.ALWAYS);
-				annotationsRegion.getChildren().add(v.getView());
-
+				refexView = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
+				refexView.setComponent(conceptVersion.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
+				refexView.getView().setMinHeight(100.0);
+				VBox.setVgrow(refexView.getView(), Priority.ALWAYS);
+				annotationsRegion.getChildren().add(refexView.getView());
 
 				stampToggle.setSelected(false);
 			});
-			
 		});
-		
-		
 	}
 
 	public StringProperty getTitle() {
@@ -432,12 +420,15 @@ public class SnomedConceptViewController {
 		
 		return conceptNid;
 	}
-
+	
 	/**
-	 * See  {@link SctTreeViewIsaacView#cancelOperations()}
+	 * Disconnects change listeners, prevents refresh
 	 */
-	public void stopOperations()
+	public void viewDiscarded()
 	{
-		sctTree.cancelOperations();
+		sctTree.viewDiscarded();
+		refexView.viewDiscarded();
+		dtv.viewDiscarded();
+		rtv.viewDiscarded();
 	}
 }
