@@ -82,6 +82,15 @@ public class EnhancedConceptViewController {
 	private ArrayList<ChangeListener<?>> changeListeners = new ArrayList<>();
 
 	private static final Logger LOG = LoggerFactory.getLogger(EnhancedConceptViewController.class);
+	
+	@FXML
+	void initialize()
+	{
+		ProgressBar pb = new ProgressBar();
+		pb.setMinWidth(300.0);
+		fsnLabel.setGraphic(pb);
+		fsnLabel.setText("Loading...");
+	}
 
 	AnchorPane getRootNode() {
 		return enhancedConceptPane;
@@ -349,7 +358,9 @@ public class EnhancedConceptViewController {
 		if (enable) {
 			releaseIdLabel.setGraphic(new ProgressBar());
 			isPrimLabel.setGraphic(new ProgressBar());
-			fsnLabel.setGraphic(new ProgressBar());
+			if (fsnLabel.getGraphic() == null) {
+				fsnLabel.setGraphic(new ProgressBar());
+			}
 			termVBox.getChildren().add(new ProgressIndicator());
 			destVBox.getChildren().add(new ProgressIndicator());
 			relVBox.getChildren().add(new ProgressIndicator());
