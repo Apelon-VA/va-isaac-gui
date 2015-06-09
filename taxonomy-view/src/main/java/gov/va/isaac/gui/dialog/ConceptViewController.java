@@ -76,9 +76,9 @@ import org.slf4j.LoggerFactory;
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class SnomedConceptViewController {
+public class ConceptViewController {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SnomedConceptViewController.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ConceptViewController.class);
 
 	@FXML private AnchorPane anchorPane;
 	@FXML private Label conceptDefinedLabel;

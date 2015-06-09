@@ -8,7 +8,7 @@
 
 <AnchorPane fx:id="anchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0"
 	prefWidth="1200.0" styleClass="dialogBackground" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="gov.va.isaac.gui.dialog.SnomedConceptViewController">
+	fx:controller="gov.va.isaac.gui.dialog.ConceptViewController">
 	<children>
 		<VBox alignment="CENTER" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
 			AnchorPane.topAnchor="0.0">

@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
 public class ConceptView implements PopupConceptViewI {
 
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
-	private final SnomedConceptViewController controller;
+	private final ConceptViewController controller;
 
 	private ConceptView() throws IOException {
 		//This is for HK2 to construct...
