@@ -453,7 +453,7 @@ public class CommonMenus
 					menuItems.add(enhancedConceptViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -485,7 +485,7 @@ public class CommonMenus
 					menuItems.add(legacyConceptViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW_LEGACY.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -508,7 +508,7 @@ public class CommonMenus
 					menuItems.add(findInTaxonomyViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.TAXONOMY_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -537,7 +537,7 @@ public class CommonMenus
 					menuItems.add(openTaskViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -566,7 +566,7 @@ public class CommonMenus
 					menuItems.add(uscrsRequestViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.USCRS_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -595,7 +595,7 @@ public class CommonMenus
 					menuItems.add(loincRequestViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOINC_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -631,7 +631,7 @@ public class CommonMenus
 					menuItems.add(newReleaseWorkflowTaskItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.RELEASE_WORKFLOW_TASK.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -764,7 +764,7 @@ public class CommonMenus
 					menuItems.add(listViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getSendToMenuItems() failed adding CommonMenuItem.LIST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -797,7 +797,7 @@ public class CommonMenus
 					menuItems.add(newWorkflowInstanceInitializationItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getSendToMenuItems() failed adding CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
