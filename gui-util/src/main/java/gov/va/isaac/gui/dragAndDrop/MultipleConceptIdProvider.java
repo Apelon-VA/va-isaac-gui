@@ -28,8 +28,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * @deprecated
- * 
  * MultipleConceptIdProvider
  * 
  * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
@@ -38,15 +36,13 @@ import java.util.UUID;
 public interface MultipleConceptIdProvider extends ConceptIdProvider {
 	/**
 	 * Get methods only use bulk methods if unambiguous (only 1 entry avail)
-	 * 
-	 * @deprecated
 	 */
 	@Override
 	public default Optional<Long> getSctId() {
-		if(getSctId().isPresent()) {
-			return getSctId();
+		if(getSctIds() != null && getSctIds().length == 1) {
+			return Optional.of(getSctIds()[0]);
 		} else {
-			return getSctId();
+			return Optional.empty();
 		}
 	}
 	public default Long[] getSctIds() {

@@ -122,7 +122,8 @@ public class EnhancedConceptBuilder {
 			if(thisSct.isPresent()) {
 				labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, String.valueOf(thisSct.get()), 0);
 			} else {
-				labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, String.valueOf(thisSct.get()), 0);
+				//TODO unreleased doesn't really make sense, this should look up and use a Loinc, or RxNorm ID, for example.
+				labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, "Unreleased", 0);
 			}
 			
 			Rectangle conRec = AnnotationRectangle.create(con);

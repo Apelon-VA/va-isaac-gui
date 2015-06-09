@@ -37,7 +37,7 @@ public interface ConceptIdProvider {
 	/**
 	 * Convenience method that will fail if it isn't overridden
 	 */
-	public default Optional<Long> getSctId() { return null; }
+	public default Optional<Long> getSctId() { return Optional.empty(); }
 
 	/**
 	 * Convenience method that will fail if it isn't overridden

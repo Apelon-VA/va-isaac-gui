@@ -44,11 +44,11 @@ public class ConceptIdProviderHelper {
 		private final UUID uuid;
 		private final Optional<Long> sctId;
 		
-		private ConceptIdProviderBean(Integer nid, UUID uuid, Long sctId) {
+		private ConceptIdProviderBean(Integer nid, UUID uuid, Optional<Long> sctId) {
 			super();
 			this.nid = nid;
 			this.uuid = uuid;
-			this.sctId = Optional.of(sctId);
+			this.sctId = sctId;
 		}
 
 		@Override
@@ -67,18 +67,7 @@ public class ConceptIdProviderHelper {
 	public static ConceptIdProvider getPopulatedConceptIdProvider(ConceptIdProvider idProvider) {
 		Integer tmpNid = idProvider != null ? idProvider.getNid() : null;
 		UUID tmpUuid = idProvider != null ? idProvider.getUUID() : null;
-		Long tmpSctId = null;
-		
-		if(idProvider != null) {
-			Optional<Long> idProviderSct = idProvider.getSctId();
-			if(idProviderSct.isPresent()) {
-				tmpSctId = idProviderSct.get();
-			} else {
-				tmpSctId = null;
-			}
-		} else {
-			tmpSctId = null;
-		}
+		Optional<Long> tmpSctId = idProvider != null ? idProvider.getSctId() : Optional.empty();
 
 		ConceptVersionBI concept = null;
 		if (tmpNid != null) {
@@ -86,16 +75,9 @@ public class ConceptIdProviderHelper {
 			if (tmpUuid == null) {
 				tmpUuid = concept != null ? concept.getPrimordialUuid() : null;
 			}
-			if (tmpSctId == null) {
+			if (!tmpSctId.isPresent()) {
 				if(concept != null) {
-					Optional<Long> caSctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
-					if(caSctId.isPresent()) {
-						tmpSctId = caSctId.get();
-					} else {
-						tmpSctId = null;
-					}
-				} else {
-					tmpSctId = null;
+					tmpSctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
 				}
 			}
 		} else if (tmpUuid != null) {
@@ -103,16 +85,9 @@ public class ConceptIdProviderHelper {
 			if (tmpNid == null) {
 				tmpNid = concept != null ? concept.getConceptNid() : null;
 			}
-			if (tmpSctId == null) {
+			if (!tmpSctId .isPresent()) {
 				if(concept != null) {
-					Optional<Long> cvSct = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
-					if(cvSct.isPresent()) {
-						tmpSctId =  cvSct.get();
-					} else {
-						tmpSctId = null;
-					}
-				} else {
-					tmpSctId = null;
+					tmpSctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
 				}
 			}
 		}

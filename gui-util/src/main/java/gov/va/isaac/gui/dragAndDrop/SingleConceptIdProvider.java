@@ -43,7 +43,7 @@ public interface SingleConceptIdProvider extends ConceptIdProvider
 	 */
 	default public boolean isSctId()
 	{
-		return getSctId() != null;
+		return getSctId().isPresent();
 	}
 	
 	/**
@@ -70,7 +70,7 @@ public interface SingleConceptIdProvider extends ConceptIdProvider
 	@Override
 	default public Optional<Long> getSctId()
 	{
-		return null;
+		return Optional.empty();
 	}
 	
 	/* (non-Javadoc)

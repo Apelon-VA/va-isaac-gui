@@ -341,7 +341,10 @@ public class OWLExporter extends CommonBase implements Exporter,
     for (RelationshipVersionBI<?> rel : currentConcept
         .getRelationshipsOutgoingActiveIsa()) {
       if (rel.isStated()) {
-        parentClasses.add(factory.getOWLClass(":" + getSnomedConceptID(OTFUtility.getConceptVersion(rel.getDestinationNid())), pm));
+        parentClasses.add(factory.getOWLClass(
+            ":"
+                + getSnomedConceptID(OTFUtility.getConceptVersion(rel
+                    .getDestinationNid())), pm));
       }
     }
 
@@ -503,7 +506,8 @@ public class OWLExporter extends CommonBase implements Exporter,
     ConceptVersionBI conceptVersionBI) throws Exception {
     // Declaration
     OWLObjectProperty owlPropertyClass =
-        factory.getOWLObjectProperty(":" + getSnomedConceptID(conceptVersionBI), pm);
+        factory.getOWLObjectProperty(
+            ":" + getSnomedConceptID(conceptVersionBI), pm);
     OWLDeclarationAxiom declarationAxiom =
         factory.getOWLDeclarationAxiom(owlPropertyClass);
     setOfAxioms.add(declarationAxiom);
@@ -580,10 +584,11 @@ public class OWLExporter extends CommonBase implements Exporter,
   private String getSnomedConceptID(ConceptVersionBI conceptVersionBI)
     throws Exception {
     
-    if (ConceptViewerHelper.getSctId(conceptVersionBI).isPresent()) {
-    	return ConceptViewerHelper.getSctId(conceptVersionBI).get().toString();
+    Optional<Long> sctId = ConceptViewerHelper.getSctId(conceptVersionBI);
+    if (sctId.isPresent()) {
+        return sctId.get().toString();
     } else {
-    	return conceptVersionBI.getPrimordialUuid().toString();
+        return conceptVersionBI.getPrimordialUuid().toString();
     }
    
   }
