@@ -67,7 +67,6 @@ import javax.inject.Singleton;
 import javax.naming.AuthenticationException;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cs.ChangeSetReader;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
