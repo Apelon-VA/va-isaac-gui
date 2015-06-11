@@ -99,6 +99,7 @@ public class ProcessInstanceCreationRequestsAPI implements ProcessInstanceServic
 	        log.info(Integer.toString(updatedRowCount) + " rows updated in PINST_REQUESTS"); 
         conn.commit();
     	} catch (SQLException e) {
+    		log.error("Change username on PINST_REQUESTS table failed", e);
 	        throw new DatastoreException("Change username on PINST_REQUESTS table failed", e);
     	}
     }

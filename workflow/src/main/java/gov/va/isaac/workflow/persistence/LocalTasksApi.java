@@ -45,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.inject.Singleton;
 import javax.sql.DataSource;
+
 import org.jvnet.hk2.annotations.Service;
 import org.kie.api.task.model.Status;
 import org.slf4j.Logger;
@@ -105,8 +107,9 @@ public class LocalTasksApi implements LocalTasksServiceBI {
 	        psUpdateUser.setString(2, oldWFUsername);
 	        int updatedRowCount = psUpdateUser.executeUpdate();
 	        log.info(Integer.toString(updatedRowCount) + " rows updated in local_tasks"); 
-        conn.commit();
+	        conn.commit();
     	} catch (SQLException e) {
+    		log.error("Change username on local_tasks table failed", e);
 	        throw new DatastoreException("Change username on local_tasks table failed", e);
     	}
     }
