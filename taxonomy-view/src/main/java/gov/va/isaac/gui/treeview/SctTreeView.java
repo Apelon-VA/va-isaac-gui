@@ -524,11 +524,14 @@ class SctTreeView {
             @Override
             protected void failed() {
                 Throwable ex = getException();
-                LOG.warn("Unexpected error trying to find concept in Tree", ex);
-
-                // Turn off progress indicator.
-                if (workingIndicator != null) {
-                    workingIndicator.set(false);
+                if (!wasGlobalShutdownRequested())
+                {
+                    LOG.warn("Unexpected error trying to find concept in Tree", ex);
+    
+                    // Turn off progress indicator.
+                    if (workingIndicator != null) {
+                        workingIndicator.set(false);
+                    }
                 }
             }
         };

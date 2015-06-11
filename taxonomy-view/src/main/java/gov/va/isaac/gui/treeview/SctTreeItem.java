@@ -56,7 +56,8 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
 
     private final List<SctTreeItem> extraParents = new ArrayList<>();
     private CountDownLatch childrenLoadedLatch = new CountDownLatch(1);
-    private DoubleProperty childLoadPercentComplete = new SimpleDoubleProperty(-1.0);
+    //-2 when not yet started, -1 for started indeterminate - between 0 and 1, if we can determine, 1 when complete.
+    private DoubleProperty childLoadPercentComplete = new SimpleDoubleProperty(-2.0);
     private volatile boolean cancelLookup = false;
     private boolean defined = false;
     private boolean multiParent = false;
@@ -99,127 +100,151 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     }
     
     void addChildren() {
-        final TaxonomyReferenceWithConcept taxRef = getValue();
-        if (! shouldDisplay()) {
-            // Don't add children to something that shouldn't be displayed
-            LOG.debug("this.shouldDisplay() == false: not adding children to " + this.getConceptUuid());
-            childLoadComplete();
-        } else if (taxRef == null || taxRef.getConcept() == null) {
-            LOG.debug("addChildren(): taxRef={}, taxRef.getConcept()={}", taxRef, taxRef.getConcept());
-            childLoadComplete();
-        } else if (taxRef.getConcept() != null) {
-            // Gather the children
-            ArrayList<SctTreeItem> childrenToProcess = new ArrayList<>();
-
-            for (RelationshipChronicleDdo r : taxRef.conceptProperty().get().getDestinationRelationships()) {
-                for (RelationshipVersionDdo rv : r.getVersions()) {
-                    if (cancelLookup) {
-                        return;
-                    }
-                    try {
-                        TaxonomyReferenceWithConcept fxtrc = new TaxonomyReferenceWithConcept(rv);
-                        SctTreeItem childItem = new SctTreeItem(fxtrc, displayPolicies);
-                        if (childItem.shouldDisplay()) {
-                            childrenToProcess.add(childItem);
-                        } else {
-                            LOG.debug("item.shouldDisplay() == false: not adding " + childItem.getConceptUuid() + " as child of " + this.getConceptUuid());
+        childLoadStarts();
+        try
+        {
+            final TaxonomyReferenceWithConcept taxRef = getValue();
+            if (! shouldDisplay()) {
+                // Don't add children to something that shouldn't be displayed
+                LOG.debug("this.shouldDisplay() == false: not adding children to " + this.getConceptUuid());
+            } else if (taxRef == null || taxRef.getConcept() == null) {
+                LOG.debug("addChildren(): taxRef={}, taxRef.getConcept()={}", taxRef, taxRef.getConcept());
+            } else if (taxRef.getConcept() != null) {
+                // Gather the children
+                ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
+                ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
+    
+                for (RelationshipChronicleDdo r : taxRef.conceptProperty().get().getDestinationRelationships()) {
+                    for (RelationshipVersionDdo rv : r.getVersions()) {
+                        if (cancelLookup) {
+                            return;
                         }
-                    } catch (IOException | ContradictionException ex) {
-                        LOG.error(null, ex);
+                        try {
+                            TaxonomyReferenceWithConcept fxtrc = new TaxonomyReferenceWithConcept(rv);
+                            SctTreeItem childItem = new SctTreeItem(fxtrc, displayPolicies);
+                            if (childItem.shouldDisplay()) {
+                                childrenToAdd.add(childItem);
+                                childrenToProcess.add(new GetSctTreeItemConceptCallable(childItem));
+                            } else {
+                                LOG.debug("item.shouldDisplay() == false: not adding " + childItem.getConceptUuid() + " as child of " + this.getConceptUuid());
+                            }
+                        } catch (IOException | ContradictionException ex) {
+                            LOG.error(null, ex);
+                        }
                     }
                 }
+    
+                Collections.sort(childrenToAdd);
+                if (cancelLookup) {
+                    return;
+                }
+                
+                Platform.runLater(() ->
+                {
+                    getChildren().addAll(childrenToAdd);
+                });
+                //This loads the children of this child
+                for (GetSctTreeItemConceptCallable child : childrenToProcess) {
+                    getWorkExecutors().getPotentiallyBlockingExecutor().execute(child);
+                }
+                
             }
-
-            Collections.sort(childrenToProcess);
-            if (cancelLookup) {
-                return;
-            }
-            
-            Platform.runLater(() ->
-            {
-                getChildren().addAll(childrenToProcess);
-                childLoadComplete();
-            });
-            
-
-            //This loads the childrens children
-            for (SctTreeItem child : childrenToProcess) {
-                getWorkExecutors().getPotentiallyBlockingExecutor().execute(new GetSctTreeItemConceptCallable(child));
-            }
+        }
+        catch (Exception e)
+        {
+            LOG.error("Unexpected error computing children and/or grandchildren", e);
+        }
+        finally
+        {
+            childLoadComplete();
         }
     }
 
     void addChildrenConceptsAndGrandchildrenItems() {
-        ArrayList<SctTreeItem> grandChildrenToProcess = new ArrayList<>();
-
-        if (! shouldDisplay()) {
-            // Don't add children to something that shouldn't be displayed
-            LOG.debug("this.shouldDisplay() == false: not adding children concepts and grandchildren items to " + this.getConceptUuid());
-            childLoadComplete();
-        } else {
-            for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren()) {
-                if (cancelLookup) {
-                    return;
-                }
-                if (((SctTreeItem)child).shouldDisplay()) {
-                    if (child.getChildren().isEmpty() && (child.getValue().getConcept() != null)) {
-                        if (child.getValue().getConcept().getDestinationRelationships().isEmpty()) {
-                            TaxonomyReferenceWithConcept value = child.getValue();
-                            child.setValue(null);
-                            SctTreeItem noChildItem = (SctTreeItem) child;
-                            noChildItem.computeGraphic();
-                            noChildItem.setValue(value);
-                        } else {
-                            ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
-
-                            for (RelationshipChronicleDdo r : child.getValue().conceptProperty().get().getDestinationRelationships()) {
+        ArrayList<GetSctTreeItemConceptCallable> grandChildrenToProcess = new ArrayList<>();
+        childLoadStarts();
+        try
+        {
+            if (! shouldDisplay()) {
+                // Don't add children to something that shouldn't be displayed
+                LOG.debug("this.shouldDisplay() == false: not adding children concepts and grandchildren items to " + this.getConceptUuid());
+            } else {
+                for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren()) {
+                    if (cancelLookup) {
+                        return;
+                    }
+                    if (((SctTreeItem)child).shouldDisplay()) {
+                        if (child.getChildren().isEmpty() && (child.getValue().getConcept() != null)) {
+                            if (child.getValue().getConcept().getDestinationRelationships().isEmpty()) {
+                                TaxonomyReferenceWithConcept value = child.getValue();
+                                child.setValue(null);
+                                SctTreeItem noChildItem = (SctTreeItem) child;
+                                noChildItem.computeGraphic();
+                                noChildItem.setValue(value);
+                            } else if (((SctTreeItem)child).getChildLoadPercentComplete().get() == -2.0){ //If this child hasn't yet been told to load
+                                ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
+                                ((SctTreeItem)child).childLoadStarts();
+    
+                                for (RelationshipChronicleDdo r : child.getValue().conceptProperty().get().getDestinationRelationships()) {
+                                    if (cancelLookup) {
+                                        return;
+                                    }
+                                    for (RelationshipVersionDdo rv : r.getVersions()) {
+                                        try {
+                                            TaxonomyReferenceWithConcept taxRef = new TaxonomyReferenceWithConcept(rv);
+                                            SctTreeItem grandChildItem = new SctTreeItem(taxRef, displayPolicies);
+    
+                                            if (grandChildItem.shouldDisplay()) {
+                                                grandChildrenToProcess.add(new GetSctTreeItemConceptCallable(grandChildItem));
+                                                grandChildrenToAdd.add(grandChildItem);
+                                            } else {
+                                                LOG.debug("grandChildItem.shouldDisplay() == false: not adding " + grandChildItem.getConceptUuid() + " as child of " + ((SctTreeItem)child).getConceptUuid());
+                                            }
+                                        } catch (IOException | ContradictionException ex) {
+                                            LOG.error(null, ex);
+                                        }
+                                    }
+                                }
+    
+                                Collections.sort(grandChildrenToAdd);
                                 if (cancelLookup) {
                                     return;
                                 }
-                                for (RelationshipVersionDdo rv : r.getVersions()) {
-                                    try {
-                                        TaxonomyReferenceWithConcept taxRef = new TaxonomyReferenceWithConcept(rv);
-                                        SctTreeItem grandChildItem = new SctTreeItem(taxRef, displayPolicies);
-
-                                        if (grandChildItem.shouldDisplay()) {
-                                            grandChildrenToProcess.add(grandChildItem);
-                                            grandChildrenToAdd.add(grandChildItem);
-                                        } else {
-                                            LOG.debug("grandChildItem.shouldDisplay() == false: not adding " + grandChildItem.getConceptUuid() + " as child of " + ((SctTreeItem)child).getConceptUuid());
-                                        }
-                                    } catch (IOException | ContradictionException ex) {
-                                        LOG.error(null, ex);
-                                    }
-                                }
+                                
+                                CountDownLatch wait = new CountDownLatch(1);
+                                Platform.runLater(() ->
+                                {
+                                    child.getChildren().addAll(grandChildrenToAdd);
+                                    ((SctTreeItem)child).childLoadComplete();
+                                    wait.countDown();
+                                });
+                                wait.await();
                             }
-
-                            Collections.sort(grandChildrenToAdd);
-                            if (cancelLookup) {
-                                return;
-                            }
-                            
-                            Platform.runLater(() ->
-                            {
-                                child.getChildren().addAll(grandChildrenToAdd);
-                                ((SctTreeItem)child).childLoadComplete();
-                            });
+                        } else if ((child.getValue() == null || child.getValue().getConcept() == null) && ((SctTreeItem)child).getChildLoadPercentComplete().get() == -2.0) {
+                            grandChildrenToProcess.add(new GetSctTreeItemConceptCallable((SctTreeItem) child));
                         }
-                    } else if (child.getValue() == null || child.getValue().getConcept() == null) {
-                        grandChildrenToProcess.add((SctTreeItem) child);
+                    } else {
+                        LOG.debug("childItem.shouldDisplay() == false: not adding " + ((SctTreeItem)child).getConceptUuid() + " as child of " + this.getConceptUuid());
                     }
-                } else {
-                    LOG.debug("childItem.shouldDisplay() == false: not adding " + ((SctTreeItem)child).getConceptUuid() + " as child of " + this.getConceptUuid());
+                }
+                
+                if (cancelLookup) {
+                    return;
+                }
+    
+                //This loads the childrens children
+                for (GetSctTreeItemConceptCallable childsChild : grandChildrenToProcess) {
+                    getWorkExecutors().getPotentiallyBlockingExecutor().execute(childsChild);
                 }
             }
-            
-            if (cancelLookup) {
-                return;
-            }
-
-            //This loads the childrens children
-            for (SctTreeItem childsChild : grandChildrenToProcess) {
-                getWorkExecutors().getPotentiallyBlockingExecutor().execute(new GetSctTreeItemConceptCallable(childsChild));
-            }
+        }
+        catch (Exception e)
+        {
+            LOG.error("Unexpected error computing children and/or grandchildren", e);
+        }
+        finally
+        {
+            childLoadComplete();
         }
     }
 
@@ -339,7 +364,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     }
 
     /**
-     * returns -1 when not yet started, otherwise, a value between 0 and 1 (1 when complete)
+     * returns -2 when not yet started, -1 when started, but indeterminate otherwise, a value between 0 and 1 (1 when complete)
      */
     public DoubleProperty getChildLoadPercentComplete() {
         return childLoadPercentComplete;
@@ -400,6 +425,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     public void clearChildren()
     {
         cancelLookup = true;
+        childrenLoadedLatch.countDown();
         for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren())
         {
             ((SctTreeItem)child).clearChildren();
@@ -416,7 +442,8 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
             public void run()
             {
                 cancelLookup = false;
-                childLoadPercentComplete.set(-1);
+                childLoadPercentComplete.set(-2);
+                childrenLoadedLatch.countDown();
                 childrenLoadedLatch = new CountDownLatch(1);
                 cdl.countDown();
             }
@@ -443,6 +470,39 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
         for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren()) {
            ((SctTreeItem)child).clearChildren();
            ((SctTreeItem)child).resetChildrenCalculators();
+        }
+    }
+    
+    /**
+     * Can be called on either a background or the FX thread
+     */
+    protected void childLoadStarts()
+    {
+        CountDownLatch cdl = new CountDownLatch(1);
+        Runnable r = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                childLoadPercentComplete.set(-1);
+                cdl.countDown();
+            }
+        };
+        if (Platform.isFxApplicationThread())
+        {
+            r.run();
+        }
+        else
+        {
+            Platform.runLater(r);
+        }
+        try
+        {
+            cdl.await();
+        }
+        catch (InterruptedException e)
+        {
+            LOG.error("unexpected interrupt", e);
         }
     }
     

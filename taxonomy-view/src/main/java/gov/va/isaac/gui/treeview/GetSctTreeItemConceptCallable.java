@@ -73,6 +73,9 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
         this.versionPolicy = versionPolicy;
         this.refexPolicy = refexPolicy;
         this.relationshipPolicy = relationshipPolicy;
+        if (addChildren) {
+            treeItem.childLoadStarts();
+        }
     }
 
     @Override
