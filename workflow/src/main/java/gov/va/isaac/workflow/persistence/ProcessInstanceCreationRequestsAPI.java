@@ -24,6 +24,7 @@ import gov.va.isaac.util.Utility;
 import gov.va.isaac.workflow.ProcessInstanceCreationRequest;
 import gov.va.isaac.workflow.ProcessInstanceServiceBI;
 import gov.va.isaac.workflow.exceptions.DatastoreException;
+
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -39,8 +40,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import javax.inject.Singleton;
 import javax.sql.DataSource;
+
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +85,22 @@ public class ProcessInstanceCreationRequestsAPI implements ProcessInstanceServic
             }
         }
         return dataSource;
+    }
+
+    public void changeUserName(String oldWFUsername, String newWFUsername) throws DatastoreException
+    {
+      	// TODO this needs to be tested - DT
+    	try {
+	        Connection conn = getDataSource().getConnection();
+	        PreparedStatement psUpdateUser = conn.prepareStatement("update PINST_REQUESTS set USER_ID = ? where USER_ID = ?");
+	        psUpdateUser.setString(1, newWFUsername);
+	        psUpdateUser.setString(2, oldWFUsername);
+	        int updatedRowCount = psUpdateUser.executeUpdate();
+	        log.info(Integer.toString(updatedRowCount) + " rows updated in PINST_REQUESTS"); 
+        conn.commit();
+    	} catch (SQLException e) {
+	        throw new DatastoreException("Change username on PINST_REQUESTS table failed", e);
+    	}
     }
 
     @Override
