@@ -77,8 +77,8 @@ public class CommonMenus
 	public static enum CommonMenuItem {
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
-		CONCEPT_VIEW("View Concept", Images.CONCEPT_VIEW),
-		CONCEPT_VIEW_LEGACY("View Concept 2", Images.CONCEPT_VIEW),
+		CONCEPT_VIEW("Model Concept", Images.CONCEPT_VIEW),
+		CONCEPT_VIEW_LEGACY("View Concept", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
 		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
