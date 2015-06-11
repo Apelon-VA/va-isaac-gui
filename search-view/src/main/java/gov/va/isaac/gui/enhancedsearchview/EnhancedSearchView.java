@@ -141,7 +141,7 @@ public class EnhancedSearchView implements DockedViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 5;
+				return 70;
 			}
 			
 			@Override
@@ -153,7 +153,7 @@ public class EnhancedSearchView implements DockedViewI
 			@Override
 			public String getMenuName()
 			{
-				return "Enhanced Search";
+				return "Query Builder";
 			}
 			
 			@Override
@@ -183,7 +183,7 @@ public class EnhancedSearchView implements DockedViewI
 	@Override
 	public String getViewTitle()
 	{
-		return "Enhanced Search";
+		return "SOLOR Query Builder";
 	}
 	
 	@Override

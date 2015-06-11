@@ -107,7 +107,7 @@ public class ListBatchView implements ListBatchViewI, DockedViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 6;
+				return 30;
 			}
 
 			@Override

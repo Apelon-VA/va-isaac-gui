@@ -72,7 +72,7 @@ public class DynamicRefexListView implements DockedViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 7;
+				return 20;
 			}
 
 			@Override

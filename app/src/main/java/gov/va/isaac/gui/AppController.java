@@ -31,8 +31,10 @@ import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.utility.ServicesToPreloadI;
 import gov.va.isaac.util.UpdateableDoubleBinding;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -141,60 +143,76 @@ public class AppController {
         
         root_.setTop(menuBar);
 
-        //Sort them...
-        TreeSet<MenuItemI> menusToAdd = new TreeSet<>();
+        //Sort them... per parent menu
+        HashMap<String, TreeSet<MenuItemI>> menusToAdd = new HashMap<>();
         for (IsaacViewWithMenusI view : moduleViews_)
         {
             for (MenuItemI menuItem : view.getMenuBarMenus())
             {
-                menusToAdd.add(menuItem);
+                TreeSet<MenuItemI> treeSet = menusToAdd.get(menuItem.getParentMenuId());
+                if (treeSet == null)
+                {
+                    treeSet = new TreeSet<>();
+                    menusToAdd.put(menuItem.getParentMenuId(), treeSet);
+                }
+                treeSet.add(menuItem);
             }
         }
 
-        for (final MenuItemI menuItemsToCreate : menusToAdd)
+        for (final TreeSet<MenuItemI> groupedMenuItemsToCreate : menusToAdd.values())
         {
-            Menu parentMenu = allMenus_.get(menuItemsToCreate.getParentMenuId());
-            if (parentMenu == null)
+            for (final MenuItemI menuItemsToCreate : groupedMenuItemsToCreate)
             {
-                LOG.error("Cannot add module menu '" + menuItemsToCreate.getMenuId() + "' because the specified parent menu doesn't exist");
-            }
-            else
-            {
-                MenuItem menuItem = new MenuItem();
-                menuItem.setId(menuItemsToCreate.getMenuId());
-                menuItem.setText(menuItemsToCreate.getMenuName());
-                menuItem.setMnemonicParsing(menuItemsToCreate.enableMnemonicParsing());
-                menuItem.setOnAction(new EventHandler<ActionEvent>()
+                Menu parentMenu = allMenus_.get(menuItemsToCreate.getParentMenuId());
+                if (parentMenu == null)
                 {
-                    @Override
-                    public void handle(ActionEvent arg0)
+                    LOG.error("Cannot add module menu '" + menuItemsToCreate.getMenuId() + "' because the specified parent menu doesn't exist");
+                }
+                else
+                {
+                    MenuItem menuItem = new MenuItem();
+                    menuItem.setId(menuItemsToCreate.getMenuId());
+                    menuItem.setText(menuItemsToCreate.getMenuName());
+                    menuItem.setMnemonicParsing(menuItemsToCreate.enableMnemonicParsing());
+                    menuItem.setOnAction(new EventHandler<ActionEvent>()
                     {
-                        menuItemsToCreate.handleMenuSelection(root_.getScene().getWindow());
+                        @Override
+                        public void handle(ActionEvent arg0)
+                        {
+                            menuItemsToCreate.handleMenuSelection(root_.getScene().getWindow());
+                        }
+                    });
+                    if (menuItemsToCreate.getImage() != null)
+                    {
+                        menuItem.setGraphic(new ImageView(menuItemsToCreate.getImage()));
                     }
-                });
-                if (menuItemsToCreate.getImage() != null)
-                {
-                    menuItem.setGraphic(new ImageView(menuItemsToCreate.getImage()));
+                    if (menuItemsToCreate.getDisableBinding() != null)
+                    {
+                        menuItem.disableProperty().bind(menuItemsToCreate.getDisableBinding());
+                    }
+                    parentMenu.getItems().add(menuItem);
                 }
-                if (menuItemsToCreate.getDisableBinding() != null)
-                {
-                    menuItem.disableProperty().bind(menuItemsToCreate.getDisableBinding());
-                }
-                parentMenu.getItems().add(menuItem);
-                //TODO fix this sorting API stuff... supposed to be sorted by the menu order in the menu API - but was never finished... see other TODO below.
-                parentMenu.getItems().sort(new Comparator<MenuItem>() {
-                  @Override
-                  public int compare(MenuItem o1, MenuItem o2) {
-                    return o1.getText().compareTo(o2.getText());
-                  }
-                  
-                });
             }
         }
 
         LOG.debug("Menus configured");
-
-        for (final DockedViewI dv : dockedViews_)
+        
+        ArrayList<DockedViewI> sortedDockedViews = new ArrayList<>();
+        for (DockedViewI dv : dockedViews_)
+        {
+            sortedDockedViews.add(dv);
+        }
+        Collections.sort(sortedDockedViews, new Comparator<DockedViewI>()
+        {
+            @Override
+            public int compare(DockedViewI o1, DockedViewI o2)
+            {
+                return o1.getMenuBarMenuToShowView().compareTo(o2.getMenuBarMenuToShowView());
+            }
+        });
+        
+       
+        for (final DockedViewI dv : sortedDockedViews)
         {
             try
             {

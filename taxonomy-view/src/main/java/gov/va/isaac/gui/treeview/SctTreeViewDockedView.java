@@ -112,7 +112,7 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 6;
+				return 10;
 			}
 			
 			@Override

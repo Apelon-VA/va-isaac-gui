@@ -87,7 +87,7 @@ public class ImportedModelsView implements DockedViewI {
 
             @Override
             public int getSortOrder() {
-                return 5;
+                return 40;
             }
 
             @Override

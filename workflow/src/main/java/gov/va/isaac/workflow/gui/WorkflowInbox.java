@@ -100,7 +100,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 			@Override
 			public int getSortOrder()
 			{
-				return 15;
+				return 80;
 			}
 			
 			@Override
@@ -184,7 +184,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 			@Override
 			public int getSortOrder()
 			{
-				return 5;
+				return 80;
 			}
 			
 			@Override

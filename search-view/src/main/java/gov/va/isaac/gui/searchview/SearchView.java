@@ -90,7 +90,7 @@ public class SearchView implements DockedViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 5;
+				return 60;
 			}
 			
 			@Override
@@ -102,7 +102,7 @@ public class SearchView implements DockedViewI
 			@Override
 			public String getMenuName()
 			{
-				return "Search";
+				return "Quick Search";
 			}
 			
 			@Override

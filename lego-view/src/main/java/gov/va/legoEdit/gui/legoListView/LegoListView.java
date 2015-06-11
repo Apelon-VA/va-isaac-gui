@@ -299,7 +299,7 @@ public class LegoListView implements DockedViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 6;
+				return 50;
 			}
 			
 			@Override
