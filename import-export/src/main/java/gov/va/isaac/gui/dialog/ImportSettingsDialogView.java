@@ -26,6 +26,7 @@ import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
 import javax.inject.Singleton;
@@ -53,7 +54,7 @@ public class ImportSettingsDialogView implements PopupViewI, IsaacViewWithMenusI
 		menus.add(new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				showView(parent);
 			}

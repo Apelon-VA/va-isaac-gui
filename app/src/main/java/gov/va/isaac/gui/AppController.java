@@ -25,6 +25,7 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.HeapStatusBar;
 import gov.va.isaac.gui.util.ToolTipDefaultsFixer;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
@@ -161,34 +162,52 @@ public class AppController {
 
         for (final TreeSet<MenuItemI> groupedMenuItemsToCreate : menusToAdd.values())
         {
-            for (final MenuItemI menuItemsToCreate : groupedMenuItemsToCreate)
+            for (final MenuItemI menuItemToCreate : groupedMenuItemsToCreate)
             {
-                Menu parentMenu = allMenus_.get(menuItemsToCreate.getParentMenuId());
+                Menu parentMenu = allMenus_.get(menuItemToCreate.getParentMenuId());
                 if (parentMenu == null)
                 {
-                    LOG.error("Cannot add module menu '" + menuItemsToCreate.getMenuId() + "' because the specified parent menu doesn't exist");
+                    LOG.error("Cannot add module menu '" + menuItemToCreate.getMenuId() + "' because the specified parent menu doesn't exist");
                 }
                 else
                 {
-                    MenuItem menuItem = new MenuItem();
-                    menuItem.setId(menuItemsToCreate.getMenuId());
-                    menuItem.setText(menuItemsToCreate.getMenuName());
-                    menuItem.setMnemonicParsing(menuItemsToCreate.enableMnemonicParsing());
+                    MenuItem menuItem;
+                    if (menuItemToCreate instanceof CheckMenuItemI)
+                    {
+                        menuItem = new CheckMenuItem();
+                        ((CheckMenuItem)menuItem).setSelected(((CheckMenuItemI)menuItemToCreate).initialState());
+                        menuItem.setOnAction(new EventHandler<ActionEvent>()
+                        {
+                            @Override
+                            public void handle(ActionEvent arg0)
+                            {
+                                menuItemToCreate.handleMenuSelection(root_.getScene().getWindow(), (CheckMenuItem)menuItem);
+                            }
+                        });
+                    }
+                    else
+                    {
+                        menuItem = new MenuItem();
+                    }
+                    
+                    menuItem.setId(menuItemToCreate.getMenuId());
+                    menuItem.setText(menuItemToCreate.getMenuName());
+                    menuItem.setMnemonicParsing(menuItemToCreate.enableMnemonicParsing());
                     menuItem.setOnAction(new EventHandler<ActionEvent>()
                     {
                         @Override
                         public void handle(ActionEvent arg0)
                         {
-                            menuItemsToCreate.handleMenuSelection(root_.getScene().getWindow());
+                            menuItemToCreate.handleMenuSelection(root_.getScene().getWindow(), menuItem);
                         }
                     });
-                    if (menuItemsToCreate.getImage() != null)
+                    if (menuItemToCreate.getImage() != null)
                     {
-                        menuItem.setGraphic(new ImageView(menuItemsToCreate.getImage()));
+                        menuItem.setGraphic(new ImageView(menuItemToCreate.getImage()));
                     }
-                    if (menuItemsToCreate.getDisableBinding() != null)
+                    if (menuItemToCreate.getDisableBinding() != null)
                     {
-                        menuItem.disableProperty().bind(menuItemsToCreate.getDisableBinding());
+                        menuItem.disableProperty().bind(menuItemToCreate.getDisableBinding());
                     }
                     parentMenu.getItems().add(menuItem);
                 }
@@ -224,7 +243,6 @@ public class AppController {
                 else
                 {
                     final BorderPane bp = buildPanelForView(dv);
-                    //TODO this isn't honoring sort order... need to sort all of the menus from the DockedViewI at once....
                     final CheckMenuItem mi = new CheckMenuItem();
                     mi.setText(dv.getMenuBarMenuToShowView().getMenuName());
                     mi.setId(dv.getMenuBarMenuToShowView().getMenuId());
@@ -235,7 +253,9 @@ public class AppController {
                         public void invalidated(Observable observable)
                         {
                             //This is a convenience call... not expected to actually show the view.
-                            dv.getMenuBarMenuToShowView().handleMenuSelection(root_.getScene().getWindow());
+                            dv.getMenuBarMenuToShowView().handleMenuSelection(root_.getScene().getWindow(), mi);
+                            //call both APIs, not all callers may have implemented the newer one (which has a default)
+                            dv.getMenuBarMenuToShowView().handleMenuSelection(root_.getScene().getWindow(), (MenuItem)mi);  
                             if (mi.isSelected() && !mainSplitPane.getItems().contains(bp))
                             {
                                 mainSplitPane.getItems().add(bp);

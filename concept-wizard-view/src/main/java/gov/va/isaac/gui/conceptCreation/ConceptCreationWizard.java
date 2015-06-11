@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Scene;
+import javafx.scene.control.MenuItem;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -60,7 +61,7 @@ public class ConceptCreationWizard implements ConceptCreationViewI, IsaacViewWit
 		MenuItemI mi = new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				showView(parent);
 			}

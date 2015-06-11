@@ -36,6 +36,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -92,7 +93,7 @@ public class AddUserDialog extends Stage implements IsaacViewWithMenusI, PopupVi
 		{
 			
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				AddUserDialog.this.showView(parent);
 			}

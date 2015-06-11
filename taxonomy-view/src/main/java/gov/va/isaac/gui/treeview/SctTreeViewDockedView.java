@@ -21,6 +21,7 @@ package gov.va.isaac.gui.treeview;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
@@ -93,13 +95,13 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
 	 */
 	@Override
-	public MenuItemI getMenuBarMenuToShowView()
+	public CheckMenuItemI getMenuBarMenuToShowView()
 	{
-		return new MenuItemI()
+		return new CheckMenuItemI()
 		{
 			
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				if (!hasBeenInited_)
 				{

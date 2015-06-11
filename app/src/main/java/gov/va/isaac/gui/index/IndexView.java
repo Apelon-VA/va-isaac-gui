@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import javafx.concurrent.Task;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
 import javax.inject.Singleton;
@@ -71,7 +72,7 @@ public class IndexView implements IsaacViewWithMenusI {
 		{
 			
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				Utility.execute(() ->
 				{

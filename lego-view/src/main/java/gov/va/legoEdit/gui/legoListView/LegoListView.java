@@ -21,6 +21,7 @@ package gov.va.legoEdit.gui.legoListView;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
@@ -39,6 +40,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.stage.FileChooser;
@@ -96,7 +98,7 @@ public class LegoListView implements DockedViewI
 		menus.add(new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				FileChooser fc = new FileChooser();
 				fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("LEGO xml Files (*.xml)", "*.xml"));
@@ -166,7 +168,7 @@ public class LegoListView implements DockedViewI
 		menus.add(new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				try
 				{
@@ -222,7 +224,7 @@ public class LegoListView implements DockedViewI
 		menus.add(new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				try
 				{
@@ -286,12 +288,12 @@ public class LegoListView implements DockedViewI
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
 	 */
 	@Override
-	public MenuItemI getMenuBarMenuToShowView()
+	public CheckMenuItemI getMenuBarMenuToShowView()
 	{
-		return new MenuItemI()
+		return new CheckMenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				//noop
 			}

@@ -20,6 +20,7 @@ package gov.va.isaac.gui.enhancedsearchview;
 
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
@@ -128,12 +130,12 @@ public class EnhancedSearchView implements DockedViewI
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
 	 */
 	@Override
-	public MenuItemI getMenuBarMenuToShowView()
+	public CheckMenuItemI getMenuBarMenuToShowView()
 	{
-		MenuItemI menuItem = new MenuItemI()
+		CheckMenuItemI checkMenuItem = new CheckMenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				//noop
 			}
@@ -174,7 +176,7 @@ public class EnhancedSearchView implements DockedViewI
 				return Images.SEARCH.getImage();
 			}
 		};
-		return menuItem;
+		return checkMenuItem;
 	}
 
 	/**
