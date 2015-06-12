@@ -68,12 +68,10 @@ public final class UserProfileDefaults {
 		return Long.MAX_VALUE;
 	}
 	
-	//TODO OCHRE paths questions
 	public static UUID getDefaultViewCoordinatePath() {
 		return IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid();
 	}
 
-	//TODO OCHRE paths questions
 	public static UUID getDefaultEditCoordinatePath() {
 		return IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid();
 	}
