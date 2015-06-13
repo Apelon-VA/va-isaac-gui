@@ -86,9 +86,6 @@ public class ConceptView implements PopupConceptViewI {
 	@Override
 	public void setConcept(UUID conceptUUID)
 	{
-		// TODO (artf231886) this needs to be rewritten so that the dialog displays immediately
-		//but with a progress indicator while we wait for the concept to be found..
-		//Also need to make sure that errors are properly handled
 		Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>()
 		{
 			@Override
