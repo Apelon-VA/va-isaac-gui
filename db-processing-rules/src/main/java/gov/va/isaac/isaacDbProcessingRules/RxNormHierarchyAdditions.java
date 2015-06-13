@@ -157,7 +157,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 							0, RelationshipType.STATED_ROLE, IdDirective.GENERATE_HASH);
 					
 					ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
-							IsaacMetadataAuxiliaryBinding.MASTER.getNid()), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
+							IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getNid()), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
 					ts.addUncommitted(cc);
 					
 					int last = addedRels.getAndIncrement();
