@@ -181,7 +181,7 @@ public class OTFUtility {
 			if (pathUuid != null && (pathChronicle = dataStore.getConcept(pathUuid)) != null) {
 				pathNid = pathChronicle.getNid();
 			} else {
-				pathNid = IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid();
+				pathNid = IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getLenient().getConceptNid();
 				pathChronicle = dataStore.getConcept(pathNid);
 				pathUuid = pathChronicle.getPrimordialUuid();
 			}
@@ -684,6 +684,10 @@ public class OTFUtility {
 		try
 		{
 			ComponentChronicleBI<?> result = dataStore.getComponent(nid);
+			if (result == null)
+			{
+				return null;
+			}
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
@@ -949,7 +953,23 @@ public class OTFUtility {
 
 	public static String getConPrefTerm(int nid) {
 		try {
-			return OTFUtility.getConceptVersion(nid).getPreferredDescription().getText();
+			ConceptVersionBI cv = OTFUtility.getConceptVersion(nid);
+			if (cv == null)
+			{
+				return nid + " NOT ON PATH";
+			}
+			else
+			{
+				DescriptionVersionBI<?> dv = cv.getPreferredDescription();
+				if (dv == null)
+				{
+					return nid + " NO DESC FOUND";
+				}
+				else
+				{
+					return dv.getText();
+				}
+			}
 		} catch (IOException | ContradictionException e) {
 			LOG.error("Unable to identify description.  Points to larger problem", e);
 			return "ERROR";
