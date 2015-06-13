@@ -23,10 +23,14 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.cradle.sememe.SememeProvider;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -106,12 +110,11 @@ public class OTFUtility {
 	private static Integer preferredNid = null;
 	private static Integer synonymNid = null;
 	private static Integer langTypeNid = null;
+	private static Integer snomedAssemblageNid = null;
 	
 	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static final Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
-
-	private static Set<UUID> rootNodeList = null;
 
 	public static TerminologyBuilderBI getBuilder() {
 		return new Builder(getEditCoordinate(), getViewCoordinateAllowInactive(), AppContext.getService(PersistentStoreI.class));
@@ -343,6 +346,14 @@ public class OTFUtility {
 		}
 		return preferredNid;
 	}
+	
+	public static int getSnomedAssemblageNid() {
+		if (snomedAssemblageNid == null)
+		{
+			snomedAssemblageNid = IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getNid();
+		}
+		return snomedAssemblageNid;
+	}
 
 	/**
 	 * Pass in the annotations on a description component to determine if one of the 
@@ -553,7 +564,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -595,7 +606,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -691,7 +702,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -721,7 +732,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -1222,5 +1233,32 @@ public class OTFUtility {
 		List<String> pts = new ArrayList<>();
 		pts.add(pt);
 		return ConceptCB.computeComponentUuid(IdDirective.GENERATE_REFEX_CONTENT_HASH, fsns, pts, null);
+	}
+	
+	public static Optional<Long> getSctId(int componentNid)
+	{
+		try
+		{
+			Optional<LatestVersion<StringSememeImpl>> sememe = AppContext.getService(SememeProvider.class)
+					.getSnapshot(StringSememeImpl.class, StampCoordinates.getDevelopmentLatest())
+					.getLatestSememeVersionsForComponentFromAssemblage(componentNid, getSnomedAssemblageNid()).findFirst();
+			if (sememe.isPresent())
+			{
+				String temp = sememe.get().value().getString();
+				try
+				{
+					return Optional.of(Long.parseLong(temp));
+				}
+				catch (NumberFormatException e)
+				{
+					LOG.error("The found string '" + temp + "' isn't parseable as a long - as an SCTID should be - in nid " + componentNid);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOG.warn("Unexpected error trying to find SCTID for nid " + componentNid, e);
+		}
+		return Optional.empty();
 	}
 }

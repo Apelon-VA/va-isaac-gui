@@ -197,7 +197,7 @@ public class SearchResultsTable  {
 		// Optional SCT ID
 		sctIdCol.setCellValueFactory((param) -> {
 			try {
-				Optional<? extends Long> sctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(param.getValue().getContainingConcept()));
+				Optional<? extends Long> sctId = ConceptViewerHelper.getSctId(param.getValue().getContainingConcept().getNid());
 				if(sctId.isPresent()) {
 					return new SimpleStringProperty(String.valueOf(sctId.get()));
 				} else {

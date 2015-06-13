@@ -584,7 +584,7 @@ public class OWLExporter extends CommonBase implements Exporter,
   private String getSnomedConceptID(ConceptVersionBI conceptVersionBI)
     throws Exception {
     
-    Optional<Long> sctId = ConceptViewerHelper.getSctId(conceptVersionBI);
+    Optional<Long> sctId = ConceptViewerHelper.getSctId(conceptVersionBI.getNid());
     if (sctId.isPresent()) {
         return sctId.get().toString();
     } else {

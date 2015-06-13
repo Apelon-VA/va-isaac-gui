@@ -523,7 +523,7 @@ public class ConceptViewerLabelHelper {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				Optional<Long> thisSct = ConceptViewerHelper.getSctId(comp);
+				Optional<Long> thisSct = ConceptViewerHelper.getSctId(comp.getNid());
 				if(thisSct.isPresent()) {
 					CustomClipboard.set(thisSct.get().toString());
 				} else {

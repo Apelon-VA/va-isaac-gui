@@ -807,7 +807,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
           .setContradictionManagerPolicy(ContradictionManagerPolicy.LAST_COMMIT_WINS);
       dataStore.getComponentVersion(viewCoordinate, typeNid).ifPresent((cv) -> 
       {
-        sctId.append(ConceptViewerHelper.getSctId(cv));
+        sctId.append(ConceptViewerHelper.getSctId(cv.getNid()));
       });
     } catch (ContradictionException e) {
       throw new IOException("Unable to get SCTID for " + typeNid, e);

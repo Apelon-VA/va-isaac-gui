@@ -118,7 +118,7 @@ public class EnhancedConceptBuilder {
 			
 		
 			// SCT Id
-			Optional<Long> thisSct = ConceptViewerHelper.getSctId(attr);
+			Optional<Long> thisSct = ConceptViewerHelper.getSctId(attr.getNid());
 			if(thisSct.isPresent()) {
 				labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, String.valueOf(thisSct.get()), 0);
 			} else {

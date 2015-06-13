@@ -77,7 +77,7 @@ public class ConceptIdProviderHelper {
 			}
 			if (!tmpSctId.isPresent()) {
 				if(concept != null) {
-					tmpSctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
+					tmpSctId = ConceptViewerHelper.getSctId(concept.getNid());
 				}
 			}
 		} else if (tmpUuid != null) {
@@ -87,7 +87,7 @@ public class ConceptIdProviderHelper {
 			}
 			if (!tmpSctId .isPresent()) {
 				if(concept != null) {
-					tmpSctId = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
+					tmpSctId = ConceptViewerHelper.getSctId(concept.getNid());
 				}
 			}
 		}

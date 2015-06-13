@@ -867,7 +867,7 @@ public class CommonMenus
 				{
 					ConceptVersionBI concept = OTFUtility.getConceptVersion(i);
 					if (concept != null) {
-						Optional<Long> conceptSct = ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept));
+						Optional<Long> conceptSct = ConceptViewerHelper.getSctId(concept.getNid());
 						if(conceptSct.isPresent()) {
 							sctIds.add(conceptSct.get());
 						}

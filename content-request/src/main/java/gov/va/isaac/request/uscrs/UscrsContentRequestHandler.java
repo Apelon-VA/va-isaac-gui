@@ -933,25 +933,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	
 	
 	private long getSct(int nid) throws ContradictionException, ValidationException {
-		
-		ViewCoordinate vcSct = new ViewCoordinate();
-		vcSct.setAllowedStatus(EnumSet.of(Status.ACTIVE, Status.INACTIVE));
-		
-		
-		Optional<? extends ComponentVersionBI> component = OTFUtility.getComponentChronicle(nid).getVersion(vcSct);
-		if(component.isPresent()) {
-			Optional<? extends Long> sct = ConceptViewerHelper.getSctId(component.get());
-			if(sct.isPresent()) {
-				return sct.get();
-			}
-		}
-		
-		ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(nid, vcSct);
-		if(conceptVersion != null) {
-			Optional<? extends Long> sct = ConceptViewerHelper.getSctId(conceptVersion);
-			if(sct.isPresent()) {
-				return sct.get();
-			}
+		Optional<? extends Long> sct = OTFUtility.getSctId(nid);
+		if(sct.isPresent()) {
+			return sct.get();
 		}
 		
 		//TODO this isn't 100% safe - we shouldn't just assume that it is going to be a new request.
