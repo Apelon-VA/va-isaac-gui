@@ -201,7 +201,7 @@ public class WorkflowTaskDetailsViewController {
 
 	private void loadContents() throws IOException {
 		UUID componentId = UUID.fromString(task.getComponentId());
-		conceptId = OTFUtility.getComponentChronicle(componentId).getConceptNid();
+		conceptId = OTFUtility.getComponentChronicle(componentId).getAssociatedConceptNid();
 		generatedComponentSummary.setText(ComponentDescriptionHelper.getComponentDescription(componentId));
 
 		taskIdLabel.setText(Long.toString(task.getId()));

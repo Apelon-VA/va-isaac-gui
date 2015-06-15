@@ -18,6 +18,7 @@ package gov.va.isaac.drools.evaluators;
 import gov.va.isaac.drools.dialect.DialectHelper;
 import gov.va.isaac.drools.dialect.UnsupportedDialectOrLanguage;
 import gov.va.isaac.drools.evaluators.facts.ConceptFact;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -87,7 +88,7 @@ public class IsMissingDescForDialectEvaluatorDefinition extends IsaacBaseEvaluat
 			}
 			ViewCoordinate coordinate = conceptToTest.getViewCoordinate();
 
-			ConceptVersionBI dialectCV = null;
+			ConceptSnapshot dialectCV = null;
 
 			if (ConceptVersionBI.class.isAssignableFrom(value2.getClass()))
 			{

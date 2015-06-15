@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.models;
 
+import gov.vha.isaac.ochre.api.coordinate.StampPath;
 import java.io.IOException;
 
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
@@ -42,7 +43,7 @@ public class InformationModelMetadata {
   private final long time;
 
   /** The path. */
-  private final Path path;
+  private final StampPath path;
 
   /** The module name. */
   private final String moduleName;
@@ -65,7 +66,7 @@ public class InformationModelMetadata {
     long time = dataStore.getTimeForStamp(stampNid);
 
     int pathNid = dataStore.getPathNidForStamp(stampNid);
-    Path path = dataStore.getPath(pathNid);
+    StampPath path = dataStore.getPath(pathNid);
 
     int moduleNid = dataStore.getModuleNidForStamp(stampNid);
     ConceptChronicleBI module = dataStore.getConcept(moduleNid);
@@ -86,7 +87,7 @@ public class InformationModelMetadata {
    * @param moduleName the module name
    * @param stampNid the STAMP nid
    */
-  public InformationModelMetadata(String importerName, long time, Path path,
+  public InformationModelMetadata(String importerName, long time, StampPath path,
       String moduleName, int stampNid) {
     this.stampNid = stampNid;
     this.importerName = importerName;
@@ -118,7 +119,7 @@ public class InformationModelMetadata {
    *
    * @return the path
    */
-  public Path getPath() {
+  public StampPath getPath() {
     return path;
   }
 

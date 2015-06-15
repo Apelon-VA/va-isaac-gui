@@ -2,6 +2,7 @@ package gov.va.isaac.gui.enhancedsearchview.filters;
 
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 import java.io.IOException;
 import java.util.Set;
@@ -73,7 +74,7 @@ public class NoSearchTermConcurrentSearcher implements ProcessUnfetchedConceptDa
 		
 
 		@Override
-		public NativeIdSetBI getNidSet() throws IOException
+		public NidSet getNidSet() 
 		{
 			return null;
 		}

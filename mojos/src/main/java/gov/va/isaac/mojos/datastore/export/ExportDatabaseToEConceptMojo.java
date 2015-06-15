@@ -19,11 +19,11 @@
 package gov.va.isaac.mojos.datastore.export;
 
 import gov.va.isaac.AppContext;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -31,7 +31,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
 
@@ -111,7 +110,7 @@ public class ExportDatabaseToEConceptMojo extends AbstractMojo implements Proces
 	 * @see org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI#getNidSet()
 	 */
 	@Override
-	public NativeIdSetBI getNidSet() throws IOException
+	public NidSet getNidSet()
 	{
 		return null;
 	}

@@ -20,7 +20,7 @@ package gov.va.isaac.search;
 
 import java.util.Comparator;
 import org.apache.commons.lang3.ObjectUtils;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

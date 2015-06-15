@@ -19,6 +19,7 @@
 package gov.va.isaac.refexDynamic;
 
 import gov.va.isaac.ExtendedAppContext;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -120,7 +121,7 @@ public class RefexAnnotationSearcher implements ProcessUnfetchedConceptDataBI
 	}
 
 	@Override
-	public NativeIdSetBI getNidSet() throws IOException
+	public NidSet getNidSet() 
 	{
 		return null;
 	}

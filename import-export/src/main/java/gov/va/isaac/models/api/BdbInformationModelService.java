@@ -64,7 +64,7 @@ import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,7 +183,7 @@ public class BdbInformationModelService implements InformationModelService {
       // Results are descriptions, need to look up concepts
       for (SearchResult result : searchResults) {
         int conceptNid =
-            dataStore.getComponent(result.getNid()).getConceptNid();
+            dataStore.getComponent(result.getNid()).getEnclosingConceptNid();
         ConceptVersionBI conceptVersion =
             OTFUtility.getConceptVersion(conceptNid);
         LOG.debug("    Check " + conceptVersion.getPrimordialUuid() + ", "

@@ -70,9 +70,11 @@ public class CompositeSearchResult {
 		} else {
 			this.matchingComponentNid_ = matchingComponent.getNid();
 		}
-		//TODO - we need to evaluate / design proper behavior for how view coordinate should work with search
+		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getAssociatedConceptNid());
+
+                //TODO - we need to evaluate / design proper behavior for how view coordinate should work with search
 		//default back to just using this for the moment, rather than what OTFUtility says.
-		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid(), vc);
+		//this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid(), vc);
 	}
 	public CompositeSearchResult(int matchingComponentNid, float score) {
 		this.bestScore = score;

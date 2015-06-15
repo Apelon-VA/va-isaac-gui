@@ -6,6 +6,7 @@ import gov.va.isaac.models.util.CommonBase;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -278,8 +279,12 @@ public class OWLExporter extends CommonBase implements Exporter,
    * org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI#getNidSet()
    */
   @Override
-  public NativeIdSetBI getNidSet() throws IOException {
-    return dataStore.getAllConceptNids();
+  public NidSet getNidSet() {
+            try {
+                return NidSet.of(dataStore.getAllConceptNids().toConceptSequenceSet());
+            } catch (IOException ex) {
+               throw new RuntimeException(ex);
+            }
   }
 
   /*

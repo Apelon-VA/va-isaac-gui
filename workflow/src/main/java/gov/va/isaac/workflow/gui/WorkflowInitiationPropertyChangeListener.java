@@ -199,7 +199,7 @@ public class WorkflowInitiationPropertyChangeListener implements PropertyChangeL
 			try {
 				try {
 					UUID componentId = OTFUtility.getComponentChronicle(componentNid).getPrimordialUuid();
-					int currentConNid = OTFUtility.getComponentVersion(componentId).getConceptNid();
+					int currentConNid = OTFUtility.getComponentVersion(componentId).getAssociatedConceptNid();
 					
 					
 					if (!conceptWithComponentInOwnedTask(currentConNid) && !conceptWithComponentInOpenRequest(currentConNid) && componentNid != 0) {
@@ -208,7 +208,7 @@ public class WorkflowInitiationPropertyChangeListener implements PropertyChangeL
 				} catch (NullPointerException npe) {
 					try {
 						// Retired Component... send up Concept to WF
-						int currentConNid = OTFUtility.getComponentChronicle(componentNid).getConceptNid();
+						int currentConNid = OTFUtility.getComponentChronicle(componentNid).getAssociatedConceptNid();
 						
 						
 						if (!conceptWithComponentInOwnedTask(currentConNid) && !conceptWithComponentInOpenRequest(currentConNid) && currentConNid != 0) {
@@ -234,7 +234,7 @@ public class WorkflowInitiationPropertyChangeListener implements PropertyChangeL
 			UUID taskCompUuid = UUID.fromString(t.getComponentId());
 			
 			try {
-				int taskConNid = OTFUtility.getComponentChronicle(taskCompUuid).getConceptNid();
+				int taskConNid = OTFUtility.getComponentChronicle(taskCompUuid).getAssociatedConceptNid();
 		
 				if (taskConNid == currentConNid) {
 					return true;
@@ -256,7 +256,7 @@ public class WorkflowInitiationPropertyChangeListener implements PropertyChangeL
 			UUID taskCompUuid = UUID.fromString(t.getComponentId());
 			
 			try {
-				int taskConNid = OTFUtility.getComponentChronicle(taskCompUuid).getConceptNid();
+				int taskConNid = OTFUtility.getComponentChronicle(taskCompUuid).getAssociatedConceptNid();
 		
 				if (taskConNid == currentConNid) {
 					return true;

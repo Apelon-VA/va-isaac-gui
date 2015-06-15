@@ -198,7 +198,7 @@ public class ImportedModelsViewController {
                 Set<Integer> nids = new HashSet<>();
                 for (InformationModel model : selected) {
                   nids.add(OTFUtility.getComponentChronicle(model.getUuid())
-                      .getConceptNid());
+                      .getEnclosingConceptNid());
                 }
                 LOG.info("nids = " + nids);
                 return nids;

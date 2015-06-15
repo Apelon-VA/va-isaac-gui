@@ -231,7 +231,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 												
 												if(conceptIsChanged) {
 													//TODO: handleChangeConcept() Method
-													ConceptChronicleBI thisConChronicle = OTFUtility.getConceptVersion(caLatest.get().getConceptNid());
+													ConceptChronicleBI thisConChronicle = OTFUtility.getConceptVersion(caLatest.get().getAssociatedConceptNid());
 													exportRelsUnFiltered.addAll(handleNewConcept(thisConChronicle));
 													conceptCreated = true;
 												} else {
@@ -893,7 +893,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private String getTerminology(ComponentVersionBI cv) throws Exception {
 		int moduleNid = cv.getModuleNid();
-		int containingConceptNid = cv.getConceptNid();
+		int containingConceptNid = cv.getAssociatedConceptNid();
 		
 		if (currentRequestMap.containsKey(containingConceptNid))
 		{
@@ -918,7 +918,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		else if (moduleNid == IsaacMetadataAuxiliaryBinding.RXNORM.getLenient().getNid()) {
 			throw new Exception("Cannot export RxNorm Terminology");
 		}
-		else if (!isChildOfSCT(cv.getConceptNid())) {
+		else if (!isChildOfSCT(cv.getAssociatedConceptNid())) {
 			throw new Exception("Cannot something that isn't part of the SCT hierarchy");
 		}
 		else

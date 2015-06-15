@@ -62,9 +62,9 @@ public enum QueryNodeType implements QueryNodeTypeI {
 	 * ConceptForComponent(Query enclosingQuery, Clause child)
 	 * 
 	 * ConceptIs(Query enclosingQuery, String conceptSpec, String viewCoordinateKey)
-	 * ConceptIsChildOf(Query enclosingQuery, String kindOfSpecKey, String viewCoordinateKey)
-	 * ConceptIsDescendentOf(Query enclosingQuery, String kindOfSpecKey, String viewCoordinateKey)
-	 * ConceptIsKindOf(Query enclosingQuery, String kindOfSpecKey, String viewCoordinateKey)
+	 * ConceptIsChildOf(Query enclosingQuery, String childOfSpecKey, String viewCoordinateKey)
+	 * ConceptIsDescendentOf(Query enclosingQuery, String childOfSpecKey, String viewCoordinateKey)
+	 * ConceptIsKindOf(Query enclosingQuery, String childOfSpecKey, String viewCoordinateKey)
 	 * 
 	 * DescriptionActiveLuceneMatch(Query enclosingQuery, String luceneMatchKey, String viewCoordinateKey)
 	 * DescriptionActiveRegexMatch(Query enclosingQuery, String regexKey, String viewCoordinateKey)
