@@ -23,11 +23,14 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -36,8 +39,10 @@ import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
@@ -57,6 +62,25 @@ import org.slf4j.LoggerFactory;
 public class SearchHandler
 {
 	private static final Logger LOG = LoggerFactory.getLogger(SearchHandler.class);
+	
+	private static ViewCoordinate vc_;
+	
+	private static ViewCoordinate getViewCoordinate()
+	{
+		if (vc_ == null)
+		{
+			try
+			{
+				vc_ = ViewCoordinates.getDevelopmentStatedLatest();
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Unexpected", e);
+			}
+		}
+		return vc_;
+	}
+	
 
 	/**
 	 * Execute a Query against the description indexes in a background thread, hand back a handle to the search object which will 
@@ -332,19 +356,20 @@ public class SearchHandler
 									}
 
 									// Get the description object.
-									ComponentVersionBI cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
+									//TODO figure out how we handle view coordinate for search
+									Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(ViewCoordinates.getDevelopmentStatedLatest());
 
 									// normalize the scores between 0 and 1
 									float normScore = (searchResult.getScore() / maxScore);
-									CompositeSearchResult csr = (cc == null ? new CompositeSearchResult(searchResult.getNid(), normScore) : 
-										new CompositeSearchResult(cc, normScore));
+									CompositeSearchResult csr = (cc.isPresent() ? new CompositeSearchResult(cc.get(), normScore) : 
+										new CompositeSearchResult(searchResult.getNid(), normScore));
 									initialSearchResults.add(csr);
 									
 
 									// add one to the scores when we are doing a prefix search, and it hits.
-									if (prefixSearch && csr.getBestScore() <= 1.0f && cc instanceof DescriptionAnalogBI)
+									if (prefixSearch && csr.getBestScore() <= 1.0f && cc.isPresent() && cc.get() instanceof DescriptionAnalogBI)
 									{
-										String matchingString = ((DescriptionAnalogBI<?>) cc).getText();
+										String matchingString = ((DescriptionAnalogBI<?>) cc.get()).getText();
 										float adjustValue = 0f;
 
 										if (matchingString.toLowerCase().equals(localQuery.trim().toLowerCase()))
@@ -465,12 +490,31 @@ public class SearchHandler
 								}
 
 								// Get the match object.
-								ComponentVersionBI cc = dataStore.getComponent(searchResult.getNid()).getVersion(OTFUtility.getViewCoordinate());
+								ComponentChronicleBI<?> cc = dataStore.getComponent(searchResult.getNid());
+								if (cc == null)
+								{
+									//TODO OCHRE this code should be unecessary - the getComponent call above 
+									//currently isn't working correctly.  Wait for fix from Keith...
+									cc = dataStore.getRefex(searchResult.getNid());
+									if (cc == null)
+									{
+										cc = dataStore.getDynamicRefex(searchResult.getNid());
+									}
+								}
+								Optional<? extends ComponentVersionBI> cv;
+								if (cc != null)
+								{
+									cv = cc.getVersion(getViewCoordinate());
+								}
+								else
+								{
+									cv = Optional.empty();
+								}
 
 								// normalize the scores between 0 and 1
 								float normScore = (searchResult.getScore() / maxScore);
-								CompositeSearchResult csr = (cc == null ? new CompositeSearchResult(searchResult.getNid(), normScore) : 
-									new CompositeSearchResult(cc, normScore));
+								CompositeSearchResult csr = (cv.isPresent() ? new CompositeSearchResult(cv.get(), normScore) :
+									new CompositeSearchResult(searchResult.getNid(), normScore));
 								initialSearchResults.add(csr);
 							}
 						}

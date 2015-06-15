@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.importedmodelsview;
 
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
@@ -27,11 +28,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link DockedViewI} for displaying the "Imported Information Models" panel.
@@ -43,14 +47,16 @@ import org.jvnet.hk2.annotations.Service;
 public class ImportedModelsView implements DockedViewI {
 
     private final ImportedModelsViewController controller;
-
+    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
+    
     private ImportedModelsView() throws IOException {
-
+        long startTime = System.currentTimeMillis();
         // Load from FXML.
         URL resource = ImportedModelsView.class.getResource("ImportedModelsView.fxml");
         FXMLLoader loader = new FXMLLoader(resource);
         loader.load();
         controller = loader.getController();
+        LOG.debug(this.getClass().getSimpleName() + " construct time (blocking GUI): {}", System.currentTimeMillis() - startTime);
     }
 
     /**
@@ -74,16 +80,16 @@ public class ImportedModelsView implements DockedViewI {
      * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
      */
     @Override
-    public MenuItemI getMenuBarMenuToShowView() {
-        MenuItemI menuItem = new MenuItemI() {
+    public CheckMenuItemI getMenuBarMenuToShowView() {
+        CheckMenuItemI checkMenuItem = new CheckMenuItemI() {
             @Override
-            public void handleMenuSelection(Window parent) {
+            public void handleMenuSelection(Window parent, MenuItem menuItem) {
                 controller.setParent(parent);
             }
 
             @Override
             public int getSortOrder() {
-                return 5;
+                return 40;
             }
 
             @Override
@@ -106,7 +112,7 @@ public class ImportedModelsView implements DockedViewI {
                 return false;
             }
         };
-        return menuItem;
+        return checkMenuItem;
     }
 
     /**
@@ -115,5 +121,10 @@ public class ImportedModelsView implements DockedViewI {
     @Override
     public String getViewTitle() {
         return "Imported Information Models";
+    }
+    
+    @Override
+    public void viewDiscarded() {
+        //noop for now - this never gets called in the current GUI design on a dockedView
     }
 }

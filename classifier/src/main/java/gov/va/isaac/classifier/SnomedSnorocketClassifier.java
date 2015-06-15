@@ -13,7 +13,6 @@ import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
-
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -27,9 +26,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
@@ -44,7 +43,6 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import au.csiro.snorocket.core.IFactory_123;
 import au.csiro.snorocket.snapi.I_Snorocket_123.I_Callback;
 import au.csiro.snorocket.snapi.I_Snorocket_123.I_EquivalentCallback;
@@ -343,7 +341,6 @@ public class SnomedSnorocketClassifier implements Classifier {
 
     // Run garbage collector
     System.gc();
-    System.gc();
 
     // Classify
     fireProgressEvent(71, "Classify");
@@ -391,7 +388,6 @@ public class SnomedSnorocketClassifier implements Classifier {
     pr = null;
     // save for incremental classification
     // rocket_123 = null;
-    System.gc();
     System.gc();
 
     // Write back results - disable commit listeners during this
@@ -850,8 +846,8 @@ public class SnomedSnorocketClassifier implements Classifier {
       final RelationshipCAB rcab =
           new RelationshipCAB(rel.getConceptNid(), rel.getTypeNid(),
               rel.getDestinationNid(), 1, RelationshipType.getRelationshipType(
-                  rel.getRefinabilityNid(), rel.getCharacteristicNid()), rel,
-              OTFUtility.getViewCoordinate(), IdDirective.PRESERVE,
+                  rel.getRefinabilityNid(), rel.getCharacteristicNid()), Optional.of(rel),
+              Optional.of(OTFUtility.getViewCoordinate()), IdDirective.PRESERVE,
               RefexDirective.EXCLUDE);
       rcab.setStatus(Status.INACTIVE);
       OTFUtility.getBuilder().constructIfNotCurrent(rcab);
@@ -1152,7 +1148,7 @@ public class SnomedSnorocketClassifier implements Classifier {
     StringIDConcept stringIdConcept =
         new StringIDConcept(concept.getNid(), String.valueOf(concept.getNid()),
             concept.getConceptAttributes()
-                .getVersion(OTFUtility.getViewCoordinate()).isDefined());
+                .getVersion(OTFUtility.getViewCoordinate()).get().isDefined());
 
     // save so we can map nids to their classifier ids.
     nidSeen.add(concept.getNid());

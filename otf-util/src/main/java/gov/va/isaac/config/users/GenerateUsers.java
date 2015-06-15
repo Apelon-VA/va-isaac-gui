@@ -202,11 +202,11 @@ public class GenerateUsers
 	
 			LanguageCode lc = LanguageCode.EN_US;
 			UUID isA = IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid();
-			IdDirective idDir = IdDirective.GENERATE_RANDOM;  //TODO OCHRE fix this
+			IdDirective idDir = IdDirective.PRESERVE;
 			UUID module = IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getPrimodialUuid();
 			UUID parents[] = new UUID[] {IsaacMetadataAuxiliaryBinding.USER.getPrimodialUuid()};
 	
-			ConceptCB cab = new ConceptCB(fsn, preferredName, lc, isA, idDir, module, userUUID, parents);
+			ConceptCB cab = new ConceptCB(fsn, preferredName, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), userUUID, parents);
 	
 			DescriptionCAB dCab = new DescriptionCAB(cab.getComponentUuid(), IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid(), lc, logonName, true,
 					IdDirective.GENERATE_HASH);
@@ -226,7 +226,7 @@ public class GenerateUsers
 			//Build this on the lowest level path, otherwise, other code that references this will fail (as it doesn't know about custom paths)
 			ConceptChronicleBI newCon = ts.getTerminologyBuilder(
 					new EditCoordinate(IsaacMetadataAuxiliaryBinding.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(), 
-							IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
+							IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
 			ts.addUncommitted(newCon);
 			ts.commit();  //TODO OCHRE change back to a concept commit
 		}

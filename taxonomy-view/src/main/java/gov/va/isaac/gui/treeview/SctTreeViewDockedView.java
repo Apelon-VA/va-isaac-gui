@@ -21,26 +21,28 @@ package gov.va.isaac.gui.treeview;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.util.OTFUtility;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
-
 import javax.inject.Named;
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SctTreeViewDockedView
@@ -51,12 +53,21 @@ import org.jvnet.hk2.annotations.Service;
 @Singleton
 public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI 
 {
+	private final Logger LOG = LoggerFactory.getLogger(SctTreeViewDockedView.class);
 	private SctTreeView sctTreeView_;
 	private boolean hasBeenInited_ = false;
+	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
+	private ProgressIndicator treeViewProgress = new ProgressIndicator(-1);
 	
 	private SctTreeViewDockedView()
 	{
+		long startTime = System.currentTimeMillis();
 		sctTreeView_ = new SctTreeView();
+		treeViewProgress.setMaxSize(16, 16);
+		treeViewProgress.setPrefSize(16, 16);
+		treeViewProgress.visibleProperty().bind(treeViewSearchRunning);
+		sctTreeView_.addToToolBar(treeViewProgress);
+		LOG.debug(this.getClass().getSimpleName() + " construct time (blocking GUI): {}", System.currentTimeMillis() - startTime);
 	}
 	
 	public void showConcept(final UUID conceptUUID, final BooleanProperty workingIndicator) 
@@ -84,13 +95,13 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
 	 */
 	@Override
-	public MenuItemI getMenuBarMenuToShowView()
+	public CheckMenuItemI getMenuBarMenuToShowView()
 	{
-		return new MenuItemI()
+		return new CheckMenuItemI()
 		{
 			
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				if (!hasBeenInited_)
 				{
@@ -103,7 +114,7 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 6;
+				return 10;
 			}
 			
 			@Override
@@ -156,8 +167,11 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 	@Override
 	public void locateConcept(UUID uuid, BooleanProperty busyIndicator)
 	{
-		//TODO (artf231864) add a visible progress indicator while this happens
-		showConcept(uuid, busyIndicator);
+		if (busyIndicator == null)
+		{
+			treeViewSearchRunning.set(true);
+		}
+		showConcept(uuid, (busyIndicator == null ? treeViewSearchRunning : busyIndicator));
 		AppContext.getMainApplicationWindow().ensureDockedViewIsVisble(this);
 	}
 
@@ -191,5 +205,11 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 	@Override
 	public SctTreeItemDisplayPolicies getDefaultDisplayPolicies() {
 		return SctTreeView.getDefaultDisplayPolicies();
+	}
+
+	@Override
+	public void viewDiscarded()
+	{
+		sctTreeView_.shutdownInstance();
 	}
 }

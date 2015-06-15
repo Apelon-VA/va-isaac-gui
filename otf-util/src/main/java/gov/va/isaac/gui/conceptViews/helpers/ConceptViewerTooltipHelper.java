@@ -133,7 +133,7 @@ public class ConceptViewerTooltipHelper {
 	}
 
 	private String createConTooltipText(ConceptAttributeVersionBI<?> attr) {
-		return "SctId: " + ConceptViewerHelper.getSctId(attr)+ " " + ConceptViewerHelper.getPrimDef(attr) + getStampTooltip(attr);
+		return "SctId: " + ConceptViewerHelper.getSctId(attr.getNid()).get()+ " " + ConceptViewerHelper.getPrimDef(attr) + getStampTooltip(attr);
 	}
 	
 	private String createRelTooltipText(RelationshipVersionBI<?> rel) {

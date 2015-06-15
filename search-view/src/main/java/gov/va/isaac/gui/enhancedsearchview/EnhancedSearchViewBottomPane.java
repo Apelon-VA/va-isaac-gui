@@ -1,20 +1,6 @@
 package gov.va.isaac.gui.enhancedsearchview;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.enhancedsearchview.model.EnhancedSavedSearch;
 import gov.va.isaac.gui.enhancedsearchview.model.SearchModel;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.ResultsToDrools;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.ResultsToRefset;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.ResultsToReport;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.ResultsToTaxonomy;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.ResultsToWorkflow;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
-import gov.va.isaac.search.CompositeSearchResult;
-import gov.vha.isaac.ochre.api.LookupService;
-import java.util.ArrayList;
-import java.util.List;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,26 +8,24 @@ import javafx.geometry.VPos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class EnhancedSearchViewBottomPane {
-	private static final Logger LOG = LoggerFactory.getLogger(EnhancedSearchViewBottomPane.class);
+	//private static final Logger LOG = LoggerFactory.getLogger(EnhancedSearchViewBottomPane.class);
 
 	private GridPane bottomPanelGridPane;
 
+	/*
 	private VBox resultsVBox;
 	private Button resultsToReportButton = new Button("Report");
 	private Button resultsToListButton = new Button("List");
@@ -49,17 +33,19 @@ public class EnhancedSearchViewBottomPane {
 	private Button resultsToTaxonomyButton = new Button("Taxonomy");
 	private Button resultsToSememeButton = new Button("Sememe");
 	private Button resultsToDroolsButton = new Button("Drools");
+	*/
 	
 	private Button resetDefaultsButton;
 
 	private VBox labelsVBox;
 	private Label totalResultsSelectedLabel;
+	private Label resultsOffPathLabel;
 	private Label totalResultsReturnedLabel;
 
-	private VBox saveSearchContainerVBox;
+	//private VBox saveSearchContainerVBox;
 
 	private SearchModel searchModel = new SearchModel();
-
+	
 	private Font boldFont = new Font("System Bold", 13.0);
 	private BorderStroke borderStroke = new BorderStroke(Paint.valueOf("BLACK"), BorderStrokeStyle.SOLID, new CornerRadii(10), new BorderWidths(1), new Insets(5));
 
@@ -73,19 +59,20 @@ public class EnhancedSearchViewBottomPane {
 		initializeResultLabels();
 
 		// Handle Results
-		initializeResultsOptions(stage);
+		//initializeResultsOptions(stage);
 		
 		// Handle Save Search 
-		initializeSaveSearchOptions();
+		//initializeSaveSearchOptions();
 		
 		initializeDefaultOptions();
 
-		bottomPanelGridPane.setConstraints(labelsVBox,  0,  0,  1,  1,  HPos.LEFT,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
-		bottomPanelGridPane.setConstraints(resultsVBox,  1,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS);
-		bottomPanelGridPane.setConstraints(saveSearchContainerVBox,  2,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS);
-		bottomPanelGridPane.setConstraints(resetDefaultsButton,  3,  0,  1,  1,  HPos.RIGHT,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
+		GridPane.setConstraints(labelsVBox,  0,  0,  1,  1,  HPos.LEFT,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
+		//bottomPanelGridPane.setConstraints(resultsVBox,  1,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS);
+		//GridPane.setConstraints(saveSearchContainerVBox,  2,  0,  1,  1,  HPos.CENTER,  VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS);
+		GridPane.setConstraints(resetDefaultsButton,  3,  0,  1,  1,  HPos.RIGHT,  VPos.CENTER, Priority.NEVER, Priority.ALWAYS);
 
-		bottomPanelGridPane.addRow(0, labelsVBox, resultsVBox, saveSearchContainerVBox, resetDefaultsButton);
+		//bottomPanelGridPane.addRow(0, labelsVBox, resultsVBox, saveSearchContainerVBox, resetDefaultsButton);
+		bottomPanelGridPane.addRow(0, labelsVBox, resetDefaultsButton);
 	}
 
 	private void initializeResultLabels() {
@@ -98,12 +85,19 @@ public class EnhancedSearchViewBottomPane {
 		totalResultsSelectedLabel.setFont(boldFont);
 		totalResultsSelectedLabel.setPrefWidth(Control.USE_COMPUTED_SIZE);
 		totalResultsSelectedLabel.setMinWidth(Control.USE_PREF_SIZE);
-
+		 
+		resultsOffPathLabel = new Label();
+		resultsOffPathLabel.setFont(boldFont);
+		resultsOffPathLabel.setPrefWidth(Control.USE_COMPUTED_SIZE);
+		resultsOffPathLabel.setMinWidth(Control.USE_PREF_SIZE);
+		
 		labelsVBox = new VBox(15);
 		labelsVBox.getChildren().add(totalResultsReturnedLabel);
+		labelsVBox.getChildren().add(resultsOffPathLabel);
 		labelsVBox.getChildren().add(totalResultsSelectedLabel);
 	}
 
+	/*
 	private void initializeSaveSearchOptions() {
 		EnhancedSavedSearch savedSearch = new EnhancedSavedSearch();
 		saveSearchContainerVBox = new VBox(15);
@@ -122,8 +116,10 @@ public class EnhancedSearchViewBottomPane {
 		saveSearchContainerVBox.getChildren().add(saveSearchLabel);
 		saveSearchContainerVBox.getChildren().add(saveSearchHBox);
 	}
+	*/
 
 	public void refreshBottomPanel() {
+		/*
 		if (searchModel.getSearchResultsTable().getResults().getItems().size() == 0) {
 			disableButtons(true);		
 		} else if (searchModel.getSearchResultsTable().getResults().getItems().size() > 5) {
@@ -131,19 +127,23 @@ public class EnhancedSearchViewBottomPane {
 		} else {
 			disableButtons(false);	
 		}
+		*/
 		
-		if (searchModel.getSearchResultsTable().getResults().getItems().size() == 1) {
-			totalResultsReturnedLabel.setText(searchModel.getSearchResultsTable().getResults().getItems().size() + " entry displayed");
+		if (SearchModel.getSearchResultsTable().getResults().getItems().size() == 1) {
+			totalResultsReturnedLabel.setText(SearchModel.getSearchResultsTable().getResults().getItems().size() + " entry displayed");
 		} else {
-			totalResultsReturnedLabel.setText(searchModel.getSearchResultsTable().getResults().getItems().size() + " entries displayed");
+			totalResultsReturnedLabel.setText(SearchModel.getSearchResultsTable().getResults().getItems().size() + " entries displayed");
 		}
 
-		disableButtons(false);		
+		resultsOffPathLabel.setText(SearchModel.getResultsOffPathCount() + " off-path " + ((SearchModel.getResultsOffPathCount() == 1)? "entry" : "entries") + " not displayed");
+		
+		// Why unconditionally enable buttons here when you conditionally disable them above???
+		//disableButtons(false);		
 	}
 
 
 	public void refreshTotalResultsSelectedLabel() {
-		int numSelected = searchModel.getSearchResultsTable().getResults().getSelectionModel().getSelectedIndices().size();
+		int numSelected = SearchModel.getSearchResultsTable().getResults().getSelectionModel().getSelectedIndices().size();
 		switch (numSelected) {
 		case 0:
 			totalResultsSelectedLabel.setText("No results selected");
@@ -166,6 +166,7 @@ public class EnhancedSearchViewBottomPane {
 		resetDefaultsButton.setOnAction((e) -> resetDefaults());
 	}
 
+	/*
 	private void initializeResultsOptions(Stage stage) {
 		initializeButtons(stage);
 		ResultsToTaxonomy.initializeTaxonomyPanel();
@@ -174,6 +175,7 @@ public class EnhancedSearchViewBottomPane {
 		resultsVBox.setAlignment(Pos.CENTER);
 		resultsVBox.setPadding(new Insets(10));
 		resultsVBox.setBorder(new Border(borderStroke));
+
 		
 		Label resultsLabel = new Label("Handle Results");
 		resultsLabel.setFont(boldFont);
@@ -213,8 +215,7 @@ public class EnhancedSearchViewBottomPane {
 		resultsToSememeButton.setMinWidth(Control.USE_PREF_SIZE);
 		resultsToDroolsButton.setMinWidth(Control.USE_PREF_SIZE);
 		disableButtons(true);	
-}
-
+	}
 
 	private void createSememe(Stage stage) {
 		try {
@@ -241,16 +242,17 @@ public class EnhancedSearchViewBottomPane {
 
 		lv.addConcepts(nids);
 	}
-
+	*/
 
 	public GridPane getBottomPaneHBox() {
 		return bottomPanelGridPane;
 	}
 	private void resetDefaults() {
 
-		searchModel.getSearchResultsTable().initializeSearchResultsTable(searchModel.getSearchTypeSelector().getCurrentType(), searchModel.getResultsTypeComboBox().getSelectionModel().getSelectedItem());
+		SearchModel.getSearchResultsTable().initializeSearchResultsTable(SearchModel.getSearchTypeSelector().getCurrentType(), searchModel.getResultsTypeComboBox().getSelectionModel().getSelectedItem());
 	}
 
+	/*
 	private void disableButtons(boolean val) {
 		resultsToReportButton.setDisable(val);
 		resultsToListButton.setDisable(val);
@@ -259,6 +261,7 @@ public class EnhancedSearchViewBottomPane {
 		resultsToSememeButton.setDisable(val);
 		resultsToDroolsButton.setDisable(val);
 	}
+	*/
 
 }
 

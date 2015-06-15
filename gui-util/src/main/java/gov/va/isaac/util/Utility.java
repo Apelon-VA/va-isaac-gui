@@ -20,6 +20,7 @@ package gov.va.isaac.util;
 
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.util.WorkExecutors;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -62,6 +63,10 @@ public class Utility {
     public static <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
         return scheduledExecutor_.schedule(callable, delay, unit);
     }
+    
+    public static ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        return scheduledExecutor_.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
 
     public static UUID getUUID(String string) {
         if (string == null)
@@ -94,6 +99,16 @@ public class Utility {
             return false;
         }
     }
+
+    /**
+     * Same as isInt / getInt - however - only returns a value if the parsed integer is negative.
+     * @param string
+     * @return
+     */
+    public static Optional<Integer> getNID(String string) {
+        Integer possibleInt = getInt(string);
+        return possibleInt != null && possibleInt.intValue() < 0 ? Optional.of(possibleInt) : Optional.empty();
+    }
     
     public static boolean isInt(String string) {
         return (getInt(string) != null);
@@ -110,5 +125,21 @@ public class Utility {
     public static void shutdownThreadPools()
     {
         scheduledExecutor_.shutdownNow();
+    }
+    
+    public static int compareStringsIgnoreCase(String s1, String s2) {
+    	int rval = 0;
+    	
+    	if (s1 != null || s2 != null) {
+    		if (s1 == null) {
+    			rval = -1;
+    		} else if (s2 == null) {
+    			rval = 1;
+    		} else {
+    			rval = s1.trim().toLowerCase().compareTo(s2.trim().toLowerCase());
+    		}
+    	}
+    	
+    	return rval;
     }
 }

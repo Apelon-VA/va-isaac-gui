@@ -22,19 +22,29 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.RuntimeGlobals;
 import gov.va.isaac.gui.util.FxUtils;
+import gov.va.isaac.gui.util.HeapStatusBar;
 import gov.va.isaac.gui.util.ToolTipDefaultsFixer;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.utility.ServicesToPreloadI;
+import gov.va.isaac.util.UpdateableDoubleBinding;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
@@ -45,10 +55,18 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.ToolBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import javax.inject.Inject;
 import org.glassfish.hk2.api.IterableProvider;
 import org.slf4j.Logger;
@@ -65,9 +83,16 @@ public class AppController {
     private static final Logger LOG = LoggerFactory.getLogger(AppController.class);
 
     private BorderPane root_;
+    private ToolBar toolbar_;
     private SplitPane mainSplitPane;
     private MenuBar menuBar;
     private BorderPane loadWait;
+    
+    private ProgressBar backgroundTasksBar_;
+    private Text backgroundTasksLabel_;
+    private UpdateableDoubleBinding backgroundTasksProgress_;
+    private ArrayList<Task<?>> backgroundTasks_ = new ArrayList<>();
+    
     private boolean preloadExecuted = false;
 
 
@@ -97,11 +122,10 @@ public class AppController {
         root_.setMaxWidth(Double.MAX_VALUE);
         
         loadWait = new BorderPane();
-        loadWait.setCenter(LightWeightDialogs.buildLoadingDialog());
+        loadWait.setCenter(LightWeightDialogs.buildWaitDialog("Loading the database"));
         mainSplitPane.getItems().add(loadWait);
         mainSplitPane.setMaxWidth(Double.MAX_VALUE);
         mainSplitPane.setMaxHeight(Double.MAX_VALUE);
-        
         
         menuBar = new MenuBar();
         for (ApplicationMenus menu : ApplicationMenus.values())
@@ -120,58 +144,94 @@ public class AppController {
         
         root_.setTop(menuBar);
 
-        //Sort them...
-        TreeSet<MenuItemI> menusToAdd = new TreeSet<>();
+        //Sort them... per parent menu
+        HashMap<String, TreeSet<MenuItemI>> menusToAdd = new HashMap<>();
         for (IsaacViewWithMenusI view : moduleViews_)
         {
             for (MenuItemI menuItem : view.getMenuBarMenus())
             {
-                menusToAdd.add(menuItem);
+                TreeSet<MenuItemI> treeSet = menusToAdd.get(menuItem.getParentMenuId());
+                if (treeSet == null)
+                {
+                    treeSet = new TreeSet<>();
+                    menusToAdd.put(menuItem.getParentMenuId(), treeSet);
+                }
+                treeSet.add(menuItem);
             }
         }
 
-        for (final MenuItemI menuItemsToCreate : menusToAdd)
+        for (final TreeSet<MenuItemI> groupedMenuItemsToCreate : menusToAdd.values())
         {
-            Menu parentMenu = allMenus_.get(menuItemsToCreate.getParentMenuId());
-            if (parentMenu == null)
+            for (final MenuItemI menuItemToCreate : groupedMenuItemsToCreate)
             {
-                LOG.error("Cannot add module menu '" + menuItemsToCreate.getMenuId() + "' because the specified parent menu doesn't exist");
-            }
-            else
-            {
-                MenuItem menuItem = new MenuItem();
-                menuItem.setId(menuItemsToCreate.getMenuId());
-                menuItem.setText(menuItemsToCreate.getMenuName());
-                menuItem.setMnemonicParsing(menuItemsToCreate.enableMnemonicParsing());
-                menuItem.setOnAction(new EventHandler<ActionEvent>()
+                Menu parentMenu = allMenus_.get(menuItemToCreate.getParentMenuId());
+                if (parentMenu == null)
                 {
-                    @Override
-                    public void handle(ActionEvent arg0)
+                    LOG.error("Cannot add module menu '" + menuItemToCreate.getMenuId() + "' because the specified parent menu doesn't exist");
+                }
+                else
+                {
+                    MenuItem menuItem;
+                    if (menuItemToCreate instanceof CheckMenuItemI)
                     {
-                        menuItemsToCreate.handleMenuSelection(root_.getScene().getWindow());
+                        menuItem = new CheckMenuItem();
+                        ((CheckMenuItem)menuItem).setSelected(((CheckMenuItemI)menuItemToCreate).initialState());
+                        menuItem.setOnAction(new EventHandler<ActionEvent>()
+                        {
+                            @Override
+                            public void handle(ActionEvent arg0)
+                            {
+                                menuItemToCreate.handleMenuSelection(root_.getScene().getWindow(), (CheckMenuItem)menuItem);
+                            }
+                        });
                     }
-                });
-                if (menuItemsToCreate.getImage() != null)
-                {
-                    menuItem.setGraphic(new ImageView(menuItemsToCreate.getImage()));
+                    else
+                    {
+                        menuItem = new MenuItem();
+                    }
+                    
+                    menuItem.setId(menuItemToCreate.getMenuId());
+                    menuItem.setText(menuItemToCreate.getMenuName());
+                    menuItem.setMnemonicParsing(menuItemToCreate.enableMnemonicParsing());
+                    menuItem.setOnAction(new EventHandler<ActionEvent>()
+                    {
+                        @Override
+                        public void handle(ActionEvent arg0)
+                        {
+                            menuItemToCreate.handleMenuSelection(root_.getScene().getWindow(), menuItem);
+                        }
+                    });
+                    if (menuItemToCreate.getImage() != null)
+                    {
+                        menuItem.setGraphic(new ImageView(menuItemToCreate.getImage()));
+                    }
+                    if (menuItemToCreate.getDisableBinding() != null)
+                    {
+                        menuItem.disableProperty().bind(menuItemToCreate.getDisableBinding());
+                    }
+                    parentMenu.getItems().add(menuItem);
                 }
-                if (menuItemsToCreate.getDisableBinding() != null)
-                {
-                    menuItem.disableProperty().bind(menuItemsToCreate.getDisableBinding());
-                }
-                parentMenu.getItems().add(menuItem);
-                //TODO fix this sorting API stuff... supposed to be sorted by the menu order in the menu API - but was never finished... see other TODO below.
-                parentMenu.getItems().sort(new Comparator<MenuItem>() {
-                  @Override
-                  public int compare(MenuItem o1, MenuItem o2) {
-                    return o1.getText().compareTo(o2.getText());
-                  }
-                  
-                });
             }
         }
 
-        for (final DockedViewI dv : dockedViews_)
+        LOG.debug("Menus configured");
+        
+        ArrayList<DockedViewI> sortedDockedViews = new ArrayList<>();
+        for (DockedViewI dv : dockedViews_)
+        {
+            sortedDockedViews.add(dv);
+        }
+        Collections.sort(sortedDockedViews, new Comparator<DockedViewI>()
+        {
+            @Override
+            public int compare(DockedViewI o1, DockedViewI o2)
+            {
+                return o1.getMenuBarMenuToShowView().compareTo(o2.getMenuBarMenuToShowView());
+            }
+        });
+        
+       
+        for (final DockedViewI dv : sortedDockedViews)
         {
             try
             {
@@ -183,7 +243,6 @@ public class AppController {
                 else
                 {
                     final BorderPane bp = buildPanelForView(dv);
-                    //TODO this isn't honoring sort order... need to sort all of the menus from the DockedViewI at once....
                     final CheckMenuItem mi = new CheckMenuItem();
                     mi.setText(dv.getMenuBarMenuToShowView().getMenuName());
                     mi.setId(dv.getMenuBarMenuToShowView().getMenuId());
@@ -194,7 +253,9 @@ public class AppController {
                         public void invalidated(Observable observable)
                         {
                             //This is a convenience call... not expected to actually show the view.
-                            dv.getMenuBarMenuToShowView().handleMenuSelection(root_.getScene().getWindow());
+                            dv.getMenuBarMenuToShowView().handleMenuSelection(root_.getScene().getWindow(), mi);
+                            //call both APIs, not all callers may have implemented the newer one (which has a default)
+                            dv.getMenuBarMenuToShowView().handleMenuSelection(root_.getScene().getWindow(), (MenuItem)mi);  
                             if (mi.isSelected() && !mainSplitPane.getItems().contains(bp))
                             {
                                 mainSplitPane.getItems().add(bp);
@@ -218,6 +279,87 @@ public class AppController {
                 LOG.error("Unexpected error configuring DockedViewI " + (dv == null ? "?" : dv.getViewTitle()), e);
             }
         }
+        LOG.debug("Docked Views configured");
+        
+        toolbar_ = new ToolBar();
+        toolbar_.setPrefSize(Double.MAX_VALUE, 24.0);
+        toolbar_.setOrientation(Orientation.HORIZONTAL);
+        
+        StackPane sp = new StackPane();
+        sp.setPrefWidth(200.0);
+        
+        backgroundTasksBar_ = new ProgressBar(0.0);
+        backgroundTasksBar_.setPrefWidth(Double.MAX_VALUE);
+        sp.getChildren().add(backgroundTasksBar_);
+        
+        backgroundTasksLabel_ = new Text("0 background tasks");
+        sp.getChildren().add(backgroundTasksLabel_);
+        
+        backgroundTasksProgress_ = new UpdateableDoubleBinding()
+        {
+            @Override
+            protected double computeValue()
+            {
+                double total = 0;
+                double current = 0;
+                boolean indeterminite = false;
+                
+                Iterator<Task<?>> taskIterator = backgroundTasks_.iterator();
+                try
+                {
+                    while (taskIterator.hasNext())
+                    {
+                        Task<?> t = taskIterator.next();
+                        if (t.isDone())
+                        {
+                            taskIterator.remove();
+                            backgroundTasksProgress_.removeBinding(t.workDoneProperty());
+                            continue;
+                        }
+                        
+                        if (t.getTotalWork() == -1)
+                        {
+                            indeterminite = true;
+                            //don't break - want to check if any are done
+                        }
+                        else
+                        {
+                            total += t.getTotalWork();
+                            current += t.getWorkDone();
+                        }
+                    }
+                }
+                catch (ConcurrentModificationException e)
+                {
+                    // don't care, clean up next time
+                }
+                
+                backgroundTasksLabel_.setText(backgroundTasks_.size() + " background task" + (backgroundTasks_.size() == 1 ? "" : "s"));
+                
+                if (indeterminite)
+                {
+                    return -1;
+                }
+                else
+                {
+                    return (total == 0 ? 0 : current / total);
+                }
+            }
+        };
+        
+        backgroundTasksBar_.progressProperty().bind(backgroundTasksProgress_);
+        
+        toolbar_.getItems().add(sp);
+        Region spacer = new Region();
+        spacer.setPrefWidth(Region.USE_PREF_SIZE);
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        toolbar_.getItems().add(spacer);
+        toolbar_.getItems().add(new Separator(Orientation.VERTICAL));
+        toolbar_.getItems().add(new HeapStatusBar());
+        
+        root_.setBottom(toolbar_);
+        
+        LOG.debug("Toolbar configured");
     }
     
     public BorderPane getRoot()
@@ -236,6 +378,7 @@ public class AppController {
             service.loadRequested();
         }
         preloadExecuted = true;
+        LOG.debug("Preloads complete");
         
         loadWait.getChildren().clear();
         
@@ -344,5 +487,15 @@ public class AppController {
                 service.shutdown();
             }
         }
+    }
+    
+    protected void addBackgroundTask(Task<?> task)
+    {
+        backgroundTasks_.add(task);
+        Platform.runLater(() -> 
+        {    
+            task.runningProperty().addListener((change) -> backgroundTasksProgress_.invalidate());
+            backgroundTasksProgress_.addBinding(task.workDoneProperty());
+        });
     }
 }

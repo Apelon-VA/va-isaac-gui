@@ -247,7 +247,7 @@ public class WorkflowAdvancementViewController
 			}
 		} else {
 			try {
-				containingConcept = ExtendedAppContext.getDataStore().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate());
+				containingConcept = ExtendedAppContext.getDataStore().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate()).get();
 			} catch (Exception e) {
 				String details = "Failed getting version from ComponentChronicleBI task " + initialTask.getId() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
 

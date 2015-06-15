@@ -22,6 +22,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.util.OTFUtility;
 import java.io.IOException;
+import java.util.Optional;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -89,10 +90,14 @@ public class Association
 
 	public String getAssociationName() throws IOException, ContradictionException
 	{
-		ConceptVersionBI cc = getAssociationTypeConcept().getVersion(OTFUtility.getViewCoordinate());
+		Optional<? extends ConceptVersionBI> cc = getAssociationTypeConcept().getVersion(OTFUtility.getViewCoordinate());
+		if (!cc.isPresent())
+		{
+			return "NOT ON PATH!";
+		}
 		
 		String best = null;
-		for (DescriptionVersionBI<?> desc : cc.getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
+		for (DescriptionVersionBI<?> desc : cc.get().getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
 		{
 			if (best == null)
 			{
@@ -108,9 +113,13 @@ public class Association
 
 	public String getAssociationInverseName() throws ContradictionException, IOException
 	{
-		ConceptVersionBI cc = getAssociationTypeConcept().getVersion(OTFUtility.getViewCoordinate());
+		Optional<? extends ConceptVersionBI> cc = getAssociationTypeConcept().getVersion(OTFUtility.getViewCoordinate());
+		if (!cc.isPresent())
+		{
+			return "NOT ON PATH!";
+		}
 		
-		for (DescriptionVersionBI<?> desc : cc.getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
+		for (DescriptionVersionBI<?> desc : cc.get().getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
 		{
 			for (RefexDynamicVersionBI<?> descNestedType : desc.getRefexesDynamicActive(OTFUtility.getViewCoordinate()))
 			{

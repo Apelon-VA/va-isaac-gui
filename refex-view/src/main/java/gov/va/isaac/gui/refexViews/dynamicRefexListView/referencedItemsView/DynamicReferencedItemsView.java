@@ -18,12 +18,10 @@
  */
 package gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView;
 
-import java.util.concurrent.TimeUnit;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
-import gov.va.isaac.util.Utility;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -82,8 +80,7 @@ public class DynamicReferencedItemsView implements PopupViewI
 		stage.onHiddenProperty().set((eventHandler) ->
 		{
 			stage.setScene(null);
-			//No other way to force a timely release of all of the bindings that would still fire / still recalculate data..
-			Utility.schedule(() -> System.gc(), 250, TimeUnit.MILLISECONDS);
+			drv_.viewDiscarded();
 		});
 		stage.show();
 		drv_.setAssemblage(assemblageConcept_.getNid(), null, null, null, true);

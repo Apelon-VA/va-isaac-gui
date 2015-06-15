@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.SelectionMode;
@@ -49,6 +49,8 @@ public class SearchResultsTable  {
 	private final TableView<CompositeSearchResult> results = new TableView<CompositeSearchResult>();
 	
 	private static final Logger LOG = LoggerFactory.getLogger(SearchResultsTable.class);
+	
+	private static final String CELL_ERROR_TEXT = "--ERROR--";
 	
 	private ResultsType resultsType;
 	private EnhancedSearchViewBottomPane bottomPane;
@@ -162,22 +164,53 @@ public class SearchResultsTable  {
 
 	private void initializeNidColumn() {
 		// NID set to invisible because largely for debugging purposes only
-		nidCol.setCellValueFactory((param) -> new SimpleIntegerProperty(param.getValue().getContainingConcept().getNid()));
+		nidCol.setCellValueFactory((param) -> {
+			try {
+				return new SimpleIntegerProperty(param.getValue().getContainingConcept().getNid());
+			} catch (Exception e) {
+				LOG.error("initializeNidColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
+				return new SimpleIntegerProperty(0);
+			}
+		});
 		nidCol.setCellFactory(new MyTableCellCallback<Number>());
 		nidCol.setVisible(false);
-
 	}	
 	
 	private void initializeUuidColumn() {
 		// UUID set to invisible because largely for debugging purposes only
-		uuIdCol.setCellValueFactory((param) -> new SimpleStringProperty(param.getValue().getContainingConcept().getPrimordialUuid().toString().trim()));
+		uuIdCol.setCellValueFactory((param) -> {
+			try {
+				return new SimpleStringProperty(param.getValue().getContainingConcept().getPrimordialUuid().toString().trim());
+			} catch (Exception e) {
+				LOG.error("initializeUuidColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			}
+		});
+
 		uuIdCol.setVisible(false);
 		uuIdCol.setCellFactory(new MyTableCellCallback<String>());
 	}
 	
 	private void initializeSctIdColumn() {
 		// Optional SCT ID
-		sctIdCol.setCellValueFactory((param) -> new SimpleStringProperty(ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(param.getValue().getContainingConcept())).trim()));
+		sctIdCol.setCellValueFactory((param) -> {
+			try {
+				Optional<? extends Long> sctId = ConceptViewerHelper.getSctId(param.getValue().getContainingConcept().getNid());
+				if(sctId.isPresent()) {
+					return new SimpleStringProperty(String.valueOf(sctId.get()));
+				} else {
+					return new SimpleStringProperty("");
+				}
+				
+			} catch (Exception e) {
+				LOG.error("initializeSctIdColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			}
+		});
+
 		sctIdCol.setCellFactory(new MyTableCellCallback<String>());
 	}
 	
@@ -186,7 +219,16 @@ public class SearchResultsTable  {
 		// matchingDescTypeCol is string value type of matching description term displayed
 		// Only meaningful for AggregationType DESCRIPTION
 		// When AggregationTyppe is CONCEPT should always be type of first match
-		matchingDescTypeCol.setCellValueFactory((param) -> new SimpleStringProperty(OTFUtility.getConPrefTerm(param.getValue().getMatchingDescriptionComponents().iterator().next().getTypeNid())));
+		
+		matchingDescTypeCol.setCellValueFactory((param) -> {
+			try {
+				return new SimpleStringProperty(OTFUtility.getConPrefTerm(param.getValue().getMatchingDescriptionComponents().iterator().next().getTypeNid()));
+			} catch (Exception e) {
+				LOG.error("initializeTypeColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			}
+		});
+
 		matchingDescTypeCol.setCellFactory(new MyTableCellCallback<String>());
 		// matchingDescTypeCol defaults to invisible for anything but DESCRIPTION
 		if (resultsType != ResultsType.DESCRIPTION) {
@@ -197,24 +239,35 @@ public class SearchResultsTable  {
 	private void initializeMatchingTextColumn() {
 		// Matching description text.
 		// If AggregationType is CONCEPT then arbitrarily picks first matching description
-		matchingTextCol.setCellValueFactory((param) -> new SimpleStringProperty(param.getValue().getMatchingStrings().iterator().next().trim()));
+		matchingTextCol.setCellValueFactory((param) -> {
+			try {
+				return new SimpleStringProperty(param.getValue().getMatchingStrings().iterator().next().trim());
+			} catch (Exception e) {
+				LOG.error("initializeMatchingTextColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			}
+		});
+
 		matchingTextCol.setCellFactory(new MyTableCellCallback<String>());
 	}
 
 	private void initializeFsnColumn() {
-
 		// Fully Specified Name
 		fsnCol.setCellFactory(new MyTableCellCallback<String>());
 		fsnCol.setCellValueFactory((param) -> {
 			try {
 				return new SimpleStringProperty(param.getValue().getContainingConcept().getFullySpecifiedDescription().getText().trim());
 			} catch (IOException | ContradictionException e) {
+				LOG.error("initializeFsnColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
 				String title = "Failed getting FSN";
 				String msg = "Failed getting fully specified description";
-				LOG.error(title);
-				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage(), AppContext.getMainApplicationWindow().getPrimaryStage());
+				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage() + " for CompositeSearchResult " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null), AppContext.getMainApplicationWindow().getPrimaryStage());
 				e.printStackTrace();
-				return null;
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			} catch (Exception e) {
+				LOG.error("initializeFsnColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
 			}
 		});
 
@@ -227,21 +280,32 @@ public class SearchResultsTable  {
 			try {
 				return new SimpleStringProperty(param.getValue().getContainingConcept().getPreferredDescription().getText().trim());
 			} catch (IOException | ContradictionException e) {
+				LOG.error("initializePrefTermColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
 				String title = "Failed getting preferred description";
 				String msg = "Failed getting preferred description";
-				LOG.error(title);
-				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage(), AppContext.getMainApplicationWindow().getPrimaryStage());
+				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage() + " for CompositeSearchResult " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null), AppContext.getMainApplicationWindow().getPrimaryStage());
 				e.printStackTrace();
-				return null;
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			} catch (Exception e) {
+				LOG.error("initializePrefTermColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
 			}
 		});
 	}
 
 	private void initializeMatchesColumn() {
-
 		// numMatchesCol only meaningful for AggregationType CONCEPT
 		// When AggregationTyppe is DESCRIPTION should always be 1
-		numMatchesCol.setCellValueFactory((param) -> new SimpleIntegerProperty(param.getValue().getMatchingDescriptionComponents().size()));
+		numMatchesCol.setCellValueFactory((param) -> {
+			try {
+				return new SimpleIntegerProperty(param.getValue().getMatchingDescriptionComponents().size());
+			} catch (Exception e) {
+				LOG.error("initializeMatchesColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleIntegerProperty(-1);
+			}
+		});
+
 		numMatchesCol.setCellFactory(new MyTableCellCallback<Number>() {
 			@Override
 			public TableCell<CompositeSearchResult, Number> modifyCell(TableCell<CompositeSearchResult, Number> cell) {
@@ -260,8 +324,11 @@ public class SearchResultsTable  {
 							} catch (IOException | ContradictionException e) {
 								String title = "Failed getting FSN";
 								String msg = "Failed getting fully specified description";
-								LOG.error(title);
+								LOG.error("initializeMatchesColumn Cell factory failed to get FSN for value " + (result != null ? result.toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 								AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage(), AppContext.getMainApplicationWindow().getPrimaryStage());
+								e.printStackTrace();
+							} catch (Exception e) {
+								LOG.error("initializeMatchesColumn Cell factory failed to get FSN for value " + (result != null ? result.toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 								e.printStackTrace();
 							}
 
@@ -286,7 +353,15 @@ public class SearchResultsTable  {
 
 	private void initializeStatusColumn() {
 		// Active status
-		statusCol.setCellValueFactory((param) -> new SimpleStringProperty(param.getValue().getContainingConcept().getStatus().toString().trim()));
+		statusCol.setCellValueFactory((param) -> {
+			try {
+				return new SimpleStringProperty(param.getValue().getContainingConcept().getStatus().toString().trim());
+			} catch (Exception e) {
+				LOG.error("initializeStatusColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			}
+		});
+
 		statusCol.setCellFactory(new MyTableCellCallback<String>());
 	}
 
@@ -338,12 +413,17 @@ public class SearchResultsTable  {
 				SememeSearchResult sememeParam = (SememeSearchResult)param.getValue();
 				return new SimpleStringProperty(sememeParam.getContainingConcept().getPreferredDescription().getText().trim());
 			} catch (IOException | ContradictionException e) {
+				LOG.error("initializeRefCompColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
 				String title = "Failed getting referenced component";
 				String msg = "Failed getting referenced component";
-				LOG.error(title);
-				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage(), AppContext.getMainApplicationWindow().getPrimaryStage());
+				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage() + " for CompositeSearchResult " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null), AppContext.getMainApplicationWindow().getPrimaryStage());
 				e.printStackTrace();
-				return null;
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			} catch (Exception e) {
+				LOG.error("initializeRefCompColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				e.printStackTrace();
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
 			}
 		});
 	}
@@ -356,12 +436,17 @@ public class SearchResultsTable  {
 				
 				return new SimpleStringProperty(sememeParam.getAssembCon().getPreferredDescription().getText().trim());
 			} catch (IOException | ContradictionException e) {
+				LOG.error("initializeAssembConColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+
 				String title = "Failed getting assemblage concept";
 				String msg = "Failed getting assemblage concept";
-				LOG.error(title);
-				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage(), AppContext.getMainApplicationWindow().getPrimaryStage());
+				AppContext.getCommonDialogs().showErrorDialog(title, msg, "Encountered " + e.getClass().getName() + ": " + e.getLocalizedMessage() + " for CompositeSearchResult " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null), AppContext.getMainApplicationWindow().getPrimaryStage());
 				e.printStackTrace();
-				return null;
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			} catch (Exception e) {
+				LOG.error("initializeAssembConColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				e.printStackTrace();
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
 			}
 		});
 		
@@ -371,13 +456,17 @@ public class SearchResultsTable  {
 		attachedDataCol.setCellFactory(new MyTableCellCallback<String>());
 
 		attachedDataCol.setCellValueFactory((param) -> {
-			SememeSearchResult sememeParam = (SememeSearchResult)param.getValue();
-			return new SimpleStringProperty(sememeParam.getAttachedData());
+			try {
+				SememeSearchResult sememeParam = (SememeSearchResult)param.getValue();
+				return new SimpleStringProperty(sememeParam.getAttachedData());
+			} catch (Exception e) {
+				LOG.error("initializeAttachedDataColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				return new SimpleStringProperty(CELL_ERROR_TEXT);
+			}
 		});
 		
 	}
 
-	
 	private void setupTableAttributes() {
 		// Enable selection of multiple rows.  Context menu handlers are coded to send collections.
 		results.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -459,7 +548,10 @@ public class SearchResultsTable  {
 								@Override
 								public Set<Integer> getNIds() {
 									Set<Integer> nids = new HashSet<>();
-									for (CompositeSearchResult r : (ObservableList<CompositeSearchResult>)c.getTableView().getSelectionModel().getSelectedItems()) {
+									for (CompositeSearchResult r : c.getTableView().getSelectionModel().getSelectedItems()) {
+										// In response to tracker artf231416 
+										// Unconditionally use containing concept's nid.  Do not use description nid
+										/*
 										if (resultsType == ResultsType.CONCEPT) {
 											nids.add(r.getContainingConcept().getNid());
 										} else if (resultsType == ResultsType.DESCRIPTION) {
@@ -468,6 +560,8 @@ public class SearchResultsTable  {
 											LOG.error("Unexpected AggregationType value " + resultsType);
 											nids.add(r.getContainingConcept().getNid());
 										}
+										*/
+										nids.add(r.getContainingConcept().getNid());
 									}
 
 									// TODO: determine why we are getting here multiple (2 or 3) times for each selection

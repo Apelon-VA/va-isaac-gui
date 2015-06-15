@@ -28,7 +28,6 @@ import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
-
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -36,9 +35,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
@@ -233,7 +232,7 @@ public class BdbInformationModelService implements InformationModelService {
     Set<InformationModel> models = new HashSet<>();
     for (RelationshipChronicleBI rel : modelConcept.getRelationshipsIncoming()) {
       RelationshipVersionBI<?> relVersion =
-          rel.getVersion(OTFUtility.getViewCoordinate());
+          rel.getVersion(OTFUtility.getViewCoordinate()).get();
       // Look for matching typeId and "active" flag
       if (relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid()
           && relVersion.isActive()) {
@@ -307,7 +306,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Need to look at stamp nid for concept attributes instead of concept
     int stampNid =
         modelConcept.getConceptAttributes()
-            .getVersion(OTFUtility.getViewCoordinate()).getStamp();
+            .getVersion(OTFUtility.getViewCoordinate()).get().getStamp();
     InformationModelMetadata metadata =
         InformationModelMetadata.newInstance(stampNid, dataStore,
             OTFUtility.getViewCoordinate());
@@ -317,7 +316,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Build associated concept UUIDs from relationships
     for (RelationshipChronicleBI rel : modelConcept.getRelationshipsOutgoing()) {
       RelationshipVersionBI<?> relVersion =
-          rel.getVersion(OTFUtility.getViewCoordinate());
+          rel.getVersion(OTFUtility.getViewCoordinate()).get();
       // Look for matching typeId and "active" flag
       if (relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid()
           && relVersion.isActive()) {
@@ -347,17 +346,17 @@ public class BdbInformationModelService implements InformationModelService {
     LOG.debug("  property refset = " + propertyRefset.getRefexName());
     for (RefexDynamicChronicleBI<?> refex : modelConcept
         .getRefexDynamicAnnotations()) {
-      RefexDynamicVersionBI<?> refexVersion =
+      Optional<? extends RefexDynamicVersionBI> refexVersion =
           refex.getVersion(OTFUtility.getViewCoordinate());
       LOG.debug("  sememe = " + refex.toUserString());
       // Look for matching refex id and "active" flag
-      if (refexVersion != null
+      if (refexVersion.isPresent()
           && refex.getAssemblageNid() == propertyRefset
-              .getRefexUsageDescriptorNid() && refexVersion.isActive()) {
+              .getRefexUsageDescriptorNid() && refexVersion.get().isActive()) {
         // Create properties for each annotation
         InformationModelProperty property =
             new DefaultInformationModelProperty();
-        RefexDynamicDataBI[] data = refexVersion.getData();
+        RefexDynamicDataBI[] data = refexVersion.get().getData();
         if (data[0] != null)
           property.setLabel(((RefexDynamicString) data[0]).getDataString());
         if (data[1] != null)
@@ -387,7 +386,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Build associated concept UUIDs from relationships
     for (RelationshipChronicleBI rel : modelConcept.getRelationshipsOutgoing()) {
       RelationshipVersionBI<?> relVersion =
-          rel.getVersion(OTFUtility.getViewCoordinate());
+          rel.getVersion(OTFUtility.getViewCoordinate()).get();
       // Look for matching typeId and "active" flag
       if (relVersion.getTypeNid() == InformationModels.HAS_TERMINOLOGY_CONCEPT
           .getLenient().getNid() && relVersion.isActive()) {
@@ -505,7 +504,7 @@ public class BdbInformationModelService implements InformationModelService {
       // Look it up by UUID0
       modelConcept = dataStore.getConcept(modelUuid);
       ConceptVersionBI modelConceptVersion =
-          modelConcept.getVersion(OTFUtility.getViewCoordinate());
+          modelConcept.getVersion(OTFUtility.getViewCoordinate()).get();
       modelConceptCB =
           modelConceptVersion.makeBlueprint(OTFUtility.getViewCoordinate(),
               IdDirective.PRESERVE, RefexDirective.EXCLUDE);
@@ -759,12 +758,12 @@ public class BdbInformationModelService implements InformationModelService {
     // have uuids from the code above
     for (RefexDynamicChronicleBI<?> refex : modelConcept
         .getRefexDynamicAnnotations()) {
-      RefexDynamicVersionBI<?> refexVersion =
+      Optional<? extends RefexDynamicVersionBI<?>> refexVersion =
           refex.getVersion(OTFUtility.getViewCoordinate());
-      if (refexVersion != null
+      if (refexVersion.isPresent()
           && !refexUuids.contains(refex.getPrimordialUuid())) {
         RefexDynamicCAB refexBlueprint =
-            refexVersion.makeBlueprint(OTFUtility.getViewCoordinate(),
+            refexVersion.get().makeBlueprint(OTFUtility.getViewCoordinate(),
                 IdDirective.PRESERVE, RefexDirective.EXCLUDE);
         refexBlueprint.setRetired();
         RefexDynamicChronicleBI<?> refex2 =

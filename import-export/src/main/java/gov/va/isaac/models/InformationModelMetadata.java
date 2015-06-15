@@ -70,7 +70,7 @@ public class InformationModelMetadata {
 
     int moduleNid = dataStore.getModuleNidForStamp(stampNid);
     ConceptChronicleBI module = dataStore.getConcept(moduleNid);
-    ConceptVersionBI version = module.getVersion(vc);
+    ConceptVersionBI version = module.getVersion(vc).get();
     String moduleName = version.getFullySpecifiedDescription().getText();
 
     return new InformationModelMetadata(importerName, time, path, moduleName,

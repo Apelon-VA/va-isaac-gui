@@ -26,6 +26,7 @@ import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
@@ -37,7 +38,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
@@ -64,6 +64,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -82,7 +83,7 @@ import com.sun.javafx.tk.Toolkit;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class RelationshipTableView
+public class RelationshipTableView implements EmbeddableViewI
 {
 	//TODO there is lots of duplicate / copy-paste code that should be condensed / reused between rel view, description view, and the dynamic refex view code.
 	private static final Logger LOG = LoggerFactory.getLogger(RelationshipTableView.class);
@@ -95,9 +96,9 @@ public class RelationshipTableView
 	
 	ArrayList<TableColumn<RelationshipVersion, RelationshipVersion>> stampColumns = new ArrayList<>();
 	TableColumn<RelationshipVersion, RelationshipVersion> sourceColumn = null;
-	
-	@SuppressWarnings("unused")
+
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
+	private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
 	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly)
 	{
@@ -117,7 +118,6 @@ public class RelationshipTableView
 		
 		refreshRequiredListenerHack = new UpdateableBooleanBinding()
 		{
-			private volatile AtomicBoolean refreshQueued = new AtomicBoolean(false);
 			{
 				setComputeOnInvalidate(true);
 				addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(),
@@ -131,43 +131,13 @@ public class RelationshipTableView
 			@Override
 			protected boolean computeValue()
 			{
-				synchronized (refreshQueued)
+				LOG.debug("Rel refresh() due to change of an observed user property");
+				refresh(null);
+				if (sourceColumn != null 
+						&& AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
 				{
-					if (refreshQueued.get())
-					{
-						LOG.info("Skip relationship refresh() due to pending refresh");
-						return false;
-					}
-					else
-					{
-						refreshQueued.set(true);
-
-						LOG.debug("Rel refresh() due to change of an observed user property");
-						Utility.schedule(() ->
-						{
-							Platform.runLater(() ->
-							{
-								try
-								{
-									synchronized (refreshQueued)
-									{
-										refreshQueued.set(false);
-									}
-									refresh(null);
-									if (sourceColumn != null 
-											&& AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
-									{
-										//this defaults to off, turn it on, if they switch to a view mode that includes targets
-										sourceColumn.setVisible(true);
-									}
-								}
-								catch (Exception e)
-								{
-									LOG.error("Unexpected error running refresh", e);
-								}
-							});
-						}, 10, TimeUnit.MILLISECONDS);
-					}
+					//this defaults to off, turn it on, if they switch to a view mode that includes targets
+					sourceColumn.setVisible(true);
 				}
 				return false;
 			}
@@ -557,6 +527,8 @@ public class RelationshipTableView
 				}
 			});
 			tc.setCellFactory(cellFactory);
+			
+			//TODO Dan forgot to put comparators on these columns
 
 			//off by default
 			if (col == RelationshipColumnType.UUID || col == RelationshipColumnType.SOURCE)
@@ -594,6 +566,25 @@ public class RelationshipTableView
 		{
 			LOG.info("refesh called while concept null");
 			return;
+		}
+		
+		if (refreshInProgress_.get())
+		{
+			LOG.debug("Skip refresh call due to refresh already in progress");
+			return;
+		}
+		synchronized (refreshInProgress_)
+		{
+			//check again inside sync block
+			if (refreshInProgress_.get())
+			{
+				LOG.debug("Skip refresh call due to refresh already in progress");
+				return;
+			}
+			else
+			{
+				refreshInProgress_.getAndSet(true);
+			}
 		}
 		
 		Utility.execute(() ->
@@ -649,6 +640,13 @@ public class RelationshipTableView
 				AppContext.getCommonDialogs().showErrorDialog("Error reading relationships", e);
 				LOG.error("Unexpected error reading relationships", e);
 			}
+			finally
+			{
+				synchronized (refreshInProgress_)
+				{
+					refreshInProgress_.set(false);
+				}
+			}
 			
 			Platform.runLater(() ->
 			{
@@ -685,13 +683,25 @@ public class RelationshipTableView
 		});
 	}
 	
-	public Node getNode()
-	{
-		return relationshipsTable;
-	}
-	
 	public ReadOnlyStringProperty getSummaryText()
 	{
 		return summaryText.getReadOnlyProperty();
+	}
+	
+	@Override
+	public void viewDiscarded()
+	{
+		synchronized (refreshInProgress_)
+		{
+			refreshInProgress_.set(true);
+		}
+		refreshRequiredListenerHack.clearBindings();
+		conceptUUID_ = null;
+	}
+
+	@Override
+	public Region getView()
+	{
+		return relationshipsTable;
 	}
 }

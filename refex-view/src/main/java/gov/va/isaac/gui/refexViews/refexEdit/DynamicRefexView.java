@@ -48,8 +48,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
@@ -150,10 +148,14 @@ public class DynamicRefexView implements RefexViewI
 	private final Object dialogThreadBlock_ = new Object();
 	private AtomicInteger noRefresh_ = new AtomicInteger(0);
 	
-	@SuppressWarnings("unused")
+	// Display refreshes on change of UserProfileBindings.getViewCoordinatePath() or UserProfileBindings.getDisplayFSN()
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 
 	private final ObservableMap<ColumnId, Filter<?>> filterCache_ = new ObservableMapWrapper<>(new WeakHashMap<>());
+	// Display refreshes on change of UserProfileBindings.getDisplayFSN().
+	// If UserProfileBindings.getDisplayFSN() at time of refresh has changed since last refresh
+	// then all filters must be cleared, because they may contain outdated display text values
+	private boolean filterCacheLastBuildDisplayFSNValue_ = AppContext.getService(UserProfileBindings.class).getDisplayFSN().get();
 	
 	private final MapChangeListener<ColumnId, Filter<?>> filterCacheListener_ = new MapChangeListener<ColumnId, Filter<?>>() {
 		@Override
@@ -613,7 +615,6 @@ public class DynamicRefexView implements RefexViewI
 			
 			refreshRequiredListenerHack = new UpdateableBooleanBinding()
 			{
-				private volatile AtomicBoolean refreshQueued = new AtomicBoolean(false);
 				{
 					setComputeOnInvalidate(true);
 					addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(), AppContext.getService(UserProfileBindings.class).getDisplayFSN());
@@ -622,37 +623,8 @@ public class DynamicRefexView implements RefexViewI
 				@Override
 				protected boolean computeValue()
 				{
-					synchronized (refreshQueued)
-					{
-						if (refreshQueued.get())
-						{
-							logger_.info("Skip DynRefex refresh() due to pending refresh");
-							return false;
-						}
-						else
-						{
-							refreshQueued.set(true);
-							logger_.debug("DynRefex refresh() due to change of an observed user property");
-							Utility.schedule(() -> 
-							{
-								Platform.runLater(() -> 
-								{
-									synchronized (refreshQueued)
-									{
-										refreshQueued.set(false);
-									}
-									try
-									{
-										refresh();
-									}
-									catch (Exception e)
-									{
-										logger_.error("Unexpected error running refresh", e);
-									}
-								});
-							}, 10, TimeUnit.MILLISECONDS);
-						}
-					}
+					logger_.debug("DynRefex refresh() due to change of an observed user property");
+					refresh();
 					return false;
 				}
 			};
@@ -769,21 +741,19 @@ public class DynamicRefexView implements RefexViewI
 	{
 		if (noRefresh_.get() > 0)
 		{
-			logger_.info("Skip refresh of dynamic refex due to wait count {}" + noRefresh_.get());
+			logger_.info("Skip refresh of dynamic refex due to wait count {}", noRefresh_.get());
 			return;
 		}
-		
-		Platform.runLater(() ->
+		else
 		{
-			ttv_.setPlaceholder(progressBar_);
-			treeRoot_.getChildren().clear();
-		});
-
+			noRefresh_.getAndIncrement();
+		}
+		
 		Utility.execute(() ->
 		{
 			try
 			{
-				loadRealData();
+				loadRealData(); // calls addFilterCacheListeners()
 			}
 			catch (Exception e)
 			{
@@ -791,6 +761,10 @@ public class DynamicRefexView implements RefexViewI
 				//null check, as the error may happen before the scene is visible
 				AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the sememe display", e.getMessage(), 
 						(rootNode_.getScene() == null ? null : rootNode_.getScene().getWindow()));
+			}
+			finally
+			{
+				noRefresh_.decrementAndGet();
 			}
 		});
 	}
@@ -1247,6 +1221,23 @@ public class DynamicRefexView implements RefexViewI
 	
 	private synchronized void loadRealData() throws IOException, ContradictionException, NumberFormatException, InterruptedException, ParseException
 	{
+		Platform.runLater(() ->
+		{
+			ttv_.setPlaceholder(progressBar_);
+			treeRoot_.getChildren().clear();
+		});
+		// If UserProfileBindings.getDisplayFSN() has changed since last data load
+		// then clear all filters, because they may contain outdated display text values
+		boolean currentDisplayFSNPreferenceValue = AppContext.getService(UserProfileBindings.class).getDisplayFSN().get();
+		if (currentDisplayFSNPreferenceValue != filterCacheLastBuildDisplayFSNValue_) {
+			logger_.debug("Clearing header node filter cache during refresh because displayFSN preference value changed to {}", currentDisplayFSNPreferenceValue);
+			filterCacheLastBuildDisplayFSNValue_ = currentDisplayFSNPreferenceValue;
+			removeFilterCacheListeners();
+			for (HeaderNode.Filter<?> filter : filterCache_.values()) {
+				filter.getFilterValues().clear();
+			}
+		}
+
 		//Now add the data
 		ArrayList<TreeItem<RefexDynamicGUI>> rowData;
 		if (setFromType_.getComponentNid() != null)
@@ -1267,7 +1258,6 @@ public class DynamicRefexView implements RefexViewI
 		
 		Platform.runLater(() ->
 		{
-			treeRoot_.getChildren().clear();
 			addButton_.setDisable(false);
 			treeRoot_.getChildren().addAll(rowData);
 			summary_.setText(rowData.size() + " entries");
@@ -1729,5 +1719,11 @@ public class DynamicRefexView implements RefexViewI
 			placeholderText.setText("No Dynamic Sememes were found using this Assemblage");
 		}
 		return rowData;
+	}
+	@Override
+	public void viewDiscarded()
+	{
+		noRefresh_.incrementAndGet();
+		refreshRequiredListenerHack.clearBindings();
 	}
 }

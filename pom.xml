@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>gov.vha.isaac</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>1.6-SNAPSHOT</version>
+		<version>1.7-SNAPSHOT</version>
 	</parent>
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>Sprint_21-SNAPSHOT</version>
+	<version>23.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
@@ -32,11 +32,11 @@
 	</distributionManagement>
 
 	<properties>
-		<query.version>2.12-SNAPSHOT</query.version>
-		<ochre.version>2.27-SNAPSHOT</ochre.version>
-		<isaac-mojo.version>1.6-SNAPSHOT</isaac-mojo.version>
-		<isaac-metadata.version>1.29-SNAPSHOT</isaac-metadata.version>
-		<newtons-cradle.version>1.17-SNAPSHOT</newtons-cradle.version>
+		<query.version>2.14-SNAPSHOT</query.version>
+		<ochre.version>2.29-SNAPSHOT</ochre.version>
+		<isaac-mojo.version>1.8-SNAPSHOT</isaac-mojo.version>
+		<isaac-metadata.version>1.31-SNAPSHOT</isaac-metadata.version>
+		<newtons-cradle.version>1.19-SNAPSHOT</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>
@@ -106,7 +106,6 @@
 				<artifactId>controlsfx</artifactId>
 				<version>8.0.5</version>
 			</dependency>
-
 		</dependencies>
 	</dependencyManagement>
 	
@@ -196,5 +195,6 @@
 		<module>sync-svn</module>
 		<module>db-processing-rules</module>
 		<module>mapping</module>
+		<module>logic-view</module>
 	</modules>
 </project>

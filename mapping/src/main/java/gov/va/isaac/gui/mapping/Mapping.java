@@ -2,18 +2,22 @@ package gov.va.isaac.gui.mapping;
 
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SearchView
@@ -26,19 +30,38 @@ import org.jvnet.hk2.annotations.Service;
 public class Mapping implements DockedViewI
 {
 	private boolean hasBeenInited_ = false;
-	private MappingController svc_;
+	private MappingController mappingController_;
+	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 	
 	private Mapping() throws IOException
 	{
 		//created by HK2
-		svc_ = MappingController.init();
+		LOG.debug(this.getClass().getSimpleName() + " construct time (blocking GUI): {}", 0);
 	}
+	
+	private MappingController getMappingController()
+	{
+		if (mappingController_ == null)
+		{
+			try
+			{
+				mappingController_ = MappingController.init();
+			}
+			catch (IOException e)
+			{
+				LOG.error("Unexpected", e);
+				throw new RuntimeException(e);
+			}
+		}
+		return mappingController_;
+	}
+	
 	/**
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getView()
 	 */
 	@Override
 	public Region getView() {
-		return svc_.getRoot();
+		return getMappingController().getRoot();
 	}
 	
 	/**
@@ -55,17 +78,17 @@ public class Mapping implements DockedViewI
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
 	 */
 	@Override
-	public MenuItemI getMenuBarMenuToShowView()
+	public CheckMenuItemI getMenuBarMenuToShowView()
 	{
-		MenuItemI menuItem = new MenuItemI()
+		CheckMenuItemI checkMenuItem = new CheckMenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				if (!hasBeenInited_)
 				{
 					//delay init till first display
-					svc_.refreshMappingSets();
+					getMappingController().refreshMappingSets();
 					hasBeenInited_ = true;
 				}
 			}
@@ -73,7 +96,7 @@ public class Mapping implements DockedViewI
 			@Override
 			public int getSortOrder()
 			{
-				return 20;
+				return 90;
 			}
 			
 			@Override
@@ -106,7 +129,7 @@ public class Mapping implements DockedViewI
 				return Images.MAPPING.getImage();
 			}
 		};
-		return menuItem;
+		return checkMenuItem;
 	}
 
 	/**
@@ -122,12 +145,17 @@ public class Mapping implements DockedViewI
 	 */
 	public void refreshMappingSets()
 	{
-		svc_.refreshMappingSets();
+		getMappingController().refreshMappingSets();
 	}
 	
 	public void refreshMappingItems()
 	{
-		svc_.refreshMappingItems();
+		getMappingController().refreshMappingItems();
 	}
-		
+	
+	@Override
+	public void viewDiscarded()
+	{
+		//noop for now - this never gets called in the current GUI design on a dockedView
+	}
 }

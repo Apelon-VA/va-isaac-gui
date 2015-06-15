@@ -24,6 +24,7 @@
  */
 package gov.va.isaac.gui.dragAndDrop;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -37,16 +38,16 @@ public interface MultipleConceptIdProvider extends ConceptIdProvider {
 	 * Get methods only use bulk methods if unambiguous (only 1 entry avail)
 	 */
 	@Override
-	public default String getSctId() {
-		if (getSctIds() != null && getSctIds().length == 1) {
-			return getSctIds()[0];
+	public default Optional<Long> getSctId() {
+		if(getSctIds() != null && getSctIds().length == 1) {
+			return Optional.of(getSctIds()[0]);
 		} else {
-			return null;
+			return Optional.empty();
 		}
 	}
-	public default String[] getSctIds() {
-		if (getSctId() != null) {
-			return new String[] { getSctId() };
+	public default Long[] getSctIds() {
+		if (getSctId().isPresent()) {
+			return new Long[] { getSctId().get() };
 		} else {
 			return null;
 		}

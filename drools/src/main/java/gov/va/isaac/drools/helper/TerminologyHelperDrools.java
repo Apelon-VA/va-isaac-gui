@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TerminologyHelperDrools
 {
+	//TODO switch over the SCTID stuff to using shared SCTID code (see the class SctID)
 	private static final Logger LOG = LoggerFactory.getLogger(TerminologyHelperDrools.class);
 	private Hashtable<String, String> usspelling;
 	private Hashtable<String, String> ukspelling;

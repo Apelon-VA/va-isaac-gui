@@ -21,12 +21,12 @@ package gov.va.isaac.workflow.persistence;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
 import gov.va.isaac.workflow.Action;
 import gov.va.isaac.workflow.LocalTask;
 import gov.va.isaac.workflow.LocalTasksServiceBI;
 import gov.va.isaac.workflow.TaskActionStatus;
 import gov.va.isaac.workflow.exceptions.DatastoreException;
-
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -68,27 +68,50 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     
     private final Set<ActionEventListener> actionEventListeners = new HashSet<>();
     
-    private DataSource ds;
+    private DataSource dataSource;
+    
+    private volatile boolean schemaCreateInProgress = false;
     
     private LocalTasksApi()
     {
         //For HK2 to construct
-        ds = AppContext.getService(DatastoreManager.class).getDataSource();
-        try
-        {
-        	//TODO need to get this in a background thread
-            createSchema();
-        }
-        catch (DatastoreException e)
-        {
-            log.error("Create schema failed during init", e);
-        }
+        Utility.execute(() -> getDataSource());
     }
     
-    public void changeUserName(String oldWFUsername, String newWFUsername)
+    private DataSource getDataSource()
     {
-        //TODO (artf231902) DAN THIS MUST BE IMPLEMENTED before changing a WF username will work properly!!!!!
-        log.error("The change username functionality is not yet complete - WF state is now corrupt!!!!!!!");
+    	if (dataSource == null)
+    	{
+    		dataSource = AppContext.getService(DatastoreManager.class).getDataSource();
+            try
+            {
+                createSchema();
+            }
+            catch (DatastoreException e)
+            {
+                log.error("Create schema failed during init", e);
+            }
+    	}
+    	return dataSource;
+    }
+    
+    public void changeUserName(String oldWFUsername, String newWFUsername) throws DatastoreException
+    {
+        //(Done) (artf231902) DAN THIS MUST BE IMPLEMENTED before changing a WF username will work properly!!!!!
+
+    	// TODO this needs to be tested - DT
+    	try {
+	        Connection conn = getDataSource().getConnection();
+	        PreparedStatement psUpdateUser = conn.prepareStatement("update local_tasks set owner = ? where owner = ?");
+	        psUpdateUser.setString(1, newWFUsername);
+	        psUpdateUser.setString(2, oldWFUsername);
+	        int updatedRowCount = psUpdateUser.executeUpdate();
+	        log.info(Integer.toString(updatedRowCount) + " rows updated in local_tasks"); 
+	        conn.commit();
+    	} catch (SQLException e) {
+    		log.error("Change username on local_tasks table failed", e);
+	        throw new DatastoreException("Change username on local_tasks table failed", e);
+    	}
     }
     
 
@@ -99,7 +122,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
 
     	WorkflowHistoryHelper.createAndAddNewEntry(task, action, task.getInputVariables());
 
-        try (Connection conn = ds.getConnection()) {
+        try (Connection conn = getDataSource().getConnection()) {
             try {
                 PreparedStatement psInsert = conn.prepareStatement("insert into local_tasks values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 psInsert.setLong(1, task.getId());
@@ -201,7 +224,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
         LocalTask task = this.getTask(taskId);
         WorkflowHistoryHelper.createAndAddNewEntry(task, action, outputVariables);
         
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             PreparedStatement psUpdateStatus = conn.prepareStatement("update local_tasks set action = ?, actionStatus = ?, outputVariables = ? where id = ?");
             psUpdateStatus.setString(1, action.name());
             psUpdateStatus.setString(2, actionStatus.name());
@@ -279,7 +302,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     @Override
     public List<LocalTask> getOpenOwnedTasks() throws DatastoreException {
         List<LocalTask> tasks = new ArrayList<>();
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             Statement s = conn.createStatement();
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks where owner = '" + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getWorkflowUsername() 
                     + "' and (status = 'Reserved' or status = 'InProgress')");
@@ -295,7 +318,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     @Override
     public List<LocalTask> getOwnedTasksByStatus(Status status) throws DatastoreException {
         List<LocalTask> tasks = new ArrayList<>();
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             Statement s = conn.createStatement();
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks where owner = '" + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getWorkflowUsername() 
                     + "' and status = '" + status + "'");
@@ -311,7 +334,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     @Override
     public List<LocalTask> getOwnedTasksByActionStatus(TaskActionStatus actionStatus) throws DatastoreException {
         List<LocalTask> tasks = new ArrayList<>();
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             Statement s = conn.createStatement();
             //we will need to change the userId in the DB - if the user enters a different workflow username
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks where owner = '" + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getWorkflowUsername() 
@@ -328,7 +351,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     @Override
     public List<LocalTask> getOpenOwnedTasksByComponentId(UUID componentId) throws DatastoreException {
         List<LocalTask> tasks = new ArrayList<>();
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             Statement s = conn.createStatement();
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks where owner = '" + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getWorkflowUsername() 
                     + "' and componentId = '" + componentId.toString() + "' and (status = 'Reserved' or status = 'InProgress')");
@@ -344,7 +367,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     @Override
     public List<LocalTask> getTasksByComponentId(UUID componentId) throws DatastoreException {
         List<LocalTask> tasks = new ArrayList<>();
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             Statement s = conn.createStatement();
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks where componentId = '" + componentId.toString() + "'");
             while (rs.next()) {
@@ -359,7 +382,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     @Override
     public List<LocalTask> getTasks() throws DatastoreException {
         List<LocalTask> tasks = new ArrayList<>();
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             Statement s = conn.createStatement();
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks");
             while (rs.next()) {
@@ -373,7 +396,7 @@ public class LocalTasksApi implements LocalTasksServiceBI {
 
     @Override
     public LocalTask getTask(Long id) throws DatastoreException {
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             LocalTask task = null;
             Statement s = conn.createStatement();
             ResultSet rs = s.executeQuery("SELECT * FROM local_tasks where id = " + id);
@@ -439,7 +462,18 @@ public class LocalTasksApi implements LocalTasksServiceBI {
 
     @Override
     public void createSchema() throws DatastoreException {
-        try (Connection conn = ds.getConnection()){
+        synchronized (log)
+        {
+            if (schemaCreateInProgress)
+            {
+                return;
+            }
+            else 
+            {
+                schemaCreateInProgress = true;
+            }
+        }
+        try (Connection conn = getDataSource().getConnection()){
             log.info("Creating Workflow LOCAL_TASKS schema");
             DatabaseMetaData dbmd = conn.getMetaData();
             ResultSet rs = dbmd.getTables(null, "WORKFLOW", "LOCAL_TASKS", null);
@@ -469,11 +503,15 @@ public class LocalTasksApi implements LocalTasksServiceBI {
         } catch (SQLException ex) {
             throw new DatastoreException(ex);
         }
+        synchronized (log)
+        {
+            schemaCreateInProgress = false;
+        }
     }
 
     @Override
     public void dropSchema() throws DatastoreException {
-        try (Connection conn = ds.getConnection()){
+        try (Connection conn = getDataSource().getConnection()){
             log.info("Dropping table local_tasks");
             Statement s = conn.createStatement();
             s.execute("drop table LOCAL_TASKS");

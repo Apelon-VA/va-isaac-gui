@@ -34,6 +34,7 @@ import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 import javafx.concurrent.Task;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -109,109 +110,112 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 					if (c == null) 
 					{
 						//This may be a different component - like a description, or another refex... need to handle.
-						ComponentVersionBI cv = ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
+						Optional<? extends ComponentVersionBI> cv = ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
+						if (cv.isPresent())
+						{
 						
-						if (cv instanceof DescriptionVersionBI<?>)
-						{
-							DescriptionVersionBI<?> dv = (DescriptionVersionBI<?>) cv;
-							CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-							menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-							
-							CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
+							if (cv.get() instanceof DescriptionVersionBI<?>)
 							{
+								DescriptionVersionBI<?> dv = (DescriptionVersionBI<?>) cv.get();
+								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
+								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
 								
-								@Override
-								public Collection<Integer> getNIds()
+								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
 								{
-									return Arrays.asList(new Integer[] {dv.getNid()});
-								}
-							});
-						}
-						else if (cv instanceof RelationshipVersionBI<?>)
-						{
-							RelationshipVersionBI<?> rv = (RelationshipVersionBI<?>) cv;
-							
-							CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-							menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-							
-							CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-							{
-								
-								@Override
-								public Collection<Integer> getNIds()
-								{
-									return Arrays.asList(new Integer[] {rv.getNid()});
-								}
-							});
-						}
-						else if (cv instanceof RefexDynamicVersionBI<?>)
-						{
-							RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv;
-							CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-							menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-							
-							CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-							{
-								
-								@Override
-								public Collection<Integer> getNIds()
-								{
-									return Arrays.asList(new Integer[] {rdv.getNid()});
-								}
-							});
-						}
-						else if (cv instanceof RefexVersionBI<?>)
-						{
-							RefexVersionBI<?> rv = (RefexVersionBI<?>) cv;
-							
-							CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-							menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-							
-							CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-							{
-								
-								@Override
-								public Collection<Integer> getNIds()
-								{
-									return Arrays.asList(new Integer[] {rv.getNid()});
-								}
-							});
-						}
-					}
-					else
-					{
-						if (DynamicRefexColumnType.ASSEMBLAGE == type_)
-						{
-							MenuItem mi = new MenuItem("View Sememe Assemblage Usage");
-							mi.setOnAction((action) ->
-							{
-								SimpleDisplayConcept sdc = new SimpleDisplayConcept(c);
-								DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
-								driv.showView(null);
-							});
-							mi.setGraphic(Images.SEARCH.createImageView());
-							cm.getItems().add(mi);
-							
-							mi = new MenuItem("Configure Sememe Indexing");
-							mi.setOnAction((action) ->
-							{
-								new ConfigureDynamicRefexIndexingView(c).showView(null);
-							});
-							mi.setGraphic(Images.CONFIGURE.createImageView());
-							cm.getItems().add(mi);
-						}
-						
-						configureDragAndDrop = true;
-
-						CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider()
-						{
-							@Override
-							public Collection<Integer> getNIds()
-							{
-								return Arrays.asList(new Integer[] {item.getNidFetcher(type_, null).applyAsInt(item.getRefex())});
+									
+									@Override
+									public Collection<Integer> getNIds()
+									{
+										return Arrays.asList(new Integer[] {dv.getNid()});
+									}
+								});
 							}
-						});
-						setStyle = true;
+							else if (cv.get() instanceof RelationshipVersionBI<?>)
+							{
+								RelationshipVersionBI<?> rv = (RelationshipVersionBI<?>) cv.get();
+								
+								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
+								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
+								
+								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
+								{
+									
+									@Override
+									public Collection<Integer> getNIds()
+									{
+										return Arrays.asList(new Integer[] {rv.getNid()});
+									}
+								});
+							}
+							else if (cv.get() instanceof RefexDynamicVersionBI<?>)
+							{
+								RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv.get();
+								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
+								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
+								
+								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
+								{
+									
+									@Override
+									public Collection<Integer> getNIds()
+									{
+										return Arrays.asList(new Integer[] {rdv.getNid()});
+									}
+								});
+							}
+							else if (cv.get() instanceof RefexVersionBI<?>)
+							{
+								RefexVersionBI<?> rv = (RefexVersionBI<?>) cv.get();
+								
+								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
+								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
+								
+								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
+								{
+									
+									@Override
+									public Collection<Integer> getNIds()
+									{
+										return Arrays.asList(new Integer[] {rv.getNid()});
+									}
+								});
+							}
+						}
+						else
+						{
+							if (DynamicRefexColumnType.ASSEMBLAGE == type_)
+							{
+								MenuItem mi = new MenuItem("View Sememe Assemblage Usage");
+								mi.setOnAction((action) ->
+								{
+									SimpleDisplayConcept sdc = new SimpleDisplayConcept(c);
+									DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
+									driv.showView(null);
+								});
+								mi.setGraphic(Images.SEARCH.createImageView());
+								cm.getItems().add(mi);
+								
+								mi = new MenuItem("Configure Sememe Indexing");
+								mi.setOnAction((action) ->
+								{
+									new ConfigureDynamicRefexIndexingView(c).showView(null);
+								});
+								mi.setGraphic(Images.CONFIGURE.createImageView());
+								cm.getItems().add(mi);
+							}
+							
+							configureDragAndDrop = true;
+	
+							CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider()
+							{
+								@Override
+								public Collection<Integer> getNIds()
+								{
+									return Arrays.asList(new Integer[] {item.getNidFetcher(type_, null).applyAsInt(item.getRefex())});
+								}
+							});
+							setStyle = true;
+						}
 					}
 				}
 				catch (Exception e)

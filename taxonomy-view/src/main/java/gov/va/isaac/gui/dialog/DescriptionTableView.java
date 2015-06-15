@@ -25,6 +25,7 @@ import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
@@ -36,7 +37,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
@@ -61,6 +61,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -79,7 +80,7 @@ import com.sun.javafx.tk.Toolkit;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class DescriptionTableView
+public class DescriptionTableView implements EmbeddableViewI
 {
 	private static final Logger LOG = LoggerFactory.getLogger(DescriptionTableView.class);
 	
@@ -89,8 +90,8 @@ public class DescriptionTableView
 	
 	ArrayList<TableColumn<DescriptionVersion, DescriptionVersion>> stampColumns = new ArrayList<>();
 	
-	@SuppressWarnings("unused")
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
+	private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
 	public DescriptionTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly)
 	{
@@ -110,7 +111,6 @@ public class DescriptionTableView
 		
 		refreshRequiredListenerHack = new UpdateableBooleanBinding()
 		{
-			private volatile AtomicBoolean refreshQueued = new AtomicBoolean(false);
 			{
 				setComputeOnInvalidate(true);
 				addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(),
@@ -122,37 +122,8 @@ public class DescriptionTableView
 			@Override
 			protected boolean computeValue()
 			{
-				synchronized (refreshQueued)
-				{
-					if (refreshQueued.get())
-					{
-						LOG.info("Skip description refresh() due to pending refresh");
-						return false;
-					}
-					else
-					{
-						refreshQueued.set(true);
-						LOG.debug("Desc refresh() due to change of an observed user property in " + DescriptionTableView.this);
-						Utility.schedule(() ->
-						{
-							Platform.runLater(() ->
-							{
-								try
-								{
-									synchronized (refreshQueued)
-									{
-										refreshQueued.set(false);
-									}
-									refresh(null);
-								}
-								catch (Exception e)
-								{
-									LOG.error("Unexpected error running refresh", e);
-								}
-							});
-						}, 10, TimeUnit.MILLISECONDS);
-					}
-				}
+				LOG.debug("Desc refresh() due to change of an observed user property in " + DescriptionTableView.this);
+				refresh(null);
 				return false;
 			}
 		};
@@ -550,6 +521,8 @@ public class DescriptionTableView
 				}
 			});
 			tc.setCellFactory(cellFactory);
+			
+			//TODO Dan forgot to put comparators on these columns
 
 			//off by default
 			if (col == DescriptionColumnType.UUID)
@@ -582,6 +555,24 @@ public class DescriptionTableView
 		{
 			LOG.info("refesh called while concept null");
 			return;
+		}
+		if (refreshInProgress_.get())
+		{
+			LOG.debug("Skipping refresh due to in progress refresh");
+			return;
+		}
+		synchronized (refreshInProgress_)
+		{
+			//recheck in sync block
+			if (refreshInProgress_.get())
+			{
+				LOG.debug("Skipping refresh due to in progress refresh");
+				return;
+			}
+			else
+			{
+				refreshInProgress_.set(true);
+			}
 		}
 		Utility.execute(() ->
 		{
@@ -621,6 +612,13 @@ public class DescriptionTableView
 				AppContext.getCommonDialogs().showErrorDialog("Error reading relationships", e);
 				LOG.error("Unexpected error reading relationships", e);
 			}
+			finally
+			{
+				synchronized (refreshInProgress_)
+				{
+					refreshInProgress_.set(false);
+				}
+			}
 			
 			Platform.runLater(() ->
 			{
@@ -654,8 +652,20 @@ public class DescriptionTableView
 		});
 	}
 	
-	public Node getNode()
+	@Override
+	public Region getView()
 	{
 		return descriptionsTable;
+	}
+
+	@Override
+	public void viewDiscarded()
+	{
+		synchronized (refreshInProgress_)
+		{
+			refreshInProgress_.set(true);
+		}
+		refreshRequiredListenerHack.clearBindings();
+		conceptUUID_ = null;
 	}
 }

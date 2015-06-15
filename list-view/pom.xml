@@ -4,19 +4,16 @@
 	<parent>
 		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
-		<version>Sprint_21-SNAPSHOT</version>
+		<version>23.2-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>list-view</artifactId>
 	<packaging>jar</packaging>
 
 	<name>ISAAC List View</name>
-	<description>
-		A List / Batch view implementation for ISAAC
-	</description>
+	<description>A List / Batch view implementation for ISAAC</description>
 
 	<dependencies>
-	
 		<!-- OTF Query Implementation. -->
 		<dependency>
 			<groupId>gov.vha.isaac.query-service.modules</groupId>
@@ -41,7 +38,6 @@
 			<groupId>org.controlsfx</groupId>
 			<artifactId>controlsfx</artifactId>
 		</dependency>
-
 	</dependencies>
 
 </project>

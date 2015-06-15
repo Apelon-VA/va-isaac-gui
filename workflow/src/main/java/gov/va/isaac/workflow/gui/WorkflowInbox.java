@@ -22,6 +22,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.dialog.BusyPopover;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
@@ -59,6 +61,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 
 	private WorkflowInbox() throws IOException
 	{
+		LOG.debug(this.getClass().getSimpleName() + " construct time (blocking GUI): {}", 0);
 	}
 
 	/**
@@ -71,7 +74,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 		MenuItemI mi = new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				final BusyPopover synchronizePopover = BusyPopover.createBusyPopover("Synchronizing workflow...", parent.getScene().getRoot());
 				
@@ -99,7 +102,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 			@Override
 			public int getSortOrder()
 			{
-				return 15;
+				return 17;
 			}
 			
 			@Override
@@ -171,11 +174,11 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 	 * @see gov.va.isaac.interfaces.gui.views.DockedViewI#getMenuBarMenuToShowView()
 	 */
 	@Override
-	public MenuItemI getMenuBarMenuToShowView() {
-		MenuItemI menuItem = new MenuItemI()
+	public CheckMenuItemI getMenuBarMenuToShowView() {
+		CheckMenuItemI checkMenuItem = new CheckMenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				//noop
 			}
@@ -183,7 +186,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 			@Override
 			public int getSortOrder()
 			{
-				return 5;
+				return 80;
 			}
 			
 			@Override
@@ -216,7 +219,7 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 				return Images.INBOX.getImage();
 			}
 		};
-		return menuItem;
+		return checkMenuItem;
 	}
 
 	/**
@@ -243,5 +246,12 @@ public class WorkflowInbox implements DockedViewI, IsaacViewWithMenusI
 				Platform.runLater(() -> controller_.loadContent());
 			}
 		}
+	}
+
+	@Override
+	public void viewDiscarded()
+	{
+		// noop - not currently called for a docked view
+		
 	}
 }

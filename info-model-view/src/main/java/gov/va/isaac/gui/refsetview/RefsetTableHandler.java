@@ -25,11 +25,10 @@ import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.NidExtRefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.NidStrExtRefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.RefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.StrExtRefsetInstance;
-import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.Utility;
 import java.io.IOException;
-
+import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -40,7 +39,6 @@ import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.text.Font;
-
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
@@ -55,7 +53,6 @@ import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.tk.Toolkit;
 
 /**
@@ -238,8 +235,8 @@ public class RefsetTableHandler {
 						instance.setValueExt(t.getNewValue());
 
 						if (OTFUtility.getRefsetMember(instance.getValueMemberNid()) == null) {
-							ComponentChronicleBI<?> compositeMember = OTFUtility.getRefsetMember(instance.getCompositeMemberNid());
 							/** TODO (artf231838) - BAC
+							ComponentChronicleBI<?> compositeMember = OTFUtility.getRefsetMember(instance.getCompositeMemberNid());
 							RefexCAB newMember = new RefexCAB(RefexType.STR, compositeMember.getNid(), CEMMetadataBinding.CEM_VALUE_REFSET.getNid(), IdDirective.GENERATE_RANDOM, RefexDirective.EXCLUDE);
 
 							newMember.put(ComponentProperty.STRING_EXTENSION_1, t.getNewValue());
@@ -445,9 +442,10 @@ public class RefsetTableHandler {
 
 			private boolean isLatestVersion(RefsetInstance instance) throws ContradictionException {
  				RefexChronicleBI<?> refChron = OTFUtility.getAllVersionsRefsetMember(instance.getMemberNid());
-				RefexVersionBI<?> refVersion = OTFUtility.getRefsetMember(instance.getMemberNid());
+				Optional<? extends RefexVersionBI<?>> refVersion = OTFUtility.getRefsetMember(instance.getMemberNid());
 				
-				if (refChron.getVersion(OTFUtility.getViewCoordinate()).getStamp() == refVersion.getStamp()) {
+				Optional<? extends RefexVersionBI> x = refChron.getVersion(OTFUtility.getViewCoordinate());
+				if (x.isPresent() && refVersion.isPresent() && x.get().getStamp() == refVersion.get().getStamp()) {
 					return true;
 				}
 				
@@ -485,14 +483,14 @@ public class RefsetTableHandler {
 	}
 
 	private RefexCAB createBlueprint(int nid) throws ContradictionException, InvalidCAB, IOException {
-		RefexVersionBI<?> refex = (RefexVersionBI<?>)OTFUtility.getRefsetMember(nid);
+		RefexVersionBI<?> refex = (RefexVersionBI<?>)OTFUtility.getRefsetMember(nid).get();
 		
 		return refex.makeBlueprint(OTFUtility.getViewCoordinate(),  IdDirective.PRESERVE, RefexDirective.INCLUDE);
 	
 	}
 
 	private void addUncommitted(RefexCAB member, boolean isAnnotation) throws IOException, InvalidCAB, ContradictionException {
-		RefexVersionBI<?> refex = (RefexVersionBI<?>)OTFUtility.getRefsetMember(member.getComponentNid());
+		RefexVersionBI<?> refex = (RefexVersionBI<?>)OTFUtility.getRefsetMember(member.getComponentNid()).get();
 		
 		//TODO retest this... the old impl was quite wrong, not sure how it ever worked, when it called addUncommitted on the wrong things.
 		OTFUtility.getBuilder().constructIfNotCurrent(member);

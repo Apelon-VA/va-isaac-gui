@@ -35,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
@@ -643,11 +644,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
           }
         }
       } else {
-        ConceptAttributeVersionBI<?> version =
-            conceptAttributeChronicle.getVersion(viewCoordinate);
-        if (version != null) {
-          versions.add(version);
-        }
+        conceptAttributeChronicle.getVersion(viewCoordinate).ifPresent((cac) -> versions.add(cac));
       }
       boolean write = true;
 
@@ -717,11 +714,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
           }
         }
       } else {
-        DescriptionVersionBI<?> version =
-            descriptionChronicle.getVersion(viewCoordinate);
-        if (version != null) {
-          versions.add(version);
-        }
+        descriptionChronicle.getVersion(viewCoordinate).ifPresent((dc) -> versions.add(dc));
       }
       boolean write = true;
 
@@ -809,26 +802,26 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
    * @throws IOException Signals that an I/O exception has occurred.
    */
   private String getSctIdOrUuidForNid(int typeNid) throws IOException {
-    String sctId = null;
+    StringBuilder sctId = new StringBuilder();
     try {
       viewCoordinate
           .setContradictionManagerPolicy(ContradictionManagerPolicy.LAST_COMMIT_WINS);
-      ComponentVersionBI componentVersion =
-          dataStore.getComponentVersion(viewCoordinate, typeNid);
-      if (componentVersion != null) {
-        sctId = ConceptViewerHelper.getSctId(componentVersion);
-      }
+      dataStore.getComponentVersion(viewCoordinate, typeNid).ifPresent((cv) -> 
+      {
+        sctId.append(ConceptViewerHelper.getSctId(cv.getNid()));
+      });
     } catch (ContradictionException e) {
       throw new IOException("Unable to get SCTID for " + typeNid, e);
     }
 
-    if (sctId == null || "Unreleased".equals(sctId)) {
-      sctId = dataStore.getUuidPrimordialForNid(typeNid).toString();
+    if (sctId.length() == 0 || "Unreleased".equals(sctId.toString())) {
+      sctId.setLength(0);
+      sctId.append(dataStore.getUuidPrimordialForNid(typeNid).toString());
     }
-    if ("Unreleased".equals(sctId)) {
+    if ("Unreleased".equals(sctId.toString())) {
       LOG.info("Unreleased SCTID for " + sctId);
     }
-    return sctId;
+    return sctId.toString();
   }
 
   /**
@@ -852,11 +845,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
           }
         }
       } else {
-        RelationshipVersionBI<?> version =
-            relationshipChronicle.getVersion(viewCoordinate);
-        if (version != null) {
-          versions.add(version);
-        }
+        relationshipChronicle.getVersion(viewCoordinate).ifPresent((rc) -> versions.add(rc));
       }
       boolean write = true;
 
@@ -1071,10 +1060,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
             }
           }
         } else {
-          RefexVersionBI<?> version = refexChronicle.getVersion(viewCoordinate);
-          if (version != null) {
-            versions.add(version);
-          }
+          refexChronicle.getVersion(viewCoordinate).ifPresent((rc) -> versions.add(rc));
         }
         boolean write = true;
         for (RefexVersionBI<?> rv : versions) {
@@ -1086,10 +1072,10 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
           if (rv.isActive()) { // CHANGE FOR DK, source data incorrect, retired
                                // descriptions should also have retired lang
                                // refsets
-            ComponentVersionBI rc =
+            Optional<? extends ComponentVersionBI> rc =
                 dataStore.getComponentVersion(viewCoordinate,
                     rv.getReferencedComponentNid());
-            if (rc == null || !rc.isActive()) {
+            if (!rc.isPresent() || !rc.get().isActive()) {
               write = false;
             }
           }
@@ -1293,7 +1279,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
 
         case MODULE_ID:
           refsetDescWriter.write(getSctIdOrUuidForNid((dataStore
-              .getComponentVersion(viewCoordinate, refexNid).getModuleNid()))
+              .getComponentVersion(viewCoordinate, refexNid).get().getModuleNid()))
               + field.seperator);
 
           break;
@@ -1347,9 +1333,12 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
     throws Exception {
     if (conceptsToProcess.isMember(cNid)) {
       count++;
-      ConceptVersionBI concept = fetcher.fetch(OTFUtility.getViewCoordinate());
-      LOG.debug("Process concept " + concept.getPrimordialUuid());
-      process(concept);
+      Optional<ConceptVersionBI> concept = fetcher.fetch(OTFUtility.getViewCoordinate());
+      if (concept.isPresent())
+      {
+          LOG.debug("Process concept " + concept.get().getPrimordialUuid());
+          process(concept.get());
+      }
     }
     allCount++;
     // Handle progress monitor

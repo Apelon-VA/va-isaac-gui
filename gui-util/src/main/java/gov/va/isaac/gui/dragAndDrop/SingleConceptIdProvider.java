@@ -18,7 +18,9 @@
  */
 package gov.va.isaac.gui.dragAndDrop;
 
+import java.util.Optional;
 import java.util.UUID;
+
 import gov.va.isaac.util.Utility;
 
 /**
@@ -41,7 +43,7 @@ public interface SingleConceptIdProvider extends ConceptIdProvider
 	 */
 	default public boolean isSctId()
 	{
-		return getSctId() != null;
+		return getSctId().isPresent();
 	}
 	
 	/**
@@ -66,9 +68,9 @@ public interface SingleConceptIdProvider extends ConceptIdProvider
 	 * @see gov.va.isaac.gui.dragAndDrop.ConceptIdProvider#getSctId()
 	 */
 	@Override
-	default public String getSctId()
+	default public Optional<Long> getSctId()
 	{
-		return null;
+		return Optional.empty();
 	}
 	
 	/* (non-Javadoc)

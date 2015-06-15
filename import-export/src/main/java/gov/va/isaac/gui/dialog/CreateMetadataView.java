@@ -27,16 +27,14 @@ import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.models.api.BdbInformationModelService;
 import gov.va.isaac.models.api.InformationModelService;
 import gov.va.isaac.util.Utility;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
 import javafx.concurrent.Task;
 import javafx.scene.Cursor;
+import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
-
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +58,7 @@ public class CreateMetadataView implements PopupViewI, IsaacViewWithMenusI {
     ArrayList<MenuItemI> menus = new ArrayList<>();
     menus.add(new MenuItemI() {
       @Override
-      public void handleMenuSelection(Window parent) {
+      public void handleMenuSelection(Window parent, MenuItem menuItem) {
         showView(parent);
       }
 

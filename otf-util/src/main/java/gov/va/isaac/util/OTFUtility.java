@@ -23,8 +23,14 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.cradle.sememe.SememeProvider;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -33,6 +39,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -76,9 +83,9 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicle
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.RefexChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.refex.type_comp.RefexCompVersionDdo;
+import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
-import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,12 +110,11 @@ public class OTFUtility {
 	private static Integer preferredNid = null;
 	private static Integer synonymNid = null;
 	private static Integer langTypeNid = null;
+	private static Integer snomedAssemblageNid = null;
 	
 	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static final Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
-
-	private static Set<UUID> rootNodeList = null;
 
 	public static TerminologyBuilderBI getBuilder() {
 		return new Builder(getEditCoordinate(), getViewCoordinateAllowInactive(), AppContext.getService(PersistentStoreI.class));
@@ -178,7 +184,7 @@ public class OTFUtility {
 			if (pathUuid != null && (pathChronicle = dataStore.getConcept(pathUuid)) != null) {
 				pathNid = pathChronicle.getNid();
 			} else {
-				pathNid = IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid();
+				pathNid = IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getLenient().getConceptNid();
 				pathChronicle = dataStore.getConcept(pathNid);
 				pathUuid = pathChronicle.getPrimordialUuid();
 			}
@@ -283,8 +289,10 @@ public class OTFUtility {
 		}
 		// If we get here, we didn't find what they were looking for. Pick
 		// something....
-		return (fsn != null ? fsn : (preferred != null ? preferred
+		String returnValue = (fsn != null ? fsn : (preferred != null ? preferred
 				: (bestFound != null ? bestFound : concept.toUserString())));
+		
+		return returnValue;
 	}
 	public static String getFullySpecifiedName(ConceptChronicleBI concept) {
 		try {
@@ -337,6 +345,14 @@ public class OTFUtility {
 			preferredNid = dataStore.getNidForUuids(PREFERRED_UUID);
 		}
 		return preferredNid;
+	}
+	
+	public static int getSnomedAssemblageNid() {
+		if (snomedAssemblageNid == null)
+		{
+			snomedAssemblageNid = IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getNid();
+		}
+		return snomedAssemblageNid;
 	}
 
 	/**
@@ -414,9 +430,14 @@ public class OTFUtility {
 
 	/**
 	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
-	 * then calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int, calls {@link #getConceptVersion(int)}
+	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
+	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
+	 * a SCTID and converts that to UUID and then calls {@link #getConceptVersion(UUID)}.  Note that is is possible for some 
+	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - then a 
+	 * runtime exception is thrown.
+	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
+	 * 
+	 * 
 	 */
 	public static ConceptVersionBI lookupIdentifier(String identifier)
 	{
@@ -434,21 +455,40 @@ public class OTFUtility {
 			return getConceptVersion(uuid);
 		}
 		
-		if (Utility.isLong(localIdentifier))
+		//if it is a negative integer, assume nid
+		Optional<Integer> nid = Utility.getNID(localIdentifier);
+		if (nid.isPresent()) {
+			return getConceptVersion(nid.get());
+		}
+		
+		if (SctId.isValidSctId(localIdentifier))
 		{
+			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
 			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
 			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
 			ConceptVersionBI cv = getConceptVersion(alternateUUID);
 			if (cv != null)
 			{
+				//sanity check:
+				if (Utility.isInt(localIdentifier))
+				{
+					int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+					if (nidFromSequence != 0)
+					{
+						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
+					}
+				}
 				return cv;
 			}
 		}
-		
-		Integer i = Utility.getInt(localIdentifier);
-		if (i != null)
+		else if (Utility.isInt(localIdentifier))
 		{
-			return getConceptVersion(i);
+			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
+			int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+			if (nidFromSequence != 0)
+			{
+				return getConceptVersion(nidFromSequence);
+			}
 		}
 		return null;
 	}
@@ -524,7 +564,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -566,7 +606,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -595,15 +635,15 @@ public class OTFUtility {
 		{
 			ComponentChronicleBI<?> componentChronicle = getComponentChronicle(nid);
 			
-			ComponentVersionBI componentVersion = componentChronicle.getVersion(getViewCoordinate());
+			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(getViewCoordinate());
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (componentVersion == null || componentVersion.getUUIDs().size() == 0)
+			if (!componentVersion.isPresent() || componentVersion.get().getUuidList().size() == 0)
 			{
 				return null;
 			} else {
-				return componentVersion;
+				return componentVersion.get();
 			}
 		} catch (ContradictionException e) {
 			LOG.error("Trouble getting concept " + nid + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
@@ -624,15 +664,15 @@ public class OTFUtility {
 		{
 			ComponentChronicleBI<?> componentChronicle = getComponentChronicle(uuid);
 			
-			ComponentVersionBI componentVersion = componentChronicle.getVersion(getViewCoordinate());
+			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(getViewCoordinate());
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (componentVersion.getUUIDs().size() == 0)
+			if (!componentVersion.isPresent() || componentVersion.get().getUuidList().size() == 0)
 			{
 				return null;
 			} else {
-				return componentVersion;
+				return componentVersion.get();
 			}
 		} catch (ContradictionException e) {
 			LOG.error("Trouble getting concept " + uuid + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
@@ -655,10 +695,14 @@ public class OTFUtility {
 		try
 		{
 			ComponentChronicleBI<?> result = dataStore.getComponent(nid);
+			if (result == null)
+			{
+				return null;
+			}
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -688,7 +732,7 @@ public class OTFUtility {
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
-			if (result.getUUIDs().size() == 0)
+			if (result.getUuidList().size() == 0)
 			{
 				return null;
 			}
@@ -702,22 +746,22 @@ public class OTFUtility {
 		}
 	}
 	
-	public static RefexVersionBI<?> getRefsetMember(int nid) {
+	/**
+	 * Returns an empty optional, if the member isn't on the path (or if it is an invalid nid alltogether)
+	 */
+	public static Optional<? extends RefexVersionBI<?>> getRefsetMember(int nid) {
 		try {
 			RefexChronicleBI<?> refexChron = (RefexChronicleBI<?>) dataStore.getComponent(nid);
 
 			if (refexChron != null) {
 				ViewCoordinate tempVc = getViewCoordinate();
 				tempVc.getAllowedStatus().add(Status.INACTIVE);
-				RefexVersionBI<?> refexChronVersion = refexChron.getVersion(tempVc);
-				
-				return refexChronVersion;
+				return refexChron.getVersion(tempVc);
 			}
 		} catch (Exception ex) {
 			LOG.warn("perhaps unexpected?", ex);
 		}
-
-		return null;
+		return Optional.empty();
 	}
 
 	public static RefexChronicleBI<?> getAllVersionsRefsetMember(int nid) {
@@ -877,33 +921,6 @@ public class OTFUtility {
 		return results;
 	}
 
-	/**
-	 * Recursively looks at parents until finds a concept without a parent
-	 */
-	public static ConceptVersionBI getRootConcept(ConceptVersionBI concept) throws IOException, ContradictionException
-	{
-		ConceptVersionBI parent = OTFUtility.getConceptVersion(concept.getRelationshipsOutgoingActiveIsa().iterator().next().getDestinationNid());
-
-		//TODO wouldn't it be far safer to just look and see if the parent is ISAAC.ISAAC_ROOT ?
-		//And document the method that way?
-		if (!getRootNodeList().contains(parent.getPrimordialUuid())) {
-			return getRootConcept(parent);
-		} else {
-			return parent;
-		}
-	}
-
-	private static Set<UUID> getRootNodeList() {
-		if (rootNodeList == null) {
-			rootNodeList = new HashSet<UUID>();
-			rootNodeList.add(UUID.fromString("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8")); // SCT
-			rootNodeList.add(UUID.fromString("3958d043-9e8c-508e-bf6d-fd9c83a856da")); // LOINC
-			rootNodeList.add(UUID.fromString("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8"));
-		}
-		
-		return rootNodeList;
-	}
-
 	public static ConceptChronicleBI createNewConcept(ConceptChronicleBI parent, String fsn,
 			String prefTerm) throws IOException, InvalidCAB, ContradictionException {
 		ConceptCB newConCB = createNewConceptBlueprint(parent, fsn, prefTerm);
@@ -947,7 +964,23 @@ public class OTFUtility {
 
 	public static String getConPrefTerm(int nid) {
 		try {
-			return OTFUtility.getConceptVersion(nid).getPreferredDescription().getText();
+			ConceptVersionBI cv = OTFUtility.getConceptVersion(nid);
+			if (cv == null)
+			{
+				return nid + " NOT ON PATH";
+			}
+			else
+			{
+				DescriptionVersionBI<?> dv = cv.getPreferredDescription();
+				if (dv == null)
+				{
+					return nid + " NO DESC FOUND";
+				}
+				else
+				{
+					return dv.getText();
+				}
+			}
 		} catch (IOException | ContradictionException e) {
 			LOG.error("Unable to identify description.  Points to larger problem", e);
 			return "ERROR";
@@ -1109,19 +1142,19 @@ public class OTFUtility {
 		retSet.add(conceptWithComp);
 		
 		for(DescriptionChronicleBI desc : conceptWithComp.getDescriptions()) {
-			retSet.add(desc.getVersion(conceptWithComp.getViewCoordinate()));
+			desc.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((dv) -> retSet.add(dv));
 		}
 
 		for(RelationshipChronicleBI rel : conceptWithComp.getRelationshipsOutgoing()) {
-			retSet.add(rel.getVersion(conceptWithComp.getViewCoordinate()));
+			rel.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rv) -> retSet.add(rv));
 		}
 
 		for(RefexChronicleBI<?> refsetMember : conceptWithComp.getRefsetMembers()) {
-			retSet.add(refsetMember.getVersion(conceptWithComp.getViewCoordinate()));
+			refsetMember.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rm) -> retSet.add(rm));
 		}
 
 		for(RefexDynamicChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
-			retSet.add(dynRef.getVersion(conceptWithComp.getViewCoordinate()));
+			dynRef.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rdv) -> retSet.add(rdv));
 		}
 
 		return retSet;
@@ -1200,5 +1233,32 @@ public class OTFUtility {
 		List<String> pts = new ArrayList<>();
 		pts.add(pt);
 		return ConceptCB.computeComponentUuid(IdDirective.GENERATE_REFEX_CONTENT_HASH, fsns, pts, null);
+	}
+	
+	public static Optional<Long> getSctId(int componentNid)
+	{
+		try
+		{
+			Optional<LatestVersion<StringSememeImpl>> sememe = AppContext.getService(SememeProvider.class)
+					.getSnapshot(StringSememeImpl.class, StampCoordinates.getDevelopmentLatest())
+					.getLatestSememeVersionsForComponentFromAssemblage(componentNid, getSnomedAssemblageNid()).findFirst();
+			if (sememe.isPresent())
+			{
+				String temp = sememe.get().value().getString();
+				try
+				{
+					return Optional.of(Long.parseLong(temp));
+				}
+				catch (NumberFormatException e)
+				{
+					LOG.error("The found string '" + temp + "' isn't parseable as a long - as an SCTID should be - in nid " + componentNid);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOG.warn("Unexpected error trying to find SCTID for nid " + componentNid, e);
+		}
+		return Optional.empty();
 	}
 }

@@ -59,7 +59,7 @@ public interface Exporter extends ProgressReporter {
 	//TODO dan notes this doesn't check the path of any nested annotations
 	// atts
 	ConceptAttributeVersionBI<?> att =
-		cv.getConceptAttributes().getVersion(vc);
+		cv.getConceptAttributes().getVersion(vc).get();
 	if (att == null)
 	  return false;
 	if (att.getPathNid() == pathNid)
@@ -67,21 +67,21 @@ public interface Exporter extends ProgressReporter {
 	
 	// descs
 	for (DescriptionChronicleBI dc : cv.getDescriptions()) {
-	  DescriptionVersionBI<?> dv = dc.getVersion(vc);
+	  DescriptionVersionBI<?> dv = dc.getVersion(vc).get();
 	  if (dv.getPathNid() == pathNid) 
 		return true;
 	}
 
 	// rels
 	for (RelationshipChronicleBI rc : cv.getRelationshipsOutgoing()) {
-	  RelationshipVersionBI<?> rv = rc.getVersion(vc);
+	  RelationshipVersionBI<?> rv = rc.getVersion(vc).get();
 	  if (rv.getPathNid() == pathNid) 
 		return true;
 	}
 	
 	// refex
 	for (RefexChronicleBI<?> rc : cv.getAnnotations()) {
-	  RefexVersionBI<?> rv = rc.getVersion(vc);
+	  RefexVersionBI<?> rv = rc.getVersion(vc).get();
 	  if (rv.getPathNid() == pathNid) 
 		return true;
 	}
@@ -89,7 +89,7 @@ public interface Exporter extends ProgressReporter {
 	try {
 		for (RefexDynamicChronicleBI<?> rc : cv.getRefexDynamicAnnotations()) {
 			if(rc != null) {
-				RefexDynamicVersionBI<?> rv = rc.getVersion(vc);
+				RefexDynamicVersionBI<?> rv = rc.getVersion(vc).get();
 				if(rv != null) {
 //					System.out.println(rc.getVersion(vc));
 					if (rv.getPathNid() == pathNid)  {

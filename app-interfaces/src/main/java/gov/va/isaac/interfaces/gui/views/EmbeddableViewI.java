@@ -35,4 +35,14 @@ public interface EmbeddableViewI extends IsaacViewI
 	 * Get a reference to the JavaFX Region component that is created by this view.
 	 */
 	public Region getView();
+	
+	/**
+	 * May be called by a parent window to inform the embedded view that it is no longer required.
+	 * An embedded view may wish to disable all listeners that are triggering expensive refresh operations,
+	 * for example, after a view has been discarded.
+	 * 
+	 * Otherwise, the bindings may continue firing, and causing refresh operations until the next iteration
+	 * of the garbage collector.
+	 */
+	public void viewDiscarded();
 }

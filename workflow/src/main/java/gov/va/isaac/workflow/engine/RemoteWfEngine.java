@@ -25,12 +25,17 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.users.Credentials;
 import gov.va.isaac.gui.users.CredentialsPromptDialog;
 import gov.va.isaac.workflow.persistence.LocalTasksApi;
+import gov.va.isaac.workflow.persistence.ProcessInstanceCreationRequestsAPI;
+
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+
 import javafx.application.Platform;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 import org.kie.api.runtime.manager.RuntimeEngine;
 import org.kie.api.task.TaskService;
@@ -116,14 +121,15 @@ public class RemoteWfEngine
 					if (promptResult != null)
 					{
 						UserProfile up = AppContext.getService(UserProfileManager.class).getCurrentlyLoggedInUserProfile();
-						if (!up.getWorkflowUsername().equals(promptResult.getUsername()))
-						{
-							AppContext.getService(LocalTasksApi.class).changeUserName(up.getWorkflowUsername(), promptResult.getUsername());
-						}
-						up.setWorkflowUsername(promptResult.getUsername());
-						up.setWorkflowPassword(promptResult.getPassword());
 						try
 						{
+							if (!up.getWorkflowUsername().equals(promptResult.getUsername()))
+							{
+								AppContext.getService(LocalTasksApi.class).changeUserName(up.getWorkflowUsername(), promptResult.getUsername());
+								AppContext.getService(ProcessInstanceCreationRequestsAPI.class).changeUserName(up.getWorkflowUsername(), promptResult.getUsername());
+							}
+							up.setWorkflowUsername(promptResult.getUsername());
+							up.setWorkflowPassword(promptResult.getPassword());
 							AppContext.getService(UserProfileManager.class).saveChanges(up);
 						}
 						catch (Exception e1)

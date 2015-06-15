@@ -50,6 +50,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
@@ -66,7 +67,6 @@ import javax.inject.Singleton;
 import javax.naming.AuthenticationException;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cs.ChangeSetReader;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -668,7 +668,7 @@ public class SyncView implements PopupViewI, IsaacViewWithMenusI
 		menus.add(new MenuItemI()
 		{
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				syncRequested();
 			}
