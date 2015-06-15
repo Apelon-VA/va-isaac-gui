@@ -949,8 +949,7 @@ public class OTFUtility {
 		UUID module = Snomed.CORE_MODULE.getLenient().getPrimordialUuid();
 		UUID parentUUIDs[] = new UUID[1];
 		parentUUIDs[0] = parent.getPrimordialUuid();
-		//TODO OCHRE deal with path
-		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
+		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), parentUUIDs);
 	}
 
 //	public static void commit(int nid) throws IOException {

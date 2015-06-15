@@ -28,6 +28,7 @@ import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -810,6 +811,6 @@ public class BdbInformationModelService implements InformationModelService {
     UUID parentUUIDs[] = new UUID[1];
     parentUUIDs[0] = parent.getPrimordialUuid();
     //TODO OCHRE deal with path
-    return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
+    return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), parentUUIDs);
   }
 }
