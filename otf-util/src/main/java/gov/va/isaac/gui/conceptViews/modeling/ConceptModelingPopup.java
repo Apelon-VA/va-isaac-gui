@@ -132,12 +132,12 @@ public class ConceptModelingPopup extends ModelingPopup
 				ExtendedAppContext.getDataStore().forget(attr);
 			}
 			boolean isDefined = (cb.getSelectionModel().getSelectedIndex() == 0); 
-			ConceptAttributeAB cab = new ConceptAttributeAB(attr.getConceptNid(), isDefined, RefexDirective.EXCLUDE);
+			ConceptAttributeAB cab = new ConceptAttributeAB(attr.getEnclosingConceptNid(), isDefined, RefexDirective.EXCLUDE);
 			// Need to add a fix for storing isDefined 
 			
 			ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 			
-			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getConceptNid()));
+			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getEnclosingConceptNid()));
 		}
 		catch (Exception e)
 		{

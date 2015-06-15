@@ -101,8 +101,8 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
-import org.ihtsdo.otf.tcc.model.index.service.IndexedGenerationCallable;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1548,10 +1548,12 @@ public class DynamicRefexView implements RefexViewI
 					ExtendedAppContext.getDataStore().forget(refex);
 					ConceptVersionBI cv = ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinate(), refex.getReferencedComponentNid());
 					//if assemblageNid != concept nid - this means it is an annotation style refex
-					if ((refex.getAssemblageNid() != refex.getConceptNid()) && cv.isUncommitted())
-					{
-						cv.cancel();
-					}
+                                        // TODO There are no more annotation refexes, they are all stored the same...
+                                        cv.cancel();
+//					if ((refex.getAssemblageNid() != refex.getConceptNid()) && cv.isUncommitted())
+//					{
+//						cv.cancel();
+//					}
 				}
 			}
 			forgetAllUncommitted(item.getChildren());

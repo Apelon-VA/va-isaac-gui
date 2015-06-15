@@ -21,7 +21,7 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 
 public class MappingItemCommentDAO extends MappingDAO 
 {
@@ -65,7 +65,7 @@ public class MappingItemCommentDAO extends MappingDAO
 
 			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentAnnotation);
 
-			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
+			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
 			ExtendedAppContext.getDataStore().commit(/* cc */);
@@ -154,7 +154,7 @@ public class MappingItemCommentDAO extends MappingDAO
 			commentCab.validate(null);
 			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentCab);
 
-			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
+			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
 			ExtendedAppContext.getDataStore().commit(/* cc */);

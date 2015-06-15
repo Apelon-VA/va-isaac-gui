@@ -22,6 +22,7 @@ import gov.va.isaac.ie.exporter.Rf2File.ReleaseType;
 import gov.va.isaac.util.AbstractProgressReporter;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressListener;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -60,7 +61,7 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.time.TimeHelper;
-import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1366,8 +1367,8 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
    * @throws IOException signals that an I/O exception has occurred
    */
   @Override
-  public NativeIdSetBI getNidSet() throws IOException {
-    return conceptsToProcess;
+  public NidSet getNidSet() {
+    return NidSet.of(conceptsToProcess.toConceptSequenceSet());
   }
 
   /*

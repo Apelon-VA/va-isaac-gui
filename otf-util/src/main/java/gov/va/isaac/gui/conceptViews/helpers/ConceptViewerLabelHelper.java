@@ -266,7 +266,7 @@ public class ConceptViewerLabelHelper {
 							LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
 						}
 						if (type == ComponentType.CONCEPT) {
-							view.setComponent(comp.getConceptNid());
+							view.setComponent(comp.getAssociatedConceptNid());
 						} else {
 							view.setComponent(comp.getNid());
 						}
@@ -293,7 +293,7 @@ public class ConceptViewerLabelHelper {
 					@Override
 					public void handle(ActionEvent event)
 					{
-						previousConceptStack.add(comp.getConceptNid());
+						previousConceptStack.add(comp.getAssociatedConceptNid());
 						if (conceptView == null) {
 							AppContext.getService(EnhancedConceptView.class).setConcept(refConNid);
 						} else {
@@ -366,7 +366,7 @@ public class ConceptViewerLabelHelper {
 			{
 				try {
 					if (type == ComponentType.CONCEPT) {
-						ConceptVersionBI con = OTFUtility.getConceptVersion(comp.getConceptNid());
+						ConceptVersionBI con = OTFUtility.getConceptVersion(comp.getAssociatedConceptNid());
 
 						if (!OTFUtility.getAllChildrenOfConcept(con, false).isEmpty()) {
 							AppContext.getCommonDialogs().showInformationDialog("Retire Concept Failure", "Cannot retire concept until it has no children");
@@ -394,7 +394,7 @@ public class ConceptViewerLabelHelper {
 								
 								ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 								
-								ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getConceptNid()));
+								ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getAssociatedConceptNid()));
 								
 								// Commit
 								ExtendedAppContext.getDataStore().commit(/* con */);
@@ -424,7 +424,7 @@ public class ConceptViewerLabelHelper {
 						retireRelationship(rel);
 					}
 					
-					conceptView.setConcept(comp.getConceptNid());
+					conceptView.setConcept(comp.getAssociatedConceptNid());
 				} catch (Exception e) {
 					LOG.error("Failure in retiring comp: " + comp.getPrimordialUuid(), e);
 				}
@@ -437,7 +437,7 @@ public class ConceptViewerLabelHelper {
 				
 				RelationshipChronicleBI rcbi = OTFUtility.getBuilder().constructIfNotCurrent(rcab);
 				
-				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rcbi.getConceptNid()));
+				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rcbi.getAssociatedConceptNid()));
 			}
 		});
 
@@ -459,7 +459,7 @@ public class ConceptViewerLabelHelper {
 					} else if (type == ComponentType.RELATIONSHIP) {
 						ExtendedAppContext.getDataStore().forget((RelationshipVersionBI<?>)comp);
 					}
-					conceptView.setConcept(comp.getConceptNid());
+					conceptView.setConcept(comp.getAssociatedConceptNid());
 				} catch (Exception e) {
 					LOG.error("Unable to cancel comp: " + comp.getNid(), e);
 				}

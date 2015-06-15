@@ -40,7 +40,7 @@ import org.ihtsdo.otf.tcc.api.spec.DescriptionSpec;
 import org.ihtsdo.otf.tcc.api.spec.SpecFactory;
 import org.ihtsdo.otf.tcc.api.store.TerminologySnapshotDI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 
 /**
  * The Class DialectHelper. Loads the lists of dialect variant words from the
@@ -84,7 +84,7 @@ public class DialectHelper
 					ViewCoordinate vc = AppContext.getService(TerminologyStoreDI.class).getMetadataVC();
 					TerminologySnapshotDI ts = AppContext.getService(TerminologyStoreDI.class).getSnapshot(vc);
 
-					ConceptVersionBI enVariantTextRefsetC = Language.EN_VARIANT_TEXT.getStrict(AppContext.getService(TerminologyStoreDI.class).getMetadataVC());
+					ConceptVersionBI enVariantTextRefsetC = (ConceptVersionBI) Language.EN_VARIANT_TEXT.getStrict(AppContext.getService(TerminologyStoreDI.class).getMetadataVC());
 					Collection<? extends RefexChronicleBI<?>> enVariants = enVariantTextRefsetC.getRefexes();
 					Set<String> variantSet = new HashSet<String>();
 					for (RefexChronicleBI<?> refex : enVariants)
@@ -142,8 +142,8 @@ public class DialectHelper
 	private static void addDialect(ConceptSpec dialectSpec, ViewCoordinate viewCoordinate, ConceptSpec varientsSpec, TerminologySnapshotDI terminologySnapshot,
 			HashMap<Integer, Map<String, String>> initialVariantMap) throws ContradictionException, IOException
 	{
-		ConceptVersionBI dialectC = dialectSpec.getStrict(viewCoordinate);
-		ConceptVersionBI variantTextRefsetC = varientsSpec.getStrict(viewCoordinate);
+		ConceptVersionBI dialectC = (ConceptVersionBI) dialectSpec.getStrict(viewCoordinate);
+		ConceptVersionBI variantTextRefsetC = (ConceptVersionBI) varientsSpec.getStrict(viewCoordinate);
 
 		Collection<? extends RefexChronicleBI<?>> dialectVarients = variantTextRefsetC.getRefexMembersActive(viewCoordinate);
 		Map<String, String> variantDialectMap = new HashMap<String, String>();

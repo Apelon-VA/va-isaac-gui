@@ -43,6 +43,7 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,7 +88,7 @@ public class QueryBuilderHelper {
 	
 	private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
-	private static NativeIdSetBI results;
+	private static NidSet results;
 
 	/**
 	 * 
@@ -659,7 +660,7 @@ public class QueryBuilderHelper {
 //			}
 
 			@Override
-			public void Let() throws IOException {
+			public void Let() {
 			}
 
 			@Override
@@ -680,13 +681,11 @@ public class QueryBuilderHelper {
 		Set<CompositeSearchResult> collection = new HashSet<CompositeSearchResult>();
 		
 		if (results != null) {
-			NativeIdSetItrBI itr = results.getSetBitIterator();
-			while (itr.next()) {
-				int nid = itr.nid();
+			results.stream().forEach((nid) -> {
 				ConceptVersionBI con = OTFUtility.getConceptVersion(nid);
 				CompositeSearchResult nidResult = new CompositeSearchResult(con, 0);
 				collection.add(nidResult);
-			}
+                        });
 		}
 
 		return collection;

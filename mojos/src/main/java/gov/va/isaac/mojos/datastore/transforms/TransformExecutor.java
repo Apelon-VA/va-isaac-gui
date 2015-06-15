@@ -19,8 +19,8 @@
 package gov.va.isaac.mojos.datastore.transforms;
 
 import gov.va.isaac.AppContext;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +32,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 
 /**
@@ -147,7 +146,7 @@ public class TransformExecutor extends AbstractMojo
 					}
 
 					@Override
-					public NativeIdSetBI getNidSet() throws IOException
+					public NidSet getNidSet()
 					{
 						return null;
 					}

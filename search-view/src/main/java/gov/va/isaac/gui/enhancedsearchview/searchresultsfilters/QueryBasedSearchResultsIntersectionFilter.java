@@ -32,6 +32,7 @@ import gov.va.isaac.gui.enhancedsearchview.filters.NonSearchTypeFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 
 		q = new Query() {
 			@Override
-			public void Let() throws IOException {
+			public void Let() {
 				for (NonSearchTypeFilter<?> filter : filters) {
 					if (filter instanceof IsDescendantOfFilter) {
 						ConceptVersionBI concept = OTFUtility.getConceptVersion(((IsDescendantOfFilter)filter).getNid());
@@ -187,12 +188,12 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 			}
 
 			@Override
-			protected ForSetSpecification ForSetSpecification() throws IOException {
+			protected ForSetSpecification ForSetSpecification() {
 				return forSetSpecification;
 			}
 		};
 
-		NativeIdSetBI outputNids = null;
+		NidSet outputNids = null;
 		try {
 			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + forSetCustomCollection.size() + " uuids");
 

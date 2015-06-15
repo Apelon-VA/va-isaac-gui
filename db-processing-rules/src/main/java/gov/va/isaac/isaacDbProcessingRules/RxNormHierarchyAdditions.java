@@ -21,6 +21,7 @@ package gov.va.isaac.isaacDbProcessingRules;
 import gov.va.isaac.mojos.datastore.transforms.TransformArbitraryI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -186,7 +187,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 			}
 
 			@Override
-			public NativeIdSetBI getNidSet() throws IOException
+			public NidSet getNidSet()
 			{
 				return null;
 			}

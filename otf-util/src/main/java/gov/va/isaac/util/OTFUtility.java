@@ -70,7 +70,7 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.api.uuid.UuidFactory;
+import gov.vha.isaac.ochre.util.UuidFactory;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
@@ -1017,7 +1017,7 @@ public class OTFUtility {
 	
 	public static List<ConceptChronicleBI> getPathConcepts() throws ValidationException, IOException, ContradictionException {
 		ConceptChronicleBI pathRefset =
-				dataStore.getConcept(IsaacMetadataAuxiliaryBinding.PATHS.getLenient().getPrimordialUuid());
+				dataStore.getConcept(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getLenient().getPrimordialUuid());
 			Collection<? extends RefexChronicleBI<?>> members = pathRefset.getRefsetMembers();
 			List<ConceptChronicleBI> pathConcepts = new ArrayList<>();
 			for (RefexChronicleBI<?> member : members) {
@@ -1033,7 +1033,7 @@ public class OTFUtility {
 			}
 			
 			if (pathConcepts.size() == 0) {
-				LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS);
+				LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE);
 			} else {
 				LOG.debug("Loaded {} paths: {}", pathConcepts.size(), pathConcepts);
 			}
@@ -1068,7 +1068,7 @@ public class OTFUtility {
 		TerminologyBuilderBI builder = getBuilder(editCoord, getViewCoordinate());
 		
 		// Create new version of all uncommitted components in concept
-		ConceptVersionBI conceptWithComp = OTFUtility.getConceptVersion(getComponentVersion(compUuid).getConceptNid());
+		ConceptVersionBI conceptWithComp = OTFUtility.getConceptVersion(getComponentVersion(compUuid).getAssociatedConceptNid());
 		Set<ComponentVersionBI> componentsInConcept = getConceptComponents(conceptWithComp);
 
 		int devPathNid = IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getNid();

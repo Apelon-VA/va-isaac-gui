@@ -189,7 +189,7 @@ public class PreferredAcceptabilityPrompt {
 			}
 			bp.setStatus(Status.INACTIVE);
 			OTFUtility.getBuilder().constructIfNotCurrent(bp);
-			ConceptVersionBI refCon = OTFUtility.getConceptVersion(member.getConceptNid());
+			ConceptVersionBI refCon = OTFUtility.getConceptVersion(member.getEnclosingConceptNid());
 	
 			ExtendedAppContext.getDataStore().addUncommitted(refCon);
 		} catch (Exception e) {

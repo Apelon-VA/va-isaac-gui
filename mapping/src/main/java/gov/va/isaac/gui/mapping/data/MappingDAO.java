@@ -38,7 +38,7 @@ import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +104,7 @@ public abstract class MappingDAO
 				mappingCab.setStatus(status);
 				RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingCab);
 
-				ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
+				ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 				ExtendedAppContext.getDataStore().addUncommitted(cc);
 				ExtendedAppContext.getDataStore().commit(/* cc */);
 			}

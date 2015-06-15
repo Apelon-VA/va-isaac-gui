@@ -51,7 +51,7 @@ public class CompositeSearchResult {
 		{
 			throw new RuntimeException("Please call the constructor that takes a nid, if matchingComponent is null...");
 		}
-		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid());
+		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getAssociatedConceptNid());
 	}
 	public CompositeSearchResult(int matchingComponentNid, float score) {
 		this.bestScore = score;

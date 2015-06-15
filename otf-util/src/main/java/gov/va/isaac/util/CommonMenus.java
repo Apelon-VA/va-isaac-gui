@@ -954,7 +954,7 @@ public class CommonMenus
 					return nid;
 				}
 			} else 	{
-				return cc.getConceptNid();
+				return cc.getEnclosingConceptNid();
 			}
 		}
 		else

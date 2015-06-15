@@ -41,7 +41,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

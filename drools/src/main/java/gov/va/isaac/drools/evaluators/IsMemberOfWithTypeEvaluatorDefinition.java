@@ -153,7 +153,7 @@ public class IsMemberOfWithTypeEvaluatorDefinition extends IsaacBaseEvaluatorDef
 						for (RefexVersionBI<?> refex : refexes)
 						{
 							RefexNidVersionBI<?> conceptRefex = (RefexNidVersionBI<?>) refex;
-							if (conceptRefex.getNid1() == conceptSpecType.getStrict(vc).getConceptNid())
+							if (conceptRefex.getNid1() == conceptSpecType.getStrict(vc).getNid())
 							{
 								return true;
 							}
@@ -238,7 +238,7 @@ public class IsMemberOfWithTypeEvaluatorDefinition extends IsaacBaseEvaluatorDef
 						for (RefexVersionBI<?> refex : refexes)
 						{
 							RefexNidVersionBI<?> conceptRefex = (RefexNidVersionBI<?>) refex;
-							if (conceptRefex.getNid1() == conceptSpecType.getStrict(vc).getConceptNid())
+							if (conceptRefex.getNid1() == conceptSpecType.getStrict(vc).getNid())
 							{
 								return true;
 							}
