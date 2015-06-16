@@ -20,6 +20,7 @@ package gov.va.isaac.gui.conceptViews.helpers;
 
 import gov.va.isaac.util.OTFUtility;
 import java.io.IOException;
+import java.util.Optional;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Label;
@@ -133,7 +134,8 @@ public class ConceptViewerTooltipHelper {
 	}
 
 	private String createConTooltipText(ConceptAttributeVersionBI<?> attr) {
-		return "SctId: " + ConceptViewerHelper.getSctId(attr.getNid()).get()+ " " + ConceptViewerHelper.getPrimDef(attr) + getStampTooltip(attr);
+		Optional<Long> sctId = ConceptViewerHelper.getSctId(attr.getNid()); 
+		return (sctId.isPresent() ? "SctId: " + sctId.get() : "") + " " + ConceptViewerHelper.getPrimDef(attr) + getStampTooltip(attr);
 	}
 	
 	private String createRelTooltipText(RelationshipVersionBI<?> rel) {
