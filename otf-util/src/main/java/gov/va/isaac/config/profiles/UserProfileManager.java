@@ -24,8 +24,10 @@ import gov.va.isaac.config.generated.RoleOption;
 import gov.va.isaac.config.generated.User;
 import gov.va.isaac.config.users.GenerateUsers;
 import gov.va.isaac.config.users.InvalidUserException;
+import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.interfaces.utility.ServicesToPreloadI;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -496,8 +498,8 @@ public class UserProfileManager implements ServicesToPreloadI
 		}
 		UserProfile up = new UserProfile(TermAux.USER.getDescription(), TermAux.USER.getDescription(), TermAux.USER.getUuids()[0]);
 		up.setLaunchWorkflowForEachCommit(false);
-		up.setEditCoordinatePath(TermAux.WB_AUX_PATH.getUuids()[0]);
-		up.setViewCoordinatePath(Snomed.SNOMED_RELEASE_PATH.getUuids()[0]);  //TODO this needs to be able to read a reasonable path out of the DB, and construct it.
+		up.setEditCoordinatePath(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid());
+		up.setViewCoordinatePath(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid());
 		loggedInUser_ = up;
 		AppContext.getService(UserProfileBindings.class).update(loggedInUser_);
 		userNamesWithProfiles_.add(up.getUserLogonName());
