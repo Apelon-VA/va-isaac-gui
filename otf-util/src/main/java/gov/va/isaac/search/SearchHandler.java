@@ -357,7 +357,7 @@ public class SearchHandler
 
 									// Get the description object.
 									//TODO figure out how we handle view coordinate for search
-									Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(ViewCoordinates.getDevelopmentStatedLatest());
+									Optional<? extends ComponentVersionBI> cc = dataStore.getComponentVersion(ViewCoordinates.getDevelopmentStatedLatest(), searchResult.getNid());
 
 									// normalize the scores between 0 and 1
 									float normScore = (searchResult.getScore() / maxScore);
