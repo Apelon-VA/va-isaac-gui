@@ -72,7 +72,7 @@ public class CompositeSearchResult {
 		}
 		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getAssociatedConceptNid());
 
-                //TODO - we need to evaluate / design proper behavior for how view coordinate should work with search
+		//TODO - we need to evaluate / design proper behavior for how view coordinate should work with search
 		//default back to just using this for the moment, rather than what OTFUtility says.
 		//this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid(), vc);
 	}
