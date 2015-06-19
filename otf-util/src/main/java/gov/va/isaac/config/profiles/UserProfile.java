@@ -23,9 +23,17 @@ import gov.va.isaac.config.generated.RoleOption;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.util.PasswordHasher;
+
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
@@ -33,6 +41,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +126,9 @@ public class UserProfile
 
 	@XmlElement
 	public String extensionNamespace = null;
-	
+
+	@XmlElement
+	public Status[] viewCoordinateStatuses = null;
 	/*
 	 *  *** Update clone() method when adding parameters
 	 *  
@@ -148,6 +159,11 @@ public class UserProfile
 		clone.changeSetUrl = this.changeSetUrl;
 		clone.releaseVersion = this.releaseVersion;
 		clone.extensionNamespace = this.extensionNamespace;
+		if (this.viewCoordinateStatuses != null) {
+			clone.viewCoordinateStatuses = Arrays.copyOf(this.viewCoordinateStatuses, this.viewCoordinateStatuses.length);
+		} else {
+			clone.viewCoordinateStatuses = null;
+		}
 
 		return clone;
 	}
@@ -564,6 +580,62 @@ public class UserProfile
 	}
 
 	/**
+	 * @return viewCoordinateStatuses unmodifiable set of viewCoordinateStatus
+	 * 
+	 * Always returns a unique unmodifiable set of 1 or more Status values.
+	 * Returns unmodifiable set of default status values if stored array is null or contains no non-null values
+	 */
+	public Set<Status> getViewCoordinateStatuses()
+	{
+		Set<Status> statuses = new HashSet<>();
+		if (viewCoordinateStatuses != null)
+		{
+			for (Status status : viewCoordinateStatuses) {
+				if (status != null) {
+					statuses.add(status);
+				}
+			}
+		}
+		
+		if (statuses.size() == 0) {
+			statuses.addAll(UserProfileDefaults.getDefaultViewCoordinateStatuses());
+		}
+
+		return Collections.unmodifiableSet(statuses);
+	}
+	/**
+	 * @param viewCoordinateStatuses set of viewCoordinateStatus
+	 * 
+	 * Sets a unique set of non-null Status values.
+	 * If passed set is null or contains no non-null values then empty array is used.
+	 */
+	public void setViewCoordinateStatuses(Set<Status> viewCoordinateStatusesSet) {
+		setViewCoordinateStatuses(viewCoordinateStatusesSet != null ? viewCoordinateStatusesSet.toArray(new Status[viewCoordinateStatusesSet.size()]) : new Status[0]);
+	}
+	/**
+	 * @param viewCoordinateStatuses variable length parameter array of viewCoordinateStatus
+	 * 
+	 * Sets a unique set of non-null Status values.
+	 * If passed parameter array is null or contains no non-null values then empty array is used.
+	 */
+	public void setViewCoordinateStatuses(Status...viewCoordinateStatusesSet) {
+		Set<Status> validPassedStatuses = new HashSet<>();
+		if (viewCoordinateStatusesSet != null) {
+			for (Status status : viewCoordinateStatusesSet) {
+				if (status != null) {
+					validPassedStatuses.add(status);
+				}
+			}
+		}
+		
+		if (validPassedStatuses.size() > 0) {
+			viewCoordinateStatuses = validPassedStatuses.toArray(new Status[validPassedStatuses.size()]);
+		} else {
+			viewCoordinateStatuses = new Status[0];
+		}
+	}
+
+	/**
 	 * @return extensionNamespace
 	 */
 	public String getExtensionNamespace()
@@ -581,7 +653,10 @@ public class UserProfile
 	{
 		this.extensionNamespace = extensionNamespace;
 	}
-
+	
+	
+	
+	
 	// Persistence methods
 	protected void store(File fileToWrite) throws IOException
 	{

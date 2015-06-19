@@ -21,11 +21,15 @@ package gov.va.isaac.config.profiles;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import java.util.Objects;
 import java.util.UUID;
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlySetWrapper;
+import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -49,10 +53,11 @@ public class UserProfileBindings
 	ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
 	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
+	ReadOnlySetWrapper<Status> viewCoordinateStatuses = new ReadOnlySetWrapper<>(new SimpleSetProperty<Status>());
 	
 	public Property<?>[] getAll()
 	{
-		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath};
+		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath, viewCoordinateStatuses};
 	}
 	
 	/**
@@ -98,6 +103,14 @@ public class UserProfileBindings
 	{
 		return editCoordinatePath.getReadOnlyProperty();
 	}
+
+	/**
+	 * @return the viewCoordinateStatuses
+	 */
+	public ReadOnlySetProperty<Status> getViewCoordinateStatuses()
+	{
+		return viewCoordinateStatuses.getReadOnlyProperty();
+	}
 	
 	protected void update(UserProfile up)
 	{
@@ -124,6 +137,15 @@ public class UserProfileBindings
 		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
 		{
 			workflowUsername.set(up.getWorkflowUsername());
+		}
+		
+		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
+		// and that viewCoordinateStatuses is initialized with an empty SimpleSetProperty<Status>
+		if (viewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
+				|| ! viewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
+				|| ! up.getViewCoordinateStatuses().containsAll(viewCoordinateStatuses.get())) {
+			viewCoordinateStatuses.get().clear();
+			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
 		}
 	}
 }
