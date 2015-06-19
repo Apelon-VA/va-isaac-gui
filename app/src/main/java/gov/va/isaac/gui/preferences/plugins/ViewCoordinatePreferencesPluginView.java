@@ -33,10 +33,12 @@ import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.commit.CommitService;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -56,6 +58,11 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
@@ -75,7 +82,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+
 import javax.inject.Singleton;
+
 import org.apache.commons.lang3.time.DateUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -92,28 +101,39 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @Singleton
-public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPluginView {
+public class ViewCoordinatePreferencesPluginView implements PreferencesPluginViewI {
 	private Logger logger = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginView.class);
 	
-	protected TreeSet<Long> times = new TreeSet<Long>();
-	protected DatePicker datePicker = null;
-	protected ComboBox<Long> timeSelectCombo = null;
-	protected HashSet<LocalDate> pathDatesList = new HashSet<LocalDate>();
-	protected Date stampDate = null;
-	protected SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-	protected DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d/M/y");
-	protected SimpleDateFormat regularDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	protected HashMap<Long, Long> truncTimeToFullTimeMap = new HashMap<Long, Long>();
-	protected SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd hh:mm:ssa");
-	protected SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm:ss a");
-	protected LocalDate stampDateInstant = null;
-	protected Long storedTimePref = null;
-	protected UUID storedPathPref = null;
+	private HBox hBox = null;
+	private ValidBooleanBinding allValid_ = null;
 	
-	protected boolean datePickerFirstRun = false; //This will probably need to go
-	protected boolean pathComboFirstRun = false;
+	private ToggleGroup statedInferredToggleGroup = null;
+	private ComboBox<UUID> pathComboBox = null;
+	
+	private final ObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
+	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
+	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
+
+	private TreeSet<Long> times = new TreeSet<Long>();
+	private DatePicker datePicker = null;
+	private ComboBox<Long> timeSelectCombo = null;
+	private HashSet<LocalDate> pathDatesList = new HashSet<LocalDate>();
+	private Date stampDate = null;
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
+	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d/M/y");
+	private SimpleDateFormat regularDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private HashMap<Long, Long> truncTimeToFullTimeMap = new HashMap<Long, Long>();
+	//private SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd hh:mm:ssa");
+	private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm:ss a");
+	private LocalDate stampDateInstant = null;
+	private Long storedTimePref = null;
+	private UUID storedPathPref = null;
+	
+	private boolean datePickerFirstRun = false; //This will probably need to go
+	private boolean pathComboFirstRun = false;
 
 	private Long overrideTimestamp;
+
 	/**
 	 * 
 	 */
@@ -121,6 +141,14 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		super();
 	}
 
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getValidationFailureMessage()
+	 */
+	@Override
+	public ReadOnlyStringProperty validationFailureMessageProperty() {
+		return allValid_.getReasonWhyInvalid();
+	}
+	
 	/* (non-Javadoc)
 	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getName()
 	 */
@@ -134,7 +162,6 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 	 */
 	@Override
 	public void save() throws IOException {
-		
 			logger.debug("Saving ViewCoordinatePreferencesPluginView data");
 			UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			
@@ -723,10 +750,6 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getPathOptions()
-	 */
-	@Override
 	protected Collection<UUID> getPathOptions() {
 		List<UUID> list = new ArrayList<>();
 
@@ -749,54 +772,30 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		return list;
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getStoredTime()
-	 */
-	@Override
 	protected Long getStoredTime() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getViewCoordinateTime();
 	}
 	
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getStoredPath()
-	 */
-	@Override
 	protected UUID getStoredPath() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getViewCoordinatePath();
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getStoredStatedInferredOption()
-	 */
-	@Override
 	protected StatedInferredOptions getStoredStatedInferredOption() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getStatedInferredPolicy();
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getDefaultPath()
-	 */
-	@Override
 	protected UUID getDefaultPath() {
 		return UserProfileDefaults.getDefaultViewCoordinatePath();
 	}
 	
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getDefaultPath()
-	 */
-	@Override
 	protected Long getDefaultTime() {
 		return Long.MAX_VALUE;
 //		return UserProfileDefaults.getDefaultViewCoordinateTime();
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getDefaultStatedInferredOption()
-	 */
-	@Override
 	protected StatedInferredOptions getDefaultStatedInferredOption() {
 		return UserProfileDefaults.getDefaultStatedInferredPolicy();
 	}
@@ -810,4 +809,15 @@ public class ViewCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		return 10;
 	}
 
+	public ReadOnlyObjectProperty<Long> currentViewCoordinateTimeProperty() {
+		return currentTimeProperty;
+	}
+	
+	public ReadOnlyObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty() {
+		return currentStatedInferredOptionProperty;
+	}
+	
+	public ReadOnlyObjectProperty<UUID> currentPathProperty() {
+		return currentPathProperty;
+	}
 }
