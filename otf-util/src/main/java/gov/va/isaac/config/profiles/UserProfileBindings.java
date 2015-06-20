@@ -19,9 +19,13 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
+
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
+
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlySetProperty;
@@ -30,10 +34,14 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.SimpleSetProperty;
+import javafx.beans.property.SetProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import com.sun.javafx.collections.ObservableSetWrapper;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -53,7 +61,9 @@ public class UserProfileBindings
 	ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
 	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
-	ReadOnlySetWrapper<Status> viewCoordinateStatuses = new ReadOnlySetWrapper<>(new SimpleSetProperty<Status>());
+	
+	private final SetProperty<Status> viewCoordinateStatusesProperty = new SimpleSetProperty<Status>(new ObservableSetWrapper<Status>(new HashSet<Status>()));
+	ReadOnlySetWrapper<Status> viewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatusesProperty);
 	
 	public Property<?>[] getAll()
 	{
@@ -144,8 +154,8 @@ public class UserProfileBindings
 		if (viewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
 				|| ! viewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
 				|| ! up.getViewCoordinateStatuses().containsAll(viewCoordinateStatuses.get())) {
-			viewCoordinateStatuses.get().clear();
-			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
+			viewCoordinateStatusesProperty.get().clear();
+			viewCoordinateStatusesProperty.get().addAll(up.getViewCoordinateStatuses());
 		}
 	}
 }
