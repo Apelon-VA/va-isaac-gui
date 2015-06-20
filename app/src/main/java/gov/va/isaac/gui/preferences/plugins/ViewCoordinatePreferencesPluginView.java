@@ -53,19 +53,29 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.HPos;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import javafx.geometry.VPos;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DateCell;
@@ -78,19 +88,24 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import javafx.util.StringConverter;
+import javafx.scene.control.cell.CheckBoxListCell;
 
 import javax.inject.Singleton;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * ViewCoordinatePreferencesPluginView
@@ -102,28 +117,37 @@ import org.slf4j.LoggerFactory;
 @Service
 @Singleton
 public class ViewCoordinatePreferencesPluginView implements PreferencesPluginViewI {
-	private Logger logger = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginView.class);
+	private static Logger logger = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginView.class);
+
+	private static final UUID moduleRootUuid = UUID.fromString("96ca29b8-a934-5abd-8d4e-0ee6aeaba520");
 	
-	private HBox hBox = null;
+	private VBox vBoxInTab = null;
 	private ValidBooleanBinding allValid_ = null;
 	
+	private ToggleGroup statusesToggleGroup = null;
 	private ToggleGroup statedInferredToggleGroup = null;
+	
 	private ComboBox<UUID> pathComboBox = null;
+	
+	private ListView<SelectableModule> selectableModuleListView;
 	
 	private final ObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
+	private final SimpleSetProperty<Status> currentStatusesProperty = new SimpleSetProperty<>(new ObservableSetWrapper<Status>(new HashSet<Status>()));
 
+	private RadioButton activeStatusButton;
+	private RadioButton inactiveStatusButton;
+	private RadioButton activeAndInactiveStatusButton;
+	
 	private TreeSet<Long> times = new TreeSet<Long>();
 	private DatePicker datePicker = null;
-	private ComboBox<Long> timeSelectCombo = null;
 	private HashSet<LocalDate> pathDatesList = new HashSet<LocalDate>();
 	private Date stampDate = null;
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
 	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d/M/y");
 	private SimpleDateFormat regularDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private HashMap<Long, Long> truncTimeToFullTimeMap = new HashMap<Long, Long>();
-	//private SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd hh:mm:ssa");
 	private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm:ss a");
 	private LocalDate stampDateInstant = null;
 	private Long storedTimePref = null;
@@ -134,6 +158,9 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 
 	private Long overrideTimestamp;
 
+	private ObservableList<SelectableModule> selectableModules = null;
+	private ObservableSet<UUID> selectedModules = FXCollections.observableSet(new HashSet<UUID>());
+	
 	/**
 	 * 
 	 */
@@ -173,10 +200,18 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			logger.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", loggedIn.getStatedInferredPolicy(), currentStatedInferredOptionProperty().get()); 
 			loggedIn.setStatedInferredPolicy(currentStatedInferredOptionProperty().get());
 			
-			//Time Coordinate Property
+			//Time Property
 			logger.debug("Setting stored VC time to :" + currentViewCoordinateTimeProperty().get());
 			loggedIn.setViewCoordinateTime(currentViewCoordinateTimeProperty().get());
 			
+			//Statuses Property
+			logger.debug("Setting stored VC statuses to :" + currentViewCoordinateStatusesProperty().get());
+			loggedIn.setViewCoordinateStatuses(currentViewCoordinateStatusesProperty().get());
+
+			//Modules Property
+			logger.debug("Setting stored VC modules to :" + selectedModules);
+			loggedIn.setViewCoordinateModules(selectedModules);
+
 			if (overrideTimestamp != null) {
 				loggedIn.setViewCoordinateTime(overrideTimestamp);
 			}
@@ -203,18 +238,122 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	 */
 	@Override
 	public Region getContent() {
-		if (hBox == null) {
+		if (vBoxInTab == null) {
+			// Populate selectableModules
+			ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(moduleRootUuid);
+			Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
+			try {
+				moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), false));
+			} catch (IOException | ContradictionException e1) {
+				e1.printStackTrace();
+			}
+			List<SelectableModule> modules = new ArrayList<>();
+			for (ConceptVersionBI cv : moduleConcepts) {
+				modules.add(new SelectableModule(cv.getNid()));
+			}
+			selectableModules = FXCollections.observableArrayList(modules);
+
+			selectableModuleListView = new ListView<>(selectableModules);
+			selectableModules.forEach(selectableModule -> selectableModule.selectedProperty().addListener((observable, wasSelected, isSelected) -> {
+				if (isSelected) {
+					if (! wasSelected) {
+						logger.debug("Adding module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
+						selectedModules.add(selectableModule.getUuid());
+					}
+				} else {
+					if (wasSelected) {
+						logger.debug("Removing module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
+						selectedModules.remove(selectableModule.getUuid());
+					}
+				}
+			}));
+
+			selectableModuleListView.setCellFactory(CheckBoxListCell.forListView(SelectableModule::selectedProperty, new StringConverter<SelectableModule>() {
+				@Override
+				public String toString(SelectableModule object) {
+					return object.getDescription();
+				}
+
+				@Override
+				public SelectableModule fromString(String string) {
+					return null;
+				}
+			}));
+
+			
+			VBox statusesToggleGroupVBox = new VBox();
+			statusesToggleGroupVBox.setSpacing(4.0);
+			statusesToggleGroup = new ToggleGroup();
+			
 			VBox statedInferredToggleGroupVBox = new VBox();
 			statedInferredToggleGroupVBox.setSpacing(4.0);
+			statedInferredToggleGroup = new ToggleGroup(); //Stated / Inferred
 			
 			//Instantiate Everything
 			pathComboBox = new ComboBox<>(); //Path
-			statedInferredToggleGroup = new ToggleGroup(); //Stated / Inferred
 			List<RadioButton> statedInferredOptionButtons = new ArrayList<>();
 			datePicker = new DatePicker(); //Date
-			timeSelectCombo = new ComboBox<Long>(); //Time
+
+			Label activeStatusToggleGroupLabel = new Label("Active status");
+			activeStatusToggleGroupLabel.getStyleClass().add("boldLabel");
+			Tooltip statusButtonsTooltip = new Tooltip("Default Status(es) is " + getDefaultViewCoordinateStatuses());
+
+			activeStatusButton = new RadioButton();
+			activeStatusButton.setText("Active");
+			activeStatusButton.setTooltip(statusButtonsTooltip);
+			statusesToggleGroup.getToggles().add(activeStatusButton);
+			activeStatusButton.selectedProperty().addListener(new ChangeListener<Boolean> () {
+				@Override
+				public void changed(
+						ObservableValue<? extends Boolean> observable,
+						Boolean oldValue, Boolean newValue) {
+					if (newValue) {
+						currentStatusesProperty.get().clear();
+						currentStatusesProperty.add(Status.ACTIVE);
+					}
+				}
+			});
+			statusesToggleGroupVBox.getChildren().add(activeStatusButton);
 			
-			//Radio buttons
+			inactiveStatusButton = new RadioButton();
+			inactiveStatusButton.setText("Inactive");
+			inactiveStatusButton.setTooltip(statusButtonsTooltip);
+			statusesToggleGroup.getToggles().add(inactiveStatusButton);
+			inactiveStatusButton.selectedProperty().addListener(new ChangeListener<Boolean> () {
+				@Override
+				public void changed(
+						ObservableValue<? extends Boolean> observable,
+						Boolean oldValue, Boolean newValue) {
+					if (newValue) {
+						currentStatusesProperty.get().clear();
+						currentStatusesProperty.add(Status.INACTIVE);
+					}
+				}
+			});
+			statusesToggleGroupVBox.getChildren().add(inactiveStatusButton);
+			
+			activeAndInactiveStatusButton = new RadioButton();
+			activeAndInactiveStatusButton.setText("All");
+			activeAndInactiveStatusButton.setTooltip(statusButtonsTooltip);
+			statusesToggleGroup.getToggles().add(activeAndInactiveStatusButton);
+			activeAndInactiveStatusButton.selectedProperty().addListener(new ChangeListener<Boolean> () {
+				@Override
+				public void changed(
+						ObservableValue<? extends Boolean> observable,
+						Boolean oldValue, Boolean newValue) {
+					if (newValue) {
+						currentStatusesProperty.get().clear();
+						currentStatusesProperty.add(Status.ACTIVE);
+						currentStatusesProperty.add(Status.INACTIVE);
+					}
+				}
+			});
+			statusesToggleGroupVBox.getChildren().add(activeAndInactiveStatusButton);
+			
+			
+			// StatedInferred Radio buttons
+			Label statedInferredOptionsToggleGroupLabel = new Label("View");
+			statedInferredOptionsToggleGroupLabel.getStyleClass().add("boldLabel");
 			for (StatedInferredOptions option : StatedInferredOptions.values()) {
 				RadioButton optionButton = new RadioButton();
 				if (option == StatedInferredOptions.STATED)
@@ -265,7 +404,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				}
 			});
 
-			pathComboBox.setButtonCell(new ListCell<UUID>() { // Don't know why this should be necessary, but without this the UUID itself is displayed
+			pathComboBox.setButtonCell(new ListCell<UUID>() {
 				@Override
 				protected void updateItem(UUID c, boolean emptyRow) {
 					super.updateItem(c, emptyRow); 
@@ -290,9 +429,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 						IntStream stamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
 						
 						pathDatesList.clear(); 
-//						disableTimeCombo(true);
-						timeSelectCombo.setValue(Long.MAX_VALUE);
-					
+						currentTimeProperty.set(Long.MAX_VALUE);
 						stamps.forEach((thisStamp) ->
 						{
 							try {
@@ -346,14 +483,14 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 						int path = OTFUtility.getConceptVersion(selectedPath).getPathNid();
 						setTimeOptions(path, dateSelected);
 						try {
-							timeSelectCombo.setValue(times.first()); //Default Dropdown Value
+//							timeSelectCombo.setValue(times.first()); //Default Dropdown Value
+							currentTimeProperty.set(times.first());
 						} catch(Exception e) {
 							// Eat it.. like a sandwich! TODO: Create Read Only Property Conditional for checking if Time Combo is disabled
 							// Right now, Sometimes Time Combo is disabled, so we catch this and eat it
 							// Otherwise make a conditional from the Read Only Boolean Property to check first
 						}
 					} else {
-						disableTimeCombo(false);
 						logger.debug("The path isn't set or the date isn't set. Both are needed right now");
 					}
 				} else {
@@ -362,47 +499,47 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			});
 			
 			//Commit-Time ComboBox
-			timeSelectCombo.setMinWidth(200);
-			timeSelectCombo.setCellFactory(new Callback<ListView<Long>, ListCell<Long>> () {
-				@Override
-				public ListCell<Long> call(ListView<Long> param) {
-					final ListCell<Long> cell = new ListCell<Long>() {
-						@Override
-						protected void updateItem(Long item, boolean emptyRow) {
-							super.updateItem(item, emptyRow);
-							if(item == null) {
-								setText("");
-							} else {
-								if(item == Long.MAX_VALUE) {
-									setText("LATEST TIME");
-								} else {
-									setText(timeFormatter.format(new Date(item)));
-								}
-							}
-						}
-					};
-					return cell;
-				}
-			});
-			timeSelectCombo.setButtonCell(new ListCell<Long>() {
-				@Override
-				protected void updateItem(Long item, boolean emptyRow) {
-					super.updateItem(item, emptyRow); 
-					if(item == null) {
-						setText("");
-					} else {
-						if(item == Long.MAX_VALUE) {
-							setText("LATEST TIME");
-						} else {
-							setText(timeFormatter.format(new Date(item)));
-						}
-					}
-				}
-			});
+//			timeSelectCombo.setMinWidth(200);
+//			timeSelectCombo.setCellFactory(new Callback<ListView<Long>, ListCell<Long>> () {
+//				@Override
+//				public ListCell<Long> call(ListView<Long> param) {
+//					final ListCell<Long> cell = new ListCell<Long>() {
+//						@Override
+//						protected void updateItem(Long item, boolean emptyRow) {
+//							super.updateItem(item, emptyRow);
+//							if(item == null) {
+//								setText("");
+//							} else {
+//								if(item == Long.MAX_VALUE) {
+//									setText("LATEST TIME");
+//								} else {
+//									setText(timeFormatter.format(new Date(item)));
+//								}
+//							}
+//						}
+//					};
+//					return cell;
+//				}
+//			});
+//			timeSelectCombo.setButtonCell(new ListCell<Long>() {
+//				@Override
+//				protected void updateItem(Long item, boolean emptyRow) {
+//					super.updateItem(item, emptyRow); 
+//					if(item == null) {
+//						setText("");
+//					} else {
+//						if(item == Long.MAX_VALUE) {
+//							setText("LATEST TIME");
+//						} else {
+//							setText(timeFormatter.format(new Date(item)));
+//						}
+//					}
+//				}
+//			});
 			
 			try { 
 				currentPathProperty.bind(pathComboBox.getSelectionModel().selectedItemProperty()); //Set Path Property
-				currentTimeProperty.bind(timeSelectCombo.getSelectionModel().selectedItemProperty());
+//				currentTimeProperty.bind(timeSelectCombo.getSelectionModel().selectedItemProperty());
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -421,24 +558,24 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				}
 				
 				if(storedTimePref != null) {
-					final Long storedTime = loggedIn.getViewCoordinateTime();
+					//final Long storedTime = loggedIn.getViewCoordinateTime();
 					Calendar cal = Calendar.getInstance();
-					cal.setTime(new Date(storedTime));
+					cal.setTime(new Date(storedTimePref));
 					cal.set(Calendar.MILLISECOND, 0); //Strip milliseconds
-					Long storedTruncTime = cal.getTimeInMillis();
+//					Long storedTruncTime = cal.getTimeInMillis();
 					
-					if(!storedTime.equals(Long.MAX_VALUE)) { //***** FIX THIS, not checking default vc time value
+					if(!storedTimePref.equals(Long.MAX_VALUE)) { //***** FIX THIS, not checking default vc time value
 						int path = OTFUtility.getConceptVersion(storedPathPref).getPathNid();
 						setTimeOptions(path, storedTimePref);
-						timeSelectCombo.setValue(storedTruncTime);
+//						timeSelectCombo.setValue(storedTruncTime);
 //						timeSelectCombo.getItems().addAll(getTimeOptions()); //The correct way, but doesen't work
 						
-						Date storedDate = new Date(storedTime);
+						Date storedDate = new Date(storedTimePref);
 						datePicker.setValue(storedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
 					} else {
 						datePicker.setValue(LocalDate.now());
-						timeSelectCombo.getItems().addAll(Long.MAX_VALUE); //The correct way, but doesen't work
-						timeSelectCombo.setValue(Long.MAX_VALUE);
+//						timeSelectCombo.getItems().addAll(Long.MAX_VALUE); //The correct way, but doesen't work
+//						timeSelectCombo.setValue(Long.MAX_VALUE);
 //						disableTimeCombo(false);
 					}
 				} else { //Stored Time Pref == null
@@ -449,27 +586,24 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				throw new Error("No stored PATH could be found. ISAAC can't run without a path");
 			}
 
-			GridPane gridPane = new GridPane();
-			gridPane.setHgap(10);
-			gridPane.setVgap(10);
+			GridPane topGridPane = new GridPane();
+			topGridPane.setHgap(10);
+			topGridPane.setVgap(10);
 			
-			Label pathLabel = new Label("View Coordinate Path");
-			gridPane.add(pathLabel, 0, 0); //Path Label - Row 0
-			GridPane.setHalignment(pathLabel, HPos.LEFT);
-			gridPane.add(statedInferredToggleGroupVBox, 1, 0, 1, 2);  //--Row 0, span 2
+			int topGridPaneRow = 0;
+
+			Label datePickerLabel = new Label("Provide view for (date)");
+			datePickerLabel.getStyleClass().add("boldLabel");
+			topGridPane.addRow(topGridPaneRow++, datePickerLabel, datePicker);
 			
-			gridPane.add(pathComboBox, 0, 1); //Path Combo box - Row 2
-			GridPane.setValignment(pathComboBox, VPos.TOP);
+			Label pathLabel = new Label("Path");
+			pathLabel.getStyleClass().add("boldLabel");
+			topGridPane.addRow(topGridPaneRow++, pathLabel, pathComboBox);
 			
-			Label datePickerLabel = new Label("View Coordinate Dates");
-			gridPane.add(datePickerLabel, 0, 2); //Row 3
-			GridPane.setHalignment(datePickerLabel, HPos.LEFT);
-			gridPane.add(datePicker, 0, 3); //Row 4
-			
-			Label timeSelectLabel = new Label("View Coordinate Times");
-			gridPane.add(timeSelectLabel, 1, 2); //Row 3
-			GridPane.setHalignment(timeSelectLabel, HPos.LEFT);
-			gridPane.add(timeSelectCombo, 1, 3); //Row 4
+
+			Label modulesLabel = new Label("Modules");
+			modulesLabel.getStyleClass().add("boldLabel");
+			topGridPane.addRow(topGridPaneRow++, modulesLabel, selectableModuleListView);
 			
 			// FOR DEBUGGING CURRENTLY SELECTED PATH, TIME AND POLICY
 /*			
@@ -493,12 +627,23 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			gridPane.add(printSelectedPolicyLabel, 2, 4);
 			GridPane.setHalignment(printSelectedPolicyLabel, HPos.LEFT);
 			*/
-			hBox = new HBox();
-			hBox.getChildren().addAll(gridPane);
+			vBoxInTab = new VBox();
+			vBoxInTab.getChildren().addAll(topGridPane);
+			
+			GridPane bottomGridPane = new GridPane();
+			bottomGridPane.setHgap(10);
+			bottomGridPane.setVgap(10);
+			
+			int bottomGridPaneRow = 0;
+			bottomGridPane.addRow(bottomGridPaneRow++);
+			bottomGridPane.addRow(bottomGridPaneRow++, activeStatusToggleGroupLabel, statusesToggleGroupVBox, statedInferredOptionsToggleGroupLabel, statedInferredToggleGroupVBox);
+			GridPane.setValignment(activeStatusToggleGroupLabel, VPos.TOP);
+			GridPane.setValignment(statedInferredOptionsToggleGroupLabel, VPos.TOP);
+			vBoxInTab.getChildren().add(bottomGridPane);
 
 			allValid_ = new ValidBooleanBinding() {
 				{
-					bind(currentStatedInferredOptionProperty, currentPathProperty, currentTimeProperty);
+					bind(currentStatedInferredOptionProperty, currentPathProperty, currentTimeProperty, currentStatusesProperty);
 					setComputeOnInvalidate(true);
 				}
 
@@ -531,6 +676,18 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 					} else {
 						TextErrorColorHelper.clearTextErrorColor(pathComboBox);
 					}
+					if (currentStatusesProperty.get() == null || currentStatusesProperty.get().size() < 1) {
+						this.setInvalidReason("Status unset");
+						TextErrorColorHelper.setTextErrorColor(activeStatusButton);
+						TextErrorColorHelper.setTextErrorColor(inactiveStatusButton);
+						TextErrorColorHelper.setTextErrorColor(activeAndInactiveStatusButton);
+						
+						return false;
+					} else {
+						TextErrorColorHelper.clearTextErrorColor(activeStatusButton);
+						TextErrorColorHelper.clearTextErrorColor(inactiveStatusButton);
+						TextErrorColorHelper.clearTextErrorColor(activeAndInactiveStatusButton);
+					}
 //					if(currentTimeProperty.get() == null && currentTimeProperty.get() != Long.MAX_VALUE)
 //					{
 //						this.setInvalidReason("View Coordinate Time is unselected");
@@ -542,11 +699,10 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				}
 			};
 		}
-//		createButton.disableProperty().bind(saveButtonValid.not()));
-
-		
 		
 		// Reload persisted values every time
+		
+		// Reload storedStatedInferredOption
 		final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
 		for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
 			if (toggle.getUserData() == storedStatedInferredOption) {
@@ -554,34 +710,31 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			}
 		}
 
-//		pathComboBox.setButtonCell(new ListCell<UUID>() {
-//			@Override
-//			protected void updateItem(UUID c, boolean emptyRow) {
-//				super.updateItem(c, emptyRow); 
-//				if (emptyRow) {
-//					setText("");
-//				} else {
-//					String desc = OTFUtility.getDescription(c);
-//					setText(desc);
-//				}
-//			}
-//		});
-//		timeSelectCombo.setButtonCell(new ListCell<Long>() {
-//			@Override
-//			protected void updateItem(Long item, boolean emptyRow) {
-//				super.updateItem(item, emptyRow); 
-//				if (emptyRow) {
-//					setText("");
-//				} else {
-//					setText(timeFormatter.format(new Date(item)));
-//				}
-//			}
-//		});
+		// Reload storedStatuses
+		final Set<Status> storedStatuses = this.getStoredViewCoordinateStatuses();
+		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
+			statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
+		} else if (storedStatuses.contains(Status.ACTIVE)) {
+			statusesToggleGroup.selectToggle(activeStatusButton);
+		} else if (storedStatuses.contains(Status.INACTIVE)) {
+			statusesToggleGroup.selectToggle(inactiveStatusButton);
+		} else if (storedStatuses.size() == 0) {
+			logger.warn("UserProfile does not contain any view coordinate Status values");
+		} else {
+			logger.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
+		}
+
+		// Reload storedModules
+		final Set<UUID> storedModules = this.getStoredViewCoordinateModules();
+		for (SelectableModule module : selectableModules) {
+			if (storedModules.contains(module.getUuid())) {
+				module.setSelected(true);
+			} else {
+				module.setSelected(false);
+			}
+		}
 		
-//		datePickerFirstRun = false;
-//		pathComboFirstRun = false;
-		
-		return hBox;
+		return vBoxInTab;
 	}
 	
 	
@@ -599,35 +752,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				return false;
 		});
 	}
-	
-	/**
-	 *  Disables the Time Combo Box by changing opacity, bg color and disabling GUI object.
-	 *  
-	 * @param clear boolean whether or not to clear the Time Combo Values as well as disabling it
-	 */
-	protected void disableTimeCombo(boolean clear) {
-		timeSelectCombo.setStyle("-fx-opacity: .5; -fx-background-color: gray");
-		timeSelectCombo.setDisable(true);
-		if(clear) {
-			timeSelectCombo.getItems().clear();
-		}
-		
-	}
-	
-	/**
-	 * Enables the Time Combo Box by changing opacity to full, and changing bg color to white
-	 * 	as well as enabling the GUI object
-	 * 
-	 * @param clear boolean whether or not to clear the Time Combo Values after enabling it.
-	 */
-	protected void enableTimeCombo(boolean clear) {
-		timeSelectCombo.setStyle("-fx-opacity: 1; -fx-background-color: white");
-		timeSelectCombo.setDisable(false);
-		if(clear) {
-			timeSelectCombo.getItems().clear();
-		}
-	}
-	
+
 	/**
 	 * 
 	 * @param path int of the path to get the Time Options for
@@ -640,14 +765,11 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	 */
 	protected void setTimeOptions(int path, Long storedTimePref) {
 		try {
-			timeSelectCombo.getItems().clear();
 			overrideTimestamp = null;
 			
 			Date startDate = null, finishDate = null;
 			if(storedTimePref != null) {
 				CommitService stampDb = AppContext.getService(CommitService.class);
-//				NidSet nidSet = new NidSet(); 
-//				nidSet.add(path); 
 				//TODO OCHRE use the right path here
 				IntStream stamps = null;
 				if(!storedTimePref.equals(getDefaultTime())) {
@@ -672,15 +794,13 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 					
 					// If have stamps, no action, if not, show Latest and set stamps to latest stamp we have in stampset
 					if (todayStamps.toArray().length == 0) {
-//						timeSelectCombo.getItems().add(Long.MAX_VALUE);
 						IntStream allStamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
 						HashSet<Integer> allStampSet = new HashSet<>(allStamps.boxed().collect(Collectors.toList()));
 						SortedSet<Integer> s = new TreeSet<Integer>(allStampSet);
 						if (!s.isEmpty()) {
 							Integer stampToSet = s.last();
 							overrideTimestamp = stampDb.getTimeForStamp(stampToSet);
-							timeSelectCombo.getItems().add(Long.MAX_VALUE);
-							timeSelectCombo.setValue(Long.MAX_VALUE);
+							currentTimeProperty.set(Long.MAX_VALUE);
 						}
 					}
 				}
@@ -688,7 +808,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				this.pathDatesList.add(LocalDate.now());
 				if (overrideTimestamp == null) {
 					if(!stampSet.isEmpty()) {
-						enableTimeCombo(true);
+//						enableTimeCombo(true);
 						for(Integer thisStamp : stampSet) {
 							Long fullTime = null;
 							Date stampDate;
@@ -707,7 +827,6 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 							
 							this.pathDatesList.add(stampInstant); //Build DatePicker
 							times.add(truncTime); //This can probably go, we don't populate hashmap like this at initialization
-							timeSelectCombo.getItems().add(truncTime);
 							
 							if(truncTimeToFullTimeMap.containsKey(truncTime)) { //Build Truncated Time to Full Time HashMap
 								//If truncTimeToFullTimeMap has this key, is the value the newest time in milliseconds?
@@ -719,11 +838,8 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 							}
 						}
 					} else {
-	//					disableTimeCombo(true);
-//						timeSelectCombo.getItems().add(Long.MAX_VALUE);
-						timeSelectCombo.setValue(Long.MAX_VALUE);
-						enableTimeCombo(true);
-	//					logger.error("Could not retreive any Stamps");
+						currentTimeProperty.set(Long.MAX_VALUE);
+						logger.warn("Could not retrieve any Stamps");
 					}
 				}
 			}
@@ -768,7 +884,6 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			list.add(storedPath);
 		}
 
-		//Collections.sort(list);
 		return list;
 	}
 
@@ -787,17 +902,32 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 		return loggedIn.getStatedInferredPolicy();
 	}
 
+	protected Set<Status> getStoredViewCoordinateStatuses() {
+		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+		return loggedIn.getViewCoordinateStatuses();
+	}
+	
+	protected Set<UUID> getStoredViewCoordinateModules() {
+		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+		return loggedIn.getViewCoordinateModules();
+	}
+	protected Set<UUID> getDefaultViewCoordinateModules() {
+		return UserProfileDefaults.getDefaultViewCoordinateModules();
+	}
+	
 	protected UUID getDefaultPath() {
 		return UserProfileDefaults.getDefaultViewCoordinatePath();
 	}
 	
 	protected Long getDefaultTime() {
-		return Long.MAX_VALUE;
-//		return UserProfileDefaults.getDefaultViewCoordinateTime();
+		return UserProfileDefaults.getDefaultViewCoordinateTime();
 	}
 
 	protected StatedInferredOptions getDefaultStatedInferredOption() {
 		return UserProfileDefaults.getDefaultStatedInferredPolicy();
+	}
+	protected Set<Status> getDefaultViewCoordinateStatuses() {
+		return UserProfileDefaults.getDefaultViewCoordinateStatuses();
 	}
 	
 	/**
@@ -809,6 +939,9 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 		return 10;
 	}
 
+	public ReadOnlySetProperty<Status> currentViewCoordinateStatusesProperty() {
+		return currentStatusesProperty;
+	}
 	public ReadOnlyObjectProperty<Long> currentViewCoordinateTimeProperty() {
 		return currentTimeProperty;
 	}
@@ -819,5 +952,56 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	
 	public ReadOnlyObjectProperty<UUID> currentPathProperty() {
 		return currentPathProperty;
+	}
+	
+	private static class SelectableModule {
+		private final IntegerProperty nid = new SimpleIntegerProperty();
+		private final BooleanProperty selected = new SimpleBooleanProperty(false);
+		private final String description;
+		private final UUID uuid;
+
+		public SelectableModule(Integer nid) {
+			this.nid.set(nid);
+			
+			String desc = null;
+			try {
+				desc = OTFUtility.getDescription(nid);
+			} catch (Exception e) {
+				logger.error("Failed to set description for concept with nid={}", nid);
+			}
+			description = desc;
+			
+			UUID aUuid = null;
+			try {
+				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid);
+				aUuid = cv.getPrimordialUuid();
+			} catch (Exception e) {
+				logger.error("Failed to set uuid for concept with nid={} and desc={}", nid, description);
+			}
+			uuid = aUuid;
+		}
+
+		public Integer getNid() {
+			return nid.get();
+		}
+		public ReadOnlyIntegerProperty nidProperty() {
+			return nid;
+		}
+
+		public BooleanProperty selectedProperty() {
+			return selected;
+		}
+		public boolean isSelected() {
+			return selected.get();
+		}
+		public void setSelected(boolean selected) {
+			this.selected.set(selected);
+		}
+		public String getDescription() {
+			return description;
+		}
+		public UUID getUuid() {
+			return uuid;
+		}
 	}
 }
