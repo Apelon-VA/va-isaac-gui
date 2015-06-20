@@ -62,9 +62,12 @@ public class UserProfileBindings
 	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
 	
-	private final SetProperty<Status> viewCoordinateStatusesProperty = new SimpleSetProperty<Status>(new ObservableSetWrapper<Status>(new HashSet<Status>()));
+	private final SetProperty<Status> viewCoordinateStatusesProperty = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
 	ReadOnlySetWrapper<Status> viewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatusesProperty);
-	
+
+	private final SetProperty<UUID> viewCoordinateModulesProperty = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<UUID> viewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModulesProperty);
+
 	public Property<?>[] getAll()
 	{
 		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath, viewCoordinateStatuses};
@@ -156,6 +159,15 @@ public class UserProfileBindings
 				|| ! up.getViewCoordinateStatuses().containsAll(viewCoordinateStatuses.get())) {
 			viewCoordinateStatusesProperty.get().clear();
 			viewCoordinateStatusesProperty.get().addAll(up.getViewCoordinateStatuses());
+		}
+
+		// This depends on the fact that UserProfile.getViewCoordinateModules() never returns null
+		// and that viewCoordinateModules is initialized with an empty SimpleSetProperty<UUID>
+		if (viewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
+				|| ! viewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
+				|| ! up.getViewCoordinateModules().containsAll(viewCoordinateModules.get())) {
+			viewCoordinateModulesProperty.get().clear();
+			viewCoordinateModulesProperty.get().addAll(up.getViewCoordinateModules());
 		}
 	}
 }

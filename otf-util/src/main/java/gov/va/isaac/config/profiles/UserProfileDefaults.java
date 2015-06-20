@@ -107,4 +107,10 @@ public final class UserProfileDefaults {
 		statuses.add(Status.ACTIVE);
 		return Collections.unmodifiableSet(statuses);
 	}
+	
+	// Empty set means ALL
+	public static Set<UUID> getDefaultViewCoordinateModules() {
+		Set<UUID> modules = new HashSet<>();
+		return Collections.unmodifiableSet(modules);
+	}
 }

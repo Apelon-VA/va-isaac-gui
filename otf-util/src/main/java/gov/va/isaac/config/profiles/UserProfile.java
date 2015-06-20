@@ -129,6 +129,10 @@ public class UserProfile
 
 	@XmlElement
 	public Status[] viewCoordinateStatuses = null;
+
+	@XmlElement
+	public UUID[] viewCoordinateModules = null;
+	
 	/*
 	 *  *** Update clone() method when adding parameters
 	 *  
@@ -163,6 +167,14 @@ public class UserProfile
 			clone.viewCoordinateStatuses = Arrays.copyOf(this.viewCoordinateStatuses, this.viewCoordinateStatuses.length);
 		} else {
 			clone.viewCoordinateStatuses = null;
+		}
+		if (this.viewCoordinateModules != null) {
+			clone.viewCoordinateModules = new UUID[this.viewCoordinateModules.length];
+			for (int i = 0; i < this.viewCoordinateModules.length; ++i) {
+				clone.viewCoordinateModules[i] = UUID.fromString(this.viewCoordinateModules[i].toString());
+			}
+		} else {
+			clone.viewCoordinateModules = null;
 		}
 
 		return clone;
@@ -580,6 +592,25 @@ public class UserProfile
 	}
 
 	/**
+	 * @return extensionNamespace
+	 */
+	public String getExtensionNamespace()
+	{
+		if (StringUtils.isBlank(extensionNamespace))
+		{
+			return UserProfileDefaults.getDefaultExtensionNamespace();
+		}
+		return extensionNamespace;
+	}
+	/**
+	 * @param extensionNamespace
+	 */
+	public void setExtensionNamespace(String extensionNamespace)
+	{
+		this.extensionNamespace = extensionNamespace;
+	}
+	
+	/**
 	 * @return viewCoordinateStatuses unmodifiable set of viewCoordinateStatus
 	 * 
 	 * Always returns a unique unmodifiable set of 1 or more Status values.
@@ -603,6 +634,7 @@ public class UserProfile
 
 		return Collections.unmodifiableSet(statuses);
 	}
+
 	/**
 	 * @param viewCoordinateStatuses set of viewCoordinateStatus
 	 * 
@@ -636,25 +668,57 @@ public class UserProfile
 	}
 
 	/**
-	 * @return extensionNamespace
+	 * @return viewCoordinateModules unmodifiable set of viewCoordinateModules
+	 * 
+	 * Always returns a unique unmodifiable set of 0 or more module UUIDs.
+	 * An empty returned set means NO RESTRICTION for the purposes of filtering.
 	 */
-	public String getExtensionNamespace()
-	{
-		if (StringUtils.isBlank(extensionNamespace))
-		{
-			return UserProfileDefaults.getDefaultExtensionNamespace();
+	public Set<UUID> getViewCoordinateModules() {
+		Set<UUID> modules = new HashSet<>();
+		if (viewCoordinateModules != null) {
+			for (UUID uuid : viewCoordinateModules) {
+				if (uuid != null) {
+					modules.add(uuid);
+				}
+			}
+		} else {
+			modules.addAll(UserProfileDefaults.getDefaultViewCoordinateModules());
 		}
-		return extensionNamespace;
+		
+		return Collections.unmodifiableSet(modules);
+	}
+	
+	/**
+	 * @param viewCoordinateModules set of viewCoordinateModule UUIDs
+	 * 
+	 * Sets a unique set of zero or more non-null UUID values.
+	 * If passed set is null or contains no non-null values then empty array is used.
+	 */
+	public void setViewCoordinateModules(Set<UUID> viewCoordinateModulesSet) {
+		setViewCoordinateModules(viewCoordinateModulesSet != null ? viewCoordinateModulesSet.toArray(new UUID[viewCoordinateModulesSet.size()]) : new UUID[0]);
 	}
 	/**
-	 * @param extensionNamespace
+	 * @param viewCoordinateModules variable length parameter array of viewCoordinateModule UUIDs
+	 * 
+	 * Sets a unique set of zero or more non-null UUID values.
+	 * If passed variable length parameter array is null or contains no non-null values then empty array is used.
 	 */
-	public void setExtensionNamespace(String extensionNamespace)
-	{
-		this.extensionNamespace = extensionNamespace;
+	public void setViewCoordinateModules(UUID...viewCoordinateModulesSet) {
+		Set<UUID> validPassedUuids = new HashSet<>();
+		if (viewCoordinateModulesSet != null) {
+			for (UUID uuid : viewCoordinateModulesSet) {
+				if (uuid != null) {
+					validPassedUuids.add(uuid);
+				}
+			}
+		}
+		
+		if (validPassedUuids.size() > 0) {
+			viewCoordinateModules = validPassedUuids.toArray(new UUID[validPassedUuids.size()]);
+		} else {
+			viewCoordinateModules = new UUID[0];
+		}
 	}
-	
-	
 	
 	
 	// Persistence methods
