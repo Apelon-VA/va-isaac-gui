@@ -129,6 +129,8 @@ public class ViewCoordinatePreferencesPluginViewController
 	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
 	private final SimpleSetProperty<Status> currentStatusesProperty = new SimpleSetProperty<>(new ObservableSetWrapper<Status>(new HashSet<Status>()));
 
+	private final List<RadioButton> statedInferredOptionButtons = new ArrayList<>();
+	
 	private RadioButton activeStatusButton;
 	private RadioButton inactiveStatusButton;
 	private RadioButton activeAndInactiveStatusButton;
@@ -165,7 +167,65 @@ public class ViewCoordinatePreferencesPluginViewController
 	@FXML
 	void initialize()
 	{
+		initializeDateSelectorComboBox();
+		initializePathComboBox();
+		initializeSelectableModuleListView();
+		initializeStatusesToggleGroup();
+		initializeStatedInferredToggleGroup();
+		initializeValidBooleanBinding();
+	}
 
+	private void initializeDateSelectorComboBox() {
+		//Calendar Date Picker
+		final Callback<DatePicker, DateCell> dayCellFactory = 
+				new Callback<DatePicker, DateCell>() {
+			@Override
+			public DateCell call(final DatePicker datePicker) {
+				return new DateCell() {
+					@Override
+					public void updateItem(LocalDate thisDate, boolean empty) {
+						super.updateItem(thisDate, empty);
+						if(pathDatesList != null) {
+							if(pathDatesList.contains(thisDate)) { 
+								setDisable(false); 
+							} else {
+								setDisable(true);
+							}
+						}
+					}
+				};
+			}
+		};
+		datePicker.setDayCellFactory(dayCellFactory);
+		datePicker.setOnAction((event) -> {
+			if(!datePickerFirstRun) {
+				UUID selectedPath = pathComboBox.getSelectionModel().getSelectedItem();
+
+				Instant instant = Instant.from(datePicker.getValue().atStartOfDay(ZoneId.systemDefault()));
+				Long dateSelected = Date.from(instant).getTime();
+
+				if(selectedPath != null && dateSelected != 0) {
+
+					int path = OTFUtility.getConceptVersion(selectedPath).getPathNid();
+					setTimeOptions(path, dateSelected);
+					try {
+						//							timeSelectCombo.setValue(times.first()); //Default Dropdown Value
+						currentTimeProperty.set(times.first());
+					} catch(Exception e) {
+						// Eat it.. like a sandwich! TODO: Create Read Only Property Conditional for checking if Time Combo is disabled
+						// Right now, Sometimes Time Combo is disabled, so we catch this and eat it
+						// Otherwise make a conditional from the Read Only Boolean Property to check first
+					}
+				} else {
+					log.debug("The path isn't set or the date isn't set. Both are needed right now");
+				}
+			} else {
+				datePickerFirstRun = false;
+			}
+		});
+	}
+	
+	private void initializePathComboBox() {
 		//Path Combo Box
 		pathComboBox.setCellFactory(new Callback<ListView<UUID>, ListCell<UUID>> () {
 			@Override
@@ -229,55 +289,9 @@ public class ViewCoordinatePreferencesPluginViewController
 			}
 		});
 		currentPathProperty.bind(pathComboBox.getSelectionModel().selectedItemProperty());
-		
-		//Calendar Date Picker
-		final Callback<DatePicker, DateCell> dayCellFactory = 
-				new Callback<DatePicker, DateCell>() {
-			@Override
-			public DateCell call(final DatePicker datePicker) {
-				return new DateCell() {
-					@Override
-					public void updateItem(LocalDate thisDate, boolean empty) {
-						super.updateItem(thisDate, empty);
-						if(pathDatesList != null) {
-							if(pathDatesList.contains(thisDate)) { 
-								setDisable(false); 
-							} else {
-								setDisable(true);
-							}
-						}
-					}
-				};
-			}
-		};
-		datePicker.setDayCellFactory(dayCellFactory);
-		datePicker.setOnAction((event) -> {
-			if(!datePickerFirstRun) {
-				UUID selectedPath = pathComboBox.getSelectionModel().getSelectedItem();
-
-				Instant instant = Instant.from(datePicker.getValue().atStartOfDay(ZoneId.systemDefault()));
-				Long dateSelected = Date.from(instant).getTime();
-
-				if(selectedPath != null && dateSelected != 0) {
-
-					int path = OTFUtility.getConceptVersion(selectedPath).getPathNid();
-					setTimeOptions(path, dateSelected);
-					try {
-						//							timeSelectCombo.setValue(times.first()); //Default Dropdown Value
-						currentTimeProperty.set(times.first());
-					} catch(Exception e) {
-						// Eat it.. like a sandwich! TODO: Create Read Only Property Conditional for checking if Time Combo is disabled
-						// Right now, Sometimes Time Combo is disabled, so we catch this and eat it
-						// Otherwise make a conditional from the Read Only Boolean Property to check first
-					}
-				} else {
-					log.debug("The path isn't set or the date isn't set. Both are needed right now");
-				}
-			} else {
-				datePickerFirstRun = false;
-			}
-		});
-		
+	}
+	
+	private void initializeSelectableModuleListView() {
 		selectableModuleListView.setCellFactory(CheckBoxListCell.forListView(SelectableModule::selectedProperty, new StringConverter<SelectableModule>() {
 			@Override
 			public String toString(SelectableModule object) {
@@ -289,18 +303,11 @@ public class ViewCoordinatePreferencesPluginViewController
 				return null;
 			}
 		}));
-		
+	}
 
-		//statusesToggleGroupVBox.setSpacing(4.0);
+	private void initializeStatusesToggleGroup() {
 		statusesToggleGroup = new ToggleGroup();
-
-		//statedInferredToggleGroupVBox.setSpacing(4.0);
-		statedInferredToggleGroup = new ToggleGroup(); //Stated / Inferred
-
-		//Instantiate Everything
-
 		Tooltip statusButtonsTooltip = new Tooltip("Default Status(es) is " + getDefaultViewCoordinateStatuses());
-
 		activeStatusButton = new RadioButton();
 		activeStatusButton.setText("Active");
 		activeStatusButton.setTooltip(statusButtonsTooltip);
@@ -352,9 +359,10 @@ public class ViewCoordinatePreferencesPluginViewController
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(activeAndInactiveStatusButton);
+	}
 
-		// StatedInferred Radio buttons
-		List<RadioButton> statedInferredOptionButtons = new ArrayList<>();
+	private void initializeStatedInferredToggleGroup() {
+		statedInferredToggleGroup = new ToggleGroup(); //Stated / Inferred
 
 		for (StatedInferredOptions option : StatedInferredOptions.values()) {
 			RadioButton optionButton = new RadioButton();
@@ -384,7 +392,9 @@ public class ViewCoordinatePreferencesPluginViewController
 				currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData());
 			}	
 		});
-
+	}
+	
+	private void initializeValidBooleanBinding() {
 		allValid_ = new ValidBooleanBinding() {
 			{
 				bind(currentStatedInferredOptionProperty, currentPathProperty, currentTimeProperty, currentStatusesProperty);
