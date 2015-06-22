@@ -80,7 +80,9 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -108,22 +110,32 @@ public class ViewCoordinatePreferencesPluginViewController
 	private static final UUID moduleRootUuid = UUID.fromString("96ca29b8-a934-5abd-8d4e-0ee6aeaba520");
 
 	private enum DateSelectionMethod {
-		SPECIFY,
-		USE_LATEST
+		SPECIFY("Specify Date"),
+		USE_LATEST("Use Latest Date");
+		
+		private final String displayName;
+		
+		private DateSelectionMethod(String dn) {
+			displayName = dn;
+		}
+		
+		public String getDisplayName() {
+			return displayName;
+		}
 	}
 	
 	private boolean contentLoaded = false;
 
-	@FXML VBox vBoxInTab;
+	@FXML GridPane gridPaneInTab;
 	@FXML GridPane topGridPane;
 	@FXML GridPane bottomGridPane;
+	@FXML DatePicker datePicker;
 	@FXML ComboBox<DateSelectionMethod> dateSelectorComboBox;
 	@FXML ComboBox<UUID> pathComboBox;
 	@FXML ListView<SelectableModule> selectableModuleListView;
 	@FXML VBox statusesToggleGroupVBox;
 	@FXML VBox statedInferredToggleGroupVBox;
 
-	DatePicker datePicker = new DatePicker();
 
 	private ValidBooleanBinding allValid_ = null;
 
@@ -165,23 +177,52 @@ public class ViewCoordinatePreferencesPluginViewController
 	{
 		// Load from FXML.
 		URL resource = ViewCoordinatePreferencesPluginViewController.class.getResource("ViewCoordinatePreferencesPluginView.fxml");
+		log.debug("Loaded URL {}", resource);
 		FXMLLoader loader = new FXMLLoader(resource);
 		loader.load();
 		return loader.getController();
 	}
 
+	private static int getNumGridPaneRows(GridPane gridPane) {
+		int numGridPaneRows = 0;
+		for (javafx.scene.Node node : gridPane.getChildren()) {
+			if (node != null) {
+				Integer rowIndex = GridPane.getRowIndex(node);
+				if (rowIndex != null && rowIndex >= numGridPaneRows) {
+					++numGridPaneRows;
+				}
+			}
+		}
+		
+		return numGridPaneRows;
+	}
+	private static void addGridPaneRowConstraintsToAllRows(GridPane gridPane, RowConstraints rowConstraints) {
+		final int numGridPaneRows = getNumGridPaneRows(gridPane);
+		for (int i = 0; i < numGridPaneRows; ++i) {
+			gridPane.getRowConstraints().add(i, rowConstraints);
+		}
+	}
+	
 	@FXML
 	void initialize()
 	{
-		assert vBoxInTab != null : "fx:id=\"vBoxInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert gridPaneInTab != null : "fx:id=\"gridPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert dateSelectorComboBox != null : "fx:id=\"dateSelectorComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert pathComboBox != null : "fx:id=\"pathComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert selectableModuleListView != null : "fx:id=\"selectableModuleListView\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert statusesToggleGroupVBox != null : "fx:id=\"statusesToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert statedInferredToggleGroupVBox != null : "fx:id=\"statedInferredToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+
+		RowConstraints gridPaneRowConstraints = new RowConstraints();
+		gridPaneRowConstraints.setVgrow(Priority.NEVER);
 		
+		addGridPaneRowConstraintsToAllRows(gridPaneInTab, gridPaneRowConstraints);
+		addGridPaneRowConstraintsToAllRows(topGridPane, gridPaneRowConstraints);
+		addGridPaneRowConstraintsToAllRows(bottomGridPane, gridPaneRowConstraints);
+
 		initializeDatePicker();
 		initializeDateSelectorComboBox();
 		initializePathComboBox();
@@ -239,6 +280,7 @@ public class ViewCoordinatePreferencesPluginViewController
 				datePickerFirstRun = false;
 			}
 		});
+		datePicker.setTooltip(new Tooltip("Enter valid date or click to select date from calendar"));
 	}
 	
 	private void initializeDateSelectorComboBox() {
@@ -252,7 +294,7 @@ public class ViewCoordinatePreferencesPluginViewController
 						if(c == null) {
 							setText(null);
 						} else {
-							setText(c.name());
+							setText(c.getDisplayName());
 						}
 					}
 				};
@@ -268,14 +310,18 @@ public class ViewCoordinatePreferencesPluginViewController
 				} else {
 					switch (c) {
 					case SPECIFY:
-						setGraphic(datePicker);
-						setText(null);
+						datePicker.setVisible(true);
+						setText(c.getDisplayName());
+						// This should change if default time ever changes
+						dateSelectorComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify date\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
 						break;
 					case USE_LATEST:
-						setGraphic(null);
-						setText(c.name());
+						datePicker.setVisible(false);
+						setText(c.getDisplayName());
+						dateSelectorComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify date.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
 						break;
 						default:
+							// Should never happen
 							throw new IllegalArgumentException("Failed setting dateSelectorComboBox ButtonCell. Unsupported "+ c.getClass().getName() + " value " + c.name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
 					}
 				}
@@ -290,9 +336,11 @@ public class ViewCoordinatePreferencesPluginViewController
 				currentTimeProperty.set(Long.MAX_VALUE);
 				break;
 				default:
+					// Should never happen
 					throw new IllegalArgumentException("Unsupported "+ dateSelectorComboBox.getSelectionModel().getSelectedItem().getClass().getName() + " value " + dateSelectorComboBox.getSelectionModel().getSelectedItem().name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
 			}
 		});
+		dateSelectorComboBox.getItems().addAll(DateSelectionMethod.values());
 		dateSelectorComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
 	}
 
@@ -374,6 +422,7 @@ public class ViewCoordinatePreferencesPluginViewController
 				return null;
 			}
 		}));
+		selectableModuleListView.setTooltip(new Tooltip("Select one or more modules to enable filtering for selected modules\nor deselect all to disable filtering by module.\nDefault module list is " + getDefaultViewCoordinateModules().toArray(new UUID[getDefaultViewCoordinateModules().size()])));
 	}
 
 	private void initializeStatusesToggleGroup() {
@@ -670,7 +719,7 @@ public class ViewCoordinatePreferencesPluginViewController
 			dateSelectorComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
 		}
 
-		return vBoxInTab;
+		return gridPaneInTab;
 	}
 
 	public ReadOnlyStringProperty validationFailureMessageProperty() {
