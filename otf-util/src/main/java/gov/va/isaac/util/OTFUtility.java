@@ -22,6 +22,9 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.config.users.InvalidUserException;
+import gov.va.isaac.interfaces.config.IsaacAppConfigI;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -127,6 +130,20 @@ public class OTFUtility {
 		ViewCoordinate vc = null;
 		try {
 			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+			if (userProfile == null)
+			{
+				LOG.warn("User profile not available yet during call to getViewCoordinate - configuring automation mode!");
+				try
+				{
+					LookupService.getService(UserProfileManager.class).configureAutomationMode(null);
+					userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+				}
+				catch (InvalidUserException e)
+				{
+					throw new RuntimeException("Problem configuring automation mode!");
+				}
+			}
+
 			StatedInferredOptions policy = userProfile.getStatedInferredPolicy();
 			switch(policy) {
 			case STATED:

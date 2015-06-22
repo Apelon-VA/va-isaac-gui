@@ -212,8 +212,6 @@ public interface IsaacAppConfigI {
   /**
    * Current view path uuid.
    * 
-   * This may differ from {@link #getDefaultViewPathUuid()} if the user has changed the value.
-   * 
    * @return possible object is {@link String }
    * 
    */
