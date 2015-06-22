@@ -29,9 +29,11 @@ import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.ochre.api.LookupService;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,10 +56,13 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -120,6 +125,15 @@ public class UscrsExportOperation extends Operation
 		}
 	}
 	
+	/**
+	 * Pass in a Date and the function will return a Date, but at the start of that day.
+	 * @param Date the day and time you would like to modify
+	 * @return Date and time at the beginning of the day
+	 */
+	public static Date getStartOfDay(Date date) {
+	    return DateUtils.truncate(date, Calendar.DATE);
+	}
+	
 	@Override
 	public void init(ObservableList<SimpleDisplayConcept> conceptList)
 	{
@@ -128,7 +142,7 @@ public class UscrsExportOperation extends Operation
 		
 		super.init(conceptList);
 		
-		String date = new SimpleDateFormat("MM-dd-yyyy").format(new Date());
+		String date = new SimpleDateFormat("MM-dd-yyyy HH-mm-ss").format(new Date());
 		fileName = "VA_USCRS_Submission_File_" + date;
 
 		//this.chooseFileName(); TODO: Finish the file name system
@@ -215,10 +229,13 @@ public class UscrsExportOperation extends Operation
 		
 		Label outputLocationLabel = new Label("Output Location");
 		root.add(outputLocationLabel, 0, 0);
+		
 		GridPane.setHalignment(outputLocationLabel, HPos.LEFT);
+		
 		
 		StackPane sp = ErrorMarkerUtils.setupErrorMarker(outputField, null, allFieldsValid);
 		root.add(sp, 1, 0);
+		GridPane.setHgrow(sp, Priority.ALWAYS); 
 		GridPane.setHalignment(sp, HPos.LEFT);
 		
 		Label datePickerLabel = new Label("Export Date Filter");
@@ -283,24 +300,43 @@ public class UscrsExportOperation extends Operation
 			protected OperationResult call() throws Exception
 			{
 				IntStream nidStream = conceptList_.stream().mapToInt(c -> c.getNid());
-				
-				ExportTaskHandlerI uscrsExporter = LookupService.getService(ExportTaskHandlerI.class, SharedServiceNames.USCRS);
 				int count = 0;
+				ExportTaskHandlerI uscrsExporter = LookupService.getService(ExportTaskHandlerI.class, SharedServiceNames.USCRS);
 				if(uscrsExporter != null) {
 					
-					if(!skipFilterCheckbox.isSelected()) {
+					updateMessage("Beginning USCRS Export ");
+					
+					if(cancelRequested_) {
+						return new OperationResult(UscrsExportOperation.this.getTitle(), cancelRequested_);
+					}
+					
+					if(!skipFilterCheckbox.isSelected() && datePicker.getValue() != null) {
+						
 						Properties options = new Properties();
 						Instant instant = Instant.from(datePicker.getValue().atStartOfDay(ZoneId.systemDefault()));
 						Long dateSelected = Date.from(instant).getTime();
+						updateMessage("USCRS Export - Date filter selected: " + dateSelected.toString());
 						options.setProperty("date", Long.toString(dateSelected));
-						
 						uscrsExporter.setOptions(options);
 					}
 					
-					Task<Integer> task = uscrsExporter.createTask(nidStream, file.toPath());
-					Utility.execute(task);
-					count = task.get();
-					//TODO: Fix all the customTask stuff here...
+					if(cancelRequested_) {
+						return new OperationResult(UscrsExportOperation.this.getTitle(), cancelRequested_);
+					}
+					
+					updateMessage("Beginning USCRS Export Handler Task");
+					
+					try {
+						Task<Integer> task = uscrsExporter.createTask(nidStream, file.toPath());
+						Utility.execute(task);
+						count = task.get();
+					} catch(FileNotFoundException fnfe) {
+						String errorMsg = "File is being used by another application. Close the other application to continue.";
+						updateMessage(errorMsg);
+						throw new RuntimeException(errorMsg);
+					}
+					
+					
 					return new OperationResult("The USCRS Content request was succesfully generated in: " + file.getPath(), new HashSet<SimpleDisplayConcept>(), "The concepts were succesfully exported");
 				} else {
 					throw new RuntimeException("The USCRS Content Request Handler is not available on the class path");
