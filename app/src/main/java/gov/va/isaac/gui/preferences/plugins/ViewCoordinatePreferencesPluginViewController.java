@@ -107,23 +107,29 @@ public class ViewCoordinatePreferencesPluginViewController
 
 	private static final UUID moduleRootUuid = UUID.fromString("96ca29b8-a934-5abd-8d4e-0ee6aeaba520");
 
+	private enum DateSelectionMethod {
+		SPECIFY,
+		USE_LATEST
+	}
+	
 	private boolean contentLoaded = false;
 
 	@FXML VBox vBoxInTab;
 	@FXML GridPane topGridPane;
 	@FXML GridPane bottomGridPane;
-	@FXML DatePicker datePicker;
+	@FXML ComboBox<DateSelectionMethod> dateSelectorComboBox;
 	@FXML ComboBox<UUID> pathComboBox;
 	@FXML ListView<SelectableModule> selectableModuleListView;
 	@FXML VBox statusesToggleGroupVBox;
 	@FXML VBox statedInferredToggleGroupVBox;
+
+	DatePicker datePicker = new DatePicker();
 
 	private ValidBooleanBinding allValid_ = null;
 
 	private ToggleGroup statusesToggleGroup = null;
 	private ToggleGroup statedInferredToggleGroup = null;
 
-	
 	private final ObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
@@ -167,6 +173,16 @@ public class ViewCoordinatePreferencesPluginViewController
 	@FXML
 	void initialize()
 	{
+		assert vBoxInTab != null : "fx:id=\"vBoxInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert dateSelectorComboBox != null : "fx:id=\"dateSelectorComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert pathComboBox != null : "fx:id=\"pathComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert selectableModuleListView != null : "fx:id=\"selectableModuleListView\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert statusesToggleGroupVBox != null : "fx:id=\"statusesToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert statedInferredToggleGroupVBox != null : "fx:id=\"statedInferredToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		
+		initializeDatePicker();
 		initializeDateSelectorComboBox();
 		initializePathComboBox();
 		initializeSelectableModuleListView();
@@ -175,7 +191,7 @@ public class ViewCoordinatePreferencesPluginViewController
 		initializeValidBooleanBinding();
 	}
 
-	private void initializeDateSelectorComboBox() {
+	private void initializeDatePicker() {
 		//Calendar Date Picker
 		final Callback<DatePicker, DateCell> dayCellFactory = 
 				new Callback<DatePicker, DateCell>() {
@@ -225,6 +241,61 @@ public class ViewCoordinatePreferencesPluginViewController
 		});
 	}
 	
+	private void initializeDateSelectorComboBox() {
+		dateSelectorComboBox.setCellFactory(new Callback<ListView<DateSelectionMethod>, ListCell<DateSelectionMethod>> () {
+			@Override
+			public ListCell<DateSelectionMethod> call(ListView<DateSelectionMethod> param) {
+				final ListCell<DateSelectionMethod> cell = new ListCell<DateSelectionMethod>() {
+					@Override
+					protected void updateItem(DateSelectionMethod c, boolean emptyRow) {
+						super.updateItem(c, emptyRow);
+						if(c == null) {
+							setText(null);
+						} else {
+							setText(c.name());
+						}
+					}
+				};
+				return cell;
+			}
+		});
+		dateSelectorComboBox.setButtonCell(new ListCell<DateSelectionMethod>() {
+			@Override
+			protected void updateItem(DateSelectionMethod c, boolean emptyRow) {
+				super.updateItem(c, emptyRow); 
+				if (emptyRow) {
+					setText("");
+				} else {
+					switch (c) {
+					case SPECIFY:
+						setGraphic(datePicker);
+						setText(null);
+						break;
+					case USE_LATEST:
+						setGraphic(null);
+						setText(c.name());
+						break;
+						default:
+							throw new IllegalArgumentException("Failed setting dateSelectorComboBox ButtonCell. Unsupported "+ c.getClass().getName() + " value " + c.name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
+					}
+				}
+			}
+		});
+		dateSelectorComboBox.setOnAction((event)-> {			
+			switch (dateSelectorComboBox.getSelectionModel().getSelectedItem()) {
+			case SPECIFY:
+				// noop. Value should be set by displayed DatePicker
+				break;
+			case USE_LATEST:
+				currentTimeProperty.set(Long.MAX_VALUE);
+				break;
+				default:
+					throw new IllegalArgumentException("Unsupported "+ dateSelectorComboBox.getSelectionModel().getSelectedItem().getClass().getName() + " value " + dateSelectorComboBox.getSelectionModel().getSelectedItem().name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
+			}
+		});
+		dateSelectorComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
+	}
+
 	private void initializePathComboBox() {
 		//Path Combo Box
 		pathComboBox.setCellFactory(new Callback<ListView<UUID>, ListCell<UUID>> () {
@@ -454,55 +525,6 @@ public class ViewCoordinatePreferencesPluginViewController
 		};
 	}
 
-	public ReadOnlyStringProperty validationFailureMessageProperty() {
-		return allValid_.getReasonWhyInvalid();
-	}
-
-	public void save() throws IOException {
-		log.debug("Saving ViewCoordinatePreferencesPluginView data");
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-
-		//Path Property
-		log.debug("Setting stored VC path (currently \"{}\") to {}", loggedIn.getViewCoordinatePath(), currentPathProperty().get()); 
-		loggedIn.setViewCoordinatePath(currentPathProperty().get());
-
-		//Stated/Inferred Policy
-		log.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", loggedIn.getStatedInferredPolicy(), currentStatedInferredOptionProperty().get()); 
-		loggedIn.setStatedInferredPolicy(currentStatedInferredOptionProperty().get());
-
-		//Time Property
-		log.debug("Setting stored VC time to :" + currentViewCoordinateTimeProperty().get());
-		loggedIn.setViewCoordinateTime(currentViewCoordinateTimeProperty().get());
-
-		//Statuses Property
-		log.debug("Setting stored VC statuses to :" + currentViewCoordinateStatusesProperty().get());
-		loggedIn.setViewCoordinateStatuses(currentViewCoordinateStatusesProperty().get());
-
-		//Modules Property
-		log.debug("Setting stored VC modules to :" + selectedModules);
-		loggedIn.setViewCoordinateModules(selectedModules);
-
-		if (overrideTimestamp != null) {
-			loggedIn.setViewCoordinateTime(overrideTimestamp);
-		}
-		try {
-			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);
-		} catch (InvalidUserException e) {
-			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to save UserProfile for " + getClass().getName();
-
-			log.error(msg, e);
-			throw new IOException(msg, e);
-		}
-	}
-
-	public static Date getEndOfDay(Date date) {
-		return DateUtils.addMilliseconds(DateUtils.ceiling(date, Calendar.DATE), -1);
-	}
-
-	public static Date getStartOfDay(Date date) {
-		return DateUtils.truncate(date, Calendar.DATE);
-	}
-
 	public Region getContent() {
 		if (! contentLoaded) {
 			contentLoaded = true;
@@ -638,7 +660,66 @@ public class ViewCoordinatePreferencesPluginViewController
 			}
 		}
 
+		Long storedTime = getStoredTime();
+		if (storedTime.equals(this.getDefaultTime())) {
+			datePicker.setValue(LocalDate.now());
+			dateSelectorComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
+		} else {
+			Date d = new Date(storedTime);
+			datePicker.setValue(d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+			dateSelectorComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
+		}
+
 		return vBoxInTab;
+	}
+
+	public ReadOnlyStringProperty validationFailureMessageProperty() {
+		return allValid_.getReasonWhyInvalid();
+	}
+
+	public void save() throws IOException {
+		log.debug("Saving ViewCoordinatePreferencesPluginView data");
+		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+
+		//Path Property
+		log.debug("Setting stored VC path (currently \"{}\") to {}", loggedIn.getViewCoordinatePath(), currentPathProperty().get()); 
+		loggedIn.setViewCoordinatePath(currentPathProperty().get());
+
+		//Stated/Inferred Policy
+		log.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", loggedIn.getStatedInferredPolicy(), currentStatedInferredOptionProperty().get()); 
+		loggedIn.setStatedInferredPolicy(currentStatedInferredOptionProperty().get());
+
+		//Time Property
+		log.debug("Setting stored VC time to :" + currentViewCoordinateTimeProperty().get());
+		loggedIn.setViewCoordinateTime(currentViewCoordinateTimeProperty().get());
+
+		//Statuses Property
+		log.debug("Setting stored VC statuses to :" + currentViewCoordinateStatusesProperty().get());
+		loggedIn.setViewCoordinateStatuses(currentViewCoordinateStatusesProperty().get());
+
+		//Modules Property
+		log.debug("Setting stored VC modules to :" + selectedModules);
+		loggedIn.setViewCoordinateModules(selectedModules);
+
+		if (overrideTimestamp != null) {
+			loggedIn.setViewCoordinateTime(overrideTimestamp);
+		}
+		try {
+			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);
+		} catch (InvalidUserException e) {
+			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to save UserProfile for " + getClass().getName();
+
+			log.error(msg, e);
+			throw new IOException(msg, e);
+		}
+	}
+
+	public static Date getEndOfDay(Date date) {
+		return DateUtils.addMilliseconds(DateUtils.ceiling(date, Calendar.DATE), -1);
+	}
+
+	public static Date getStartOfDay(Date date) {
+		return DateUtils.truncate(date, Calendar.DATE);
 	}
 
 	private IntStream getStamps(int pathSequence, long startTime, long endTime)
