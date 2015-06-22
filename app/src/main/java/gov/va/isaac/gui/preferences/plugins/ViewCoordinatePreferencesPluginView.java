@@ -24,6 +24,8 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginVi
 import java.io.IOException;
 
 import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 
@@ -43,17 +45,27 @@ import org.slf4j.LoggerFactory;
 public class ViewCoordinatePreferencesPluginView implements PreferencesPluginViewI
 {
 	ViewCoordinatePreferencesPluginViewController drlvc_;
+	
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 	
-	// ReflectUtil needs this to be public
-	public ViewCoordinatePreferencesPluginView()
-	{
-		// created by HK2
+	/**
+	 * This slave property, bound to controller validationFailureMessageProperty only after controller construction,
+	 * allows a client to bind to this view before the controller is initialized
+	 */
+	private final StringProperty slaveValidationFailureMessageProperty = new SimpleStringProperty();
+	
+	/**
+	 * Constructor should only be called by HK2
+	 */
+	private ViewCoordinatePreferencesPluginView() {
 		LOG.debug(this.getClass().getSimpleName() + " construct time (blocking GUI): {}", 0);
 	}
 
 	/**
 	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI
+	 * 
+	 * Uses FXMLLoader to construct the underlying controller
+	 * and binds the slaveValidationFailureMessageProperty to the controller's validationFailureMessageProperty
 	 */
 	@Override
 	public Region getContent()
@@ -63,6 +75,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
+				slaveValidationFailureMessageProperty.bind(drlvc_.validationFailureMessageProperty());
 			}
 			catch (IOException e)
 			{
@@ -75,19 +88,31 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 		return drlvc_.getContent();
 	}
 
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getName()
+	 */
 	@Override
 	public String getName() {
-		return "View Coordinate";
+		return "Set View Coordinate";
 	}
 
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#validationFailureMessageProperty()
+	 * 
+	 * This slave property, bound to controller validationFailureMessageProperty only after controller construction,
+	 * allows a client to bind to this view before the controller is initialized
+	 */
 	@Override
 	public ReadOnlyStringProperty validationFailureMessageProperty() {
-		if (drlvc_ == null) {
-			getContent();
-		}
-		return drlvc_.validationFailureMessageProperty();
+		return slaveValidationFailureMessageProperty;
 	}
 
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#save()
+	 * 
+	 * If controller not yet initialized, then initialize it and save current values
+	 * TODO maybe should be noop, since obviously no values changed.  Could be utility in saving defaults to uninitialized preferences, however
+	 */
 	@Override
 	public void save() throws IOException {
 		if (drlvc_ == null) {
@@ -96,6 +121,9 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 		drlvc_.save();
 	}
 
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getTabOrder()
+	 */
 	@Override
 	public int getTabOrder() {
 		return 10;
