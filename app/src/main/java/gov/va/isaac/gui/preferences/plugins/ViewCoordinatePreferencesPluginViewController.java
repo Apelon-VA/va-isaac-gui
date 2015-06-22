@@ -562,12 +562,16 @@ public class ViewCoordinatePreferencesPluginViewController
 					TextErrorColorHelper.clearTextErrorColor(inactiveStatusButton);
 					TextErrorColorHelper.clearTextErrorColor(activeAndInactiveStatusButton);
 				}
-				//					if(currentTimeProperty.get() == null && currentTimeProperty.get() != Long.MAX_VALUE)
-				//					{
-				//						this.setInvalidReason("View Coordinate Time is unselected");
-				//						TextErrorColorHelper.setTextErrorColor(timeSelectCombo);
-				//						return false;
-				//					}
+				if(currentTimeProperty.get() == null && currentTimeProperty.get() != Long.MAX_VALUE)
+				{
+					this.setInvalidReason("View Coordinate Time is unselected");
+					TextErrorColorHelper.setTextErrorColor(dateSelectorComboBox);
+					TextErrorColorHelper.setTextErrorColor(datePicker);
+					return false;
+				} else {
+					TextErrorColorHelper.clearTextErrorColor(dateSelectorComboBox);
+					TextErrorColorHelper.clearTextErrorColor(datePicker);
+				}
 				this.clearInvalidReason();
 				return true;
 			}
@@ -613,67 +617,60 @@ public class ViewCoordinatePreferencesPluginViewController
 			UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			storedTimePref = loggedIn.getViewCoordinateTime();
 			storedPathPref = loggedIn.getViewCoordinatePath();
-
-			if(storedPathPref != null) {
-				pathComboBox.getItems().clear(); //Set the path Dates by default
-				pathComboBox.getItems().addAll(getPathOptions());
-				final UUID storedPath = getStoredPath();
-				if(storedPath != null) {
-					pathComboBox.getSelectionModel().select(storedPath);
-				}
-
-				if(storedTimePref != null) {
-					//final Long storedTime = loggedIn.getViewCoordinateTime();
-					Calendar cal = Calendar.getInstance();
-					cal.setTime(new Date(storedTimePref));
-					cal.set(Calendar.MILLISECOND, 0); //Strip milliseconds
-					//					Long storedTruncTime = cal.getTimeInMillis();
-
-					if(!storedTimePref.equals(Long.MAX_VALUE)) { //***** FIX THIS, not checking default vc time value
-						int path = OTFUtility.getConceptVersion(storedPathPref).getPathNid();
-						setTimeOptions(path, storedTimePref);
-						//						timeSelectCombo.setValue(storedTruncTime);
-						//						timeSelectCombo.getItems().addAll(getTimeOptions()); //The correct way, but doesen't work
-
-						Date storedDate = new Date(storedTimePref);
-						datePicker.setValue(storedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-					} else {
-						datePicker.setValue(LocalDate.now());
-						//						timeSelectCombo.getItems().addAll(Long.MAX_VALUE); //The correct way, but doesen't work
-						//						timeSelectCombo.setValue(Long.MAX_VALUE);
-						//						disableTimeCombo(false);
-					}
-				} else { //Stored Time Pref == null
-					log.error("ERROR: Stored Time Preference = null");
-				}
-			} else { //Stored Path Pref == null
-				log.error("We could not load a stored path, ISAAC cannot run");
-				throw new Error("No stored PATH could be found. ISAAC can't run without a path");
-			}
-
-			// FOR DEBUGGING CURRENTLY SELECTED PATH, TIME AND POLICY
-			/*			
-			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-			StatedInferredOptions chosenPolicy = userProfile.getStatedInferredPolicy();
-			UUID chosenPathUuid = userProfile.getViewCoordinatePath();
-			Long chosenTime = userProfile.getViewCoordinateTime();
-
-			Label printSelectedPathLabel = new Label("Path: " + OTFUtility.getDescription(chosenPathUuid));
-			gridPane.add(printSelectedPathLabel, 0, 4);
-			GridPane.setHalignment(printSelectedPathLabel, HPos.LEFT);
-			Label printSelectedTimeLabel = null;
-			if(chosenTime != getDefaultTime()) {
-				printSelectedTimeLabel = new Label("Time: " + dateFormat.format(new Date(chosenTime)));
-			} else {
-				printSelectedTimeLabel = new Label("Time: LONG MAX VALUE");
-			}
-			gridPane.add(printSelectedTimeLabel, 1, 4);
-			GridPane.setHalignment(printSelectedTimeLabel, HPos.LEFT);
-			Label printSelectedPolicyLabel = new Label("Policy: " + chosenPolicy);
-			gridPane.add(printSelectedPolicyLabel, 2, 4);
-			GridPane.setHalignment(printSelectedPolicyLabel, HPos.LEFT);
-			 */
 		}
+
+		if(storedPathPref != null) {
+			pathComboBox.getItems().clear(); //Set the path Dates by default
+			pathComboBox.getItems().addAll(getPathOptions());
+			final UUID storedPath = getStoredPath();
+			if(storedPath != null) {
+				pathComboBox.getSelectionModel().select(storedPath);
+			}
+
+			if(storedTimePref != null) {
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(new Date(storedTimePref));
+				cal.set(Calendar.MILLISECOND, 0); //Strip milliseconds
+
+				if(!storedTimePref.equals(Long.MAX_VALUE)) { //***** FIX THIS, not checking default vc time value
+					int path = OTFUtility.getConceptVersion(storedPathPref).getPathNid();
+					setTimeOptions(path, storedTimePref);
+
+					Date storedDate = new Date(storedTimePref);
+					datePicker.setValue(storedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+				} else {
+					datePicker.setValue(LocalDate.now());
+				}
+			} else { //Stored Time Pref == null
+				log.error("ERROR: Stored Time Preference = null");
+			}
+		} else { //Stored Path Pref == null
+			log.error("We could not load a stored path, ISAAC cannot run");
+			throw new Error("No stored PATH could be found. ISAAC can't run without a path");
+		}
+
+		// FOR DEBUGGING CURRENTLY SELECTED PATH, TIME AND POLICY
+		/*			
+		UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+		StatedInferredOptions chosenPolicy = userProfile.getStatedInferredPolicy();
+		UUID chosenPathUuid = userProfile.getViewCoordinatePath();
+		Long chosenTime = userProfile.getViewCoordinateTime();
+
+		Label printSelectedPathLabel = new Label("Path: " + OTFUtility.getDescription(chosenPathUuid));
+		gridPane.add(printSelectedPathLabel, 0, 4);
+		GridPane.setHalignment(printSelectedPathLabel, HPos.LEFT);
+		Label printSelectedTimeLabel = null;
+		if(chosenTime != getDefaultTime()) {
+			printSelectedTimeLabel = new Label("Time: " + dateFormat.format(new Date(chosenTime)));
+		} else {
+			printSelectedTimeLabel = new Label("Time: LONG MAX VALUE");
+		}
+		gridPane.add(printSelectedTimeLabel, 1, 4);
+		GridPane.setHalignment(printSelectedTimeLabel, HPos.LEFT);
+		Label printSelectedPolicyLabel = new Label("Policy: " + chosenPolicy);
+		gridPane.add(printSelectedPolicyLabel, 2, 4);
+		GridPane.setHalignment(printSelectedPolicyLabel, HPos.LEFT);
+		 */
 
 		// Reload persisted values every time
 
