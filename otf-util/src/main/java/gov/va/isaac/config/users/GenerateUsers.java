@@ -293,15 +293,7 @@ public class GenerateUsers
 
 	public static UUID calculateUserUUID(String uniqueLogonName)
 	{
-		try
-		{
-			return UuidT5Generator.get(USER_LOGON_NAMESPACE, uniqueLogonName);
-		}
-		catch (NoSuchAlgorithmException | UnsupportedEncodingException e)
-		{
-			logger.error("Unexpected", e);
-			throw new RuntimeException(e);
-		}
+            return UuidT5Generator.get(USER_LOGON_NAMESPACE, uniqueLogonName);
 	}
 
 	static String toString(User user)

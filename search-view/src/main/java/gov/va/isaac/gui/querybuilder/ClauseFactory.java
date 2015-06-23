@@ -120,7 +120,7 @@ public class ClauseFactory {
                         final String conceptSpecKey = "UUIDKeyFor" + node.getTemporaryUniqueId();
                         final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
                         query.getLetDeclarations().put(conceptSpecKey, new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
-                        query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
                         Clause clause = null;
                         
                         if (itemType == QueryNodeType.CONCEPT_IS) {
@@ -148,7 +148,7 @@ public class ClauseFactory {
                         final String stringMatchKey = "StringMatchKeyFor" + node.getTemporaryUniqueId();
                         final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
                         query.getLetDeclarations().put(stringMatchKey, node.getString());
-                        query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
                         
                         Clause clause = null;
                         if (itemType == QueryNodeType.DESCRIPTION_CONTAINS) {
@@ -181,7 +181,7 @@ public class ClauseFactory {
                         query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
                         
                         final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-                        query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
                         
                         Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsConcept(
                                 /* Query */		query,
@@ -206,7 +206,7 @@ public class ClauseFactory {
                         query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
                         
                         final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-                        query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
                         
                         Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsKindOfConcept(
                                 /* Query */		query,
@@ -230,7 +230,7 @@ public class ClauseFactory {
                         query.getLetDeclarations().put(queryTextKey, queryText);
                         
                         final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-                        query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
                         
                         Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsString(
                                 /* Query */		query,
@@ -259,7 +259,7 @@ public class ClauseFactory {
                         query.getLetDeclarations().put(sourceConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(sourceConcept), sourceConcept.getPrimordialUuid()));
                         
                         final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-                        query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
                         
                         final String useDestinationSubsumptionKey = "UseDestinationSubsumptionBooleanKeyFor" + node.getTemporaryUniqueId();
                         query.getLetDeclarations().put(useDestinationSubsumptionKey, node.getUseDestinationSubsumption());
@@ -294,7 +294,7 @@ public class ClauseFactory {
 //			query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
 //
 //			final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-//			query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+//			query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
 //			
 //			Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RelRestriction(
 //				/* Query */		query,

@@ -70,7 +70,6 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronic
 import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
 import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -319,7 +318,6 @@ class SctTreeView {
                 ConceptChronicleDdo rootConceptCC = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(
                         rootConcept,
                         OTFUtility.getViewCoordinate(),
-                        VersionPolicy.ACTIVE_VERSIONS,
                         RefexPolicy.NONE,
                         RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
                 LOG.debug("Finished loading root concept");
@@ -610,9 +608,8 @@ class SctTreeView {
         TerminologySnapshotDI snapshot = dataStore.getSnapshot(viewCoordinate);
 
         return new ConceptChronicleDdo(
-                snapshot,
+                snapshot.getViewCoordinate(),
                 wbConcept,
-                VersionPolicy.ACTIVE_VERSIONS,
                 RefexPolicy.NONE,
                 RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
     }

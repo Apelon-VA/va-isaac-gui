@@ -44,7 +44,6 @@ import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
 import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -93,7 +92,7 @@ public class ConceptView implements PopupConceptViewI {
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
 				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(conceptUUID, OTFUtility.getViewCoordinateAllowInactive(),
-						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+						RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
 				LOG.info("Finished loading concept with UUID " + conceptUUID);
 
 				return concept;
@@ -144,7 +143,7 @@ public class ConceptView implements PopupConceptViewI {
 				LOG.info("Loading concept with nid " + conceptNid);
 				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(ExtendedAppContext.getDataStore().getUuidPrimordialForNid(conceptNid), 
 						OTFUtility.getViewCoordinateAllowInactive(),
-						VersionPolicy.ACTIVE_VERSIONS, RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+						RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
 				LOG.info("Finished loading concept with nid " + conceptNid);
 				return concept;
 			}

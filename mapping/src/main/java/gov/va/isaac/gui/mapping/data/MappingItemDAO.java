@@ -69,7 +69,7 @@ public class MappingItemDAO extends MappingDAO
 			
 			return new MappingItem((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));
 		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException | NoSuchAlgorithmException e)
+		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{
 			LOG.error("Unexpected", e);
 			throw new IOException("Invalid mapping. Check Source, Target, and Qualifier.", e);

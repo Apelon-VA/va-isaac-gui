@@ -66,7 +66,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesVersionDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.identifier.IdentifierDdo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,28 +201,6 @@ public class ConceptViewController {
 		});
 		CopyableLabel.addCopyMenu(uuidLabel);
 
-		// Add context menu items for additional identifiers.
-		for (final IdentifierDdo id : attributeChronicle.getAdditionalIds()) {
-
-			MenuItem mi = new MenuItem("View Concept");
-			mi.setOnAction(new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(ActionEvent ignore) {
-					AppContext.getCommonDialogs().showConceptDialog(id.getAuthorityRef().getUuid());
-				}
-			});
-
-			CopyableLabel l = new CopyableLabel(id.getAuthorityRef().getText());
-			l.getContextMenu().getItems().add(mi);
-			l.getStyleClass().add("boldLabel");
-
-			HBox hbox = new HBox();
-			hbox.getChildren().add(l);
-			hbox.getChildren().add(new CopyableLabel(id.getDenotation().toString()));
-			hbox.setSpacing(5.0);
-
-			idVBox.getChildren().add(hbox);
-		}
 		
 		dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
 		descriptionsTableHolder.getChildren().add(dtv.getView());
