@@ -28,7 +28,13 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 
 /**
  * UserProfileDefaults
@@ -94,5 +100,17 @@ public final class UserProfileDefaults {
 	
 	public static String getDefaultExtensionNamespace() {
 		return "";
+	}
+	
+	public static Set<Status> getDefaultViewCoordinateStatuses() {
+		Set<Status> statuses = new HashSet<>();
+		statuses.add(Status.ACTIVE);
+		return Collections.unmodifiableSet(statuses);
+	}
+	
+	// Empty set means ALL
+	public static Set<UUID> getDefaultViewCoordinateModules() {
+		Set<UUID> modules = new HashSet<>();
+		return Collections.unmodifiableSet(modules);
 	}
 }

@@ -19,17 +19,29 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
+
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
+
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlySetWrapper;
+import javafx.beans.property.SimpleSetProperty;
+import javafx.beans.property.SetProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import com.sun.javafx.collections.ObservableSetWrapper;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -50,9 +62,15 @@ public class UserProfileBindings
 	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
 	
+	private final SetProperty<Status> viewCoordinateStatusesProperty = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<Status> viewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatusesProperty);
+
+	private final SetProperty<UUID> viewCoordinateModulesProperty = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<UUID> viewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModulesProperty);
+
 	public Property<?>[] getAll()
 	{
-		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath};
+		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath, viewCoordinateStatuses};
 	}
 	
 	/**
@@ -98,6 +116,14 @@ public class UserProfileBindings
 	{
 		return editCoordinatePath.getReadOnlyProperty();
 	}
+
+	/**
+	 * @return the viewCoordinateStatuses
+	 */
+	public ReadOnlySetProperty<Status> getViewCoordinateStatuses()
+	{
+		return viewCoordinateStatuses.getReadOnlyProperty();
+	}
 	
 	protected void update(UserProfile up)
 	{
@@ -124,6 +150,24 @@ public class UserProfileBindings
 		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
 		{
 			workflowUsername.set(up.getWorkflowUsername());
+		}
+		
+		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
+		// and that viewCoordinateStatuses is initialized with an empty SimpleSetProperty<Status>
+		if (viewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
+				|| ! viewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
+				|| ! up.getViewCoordinateStatuses().containsAll(viewCoordinateStatuses.get())) {
+			viewCoordinateStatusesProperty.get().clear();
+			viewCoordinateStatusesProperty.get().addAll(up.getViewCoordinateStatuses());
+		}
+
+		// This depends on the fact that UserProfile.getViewCoordinateModules() never returns null
+		// and that viewCoordinateModules is initialized with an empty SimpleSetProperty<UUID>
+		if (viewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
+				|| ! viewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
+				|| ! up.getViewCoordinateModules().containsAll(viewCoordinateModules.get())) {
+			viewCoordinateModulesProperty.get().clear();
+			viewCoordinateModulesProperty.get().addAll(up.getViewCoordinateModules());
 		}
 	}
 }
