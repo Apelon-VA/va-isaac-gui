@@ -54,6 +54,7 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -173,22 +174,28 @@ public class EconceptExportOperation extends Operation
 				{
 					if(!filePath.equals(""))
 					{
-						String path = filePath.substring(0, filePath.lastIndexOf(File.separator));
-						logger_.debug("Output Directory: " + path);
-						File f = new File(path);
-						if(file != null) {
-							if(file.isFile()) {
-								this.setInvalidReason("The file " + filePath + " already exists");
-								return false;
-							}
-							else if(f.isDirectory()){
-								return true;
+						String fieldOutput = outputField.getText();
+						if(filePath != null && !fieldOutput.isEmpty() && file != null) //fieldOutput is repetetive but necessary
+						{	
+							String path = filePath.substring(0, filePath.lastIndexOf(File.separator));
+							logger_.debug("Output Directory: " + path);
+							File f = new File(path);
+							if(file != null) {
+								if(file.isFile()) {
+									this.setInvalidReason("The file " + filePath + " already exists");
+									return false;
+								}
+								else if(f.isDirectory()){
+									return true;
+								} else {
+									this.setInvalidReason("Output Path is not a directory");
+									return false;
+								}
 							} else {
-								this.setInvalidReason("Output Path is not a directory");
+								this.setInvalidReason("file object is null");
 								return false;
 							}
 						} else {
-							this.setInvalidReason("file object is null");
 							return false;
 						}
 					} else {
@@ -214,6 +221,7 @@ public class EconceptExportOperation extends Operation
 		
 		StackPane sp = ErrorMarkerUtils.setupErrorMarker(outputField, null, allFieldsValid);
 		root.add(sp, 1, 0);
+		GridPane.setHgrow(sp, Priority.ALWAYS);
 		GridPane.setHalignment(sp, HPos.LEFT);
 		
 		Label eConChangesetLabel = new Label("EConcept / Changeset");
@@ -324,7 +332,6 @@ public class EconceptExportOperation extends Operation
 	@Override
 	protected void conceptListChanged()
 	{
-		//TODO: DO we want to also populate this list with exported concepts ?
 	}
 
 	/**
