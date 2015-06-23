@@ -70,7 +70,7 @@ public class UserProfileBindings
 
 	public Property<?>[] getAll()
 	{
-		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath, viewCoordinateStatuses};
+		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath, viewCoordinateStatuses, viewCoordinateModulesProperty};
 	}
 	
 	/**
