@@ -93,7 +93,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	 */
 	@Override
 	public String getName() {
-		return "Set View Coordinate";
+		return "View Coordinate";
 	}
 
 	/* (non-Javadoc)

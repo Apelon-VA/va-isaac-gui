@@ -38,6 +38,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -54,7 +55,6 @@ import java.util.stream.IntStream;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -62,8 +62,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleSetProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
@@ -109,22 +107,25 @@ public class ViewCoordinatePreferencesPluginViewController
 
 	private static final UUID moduleRootUuid = UUID.fromString("96ca29b8-a934-5abd-8d4e-0ee6aeaba520");
 
+	/**
+	 * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
+	 *
+	 * For populating dateSelectorComboBox
+	 */
 	private enum DateSelectionMethod {
 		SPECIFY("Specify Date"),
 		USE_LATEST("Use Latest Date");
-		
+
 		private final String displayName;
-		
+
 		private DateSelectionMethod(String dn) {
 			displayName = dn;
 		}
-		
+
 		public String getDisplayName() {
 			return displayName;
 		}
 	}
-	
-	private boolean contentLoaded = false;
 
 	@FXML GridPane gridPaneInTab;
 	@FXML GridPane topGridPane;
@@ -136,45 +137,41 @@ public class ViewCoordinatePreferencesPluginViewController
 	@FXML VBox statusesToggleGroupVBox;
 	@FXML VBox statedInferredToggleGroupVBox;
 
-
-	private ValidBooleanBinding allValid_ = null;
+	private boolean contentLoaded = false;
 
 	private ToggleGroup statusesToggleGroup = null;
 	private ToggleGroup statedInferredToggleGroup = null;
 
+	private ObservableList<SelectableModule> selectableModules = null;
+
+	private ValidBooleanBinding allValid_ = null;
+
+	// ValidBooleanBinding allValid_ dependencies
 	private final ObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
 	private final SimpleSetProperty<Status> currentStatusesProperty = new SimpleSetProperty<>(new ObservableSetWrapper<Status>(new HashSet<Status>()));
+	private final SelectableModule allModulesMarker = new SelectableModule();
+	private final ObservableSet<UUID> selectedModules = FXCollections.observableSet(new HashSet<UUID>());
 
 	private final List<RadioButton> statedInferredOptionButtons = new ArrayList<>();
-	
+
 	private RadioButton activeStatusButton;
 	private RadioButton inactiveStatusButton;
 	private RadioButton activeAndInactiveStatusButton;
 
-	private TreeSet<Long> times = new TreeSet<Long>();
-	private HashSet<LocalDate> pathDatesList = new HashSet<LocalDate>();
+	private final TreeSet<Long> times = new TreeSet<Long>();
+	private final HashSet<LocalDate> pathDatesList = new HashSet<LocalDate>();
 	private Date stampDate = null;
-//	private SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-//	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d/M/y");
-//	private SimpleDateFormat regularDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	private HashMap<Long, Long> truncTimeToFullTimeMap = new HashMap<Long, Long>();
-//	private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm:ss a");
+	private final HashMap<Long, Long> truncTimeToFullTimeMap = new HashMap<Long, Long>();
 	private LocalDate stampDateInstant = null;
 	private Long storedTimePref = null;
 	private UUID storedPathPref = null;
-
 	private boolean datePickerFirstRun = false; //This will probably need to go
 	private boolean pathComboFirstRun = false;
-
 	private Long overrideTimestamp;
 
-	private ObservableList<SelectableModule> selectableModules = null;
-	private ObservableSet<UUID> selectedModules = FXCollections.observableSet(new HashSet<UUID>());
-
-	protected static ViewCoordinatePreferencesPluginViewController construct() throws IOException
-	{
+	protected static ViewCoordinatePreferencesPluginViewController construct() throws IOException {
 		// Load from FXML.
 		URL resource = ViewCoordinatePreferencesPluginViewController.class.getResource("ViewCoordinatePreferencesPluginView.fxml");
 		log.debug("Loaded URL {}", resource);
@@ -183,29 +180,8 @@ public class ViewCoordinatePreferencesPluginViewController
 		return loader.getController();
 	}
 
-	private static int getNumGridPaneRows(GridPane gridPane) {
-		int numGridPaneRows = 0;
-		for (javafx.scene.Node node : gridPane.getChildren()) {
-			if (node != null) {
-				Integer rowIndex = GridPane.getRowIndex(node);
-				if (rowIndex != null && rowIndex >= numGridPaneRows) {
-					++numGridPaneRows;
-				}
-			}
-		}
-		
-		return numGridPaneRows;
-	}
-	private static void addGridPaneRowConstraintsToAllRows(GridPane gridPane, RowConstraints rowConstraints) {
-		final int numGridPaneRows = getNumGridPaneRows(gridPane);
-		for (int i = 0; i < numGridPaneRows; ++i) {
-			gridPane.getRowConstraints().add(i, rowConstraints);
-		}
-	}
-	
 	@FXML
-	void initialize()
-	{
+	void initialize() {
 		assert gridPaneInTab != null : "fx:id=\"gridPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
@@ -218,7 +194,7 @@ public class ViewCoordinatePreferencesPluginViewController
 
 		RowConstraints gridPaneRowConstraints = new RowConstraints();
 		gridPaneRowConstraints.setVgrow(Priority.NEVER);
-		
+
 		addGridPaneRowConstraintsToAllRows(gridPaneInTab, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(topGridPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(bottomGridPane, gridPaneRowConstraints);
@@ -280,49 +256,47 @@ public class ViewCoordinatePreferencesPluginViewController
 				datePickerFirstRun = false;
 			}
 		});
-		datePicker.setTooltip(new Tooltip("Enter valid date or click to select date from calendar"));
+		datePicker.setTooltip(new Tooltip("Enter valid date or click to select date from calendar representing\nan historical snapshot version of the database"));
 	}
-	
+
 	private void initializeDateSelectorComboBox() {
-		dateSelectorComboBox.setCellFactory(new Callback<ListView<DateSelectionMethod>, ListCell<DateSelectionMethod>> () {
-			@Override
-			public ListCell<DateSelectionMethod> call(ListView<DateSelectionMethod> param) {
-				final ListCell<DateSelectionMethod> cell = new ListCell<DateSelectionMethod>() {
-					@Override
-					protected void updateItem(DateSelectionMethod c, boolean emptyRow) {
-						super.updateItem(c, emptyRow);
-						if(c == null) {
-							setText(null);
-						} else {
-							setText(c.getDisplayName());
-						}
+		dateSelectorComboBox.setCellFactory((param) -> {
+			final ListCell<DateSelectionMethod> cell = new ListCell<DateSelectionMethod>() {
+				@Override
+				protected void updateItem(DateSelectionMethod selectionMethod, boolean emptyRow) {
+					super.updateItem(selectionMethod, emptyRow);
+					if(selectionMethod == null) {
+						setText(null);
+					} else {
+						setText(selectionMethod.getDisplayName());
 					}
-				};
-				return cell;
-			}
+				}
+			};
+			return cell;
 		});
+		
 		dateSelectorComboBox.setButtonCell(new ListCell<DateSelectionMethod>() {
 			@Override
-			protected void updateItem(DateSelectionMethod c, boolean emptyRow) {
-				super.updateItem(c, emptyRow); 
+			protected void updateItem(DateSelectionMethod selectionMethod, boolean emptyRow) {
+				super.updateItem(selectionMethod, emptyRow); 
 				if (emptyRow) {
 					setText("");
 				} else {
-					switch (c) {
+					switch (selectionMethod) {
 					case SPECIFY:
 						datePicker.setVisible(true);
-						setText(c.getDisplayName());
+						setText(selectionMethod.getDisplayName());
 						// This should change if default time ever changes
-						dateSelectorComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify date\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
+						dateSelectorComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify a date\nin the past representing an historical snapshot version of the database\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
 						break;
 					case USE_LATEST:
 						datePicker.setVisible(false);
-						setText(c.getDisplayName());
-						dateSelectorComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify date.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
+						setText(selectionMethod.getDisplayName());
+						dateSelectorComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest (most recent) date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify a date\nin the past representing an historical snapshot version of the database.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
 						break;
-						default:
-							// Should never happen
-							throw new IllegalArgumentException("Failed setting dateSelectorComboBox ButtonCell. Unsupported "+ c.getClass().getName() + " value " + c.name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
+					default:
+						// Should never happen
+						throw new IllegalArgumentException("Failed setting dateSelectorComboBox ButtonCell. Unsupported "+ selectionMethod.getClass().getName() + " value " + selectionMethod.name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
 					}
 				}
 			}
@@ -335,9 +309,9 @@ public class ViewCoordinatePreferencesPluginViewController
 			case USE_LATEST:
 				currentTimeProperty.set(Long.MAX_VALUE);
 				break;
-				default:
-					// Should never happen
-					throw new IllegalArgumentException("Unsupported "+ dateSelectorComboBox.getSelectionModel().getSelectedItem().getClass().getName() + " value " + dateSelectorComboBox.getSelectionModel().getSelectedItem().name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
+			default:
+				// Should never happen
+				throw new IllegalArgumentException("Unsupported "+ dateSelectorComboBox.getSelectionModel().getSelectedItem().getClass().getName() + " value " + dateSelectorComboBox.getSelectionModel().getSelectedItem().name() + ".  Must be " + DateSelectionMethod.SPECIFY.name() + " or " + DateSelectionMethod.USE_LATEST.name() + ".");
 			}
 		});
 		dateSelectorComboBox.getItems().addAll(DateSelectionMethod.values());
@@ -345,24 +319,20 @@ public class ViewCoordinatePreferencesPluginViewController
 	}
 
 	private void initializePathComboBox() {
-		//Path Combo Box
-		pathComboBox.setCellFactory(new Callback<ListView<UUID>, ListCell<UUID>> () {
-			@Override
-			public ListCell<UUID> call(ListView<UUID> param) {
-				final ListCell<UUID> cell = new ListCell<UUID>() {
-					@Override
-					protected void updateItem(UUID c, boolean emptyRow) {
-						super.updateItem(c, emptyRow);
-						if(c == null) {
-							setText(null);
-						} else {
-							String desc = OTFUtility.getDescription(c);
-							setText(desc);
-						}
+		pathComboBox.setCellFactory((param) -> {
+			final ListCell<UUID> cell = new ListCell<UUID>() {
+				@Override
+				protected void updateItem(UUID c, boolean emptyRow) {
+					super.updateItem(c, emptyRow);
+					if(c == null) {
+						setText(null);
+					} else {
+						String desc = OTFUtility.getDescription(c);
+						setText(desc);
 					}
-				};
-				return cell;
-			}
+				}
+			};
+			return cell;
 		});
 		pathComboBox.setButtonCell(new ListCell<UUID>() {
 			@Override
@@ -409,8 +379,9 @@ public class ViewCoordinatePreferencesPluginViewController
 		});
 		currentPathProperty.bind(pathComboBox.getSelectionModel().selectedItemProperty());
 	}
-	
+
 	private void initializeSelectableModuleListView() {
+		allModulesMarker.selectedProperty().set(true); // default only.  may be changed in getContent()
 		selectableModuleListView.setCellFactory(CheckBoxListCell.forListView(SelectableModule::selectedProperty, new StringConverter<SelectableModule>() {
 			@Override
 			public String toString(SelectableModule object) {
@@ -422,7 +393,7 @@ public class ViewCoordinatePreferencesPluginViewController
 				return null;
 			}
 		}));
-		selectableModuleListView.setTooltip(new Tooltip("Select one or more modules to enable filtering for selected modules\nor deselect all to disable filtering by module.\nDefault module list is " + getDefaultViewCoordinateModules().toArray(new UUID[getDefaultViewCoordinateModules().size()])));
+		selectableModuleListView.setTooltip(new Tooltip("Select one or more modules to enable filtering for selected modules\nor deselect all to disable filtering by module.\nDefault module list is " + Arrays.toString(getDefaultViewCoordinateModules().toArray(new UUID[getDefaultViewCoordinateModules().size()]))));
 	}
 
 	private void initializeStatusesToggleGroup() {
@@ -432,15 +403,10 @@ public class ViewCoordinatePreferencesPluginViewController
 		activeStatusButton.setText("Active");
 		activeStatusButton.setTooltip(statusButtonsTooltip);
 		statusesToggleGroup.getToggles().add(activeStatusButton);
-		activeStatusButton.selectedProperty().addListener(new ChangeListener<Boolean> () {
-			@Override
-			public void changed(
-					ObservableValue<? extends Boolean> observable,
-					Boolean oldValue, Boolean newValue) {
-				if (newValue) {
-					currentStatusesProperty.get().clear();
-					currentStatusesProperty.add(Status.ACTIVE);
-				}
+		activeStatusButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue) {
+				currentStatusesProperty.get().clear();
+				currentStatusesProperty.add(Status.ACTIVE);
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(activeStatusButton);
@@ -449,15 +415,10 @@ public class ViewCoordinatePreferencesPluginViewController
 		inactiveStatusButton.setText("Inactive");
 		inactiveStatusButton.setTooltip(statusButtonsTooltip);
 		statusesToggleGroup.getToggles().add(inactiveStatusButton);
-		inactiveStatusButton.selectedProperty().addListener(new ChangeListener<Boolean> () {
-			@Override
-			public void changed(
-					ObservableValue<? extends Boolean> observable,
-					Boolean oldValue, Boolean newValue) {
-				if (newValue) {
-					currentStatusesProperty.get().clear();
-					currentStatusesProperty.add(Status.INACTIVE);
-				}
+		inactiveStatusButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue) {
+				currentStatusesProperty.get().clear();
+				currentStatusesProperty.add(Status.INACTIVE);
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(inactiveStatusButton);
@@ -466,16 +427,11 @@ public class ViewCoordinatePreferencesPluginViewController
 		activeAndInactiveStatusButton.setText("All");
 		activeAndInactiveStatusButton.setTooltip(statusButtonsTooltip);
 		statusesToggleGroup.getToggles().add(activeAndInactiveStatusButton);
-		activeAndInactiveStatusButton.selectedProperty().addListener(new ChangeListener<Boolean> () {
-			@Override
-			public void changed(
-					ObservableValue<? extends Boolean> observable,
-					Boolean oldValue, Boolean newValue) {
-				if (newValue) {
-					currentStatusesProperty.get().clear();
-					currentStatusesProperty.add(Status.ACTIVE);
-					currentStatusesProperty.add(Status.INACTIVE);
-				}
+		activeAndInactiveStatusButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue) {
+				currentStatusesProperty.get().clear();
+				currentStatusesProperty.add(Status.ACTIVE);
+				currentStatusesProperty.add(Status.INACTIVE);
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(activeAndInactiveStatusButton);
@@ -486,16 +442,13 @@ public class ViewCoordinatePreferencesPluginViewController
 
 		for (StatedInferredOptions option : StatedInferredOptions.values()) {
 			RadioButton optionButton = new RadioButton();
-			if (option == StatedInferredOptions.STATED)
-			{
+			if (option == StatedInferredOptions.STATED) {
 				optionButton.setText("Stated");
 			}
-			else if (option == StatedInferredOptions.INFERRED)
-			{
+			else if (option == StatedInferredOptions.INFERRED) {
 				optionButton.setText("Inferred");
 			}
-			else
-			{
+			else {
 				throw new RuntimeException("oops");
 			}
 			optionButton.setUserData(option);
@@ -504,20 +457,21 @@ public class ViewCoordinatePreferencesPluginViewController
 			statedInferredToggleGroupVBox.getChildren().add(optionButton);
 			statedInferredOptionButtons.add(optionButton);
 		}
-		statedInferredToggleGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
-			@Override
-			public void changed(
-					ObservableValue<? extends Toggle> observable,
-					Toggle oldValue, Toggle newValue) {
-				currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData());
-			}	
-		});
+		statedInferredToggleGroup.selectedToggleProperty().addListener(
+				(observable, oldValue, newValue) -> currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData()));
 	}
-	
+
 	private void initializeValidBooleanBinding() {
 		allValid_ = new ValidBooleanBinding() {
 			{
-				bind(currentStatedInferredOptionProperty, currentPathProperty, currentTimeProperty, currentStatusesProperty);
+				bind(
+						currentStatedInferredOptionProperty,
+						currentPathProperty,
+						currentTimeProperty,
+						currentStatusesProperty,
+						selectedModules,
+						allModulesMarker.selectedProperty()
+						);
 				setComputeOnInvalidate(true);
 			}
 
@@ -572,6 +526,21 @@ public class ViewCoordinatePreferencesPluginViewController
 					TextErrorColorHelper.clearTextErrorColor(dateSelectorComboBox);
 					TextErrorColorHelper.clearTextErrorColor(datePicker);
 				}
+
+				if (allModulesMarker.selectedProperty().get()
+						&& selectedModules.size() > 0) {
+					this.setInvalidReason("ALL module cannot be selected while any (currently " + selectedModules.size() + ") specific module selected");
+					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
+					return false;
+				} else if (! allModulesMarker.selectedProperty().get()
+						&& selectedModules.size() == 0) {
+					this.setInvalidReason("ALL module must be selected if no specific module(s) selected");
+					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
+					return false;
+				} else {
+					TextErrorColorHelper.clearTextErrorColor(selectableModuleListView);
+				}
+
 				this.clearInvalidReason();
 				return true;
 			}
@@ -583,11 +552,13 @@ public class ViewCoordinatePreferencesPluginViewController
 			contentLoaded = true;
 
 			// Populate selectableModules
-			ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(moduleRootUuid);
-			Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
+			final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(moduleRootUuid);
+			final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
 			try {
 				moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), false));
 			} catch (IOException | ContradictionException e1) {
+				// TODO add error dialog
+				log.error("Failed loading module concepts as children of " + moduleRootConcept, e1);
 				e1.printStackTrace();
 			}
 			List<SelectableModule> modules = new ArrayList<>();
@@ -596,20 +567,33 @@ public class ViewCoordinatePreferencesPluginViewController
 			}
 			selectableModules = FXCollections.observableArrayList(modules);
 
-			selectableModuleListView.getItems().addAll(selectableModules);
+			allModulesMarker.selected.addListener((observable, oldValue, newValue) -> {
+				if (newValue) {
+					for (SelectableModule module : selectableModules) {
+						module.selectedProperty().set(false);
+					}
+				}
+			});
 			selectableModules.forEach(selectableModule -> selectableModule.selectedProperty().addListener((observable, wasSelected, isSelected) -> {
 				if (isSelected) {
 					if (! wasSelected) {
 						log.debug("Adding module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
 						selectedModules.add(selectableModule.getUuid());
+						allModulesMarker.selectedProperty().set(false);
 					}
 				} else {
 					if (wasSelected) {
 						log.debug("Removing module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
 						selectedModules.remove(selectableModule.getUuid());
+
+						if (selectedModules.size() == 0) {
+							allModulesMarker.selectedProperty().set(true);
+						}
 					}
 				}
 			}));
+			selectableModuleListView.getItems().addAll(selectableModules);
+			selectableModuleListView.getItems().add(allModulesMarker);
 
 			pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
 
@@ -697,12 +681,31 @@ public class ViewCoordinatePreferencesPluginViewController
 		}
 
 		// Reload storedModules
-		final Set<UUID> storedModules = this.getStoredViewCoordinateModules();
-		for (SelectableModule module : selectableModules) {
-			if (storedModules.contains(module.getUuid())) {
-				module.setSelected(true);
-			} else {
-				module.setSelected(false);
+		final Set<UUID> storedModuleUuids = this.getStoredViewCoordinateModules();
+		if (storedModuleUuids.size() == 0) {
+			allModulesMarker.setSelected(true);
+		} else {
+			// Check to make sure that stored UUID refers to an existing, known module
+			for (UUID storedModuleUuid : storedModuleUuids) {
+				boolean foundStoredUuidModuleInSelectableModules = false;
+				for (SelectableModule selectableModule : selectableModules) {
+					if (storedModuleUuid.equals(selectableModule.getUuid())) {
+						foundStoredUuidModuleInSelectableModules = true;
+						break;
+					}
+				}
+
+				if (! foundStoredUuidModuleInSelectableModules) {
+					log.error("Loaded module (uuid={}) from user preferences that does not currently exist", storedModuleUuid);
+					// TODO add error or warning dialog
+				}
+			}
+			for (SelectableModule module : selectableModules) {
+				if (storedModuleUuids.contains(module.getUuid())) {
+					module.setSelected(true);
+				} else {
+					module.setSelected(false);
+				}
 			}
 		}
 
@@ -975,11 +978,20 @@ public class ViewCoordinatePreferencesPluginViewController
 		return currentPathProperty;
 	}
 
-	static class SelectableModule {
+	private class SelectableModule {
 		private final IntegerProperty nid = new SimpleIntegerProperty();
 		private final BooleanProperty selected = new SimpleBooleanProperty(false);
 		private final String description;
 		private final UUID uuid;
+
+		/**
+		 * Constructor for returning SelectableModule representing ALL modules
+		 */
+		private SelectableModule() {
+			nid.set(0);
+			description = "ALL";
+			uuid = null;
+		}
 
 		public SelectableModule(Integer nid) {
 			this.nid.set(nid);
@@ -1005,15 +1017,8 @@ public class ViewCoordinatePreferencesPluginViewController
 		public Integer getNid() {
 			return nid.get();
 		}
-		public ReadOnlyIntegerProperty nidProperty() {
-			return nid;
-		}
-
 		public BooleanProperty selectedProperty() {
 			return selected;
-		}
-		public boolean isSelected() {
-			return selected.get();
 		}
 		public void setSelected(boolean selected) {
 			this.selected.set(selected);
@@ -1023,6 +1028,26 @@ public class ViewCoordinatePreferencesPluginViewController
 		}
 		public UUID getUuid() {
 			return uuid;
+		}
+	}
+
+	private static int getNumGridPaneRows(GridPane gridPane) {
+		int numGridPaneRows = 0;
+		for (javafx.scene.Node node : gridPane.getChildren()) {
+			if (node != null) {
+				Integer rowIndex = GridPane.getRowIndex(node);
+				if (rowIndex != null && rowIndex >= numGridPaneRows) {
+					++numGridPaneRows;
+				}
+			}
+		}
+
+		return numGridPaneRows;
+	}
+	private static void addGridPaneRowConstraintsToAllRows(GridPane gridPane, RowConstraints rowConstraints) {
+		final int numGridPaneRows = getNumGridPaneRows(gridPane);
+		for (int i = 0; i < numGridPaneRows; ++i) {
+			gridPane.getRowConstraints().add(i, rowConstraints);
 		}
 	}
 }
