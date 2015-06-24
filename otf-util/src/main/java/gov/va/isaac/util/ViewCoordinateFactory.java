@@ -1,5 +1,6 @@
 package gov.va.isaac.util;
 
+import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
@@ -19,7 +20,30 @@ import org.ihtsdo.otf.tcc.api.relationship.RelAssertionType;
 import org.ihtsdo.otf.tcc.api.store.Ts;
 
 public class ViewCoordinateFactory {
-	public static ViewCoordinate get(UUID path, EnumSet<Status> statuses, long time, RelAssertionType relAssertionType, Set<UUID> modules) throws IOException {
+	public static ViewCoordinate get(
+			UUID path,
+			Set<Status> statusesSet,
+			long time,
+			StatedInferredOptions statedInferredOption,
+			Set<UUID> modules) throws IOException {
+		
+		final EnumSet<Status> statuses = EnumSet.allOf(Status.class); // Have to have non-empty set to create
+		statuses.clear();
+		statuses.addAll(statusesSet);
+		
+		RelAssertionType relAssertionType = null;
+		
+		switch (statedInferredOption) {
+		case STATED:
+			relAssertionType = RelAssertionType.STATED;
+			break;
+		case INFERRED:
+			relAssertionType = RelAssertionType.INFERRED;
+			break;
+		default:
+			throw new IllegalArgumentException("Unsupported " + StatedInferredOptions.class.getName() + " value " + statedInferredOption + ".  Expected one of " + StatedInferredOptions.STATED + " or " + StatedInferredOptions.INFERRED);
+		}
+		
 		if (path.equals(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid())
 				&& statuses.size() == 2 && statuses.contains(Status.ACTIVE) && statuses.contains(Status.INACTIVE)
 				&& relAssertionType == RelAssertionType.INFERRED
@@ -69,7 +93,7 @@ public class ViewCoordinateFactory {
 				&& (modules == null || modules.size() == 0)) {
 			return ViewCoordinates.getMasterStatedLatestActiveOnly();
 		} else {
-			ConceptVersionBI pathConcept = OTFUtility.getConceptVersion(path);
+			ConceptVersionBI pathConcept = OTFUtility.getConceptVersion(path, ViewCoordinates.getDevelopmentStatedLatest());
 			String pathDesc = OTFUtility.getDescription(pathConcept).toLowerCase();
 			String statusDesc = null;
 			if (statuses.size() == 2 && statuses.contains(Status.ACTIVE) && statuses.contains(Status.INACTIVE)) {
@@ -95,10 +119,12 @@ public class ViewCoordinateFactory {
 				desc += " " + modulesDesc;
 			}
 
-			ViewCoordinate viewCoordinate = new ViewCoordinate(UUID.randomUUID(),
-					desc, Ts.get().getMetadataVC());
-			Position viewPosition
-					= Ts.get().newPosition(Ts.get().getPath(pathConcept.getNid()),
+			ViewCoordinate viewCoordinate = new ViewCoordinate(
+					UUID.randomUUID(),
+					desc,
+					Ts.get().getMetadataVC());
+			Position viewPosition = Ts.get().newPosition(
+					Ts.get().getPath(pathConcept.getNid()),
 					time);
 
 			viewCoordinate.setViewPosition(viewPosition);

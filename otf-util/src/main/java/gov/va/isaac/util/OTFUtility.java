@@ -24,16 +24,16 @@ import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
-import gov.va.isaac.interfaces.config.IsaacAppConfigI;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
+import gov.vha.isaac.ochre.util.UuidFactory;
+
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -80,7 +81,6 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import gov.vha.isaac.ochre.util.UuidFactory;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
@@ -144,35 +144,13 @@ public class OTFUtility {
 				}
 			}
 
-			StatedInferredOptions policy = userProfile.getStatedInferredPolicy();
-			switch(policy) {
-			case STATED:
-				vc = ViewCoordinates.getDevelopmentStatedLatest();
-				break;
-			case INFERRED:
-				vc = ViewCoordinates.getDevelopmentInferredLatest();
-				break;
-			default: // Should never happen unless a new policy has been coded
-				throw new RuntimeException("Unsupported StatedInferredOptions policy " + policy);
-			}
+			StatedInferredOptions relAssertionType = userProfile.getStatedInferredPolicy();
+			UUID path = userProfile.getViewCoordinatePath();
+			Set<Status> statuses = userProfile.getViewCoordinateStatuses();
+			long time = userProfile.getViewCoordinateTime();
+			Set<UUID> modules = userProfile.getViewCoordinateModules();
 
-			//TODO OCHRE this is all different now
-			//LOG.info("Using {} policy for view coordinate", policy);
-//
-//			final UUID pathUuid = userProfile.getViewCoordinatePath();
-//			final Long time = userProfile.getViewCoordinateTime();
-//			final ConceptChronicleBI pathChronicle = dataStore.getConcept(pathUuid);
-//			final int pathNid = pathChronicle.getNid();
-//
-//			// Start with standard view coordinate and override the path setting to
-//			// use the preferred path
-//			Position position = dataStore.newPosition(dataStore.getPath(pathNid), time);
-
-//			vc.setViewPosition(position);
-
-			//LOG.info("Using ViewCoordinate policy={}, path nid={}, uuid={}, desc={}", policy, pathNid, pathUuid, OTFUtility.getDescription(pathChronicle));
-		} catch (NullPointerException e) {
-			LOG.error("View path UUID does not exist", e);
+			vc = ViewCoordinateFactory.get(path, statuses, time, relAssertionType, modules);
 		} catch (IOException e) {
 			LOG.error("Unexpected error fetching view coordinates!", e);
 		}
@@ -228,14 +206,17 @@ public class OTFUtility {
 		return (result == null ? null : getDescription(result));
 	}
 
-	public static String getDescription(UUID uuid) {
+	public static String getDescription(UUID uuid, ViewCoordinate vc) {
 		try {
-			ConceptVersionBI conceptVersion = dataStore.getConceptVersion(getViewCoordinate(), uuid);
+			ConceptVersionBI conceptVersion = dataStore.getConceptVersion(vc, uuid);
 			return getDescription(conceptVersion);
 		} catch (Exception ex) {
 			LOG.warn("Unexpected error looking up description", ex);
 			return null;
 		}
+	}
+	public static String getDescription(UUID uuid) {
+		return getDescription(uuid, getViewCoordinate());
 	}
 	
 	/**
@@ -247,18 +228,21 @@ public class OTFUtility {
 		return (result == null ? null : getDescription(result));
 	}
 	
-	public static String getDescription(int nid) {
+	public static String getDescription(int nid, ViewCoordinate vc) {
 		try {
 			if (!dataStore.hasConcept(nid))
 			{
 				return null;
 			}
-			ConceptVersionBI conceptVersion = dataStore.getConceptVersion(getViewCoordinate(), nid);
+			ConceptVersionBI conceptVersion = dataStore.getConceptVersion(vc, nid);
 			return getDescription(conceptVersion);
 		} catch (Exception ex) {
 			LOG.warn("Unexpected error looking up description", ex);
 			return null;
 		}
+	}
+	public static String getDescription(int nid) {
+		return getDescription(nid, getViewCoordinate());
 	}
 
 	/**
@@ -566,7 +550,7 @@ public class OTFUtility {
 	 * Get the ConceptVersion identified by UUID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if the concept exists at that point.  Returns null otherwise.
 	 */
-	public static ConceptVersionBI getConceptVersion(UUID uuid)
+	public static ConceptVersionBI getConceptVersion(UUID uuid, ViewCoordinate vc)
 	{
 		LOG.debug("Get ConceptVersion: '{}'", uuid);
 		
@@ -576,7 +560,7 @@ public class OTFUtility {
 		}
 		try
 		{
-			ConceptVersionBI result = dataStore.getConceptVersion(getViewCoordinate(), uuid);
+			ConceptVersionBI result = dataStore.getConceptVersion(vc, uuid);
 
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
@@ -596,14 +580,20 @@ public class OTFUtility {
 	}
 	
 	/**
+	 * Get the ConceptVersion identified by UUID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
+	 * only if the concept exists at that point.  Returns null otherwise.
+	 */
+	public static ConceptVersionBI getConceptVersion(UUID uuid) {
+		return getConceptVersion(uuid, getViewCoordinate());
+	}
+	
+	/**
 	 * Get the ConceptVersion identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if the concept exists at that point.  Returns null otherwise.
 	 */
 	public static ConceptVersionBI getConceptVersion(int nid)
 	{
-		ViewCoordinate vc = getViewCoordinate();
-		
-		return OTFUtility.getConceptVersion(nid, vc);
+		return OTFUtility.getConceptVersion(nid, getViewCoordinate());
 	}
 	
 	/**
@@ -640,7 +630,7 @@ public class OTFUtility {
 	 * Get the ComponentVersionBI identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if the Component exists at that point.  Returns null otherwise.
 	 */
-	public static ComponentVersionBI getComponentVersion(int nid)
+	public static ComponentVersionBI getComponentVersion(int nid, ViewCoordinate vc)
 	{
 		LOG.debug("Get component by nid: '{}'", nid);
 		if (nid == 0)
@@ -652,7 +642,7 @@ public class OTFUtility {
 		{
 			ComponentChronicleBI<?> componentChronicle = getComponentChronicle(nid);
 			
-			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(getViewCoordinate());
+			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(vc);
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
@@ -668,12 +658,15 @@ public class OTFUtility {
 			return null;
 		}
 	}
+	public static ComponentVersionBI getComponentVersion(int nid) {
+		return getComponentVersion(nid, getViewCoordinate());
+	}
 	
 	/**
 	 * Get the ComponentVersionBI identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if the Component exists at that point.  Returns null otherwise.
 	 */
-	public static ComponentVersionBI getComponentVersion(UUID uuid)
+	public static ComponentVersionBI getComponentVersion(UUID uuid, ViewCoordinate vc)
 	{
 		LOG.debug("Get component by nid: '{}'", uuid);
 		
@@ -681,7 +674,7 @@ public class OTFUtility {
 		{
 			ComponentChronicleBI<?> componentChronicle = getComponentChronicle(uuid);
 			
-			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(getViewCoordinate());
+			Optional<? extends ComponentVersionBI> componentVersion = componentChronicle.getVersion(vc);
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
 			// essentially a new, empty, useless node. Sigh.
@@ -697,7 +690,9 @@ public class OTFUtility {
 			return null;
 		}
 	}
-	
+	public static ComponentVersionBI getComponentVersion(UUID uuid) {
+		return getComponentVersion(uuid, getViewCoordinate());
+	}
 	/**
 	 * Get the Component identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if it exists at that point.  Returns null otherwise.
