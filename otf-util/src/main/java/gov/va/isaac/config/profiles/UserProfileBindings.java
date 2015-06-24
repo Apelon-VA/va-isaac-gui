@@ -62,17 +62,25 @@ public class UserProfileBindings
 	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
 	
-	private final SetProperty<Status> viewCoordinateStatusesProperty = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
-	ReadOnlySetWrapper<Status> viewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatusesProperty);
+	private final SetProperty<Status> viewCoordinateStatuses = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
 
-	private final SetProperty<UUID> viewCoordinateModulesProperty = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
-	ReadOnlySetWrapper<UUID> viewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModulesProperty);
+	private final SetProperty<UUID> viewCoordinateModules = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
 
-	public Property<?>[] getAll()
-	{
-		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath, viewCoordinateStatuses, viewCoordinateModulesProperty};
+	public Property<?>[] getAll() {
+		return new Property<?>[] {
+				statedInferredPolicy,
+				displayFSN,
+				displayRelDirection,
+				workflowUsername,
+				viewCoordinatePath,
+				editCoordinatePath,
+				readOnlyViewCoordinateStatuses,
+				readOnlyViewCoordinateModules
+		};
 	}
-	
+
 	/**
 	 * @return the statedInferredPolicy
 	 */
@@ -122,7 +130,15 @@ public class UserProfileBindings
 	 */
 	public ReadOnlySetProperty<Status> getViewCoordinateStatuses()
 	{
-		return viewCoordinateStatuses.getReadOnlyProperty();
+		return readOnlyViewCoordinateStatuses;
+	}
+
+	/**
+	 * @return the viewCoordinateModules
+	 */
+	public ReadOnlySetProperty<UUID> getViewCoordinateModules()
+	{
+		return readOnlyViewCoordinateModules;
 	}
 	
 	protected void update(UserProfile up)
@@ -154,20 +170,20 @@ public class UserProfileBindings
 		
 		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
 		// and that viewCoordinateStatuses is initialized with an empty SimpleSetProperty<Status>
-		if (viewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
-				|| ! viewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
-				|| ! up.getViewCoordinateStatuses().containsAll(viewCoordinateStatuses.get())) {
-			viewCoordinateStatusesProperty.get().clear();
-			viewCoordinateStatusesProperty.get().addAll(up.getViewCoordinateStatuses());
+		if (readOnlyViewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
+				|| ! readOnlyViewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
+				|| ! up.getViewCoordinateStatuses().containsAll(readOnlyViewCoordinateStatuses.get())) {
+			viewCoordinateStatuses.get().clear();
+			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
 		}
 
 		// This depends on the fact that UserProfile.getViewCoordinateModules() never returns null
 		// and that viewCoordinateModules is initialized with an empty SimpleSetProperty<UUID>
-		if (viewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
-				|| ! viewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
-				|| ! up.getViewCoordinateModules().containsAll(viewCoordinateModules.get())) {
-			viewCoordinateModulesProperty.get().clear();
-			viewCoordinateModulesProperty.get().addAll(up.getViewCoordinateModules());
+		if (readOnlyViewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
+				|| ! readOnlyViewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
+				|| ! up.getViewCoordinateModules().containsAll(readOnlyViewCoordinateModules.get())) {
+			viewCoordinateModules.get().clear();
+			viewCoordinateModules.get().addAll(up.getViewCoordinateModules());
 		}
 	}
 }
