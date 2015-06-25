@@ -44,7 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.text.SimpleDateFormat;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -69,14 +68,12 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
-import javafx.scene.control.Label;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
-import javafx.scene.Node;
 import javafx.util.StringConverter;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -97,8 +94,6 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 
 public class ViewCoordinatePreferencesPluginViewController {
 	private final static Logger log = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginViewController.class);
-
-	private static final UUID moduleRootUuid = /* IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(); */ UUID.fromString("96ca29b8-a934-5abd-8d4e-0ee6aeaba520");
 
 	/**
 	 * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
@@ -181,18 +176,18 @@ public class ViewCoordinatePreferencesPluginViewController {
 		addGridPaneRowConstraintsToAllRows(topGridPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(bottomGridPane, gridPaneRowConstraints);
 
-		currentPathProperty.addListener((observable, oldValue, newValue) -> {
-			log.debug("currentPathProperty changed from {} to {}", oldValue, newValue);
-		});
-		currentStatedInferredOptionProperty.addListener((observable, oldValue, newValue) -> {
-			log.debug("currentStatedInferredOptionProperty changed from {} to {}", oldValue, newValue);
-		});
-		currentTimeProperty.addListener((observable, oldValue, newValue) -> {
-			log.debug("currentTimeProperty changed from {} to {}", oldValue, newValue);
-		});
-		currentStatusesProperty.addListener((observable, oldValue, newValue) -> {
-			log.debug("currentStatusesProperty changed from {} to {}", Arrays.toString(oldValue.toArray()), Arrays.toString(newValue.toArray()));
-		});
+//		currentPathProperty.addListener((observable, oldValue, newValue) -> {
+//			log.debug("currentPathProperty changed from {} to {}", oldValue, newValue);
+//		});
+//		currentStatedInferredOptionProperty.addListener((observable, oldValue, newValue) -> {
+//			log.debug("currentStatedInferredOptionProperty changed from {} to {}", oldValue, newValue);
+//		});
+//		currentTimeProperty.addListener((observable, oldValue, newValue) -> {
+//			log.debug("currentTimeProperty changed from {} to {}", oldValue, newValue);
+//		});
+//		currentStatusesProperty.addListener((observable, oldValue, newValue) -> {
+//			log.debug("currentStatusesProperty changed from {} to {}", Arrays.toString(oldValue.toArray()), Arrays.toString(newValue.toArray()));
+//		});
 		
 		initializeDatePicker();
 		initializeDateSelectionMethodComboBox();
@@ -201,17 +196,6 @@ public class ViewCoordinatePreferencesPluginViewController {
 		initializeStatusesToggleGroup();
 		initializeStatedInferredToggleGroup();
 		initializeValidBooleanBinding();
-		
-		// DEBUG ONLY
-//		Label currentTimeLabel = new Label();
-//		currentTimeProperty.addListener((obs, oldValue, newValue) -> {
-//			if (newValue == Long.MAX_VALUE) {
-//				currentTimeLabel.setText("LATEST");
-//			} else {
-//				currentTimeLabel.setText(new SimpleDateFormat().format(new Date(newValue)));
-//			}
-//		});
-//		topGridPane.addRow(3, new Label("Current Time"), currentTimeLabel);
 	}
 
 	private void setCurrentTimePropertyFromDatePicker() {
@@ -233,37 +217,17 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 	
 	private void initializeDatePicker() {
-//		final Callback<DatePicker, DateCell> dayCellFactory = 
-//				new Callback<DatePicker, DateCell>() {
-//			@Override
-//			public DateCell call(final DatePicker datePicker) {
-//				return new DateCell() {
-//					@Override
-//					public void updateItem(LocalDate thisDate, boolean empty) {
-//						super.updateItem(thisDate, empty);
-//						if(pathDatesList != null) {
-//							if(pathDatesList.contains(thisDate)) { 
-//								setDisable(false); 
-//							} else {
-//								setDisable(true);
-//							}
-//						}
-//					}
-//				};
-//			}
-//		};
-//		datePicker.setDayCellFactory(dayCellFactory);
 		datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
 			if (dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() == DateSelectionMethod.SPECIFY) {
 				setCurrentTimePropertyFromDatePicker();
 			}
 		});
-		datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
-			log.debug("datePicker value changed from {} to {} while DateSelectionMethod={}", oldValue, newValue, dateSelectionMethodComboBox.getSelectionModel().getSelectedItem());
-		});
-		datePicker.setOnAction((event) -> {
-			log.debug("DatePicker activated with value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
-		});
+//		datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
+//			log.debug("datePicker value changed from {} to {} while DateSelectionMethod={}", oldValue, newValue, dateSelectionMethodComboBox.getSelectionModel().getSelectedItem());
+//		});
+//		datePicker.setOnAction((event) -> {
+//			log.debug("DatePicker activated with value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+//		});
 		datePicker.setTooltip(new Tooltip("Enter valid date or click to select date from calendar representing\nan historical snapshot version of the database"));
 	}
 
@@ -294,7 +258,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					case SPECIFY:
 						datePicker.setVisible(true);
 						setText(selectionMethod.getDisplayName());
-						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 						// This should change if default time ever changes
 						dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify a date\nin the past representing an historical snapshot version of the database\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
@@ -302,7 +266,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					case USE_LATEST:
 						datePicker.setVisible(false);
 						setText(selectionMethod.getDisplayName());
-						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 						dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest (most recent) date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify a date\nin the past representing an historical snapshot version of the database.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
 						break;
@@ -314,7 +278,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			}
 		});
 		dateSelectionMethodComboBox.setOnAction((event)-> {	
-			log.debug("dateSelectorComboBox activated. datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+//			log.debug("dateSelectorComboBox activated. datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 			switch (dateSelectionMethodComboBox.getSelectionModel().getSelectedItem()) {
 			case SPECIFY:
@@ -360,11 +324,20 @@ public class ViewCoordinatePreferencesPluginViewController {
 					setText("");
 				} else {
 					String desc = OTFUtility.getDescription(c);
+//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
 			}
 		});
-//		pathComboBox.setOnAction((event)-> {
+//		pathComboBox.getButtonCell().textProperty().addListener((obs, oldValue, newValue) -> {
+//			if (newValue != null) {
+//				try {
+//					UUID testUuid = UUID.fromString(newValue);
+//					log.warn("Setting path button cell to a UUID string \"" + testUuid + "\"!");
+//				} catch (Exception e) {
+//					// ignore
+//				}
+//			}
 //		});
 		currentPathProperty.bind(pathComboBox.getSelectionModel().selectedItemProperty());
 	}
@@ -382,12 +355,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 				return null;
 			}
 		}));
-		selectableModuleListView.setTooltip(new Tooltip("Select one or more modules to enable filtering for selected modules\nor deselect all to disable filtering by module.\nDefault module list is " + Arrays.toString(getDefaultViewCoordinateModules().toArray(new UUID[getDefaultViewCoordinateModules().size()]))));
+		selectableModuleListView.setTooltip(new Tooltip("Select one or more modules to enable filtering for selected modules\nor deselect all to disable filtering by module.\nDefault module list is " + Arrays.toString(getDefaultModules().toArray(new UUID[getDefaultModules().size()]))));
 	}
 
 	private void initializeStatusesToggleGroup() {
 		statusesToggleGroup = new ToggleGroup();
-		Tooltip statusButtonsTooltip = new Tooltip("Default Status(es) is " + getDefaultViewCoordinateStatuses());
+		Tooltip statusButtonsTooltip = new Tooltip("Default Status(es) is " + getDefaultStatuses());
 		activeStatusButton = new RadioButton();
 		activeStatusButton.setText("Active");
 		activeStatusButton.setTooltip(statusButtonsTooltip);
@@ -552,7 +525,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			contentLoaded = true;
 
 			// Populate selectableModules
-			final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(moduleRootUuid);
+			final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid());
 			final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
 			try {
 				moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), false));
@@ -597,10 +570,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
 
+			pathComboBox.getItems().clear();
+			pathComboBox.getItems().addAll(getPathOptions());
 		}
-		
-		pathComboBox.getItems().clear(); //Set the path Dates by default
-		pathComboBox.getItems().addAll(getPathOptions());
 
 		// Reload persisted values every time
 
@@ -616,7 +588,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		}
 
 		// Reload storedStatuses
-		final Set<Status> storedStatuses = this.getStoredViewCoordinateStatuses();
+		final Set<Status> storedStatuses = this.getStoredStatuses();
 		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
 			statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
 		} else if (storedStatuses.contains(Status.ACTIVE)) {
@@ -630,7 +602,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		}
 
 		// Reload storedModules
-		final Set<UUID> storedModuleUuids = this.getStoredViewCoordinateModules();
+		final Set<UUID> storedModuleUuids = this.getStoredModules();
 		if (storedModuleUuids.size() == 0) {
 			allModulesMarker.setSelected(true);
 		} else {
@@ -689,12 +661,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 		loggedIn.setStatedInferredPolicy(currentStatedInferredOptionProperty().get());
 
 		//Time Property
-		log.debug("Setting stored VC time to :" + currentViewCoordinateTimeProperty().get());
-		loggedIn.setViewCoordinateTime(currentViewCoordinateTimeProperty().get());
+		log.debug("Setting stored VC time to :" + currentTimeProperty().get());
+		loggedIn.setViewCoordinateTime(currentTimeProperty().get());
 
 		//Statuses Property
-		log.debug("Setting stored VC statuses to :" + currentViewCoordinateStatusesProperty().get());
-		loggedIn.setViewCoordinateStatuses(currentViewCoordinateStatusesProperty().get());
+		log.debug("Setting stored VC statuses to :" + currentStatusesProperty().get());
+		loggedIn.setViewCoordinateStatuses(currentStatusesProperty().get());
 
 		//Modules Property
 		log.debug("Setting stored VC modules to :" + selectedModules);
@@ -723,119 +695,6 @@ public class ViewCoordinatePreferencesPluginViewController {
 	public static Date getPriorDay(Date date) {
 		return DateUtils.addDays(date, -1);
 	}
-
-	/**
-	 * 
-	 * @param path int of the path to get the Time Options for
-	 * @param loggedIn.getViewCoordinateTime() Long of anytime during the specific day that we want to return times for
-	 * @return populates the "times" TreeSet (time longs truncated at the "the seconds" position) 
-	 * 			which populates Time Combo box, the truncTimeToFullTimeMap which maps the truncated times
-	 * 			im times TreeSet to each times full Long value. The truncTimeToFullTimeMap chooses each time
-	 * 			up to the second and maps it to the greatest equivalent time up to the milliseconds.
-	 * 			
-	 */
-//	protected void setTimeOptions(int path, Long loggedIn.getViewCoordinateTime()) {
-//		try {
-//			overrideTimestamp = null;
-//
-//			Date startDate = null, finishDate = null;
-//			if(loggedIn.getViewCoordinateTime() != null) {
-//				CommitService stampDb = AppContext.getService(CommitService.class);
-//				//TODO OCHRE use the right path here
-//				IntStream stamps = null;
-//				if(!loggedIn.getViewCoordinateTime().equals(getDefaultTime())) {
-//					startDate = getStartOfDay(new Date(loggedIn.getViewCoordinateTime())); 
-//					finishDate = getEndOfDay(new Date(loggedIn.getViewCoordinateTime()));
-//					stamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), startDate.getTime(), finishDate.getTime());
-//				} else {
-//					stamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
-//				}
-//
-//				truncTimeToFullTimeMap.clear();
-//				times.clear();
-//
-//				HashSet<Integer> stampSet = new HashSet<>(stamps.boxed().collect(Collectors.toList()));
-//
-//				Date d = new Date(loggedIn.getViewCoordinateTime());
-//				if (dateIsLocalDate(d)) {
-//					// Get stamps of day
-//					Date todayStartDate = getStartOfDay(new Date()); 
-//					Date todayFinishDate = getEndOfDay(new Date());
-//					IntStream todayStamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), todayStartDate.getTime(), todayFinishDate.getTime());
-//
-//					// If have stamps, no action, if not, show Latest and set stamps to latest stamp we have in stampset
-//					if (todayStamps.toArray().length == 0) {
-//						IntStream allStamps = getStamps(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getSequence(), Long.MIN_VALUE, Long.MAX_VALUE);
-//						HashSet<Integer> allStampSet = new HashSet<>(allStamps.boxed().collect(Collectors.toList()));
-//						SortedSet<Integer> s = new TreeSet<Integer>(allStampSet);
-//						if (!s.isEmpty()) {
-//							Integer stampToSet = s.last();
-//							overrideTimestamp = stampDb.getTimeForStamp(stampToSet);
-//							currentTimeProperty.set(Long.MAX_VALUE);
-//						}
-//					}
-//				}
-//
-//				this.pathDatesList.add(LocalDate.now());
-//				if (overrideTimestamp == null) {
-//					if(!stampSet.isEmpty()) {
-//						//						enableTimeCombo(true);
-//						for(Integer thisStamp : stampSet) {
-//							Long fullTime = null;
-//							Date stampDate;
-//							LocalDate stampInstant = null;
-//							try {
-//								fullTime = stampDb.getTimeForStamp(thisStamp);
-//								stampDate = new Date(fullTime);
-//								stampInstant = stampDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-//							} catch (Exception e) {
-//								e.printStackTrace();
-//							}
-//							Calendar cal = Calendar.getInstance();
-//							cal.setTime(new Date(fullTime));
-//							cal.set(Calendar.MILLISECOND, 0); //Strip milliseconds
-//							Long truncTime = cal.getTimeInMillis();
-//
-//							this.pathDatesList.add(stampInstant); //Build DatePicker
-//							times.add(truncTime); //This can probably go, we don't populate hashmap like this at initialization
-//
-//							if(truncTimeToFullTimeMap.containsKey(truncTime)) { //Build Truncated Time to Full Time HashMap
-//								//If truncTimeToFullTimeMap has this key, is the value the newest time in milliseconds?
-//								if(new Date(truncTimeToFullTimeMap.get(truncTime)).before(new Date(fullTime))) {
-//									truncTimeToFullTimeMap.put(truncTime, fullTime);
-//								}
-//							} else {
-//								truncTimeToFullTimeMap.put(truncTime, fullTime);
-//							}
-//						}
-//					} else {
-//						currentTimeProperty.set(Long.MAX_VALUE);
-//						log.warn("Could not retrieve any Stamps");
-//					}
-//				}
-//			}
-//		} catch (Exception e) {
-//			log.error("Error setting the default Time Dropdown");
-//			e.printStackTrace();
-//		}
-//	}
-//
-//	private boolean dateIsLocalDate(Date d) {
-//		Month ldMonth = LocalDate.now().atStartOfDay().getMonth();
-//		int ldDate = LocalDate.now().atStartOfDay().getDayOfMonth();
-//		int ldYear = LocalDate.now().atStartOfDay().getYear();
-//
-//		Calendar cal = Calendar.getInstance();
-//		cal.setTime(d);
-//
-//		if (cal.get(Calendar.YEAR) == ldYear &&
-//				cal.get(Calendar.DAY_OF_MONTH) == ldDate &&
-//				cal.get(Calendar.MONTH) == (ldMonth.getValue() -1)) {
-//			return true;
-//		}
-//
-//		return false;
-//	}
 
 	protected Collection<UUID> getPathOptions() {
 		List<UUID> list = new ArrayList<>();
@@ -873,16 +732,16 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return loggedIn.getStatedInferredPolicy();
 	}
 
-	protected Set<Status> getStoredViewCoordinateStatuses() {
+	protected Set<Status> getStoredStatuses() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getViewCoordinateStatuses();
 	}
 
-	protected Set<UUID> getStoredViewCoordinateModules() {
+	protected Set<UUID> getStoredModules() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getViewCoordinateModules();
 	}
-	protected Set<UUID> getDefaultViewCoordinateModules() {
+	protected Set<UUID> getDefaultModules() {
 		return UserProfileDefaults.getDefaultViewCoordinateModules();
 	}
 
@@ -897,14 +756,14 @@ public class ViewCoordinatePreferencesPluginViewController {
 	protected StatedInferredOptions getDefaultStatedInferredOption() {
 		return UserProfileDefaults.getDefaultStatedInferredPolicy();
 	}
-	protected Set<Status> getDefaultViewCoordinateStatuses() {
+	protected Set<Status> getDefaultStatuses() {
 		return UserProfileDefaults.getDefaultViewCoordinateStatuses();
 	}
 
-	public ReadOnlySetProperty<Status> currentViewCoordinateStatusesProperty() {
+	public ReadOnlySetProperty<Status> currentStatusesProperty() {
 		return currentStatusesProperty;
 	}
-	public ReadOnlyObjectProperty<Long> currentViewCoordinateTimeProperty() {
+	public ReadOnlyObjectProperty<Long> currentTimeProperty() {
 		return currentTimeProperty;
 	}
 
