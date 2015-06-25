@@ -21,5 +21,9 @@
 			<artifactId>otf-util</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.logic.modules</groupId>
+			<artifactId>logic</artifactId>
+		</dependency>
 	</dependencies>
 </project>
