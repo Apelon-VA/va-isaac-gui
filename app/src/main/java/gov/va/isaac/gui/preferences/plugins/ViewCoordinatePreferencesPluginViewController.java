@@ -27,6 +27,7 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
@@ -75,6 +76,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import javafx.concurrent.Task;
+import javafx.application.Platform;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
@@ -176,19 +179,19 @@ public class ViewCoordinatePreferencesPluginViewController {
 		addGridPaneRowConstraintsToAllRows(topGridPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(bottomGridPane, gridPaneRowConstraints);
 
-//		currentPathProperty.addListener((observable, oldValue, newValue) -> {
-//			log.debug("currentPathProperty changed from {} to {}", oldValue, newValue);
-//		});
-//		currentStatedInferredOptionProperty.addListener((observable, oldValue, newValue) -> {
-//			log.debug("currentStatedInferredOptionProperty changed from {} to {}", oldValue, newValue);
-//		});
-//		currentTimeProperty.addListener((observable, oldValue, newValue) -> {
-//			log.debug("currentTimeProperty changed from {} to {}", oldValue, newValue);
-//		});
-//		currentStatusesProperty.addListener((observable, oldValue, newValue) -> {
-//			log.debug("currentStatusesProperty changed from {} to {}", Arrays.toString(oldValue.toArray()), Arrays.toString(newValue.toArray()));
-//		});
-		
+		//		currentPathProperty.addListener((observable, oldValue, newValue) -> {
+		//			log.debug("currentPathProperty changed from {} to {}", oldValue, newValue);
+		//		});
+		//		currentStatedInferredOptionProperty.addListener((observable, oldValue, newValue) -> {
+		//			log.debug("currentStatedInferredOptionProperty changed from {} to {}", oldValue, newValue);
+		//		});
+		//		currentTimeProperty.addListener((observable, oldValue, newValue) -> {
+		//			log.debug("currentTimeProperty changed from {} to {}", oldValue, newValue);
+		//		});
+		//		currentStatusesProperty.addListener((observable, oldValue, newValue) -> {
+		//			log.debug("currentStatusesProperty changed from {} to {}", Arrays.toString(oldValue.toArray()), Arrays.toString(newValue.toArray()));
+		//		});
+
 		initializeDatePicker();
 		initializeDateSelectionMethodComboBox();
 		initializePathComboBox();
@@ -215,19 +218,19 @@ public class ViewCoordinatePreferencesPluginViewController {
 			datePicker.setValue(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
 		}
 	}
-	
+
 	private void initializeDatePicker() {
 		datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
 			if (dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() == DateSelectionMethod.SPECIFY) {
 				setCurrentTimePropertyFromDatePicker();
 			}
 		});
-//		datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
-//			log.debug("datePicker value changed from {} to {} while DateSelectionMethod={}", oldValue, newValue, dateSelectionMethodComboBox.getSelectionModel().getSelectedItem());
-//		});
-//		datePicker.setOnAction((event) -> {
-//			log.debug("DatePicker activated with value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
-//		});
+		//		datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
+		//			log.debug("datePicker value changed from {} to {} while DateSelectionMethod={}", oldValue, newValue, dateSelectionMethodComboBox.getSelectionModel().getSelectedItem());
+		//		});
+		//		datePicker.setOnAction((event) -> {
+		//			log.debug("DatePicker activated with value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+		//		});
 		datePicker.setTooltip(new Tooltip("Enter valid date or click to select date from calendar representing\nan historical snapshot version of the database"));
 	}
 
@@ -246,7 +249,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			};
 			return cell;
 		});
-		
+
 		dateSelectionMethodComboBox.setButtonCell(new ListCell<DateSelectionMethod>() {
 			@Override
 			protected void updateItem(DateSelectionMethod selectionMethod, boolean emptyRow) {
@@ -258,7 +261,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					case SPECIFY:
 						datePicker.setVisible(true);
 						setText(selectionMethod.getDisplayName());
-//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+						//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 						// This should change if default time ever changes
 						dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify a date\nin the past representing an historical snapshot version of the database\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
@@ -266,7 +269,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					case USE_LATEST:
 						datePicker.setVisible(false);
 						setText(selectionMethod.getDisplayName());
-//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+						//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 						dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest (most recent) date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify a date\nin the past representing an historical snapshot version of the database.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
 						break;
@@ -278,7 +281,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			}
 		});
 		dateSelectionMethodComboBox.setOnAction((event)-> {	
-//			log.debug("dateSelectorComboBox activated. datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
+			//			log.debug("dateSelectorComboBox activated. datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 			switch (dateSelectionMethodComboBox.getSelectionModel().getSelectedItem()) {
 			case SPECIFY:
@@ -324,21 +327,21 @@ public class ViewCoordinatePreferencesPluginViewController {
 					setText("");
 				} else {
 					String desc = OTFUtility.getDescription(c);
-//					log.debug("Setting path button cell to \"" + desc + "\"");
+					//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
 			}
 		});
-//		pathComboBox.getButtonCell().textProperty().addListener((obs, oldValue, newValue) -> {
-//			if (newValue != null) {
-//				try {
-//					UUID testUuid = UUID.fromString(newValue);
-//					log.warn("Setting path button cell to a UUID string \"" + testUuid + "\"!");
-//				} catch (Exception e) {
-//					// ignore
-//				}
-//			}
-//		});
+		//		pathComboBox.getButtonCell().textProperty().addListener((obs, oldValue, newValue) -> {
+		//			if (newValue != null) {
+		//				try {
+		//					UUID testUuid = UUID.fromString(newValue);
+		//					log.warn("Setting path button cell to a UUID string \"" + testUuid + "\"!");
+		//				} catch (Exception e) {
+		//					// ignore
+		//				}
+		//			}
+		//		});
 		currentPathProperty.bind(pathComboBox.getSelectionModel().selectedItemProperty());
 	}
 
@@ -521,125 +524,169 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	public Region getContent() {
-		if (! contentLoaded) {
-			contentLoaded = true;
+		Task<Void> task = new Task<Void>() {
+			@Override
+			protected Void call() throws Exception {
+				log.debug("initializing content");
 
-			// Populate selectableModules
-			final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid());
-			final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
-			try {
-				moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), false));
-			} catch (IOException | ContradictionException e1) {
-				// TODO add error dialog
-				log.error("Failed loading module concepts as children of " + moduleRootConcept, e1);
-				e1.printStackTrace();
-			}
-			List<SelectableModule> modules = new ArrayList<>();
-			for (ConceptVersionBI cv : moduleConcepts) {
-				modules.add(new SelectableModule(cv.getNid()));
-			}
-			selectableModules = FXCollections.observableArrayList(modules);
+				try {
+					if (! contentLoaded) {
+						contentLoaded = true;
 
-			allModulesMarker.selected.addListener((observable, oldValue, newValue) -> {
-				if (newValue) {
-					for (SelectableModule module : selectableModules) {
-						module.selectedProperty().set(false);
+						// Populate selectableModules
+						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid());
+						final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
+						try {
+							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), false));
+						} catch (IOException | ContradictionException e1) {
+							// TODO add error dialog
+							log.error("Failed loading module concepts as children of " + moduleRootConcept, e1);
+							e1.printStackTrace();
+						}
+						List<SelectableModule> modules = new ArrayList<>();
+						for (ConceptVersionBI cv : moduleConcepts) {
+							modules.add(new SelectableModule(cv.getNid()));
+						}
+						selectableModules = FXCollections.observableArrayList(modules);
+
+						allModulesMarker.selected.addListener((observable, oldValue, newValue) -> {
+							if (newValue) {
+								for (SelectableModule module : selectableModules) {
+									module.selectedProperty().set(false);
+								}
+							}
+						});
+						selectableModules.forEach(selectableModule -> selectableModule.selectedProperty().addListener((observable, wasSelected, isSelected) -> {
+							if (isSelected) {
+								if (! wasSelected) {
+									log.debug("Adding module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
+									selectedModules.add(selectableModule.getUuid());
+									allModulesMarker.selectedProperty().set(false);
+								}
+							} else {
+								if (wasSelected) {
+									log.debug("Removing module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
+									selectedModules.remove(selectableModule.getUuid());
+
+									if (selectedModules.size() == 0) {
+										allModulesMarker.selectedProperty().set(true);
+									}
+								}
+							}
+						}));
+						selectableModuleListView.getItems().addAll(selectableModules);
+						selectableModuleListView.getItems().add(allModulesMarker);
+
+						Runnable work = new Runnable() {
+							@Override
+							public void run() {
+								pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
+							}
+						};
+						if (Platform.isFxApplicationThread()) {
+							work.run();
+						}
+						else {
+							Platform.runLater(work);
+						}
+						
+						pathComboBox.getItems().clear();
+						pathComboBox.getItems().addAll(getPathOptions());
 					}
-				}
-			});
-			selectableModules.forEach(selectableModule -> selectableModule.selectedProperty().addListener((observable, wasSelected, isSelected) -> {
-				if (isSelected) {
-					if (! wasSelected) {
-						log.debug("Adding module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
-						selectedModules.add(selectableModule.getUuid());
-						allModulesMarker.selectedProperty().set(false);
-					}
-				} else {
-					if (wasSelected) {
-						log.debug("Removing module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
-						selectedModules.remove(selectableModule.getUuid());
 
-						if (selectedModules.size() == 0) {
-							allModulesMarker.selectedProperty().set(true);
+					// Reload persisted values every time
+
+					UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+					pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath());
+
+					// Reload storedStatedInferredOption
+					final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
+					for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
+						if (toggle.getUserData() == storedStatedInferredOption) {
+							toggle.setSelected(true);
 						}
 					}
-				}
-			}));
-			selectableModuleListView.getItems().addAll(selectableModules);
-			selectableModuleListView.getItems().add(allModulesMarker);
 
-			pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
-
-			pathComboBox.getItems().clear();
-			pathComboBox.getItems().addAll(getPathOptions());
-		}
-
-		// Reload persisted values every time
-
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath());
-		
-		// Reload storedStatedInferredOption
-		final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
-		for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
-			if (toggle.getUserData() == storedStatedInferredOption) {
-				toggle.setSelected(true);
-			}
-		}
-
-		// Reload storedStatuses
-		final Set<Status> storedStatuses = this.getStoredStatuses();
-		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
-			statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
-		} else if (storedStatuses.contains(Status.ACTIVE)) {
-			statusesToggleGroup.selectToggle(activeStatusButton);
-		} else if (storedStatuses.contains(Status.INACTIVE)) {
-			statusesToggleGroup.selectToggle(inactiveStatusButton);
-		} else if (storedStatuses.size() == 0) {
-			log.warn("UserProfile does not contain any view coordinate Status values");
-		} else {
-			log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
-		}
-
-		// Reload storedModules
-		final Set<UUID> storedModuleUuids = this.getStoredModules();
-		if (storedModuleUuids.size() == 0) {
-			allModulesMarker.setSelected(true);
-		} else {
-			// Check to make sure that stored UUID refers to an existing, known module
-			for (UUID storedModuleUuid : storedModuleUuids) {
-				boolean foundStoredUuidModuleInSelectableModules = false;
-				for (SelectableModule selectableModule : selectableModules) {
-					if (storedModuleUuid.equals(selectableModule.getUuid())) {
-						foundStoredUuidModuleInSelectableModules = true;
-						break;
+					// Reload storedStatuses
+					final Set<Status> storedStatuses = getStoredStatuses();
+					if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
+						statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
+					} else if (storedStatuses.contains(Status.ACTIVE)) {
+						statusesToggleGroup.selectToggle(activeStatusButton);
+					} else if (storedStatuses.contains(Status.INACTIVE)) {
+						statusesToggleGroup.selectToggle(inactiveStatusButton);
+					} else if (storedStatuses.size() == 0) {
+						log.warn("UserProfile does not contain any view coordinate Status values");
+					} else {
+						log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
 					}
-				}
 
-				if (! foundStoredUuidModuleInSelectableModules) {
-					log.error("Loaded module (uuid={}) from user preferences that does not currently exist", storedModuleUuid);
-					// TODO add error or warning dialog
+					// Reload storedModules
+					final Set<UUID> storedModuleUuids = getStoredModules();
+					if (storedModuleUuids.size() == 0) {
+						allModulesMarker.setSelected(true);
+					} else {
+						// Check to make sure that stored UUID refers to an existing, known module
+						for (UUID storedModuleUuid : storedModuleUuids) {
+							boolean foundStoredUuidModuleInSelectableModules = false;
+							for (SelectableModule selectableModule : selectableModules) {
+								if (storedModuleUuid.equals(selectableModule.getUuid())) {
+									foundStoredUuidModuleInSelectableModules = true;
+									break;
+								}
+							}
+
+							if (! foundStoredUuidModuleInSelectableModules) {
+								log.error("Loaded module (uuid={}) from user preferences that does not currently exist", storedModuleUuid);
+								// TODO add error or warning dialog
+							}
+						}
+						for (SelectableModule module : selectableModules) {
+							if (storedModuleUuids.contains(module.getUuid())) {
+								module.setSelected(true);
+							} else {
+								module.setSelected(false);
+							}
+						}
+					}
+
+					Long storedTime = getStoredTime();
+					if (storedTime.equals(Long.MAX_VALUE)) {
+						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
+						currentTimeProperty.set(Long.MAX_VALUE);
+						datePicker.setValue(LocalDate.now());
+					} else {
+						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
+						currentTimeProperty.set(storedTime);
+						setDatePickerFromCurrentTimeProperty();
+					}
+
+					return null;
+				}
+				catch (Exception e) {
+					log.error("initContent() task caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+					e.printStackTrace();
+					throw e;
 				}
 			}
-			for (SelectableModule module : selectableModules) {
-				if (storedModuleUuids.contains(module.getUuid())) {
-					module.setSelected(true);
-				} else {
-					module.setSelected(false);
-				}
-			}
-		}
 
-		Long storedTime = getStoredTime();
-		if (storedTime.equals(Long.MAX_VALUE)) {
-			dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
-			currentTimeProperty.set(Long.MAX_VALUE);
-			datePicker.setValue(LocalDate.now());
-		} else {
-			dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
-			currentTimeProperty.set(storedTime);
-			setDatePickerFromCurrentTimeProperty();
-		}
+			@Override
+			protected void succeeded()
+			{
+				log.debug("Content initialization succeeded");
+			}
+
+			@Override
+			protected void failed() {
+				Throwable ex = getException();
+				String title = "Unexpected error initializing content";
+				String msg = ex.getClass().getName();
+				log.error(title, ex);
+				AppContext.getCommonDialogs().showErrorDialog(title, msg, ex.getMessage());
+			}
+		};
+
+		Utility.execute(task);
 
 		return gridPaneInTab;
 	}
