@@ -26,9 +26,9 @@ public class ViewCoordinateFactory {
 
 	public static ViewCoordinate get(
 			UUID path,
+			StatedInferredOptions statedInferredOption,
 			Set<Status> statusesSet,
 			long time,
-			StatedInferredOptions statedInferredOption,
 			Set<UUID> modules) throws IOException {
 		
 		final EnumSet<Status> statuses = EnumSet.allOf(Status.class); // Have to have non-empty set to create
@@ -123,6 +123,8 @@ public class ViewCoordinateFactory {
 				desc += " " + modulesDesc;
 			}
 
+			LOG.debug("Creating ad hoc VC: {}", desc);
+			
 			ViewCoordinate viewCoordinate = new ViewCoordinate(
 					UUID.randomUUID(),
 					desc,
@@ -145,7 +147,7 @@ public class ViewCoordinateFactory {
 			viewCoordinate.getLangPrefSpecs().add(IsaacMetadataAuxiliaryBinding.GB_ENGLISH_DIALECT);
 
 			if (modules != null && modules.size() > 0) {
-				throw new IllegalArgumentException("Passing modules not yet supported");
+				throw new IllegalArgumentException("Passing modules to ViewCoordinate not yet supported");
 			}
 
 			return viewCoordinate;
