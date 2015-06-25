@@ -69,8 +69,10 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
@@ -118,7 +120,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 		}
 	}
 
-	@FXML GridPane gridPaneInTab;
+	@FXML StackPane rootStackPaneInTab;
+	@FXML GridPane gridPaneInRootStackPane;
 	@FXML GridPane topGridPane;
 	@FXML GridPane bottomGridPane;
 	@FXML DatePicker datePicker;
@@ -130,6 +133,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	private boolean contentLoaded = false;
 
+	final private ProgressIndicator progressIndicator = new ProgressIndicator();
+	{
+		progressIndicator.setMaxWidth(50.0);
+		progressIndicator.setMaxHeight(50.0);
+	}
+	
 	private ToggleGroup statusesToggleGroup = null;
 	private ToggleGroup statedInferredToggleGroup = null;
 
@@ -162,7 +171,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	@FXML
 	void initialize() {
-		assert gridPaneInTab != null : "fx:id=\"gridPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert rootStackPaneInTab != null : "fx:id=\"rootStackPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert gridPaneInRootStackPane != null : "fx:id=\"gridPaneInRootStackPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
@@ -175,7 +185,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		RowConstraints gridPaneRowConstraints = new RowConstraints();
 		gridPaneRowConstraints.setVgrow(Priority.NEVER);
 
-		addGridPaneRowConstraintsToAllRows(gridPaneInTab, gridPaneRowConstraints);
+		addGridPaneRowConstraintsToAllRows(gridPaneInRootStackPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(topGridPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(bottomGridPane, gridPaneRowConstraints);
 
@@ -660,7 +670,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 						currentTimeProperty.set(storedTime);
 						setDatePickerFromCurrentTimeProperty();
 					}
-
+					
 					return null;
 				}
 				catch (Exception e) {
@@ -674,10 +684,14 @@ public class ViewCoordinatePreferencesPluginViewController {
 			protected void succeeded()
 			{
 				log.debug("Content initialization succeeded");
+				rootStackPaneInTab.getChildren().remove(progressIndicator);
+				progressIndicator.setVisible(false);
 			}
 
 			@Override
 			protected void failed() {
+				rootStackPaneInTab.getChildren().remove(progressIndicator);
+				progressIndicator.setVisible(false);
 				Throwable ex = getException();
 				String title = "Unexpected error initializing content";
 				String msg = ex.getClass().getName();
@@ -686,9 +700,14 @@ public class ViewCoordinatePreferencesPluginViewController {
 			}
 		};
 
+		if (! rootStackPaneInTab.getChildren().contains(progressIndicator)) {
+			rootStackPaneInTab.getChildren().add(0, progressIndicator);
+		}
+		progressIndicator.setVisible(true);
+		
 		Utility.execute(task);
 
-		return gridPaneInTab;
+		return gridPaneInRootStackPane;
 	}
 
 	public ReadOnlyStringProperty validationFailureMessageProperty() {
