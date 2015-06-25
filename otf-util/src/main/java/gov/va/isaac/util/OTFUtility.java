@@ -27,7 +27,6 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -145,31 +144,13 @@ public class OTFUtility {
 				}
 			}
 
-			StatedInferredOptions policy = userProfile.getStatedInferredPolicy();
-			switch(policy) {
-			case STATED:
-				vc = ViewCoordinates.getDevelopmentStatedLatest();
-				break;
-			case INFERRED:
-				vc = ViewCoordinates.getDevelopmentInferredLatest();
-				break;
-			default: // Should never happen unless a new policy has been coded
-				throw new RuntimeException("Unsupported StatedInferredOptions policy " + policy);
-			}
+			StatedInferredOptions relAssertionType = userProfile.getStatedInferredPolicy();
+			UUID path = userProfile.getViewCoordinatePath();
+			Set<Status> statuses = userProfile.getViewCoordinateStatuses();
+			long time = userProfile.getViewCoordinateTime();
+			Set<UUID> modules = userProfile.getViewCoordinateModules();
 
-			//TODO OCHRE this is all different now
-			//LOG.info("Using {} policy for view coordinate", policy);
-//
-//			final UUID pathUuid = userProfile.getViewCoordinatePath();
-//			final Long time = userProfile.getViewCoordinateTime();
-//			final ConceptChronicleBI pathChronicle = dataStore.getConcept(pathUuid);
-//			final int pathNid = pathChronicle.getNid();
-//
-//			// Start with standard view coordinate and override the path setting to
-//			// use the preferred path
-//			Position position = dataStore.newPosition(dataStore.getPath(pathNid), time);
-
-//			vc.setViewPosition(position);
+			vc = ViewCoordinateFactory.get(path, statuses, time, relAssertionType, modules);
 
 			//LOG.info("Using ViewCoordinate policy={}, path nid={}, uuid={}, desc={}", policy, pathNid, pathUuid, OTFUtility.getDescription(pathChronicle));
 		} catch (NullPointerException e) {

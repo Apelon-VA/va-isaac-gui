@@ -18,8 +18,12 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.relationship.RelAssertionType;
 import org.ihtsdo.otf.tcc.api.store.Ts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ViewCoordinateFactory {
+	private static final Logger LOG = LoggerFactory.getLogger(ViewCoordinateFactory.class);
+
 	public static ViewCoordinate get(
 			UUID path,
 			Set<Status> statusesSet,
