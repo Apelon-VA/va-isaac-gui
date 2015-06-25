@@ -87,7 +87,7 @@
             </ScrollPane>
             <FlowPane GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                <children>
-                  <ComboBox fx:id="dateSelectorComboBox">
+                  <ComboBox fx:id="dateSelectionMethodComboBox">
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </padding>
