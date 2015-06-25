@@ -29,6 +29,7 @@ import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -59,12 +61,14 @@ import javafx.beans.property.SimpleSetProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
@@ -74,16 +78,15 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
-import javafx.concurrent.Task;
-import javafx.application.Platform;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
+import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,7 +121,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 		}
 	}
 
-	@FXML GridPane gridPaneInTab;
+	@FXML StackPane rootStackPaneInTab;
+	@FXML GridPane gridPaneInRootStackPane;
 	@FXML GridPane topGridPane;
 	@FXML GridPane bottomGridPane;
 	@FXML DatePicker datePicker;
@@ -130,10 +134,18 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	private boolean contentLoaded = false;
 
+	final ViewCoordinate viewCoordinate;
+	
+	final private ProgressIndicator progressIndicator = new ProgressIndicator();
+	{
+		progressIndicator.setMaxWidth(50.0);
+		progressIndicator.setMaxHeight(50.0);
+	}
+	
 	private ToggleGroup statusesToggleGroup = null;
 	private ToggleGroup statedInferredToggleGroup = null;
 
-	private ObservableList<SelectableModule> selectableModules = null;
+	private ObservableList<SelectableModule> selectableModules = FXCollections.observableArrayList(new ArrayList<>());
 
 	private ValidBooleanBinding allValid_ = null;
 
@@ -160,9 +172,22 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return loader.getController();
 	}
 
+	{
+		try {
+			viewCoordinate = ViewCoordinates.getDevelopmentStatedLatest();
+		} catch (IOException e) {
+			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to initialize ViewCoordinate";
+			log.error(msg, e);
+			e.printStackTrace();
+
+			throw new RuntimeException(msg, e);
+		}
+	}
+	
 	@FXML
 	void initialize() {
-		assert gridPaneInTab != null : "fx:id=\"gridPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert rootStackPaneInTab != null : "fx:id=\"rootStackPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert gridPaneInRootStackPane != null : "fx:id=\"gridPaneInRootStackPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
 		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
@@ -175,7 +200,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		RowConstraints gridPaneRowConstraints = new RowConstraints();
 		gridPaneRowConstraints.setVgrow(Priority.NEVER);
 
-		addGridPaneRowConstraintsToAllRows(gridPaneInTab, gridPaneRowConstraints);
+		addGridPaneRowConstraintsToAllRows(gridPaneInRootStackPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(topGridPane, gridPaneRowConstraints);
 		addGridPaneRowConstraintsToAllRows(bottomGridPane, gridPaneRowConstraints);
 
@@ -332,16 +357,21 @@ public class ViewCoordinatePreferencesPluginViewController {
 				}
 			}
 		});
-		//		pathComboBox.getButtonCell().textProperty().addListener((obs, oldValue, newValue) -> {
-		//			if (newValue != null) {
-		//				try {
-		//					UUID testUuid = UUID.fromString(newValue);
-		//					log.warn("Setting path button cell to a UUID string \"" + testUuid + "\"!");
-		//				} catch (Exception e) {
-		//					// ignore
-		//				}
-		//			}
-		//		});
+		pathComboBox.setConverter(new StringConverter<UUID>() {
+			@Override
+			public String toString(UUID uuid) {
+				if (uuid == null){
+					return null;
+				} else {
+					return OTFUtility.getDescription(uuid);
+				}
+			}
+
+			@Override
+			public UUID fromString(String userId) {
+				return null;
+			}
+		});
 		currentPathProperty.bind(pathComboBox.getSelectionModel().selectedItemProperty());
 	}
 
@@ -534,20 +564,21 @@ public class ViewCoordinatePreferencesPluginViewController {
 						contentLoaded = true;
 
 						// Populate selectableModules
-						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid());
+						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), viewCoordinate);
 						final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
 						try {
-							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), false));
-						} catch (IOException | ContradictionException e1) {
-							// TODO add error dialog
-							log.error("Failed loading module concepts as children of " + moduleRootConcept, e1);
-							e1.printStackTrace();
+							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), viewCoordinate, false));
+						} catch (Exception e) {
+							log.error("Failed loading module concepts as children of " + moduleRootConcept, e);
+							e.printStackTrace();
+							AppContext.getCommonDialogs().showErrorDialog("Failed loading module concepts as children of " + moduleRootConcept + ". See logs.", e);
 						}
 						List<SelectableModule> modules = new ArrayList<>();
 						for (ConceptVersionBI cv : moduleConcepts) {
 							modules.add(new SelectableModule(cv.getNid()));
 						}
-						selectableModules = FXCollections.observableArrayList(modules);
+						selectableModules.clear();
+						selectableModules.addAll(modules);
 
 						allModulesMarker.selected.addListener((observable, oldValue, newValue) -> {
 							if (newValue) {
@@ -559,13 +590,13 @@ public class ViewCoordinatePreferencesPluginViewController {
 						selectableModules.forEach(selectableModule -> selectableModule.selectedProperty().addListener((observable, wasSelected, isSelected) -> {
 							if (isSelected) {
 								if (! wasSelected) {
-									log.debug("Adding module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
+									//log.debug("Adding module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
 									selectedModules.add(selectableModule.getUuid());
 									allModulesMarker.selectedProperty().set(false);
 								}
 							} else {
 								if (wasSelected) {
-									log.debug("Removing module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
+									//log.debug("Removing module nid={}, uuid={}, desc={}", selectableModule.getNid(), selectableModule.getUuid(), selectableModule.getDescription());
 									selectedModules.remove(selectableModule.getUuid());
 
 									if (selectedModules.size() == 0) {
@@ -574,21 +605,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 								}
 							}
 						}));
+						selectableModuleListView.getItems().clear();
 						selectableModuleListView.getItems().addAll(selectableModules);
 						selectableModuleListView.getItems().add(allModulesMarker);
 
-						Runnable work = new Runnable() {
-							@Override
-							public void run() {
-								pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
-							}
-						};
-						if (Platform.isFxApplicationThread()) {
-							work.run();
-						}
-						else {
-							Platform.runLater(work);
-						}
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath(), viewCoordinate) + "\"")));
 						
 						pathComboBox.getItems().clear();
 						pathComboBox.getItems().addAll(getPathOptions());
@@ -619,6 +640,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 						log.warn("UserProfile does not contain any view coordinate Status values");
 					} else {
 						log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
+						AppContext.getCommonDialogs().showErrorDialog(
+								"Unsupported View Coordinate Status",
+								"UserProfile contains unsupported view coordinate Status values",
+								Arrays.toString(storedStatuses.toArray()));
 					}
 
 					// Reload storedModules
@@ -638,7 +663,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 							if (! foundStoredUuidModuleInSelectableModules) {
 								log.error("Loaded module (uuid={}) from user preferences that does not currently exist", storedModuleUuid);
-								// TODO add error or warning dialog
+								AppContext.getCommonDialogs().showErrorDialog(
+										"Unsupported Module",
+										"Loaded a module UUID from UserProfile that does not correspond to existing module",
+										"Concept (UUID=" + storedModuleUuid + ") not a valid module.  Must be one of " + Arrays.toString(selectableModules.toArray()));
 							}
 						}
 						for (SelectableModule module : selectableModules) {
@@ -654,13 +682,13 @@ public class ViewCoordinatePreferencesPluginViewController {
 					if (storedTime.equals(Long.MAX_VALUE)) {
 						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
 						currentTimeProperty.set(Long.MAX_VALUE);
-						datePicker.setValue(LocalDate.now());
+						runLaterIfNotFXApplicationThread(() -> datePicker.setValue(LocalDate.now()));
 					} else {
 						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
 						currentTimeProperty.set(storedTime);
-						setDatePickerFromCurrentTimeProperty();
+						runLaterIfNotFXApplicationThread(() -> setDatePickerFromCurrentTimeProperty());
 					}
-
+					
 					return null;
 				}
 				catch (Exception e) {
@@ -674,21 +702,35 @@ public class ViewCoordinatePreferencesPluginViewController {
 			protected void succeeded()
 			{
 				log.debug("Content initialization succeeded");
+				
+				removeProgressIndicator();
 			}
 
 			@Override
 			protected void failed() {
+				removeProgressIndicator();
+				
 				Throwable ex = getException();
-				String title = "Unexpected error initializing content";
-				String msg = ex.getClass().getName();
-				log.error(title, ex);
-				AppContext.getCommonDialogs().showErrorDialog(title, msg, ex.getMessage());
+				log.error("loadContent() caught " + ex.getClass().getName() + " " + ex.getLocalizedMessage(), ex);
+				AppContext.getCommonDialogs().showErrorDialog("Failed loading content. See logs.", ex);
 			}
 		};
 
+		addProgressIndicator();
+		
 		Utility.execute(task);
 
-		return gridPaneInTab;
+		return gridPaneInRootStackPane;
+	}
+	
+	private void addProgressIndicator() {
+		if (! rootStackPaneInTab.getChildren().contains(progressIndicator)) {
+			rootStackPaneInTab.getChildren().add(0, progressIndicator);
+		}
+		progressIndicator.setVisible(true);
+	}
+	private void removeProgressIndicator() {
+		rootStackPaneInTab.getChildren().remove(progressIndicator);
 	}
 
 	public ReadOnlyStringProperty validationFailureMessageProperty() {
@@ -751,9 +793,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 			for (ConceptChronicleBI cc : pathConcepts) {
 				list.add(cc.getPrimordialUuid());
 			}
-		} catch (IOException | ContradictionException e) {
+		} catch (Exception e) {
 			log.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 			e.printStackTrace();
+			AppContext.getCommonDialogs().showErrorDialog("Failed loading path options.  See logs.", e);
 		}
 		// Add currently-stored value to list of options, if not already there
 		UUID storedPath = getStoredPath();
@@ -842,7 +885,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			String desc = null;
 			try {
-				desc = OTFUtility.getDescription(nid);
+				desc = OTFUtility.getDescription(nid, viewCoordinate);
 			} catch (Exception e) {
 				log.error("Failed to set description for concept with nid={}", nid);
 			}
@@ -850,7 +893,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			UUID aUuid = null;
 			try {
-				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid);
+				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, viewCoordinate);
 				aUuid = cv.getPrimordialUuid();
 			} catch (Exception e) {
 				log.error("Failed to set uuid for concept with nid={} and desc={}", nid, description);
@@ -892,6 +935,14 @@ public class ViewCoordinatePreferencesPluginViewController {
 		final int numGridPaneRows = getNumGridPaneRows(gridPane);
 		for (int i = 0; i < numGridPaneRows; ++i) {
 			gridPane.getRowConstraints().add(i, rowConstraints);
+		}
+	}
+
+	public static void runLaterIfNotFXApplicationThread(Runnable work) {
+		if (Platform.isFxApplicationThread()) {
+			work.run();
+		} else {
+			Platform.runLater(work);
 		}
 	}
 }

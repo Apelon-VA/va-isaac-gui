@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.workflow.preferences;
 
+import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
@@ -141,7 +142,19 @@ public class WorkflowPreferencesPluginView extends AbstractPreferencesPluginView
 				new PreferencesPluginProperty.StringConverter<UUID>() {
 					@Override
 					public String convertToString(UUID value) {
-						return value != null ? OTFUtility.getDescription(value) : null;
+						if (value != null) {
+							try {
+								return OTFUtility.getDescription(value);
+							} catch (Exception e) {
+								String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " getting description for workflow promotion path uuid " + value;
+								logger.error(msg, e);
+								AppContext.getCommonDialogs().showErrorDialog(msg, e);
+
+								return value.toString();
+							}
+						} else {
+							return null;
+						}
 					}
 				}) {
 			@Override

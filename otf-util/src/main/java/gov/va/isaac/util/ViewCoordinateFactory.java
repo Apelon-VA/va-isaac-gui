@@ -18,13 +18,17 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.relationship.RelAssertionType;
 import org.ihtsdo.otf.tcc.api.store.Ts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ViewCoordinateFactory {
+	private static final Logger LOG = LoggerFactory.getLogger(ViewCoordinateFactory.class);
+
 	public static ViewCoordinate get(
 			UUID path,
+			StatedInferredOptions statedInferredOption,
 			Set<Status> statusesSet,
 			long time,
-			StatedInferredOptions statedInferredOption,
 			Set<UUID> modules) throws IOException {
 		
 		final EnumSet<Status> statuses = EnumSet.allOf(Status.class); // Have to have non-empty set to create
@@ -119,6 +123,8 @@ public class ViewCoordinateFactory {
 				desc += " " + modulesDesc;
 			}
 
+			LOG.debug("Creating ad hoc VC: {}", desc);
+			
 			ViewCoordinate viewCoordinate = new ViewCoordinate(
 					UUID.randomUUID(),
 					desc,
@@ -141,7 +147,7 @@ public class ViewCoordinateFactory {
 			viewCoordinate.getLangPrefSpecs().add(IsaacMetadataAuxiliaryBinding.GB_ENGLISH_DIALECT);
 
 			if (modules != null && modules.size() > 0) {
-				throw new IllegalArgumentException("Passing modules not yet supported");
+				throw new IllegalArgumentException("Passing modules to ViewCoordinate not yet supported");
 			}
 
 			return viewCoordinate;
