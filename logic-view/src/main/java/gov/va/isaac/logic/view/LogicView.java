@@ -113,11 +113,10 @@ public class LogicView implements PopupViewI, IsaacViewWithMenusI
 		
 		summary_.setMaxHeight(100);
 		summary_.setMaxWidth(Double.MAX_VALUE);
-		
-		//summaryPane.setMaxWidth(Double.MAX_VALUE);
+		summary_.setEditable(false);
 		
 		summaryPane_.setFitToWidth(true);
-		summaryPane_.setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
+		summaryPane_.setHbarPolicy(ScrollBarPolicy.NEVER);
 		summaryPane_.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		summaryPane_.setMaxHeight(100);
 		summaryPane_.setContent(summary_);
