@@ -24,7 +24,6 @@ import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
-import gov.va.isaac.interfaces.config.IsaacAppConfigI;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -34,6 +33,8 @@ import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
+import gov.vha.isaac.ochre.util.UuidFactory;
+
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -80,7 +82,6 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import gov.vha.isaac.ochre.util.UuidFactory;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
@@ -566,7 +567,7 @@ public class OTFUtility {
 	 * Get the ConceptVersion identified by UUID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if the concept exists at that point.  Returns null otherwise.
 	 */
-	public static ConceptVersionBI getConceptVersion(UUID uuid)
+	public static ConceptVersionBI getConceptVersion(UUID uuid, ViewCoordinate vc)
 	{
 		LOG.debug("Get ConceptVersion: '{}'", uuid);
 		
@@ -576,7 +577,7 @@ public class OTFUtility {
 		}
 		try
 		{
-			ConceptVersionBI result = dataStore.getConceptVersion(getViewCoordinate(), uuid);
+			ConceptVersionBI result = dataStore.getConceptVersion(vc, uuid);
 
 			// Nothing like an undocumented getter which, rather than returning null when
 			// the thing you are asking for doesn't exist - it goes off and returns
@@ -594,6 +595,10 @@ public class OTFUtility {
 		}
 		return null;
 	}
+	public static ConceptVersionBI getConceptVersion(UUID uuid) {
+		return getConceptVersion(uuid, getViewCoordinate());
+	}
+
 	
 	/**
 	 * Get the ConceptVersion identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 

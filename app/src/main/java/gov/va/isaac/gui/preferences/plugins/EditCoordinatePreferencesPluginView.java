@@ -151,7 +151,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 			// ComboBox
 			final UUID storedPath = getStoredPath();
 			pathComboBox.getSelectionModel().select(storedPath);
-			pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
+			//pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
 
 			hBox = new HBox();
 			hBox.getChildren().addAll(pathComboBox);

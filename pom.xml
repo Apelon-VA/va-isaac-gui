@@ -32,6 +32,7 @@
 	</distributionManagement>
 
 	<properties>
+		<logic.version>1.14-SNAPSHOT</logic.version>
 		<query.version>2.14-SNAPSHOT</query.version>
 		<ochre.version>2.29-SNAPSHOT</ochre.version>
 		<isaac-mojo.version>1.8-SNAPSHOT</isaac-mojo.version>
@@ -53,6 +54,13 @@
 			</dependency>
 		
 			<dependency>
+				<groupId>gov.vha.isaac.logic.modules</groupId>
+				<artifactId>logic</artifactId>
+				<version>${logic.version}</version>
+				<type>jar</type>
+			</dependency>
+
+                        <dependency>
 				<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
 				<artifactId>newtons-cradle</artifactId>
 				<version>${newtons-cradle.version}</version>

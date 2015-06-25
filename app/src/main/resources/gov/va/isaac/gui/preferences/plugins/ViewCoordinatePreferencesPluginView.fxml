@@ -6,8 +6,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
-<GridPane fx:id="gridPaneInTab" maxHeight="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewController">
+<GridPane fx:id="gridPaneInTab" maxHeight="1.7976931348623157E308" prefHeight="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewController">
    <columnConstraints>
       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
    </columnConstraints>
@@ -88,7 +87,7 @@
             </ScrollPane>
             <FlowPane GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                <children>
-                  <ComboBox fx:id="dateSelectorComboBox">
+                  <ComboBox fx:id="dateSelectionMethodComboBox">
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </padding>
@@ -114,7 +113,7 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </GridPane.margin>
       </GridPane>
-      <GridPane fx:id="bottomGridPane" maxHeight="1.7976931348623157E308" GridPane.rowIndex="1" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+      <GridPane fx:id="bottomGridPane" maxHeight="1.7976931348623157E308" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
         <columnConstraints>
           <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" minWidth="10.0" />
         </columnConstraints>
@@ -122,7 +121,7 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <FlowPane alignment="BOTTOM_CENTER" columnHalignment="CENTER" maxHeight="1.7976931348623157E308" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+            <FlowPane alignment="BOTTOM_CENTER" columnHalignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
                <children>
                   <HBox alignment="TOP_CENTER">
                      <children>
