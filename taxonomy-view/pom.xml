@@ -41,6 +41,11 @@
             <artifactId>newtons-cradle</artifactId>
         </dependency>
    
+        <dependency>
+            <groupId>gov.vha.isaac.logic.modules</groupId>
+            <artifactId>logic</artifactId>
+        </dependency>
+   
     </dependencies>
 
 </project>
