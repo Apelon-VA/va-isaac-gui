@@ -70,8 +70,8 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	@Override
 	public Region getContent()
 	{
-		if (drlvc_ == null)
-		{
+//		if (drlvc_ == null)
+//		{
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
@@ -84,7 +84,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 				return new Label("Unexpected error initializing view, see log file");
 			}
 
-		}
+//		}
 		return drlvc_.getContent();
 	}
 

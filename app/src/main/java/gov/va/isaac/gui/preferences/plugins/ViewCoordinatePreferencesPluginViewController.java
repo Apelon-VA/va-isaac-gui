@@ -454,7 +454,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			statedInferredOptionButtons.add(optionButton);
 		}
 		statedInferredToggleGroup.selectedToggleProperty().addListener(
-				(observable, oldValue, newValue) -> currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData()));
+				(observable, oldValue, newValue) -> runLaterIfNotFXApplicationThread(() -> currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData())));
 	}
 
 	private void initializeValidBooleanBinding() {
@@ -625,13 +625,13 @@ public class ViewCoordinatePreferencesPluginViewController {
 					// Reload persisted values every time
 
 					UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath()));
+					pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath());
 
 					// Reload storedStatedInferredOption
-					runLaterIfNotFXApplicationThread(() -> loadStoredStatedInferredOption());
+					loadStoredStatedInferredOption();
 
 					// Reload storedStatuses
-					runLaterIfNotFXApplicationThread(() -> loadStoredStatuses());
+					loadStoredStatuses();
 
 					// Reload storedModules
 					final Set<UUID> storedModuleUuids = getStoredModules();
