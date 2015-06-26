@@ -70,6 +70,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 	protected HashMap<Integer, AtomicInteger> generatedRels = new HashMap<>();
 	protected HashMap<Integer, AtomicInteger> mergedConcepts = new HashMap<>();
 	protected AtomicInteger examinedConcepts = new AtomicInteger();
+	protected AtomicInteger rulesFailed = new AtomicInteger();
 	protected TreeMap<Integer, Set<String>> ruleHits = new TreeMap<>();  //rule id to the set of UUIDs impacted by the rule
 	protected ConcurrentHashMap<String, Set<Integer>> conceptHitsByRule = new ConcurrentHashMap<>();  //inverse of above - hit concepts to rules that hit them
 	protected List<RuleDefinition> rules_;
@@ -79,6 +80,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 	protected ViewCoordinate vc_;
 	
 	private String name_;
+	protected int spreadsheetVersion_;
 	private static final String eol = System.getProperty("line.separator");
 	
 	public BaseSpreadsheetCode(String name)
@@ -102,7 +104,9 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		ts_ = ts;
 		vc_ = ViewCoordinates.getDevelopmentStatedLatest();
 		
-		rules_ = new SpreadsheetReader().readSpreadSheet(SpreadsheetReader.class.getResourceAsStream(spreadsheetFileName));
+		SpreadsheetReader sr = new SpreadsheetReader(); 
+		rules_ = sr.readSpreadSheet(SpreadsheetReader.class.getResourceAsStream(spreadsheetFileName));
+		spreadsheetVersion_ = sr.getVersion();
 		for (RuleDefinition rd : rules_)
 		{
 			ruleHits.put(rd.getId(), Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()));
@@ -138,7 +142,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		RelationshipCAB rCab = new RelationshipCAB(source.getPrimordialUuid(), Snomed.IS_A.getUuids()[0], target, 0, RelationshipType.STATED_HIERARCHY, 
 				IdDirective.GENERATE_HASH);
 		
-		ts_.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
+		ts_.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
 				getNid(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid())), vc_).construct(rCab);
 		ts_.addUncommitted(source);
 	}
@@ -286,6 +290,11 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		
 		bw.append("Examined " + examinedConcepts.get() + " concepts and added hierarchy linkages to " + totalRelCount + " concepts.  "
 				+ "Merged " + totalMergedCount + " concepts" + eol);
+		
+		if (rulesFailed.get() > 0)
+		{
+			bw.append("!!! - " + rulesFailed.get() + " Rules failed processing!" + eol);
+		}
 		
 		bw.append("Rule,Concept Count,Concept UUID,Concept FSN,Concept UUID,Concept FSN" + eol);
 		for (Entry<Integer, Set<String>> x : ruleHits.entrySet())

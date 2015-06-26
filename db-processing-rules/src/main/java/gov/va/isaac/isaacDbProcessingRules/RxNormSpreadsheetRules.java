@@ -73,7 +73,7 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts) throws IOException
 	{
-		super.configure("/SOLOR RxNorm Rules.xlsx", ts);
+		super.configure("/SOLOR RxNorm Rules v2.xlsx", ts);
 	}
 	
 
@@ -86,11 +86,11 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	public boolean transform(TerminologyStoreDI ts, ConceptChronicleBI cc) throws Exception
 	{
 		examinedConcepts.incrementAndGet();
-		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersions());
+		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersionList());
 		if (latest.getModuleNid() == getNid(IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid()))
 		{
-			//Rule for all other rules:
-			if (ttyIs(IN, cc))
+			//Rule for all other rules - but only check for v 1
+			if (spreadsheetVersion_ == 2 || ttyIs(IN, cc))
 			{
 				boolean commitRequired = false;
 				
@@ -167,6 +167,10 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 			case CHILD_OF:
 				addRel(cc, sctTargetConcept);
 				generatedRels.get(rd.getId()).getAndIncrement();
+				break;
+			case MERGE:
+				mergeConcepts(cc, sctTargetConcept, IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid());
+				mergedConcepts.get(rd.getId()).incrementAndGet();
 				break;
 			default :
 				throw new RuntimeException("Unhandled Action");
