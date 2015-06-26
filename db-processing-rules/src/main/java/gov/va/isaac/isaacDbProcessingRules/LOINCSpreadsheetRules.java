@@ -29,6 +29,7 @@ import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
@@ -52,7 +54,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -137,7 +138,19 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 					}
 					catch (Exception e)
 					{
-						throw new RuntimeException("Failure processing rule " + rd.getId(), e);
+						AtomicInteger failCount = rulesFailed.get(rd.getId());
+						if (failCount == null)
+						{
+							failCount = new AtomicInteger();
+							rulesFailed.put(rd.getId(), failCount);
+						}
+						failCount.incrementAndGet();
+						//Only dump the error the first time it happens (will happen many times, if the rule is bad)
+						if (failCount.get() == 1)
+						{
+							System.err.println("!!! Failure processing rule " + rd.getId());
+							e.printStackTrace();
+						}
 					}
 				}
 				return commitRequired;

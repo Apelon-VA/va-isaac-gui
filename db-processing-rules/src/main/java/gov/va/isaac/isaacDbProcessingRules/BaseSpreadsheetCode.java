@@ -31,7 +31,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,10 +53,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
-import org.ihtsdo.otf.tcc.dto.component.identifier.TtkIdentifier;
-import org.ihtsdo.otf.tcc.dto.component.identifier.TtkIdentifierUuid;
-import org.ihtsdo.otf.tcc.model.cc.concept.ConceptChronicle;
 
 /**
  * {@link BaseSpreadsheetCode}
@@ -70,7 +65,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 	protected HashMap<Integer, AtomicInteger> generatedRels = new HashMap<>();
 	protected HashMap<Integer, AtomicInteger> mergedConcepts = new HashMap<>();
 	protected AtomicInteger examinedConcepts = new AtomicInteger();
-	protected AtomicInteger rulesFailed = new AtomicInteger();
+	protected HashMap<Integer, AtomicInteger> rulesFailed = new HashMap<>();
 	protected TreeMap<Integer, Set<String>> ruleHits = new TreeMap<>();  //rule id to the set of UUIDs impacted by the rule
 	protected ConcurrentHashMap<String, Set<Integer>> conceptHitsByRule = new ConcurrentHashMap<>();  //inverse of above - hit concepts to rules that hit them
 	protected List<RuleDefinition> rules_;
@@ -154,24 +149,25 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		//Create a TtkConcept of the thing we want to merge - but change the primary UUID to the thing we want to merge onto.
 		//Keep our UUID as a secondary.
 		//TRY 1 - this still doesn't seem quite right - the other id ends up as an alternate identifier, instead of a primary... which seems wrong.
-		TtkConceptChronicle tcc = new TtkConceptChronicle(source);
-		
-		UUID temp = tcc.getPrimordialUuid();
-		tcc.setPrimordialUuid(mergeOnto);
-		if (tcc.getConceptAttributes().getAdditionalIdComponents() == null)
-		{
-			tcc.getConceptAttributes().setAdditionalIdComponents(new ArrayList<TtkIdentifier>());
-		}
-		
-		TtkIdentifier id = new TtkIdentifierUuid(temp);
-		id.setStatus(tcc.getConceptAttributes().getStatus());
-		id.setTime(tcc.getConceptAttributes().getTime());
-		id.setAuthorUuid(tcc.getConceptAttributes().getAuthorUuid());
-		id.setModuleUuid(IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getPrimodialUuid());
-		id.setPathUuid(tcc.getConceptAttributes().getPathUuid());
-		id.setAuthorityUuid(authority);
-
-		tcc.getConceptAttributes().getAdditionalIdComponents().add(id);
+//This was causing null pointers - had to disable for now.
+//		TtkConceptChronicle tcc = new TtkConceptChronicle(source);
+//		
+//		UUID temp = tcc.getPrimordialUuid();
+//		tcc.setPrimordialUuid(mergeOnto);
+//		if (tcc.getConceptAttributes().getAdditionalIdComponents() == null)
+//		{
+//			tcc.getConceptAttributes().setAdditionalIdComponents(new ArrayList<TtkIdentifier>());
+//		}
+//		
+//		TtkIdentifier id = new TtkIdentifierUuid(temp);
+//		id.setStatus(tcc.getConceptAttributes().getStatus());
+//		id.setTime(tcc.getConceptAttributes().getTime());
+//		id.setAuthorUuid(tcc.getConceptAttributes().getAuthorUuid());
+//		id.setModuleUuid(IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getPrimodialUuid());
+//		id.setPathUuid(tcc.getConceptAttributes().getPathUuid());
+//		id.setAuthorityUuid(authority);
+//
+//		tcc.getConceptAttributes().getAdditionalIdComponents().add(id);
 		
 		//THIS didn't work either
 //		ConceptVersionBI sourceVersion = source.getVersion(vc);
@@ -182,7 +178,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 //		getNid(IsaacMetadataAuxiliaryBinding.MASTER.getPrimodialUuid())), StandardViewCoordinates.getWbAuxiliary()).construct(cab);
 //		ts.addUncommitted(sourceVersion);
 		
-		ConceptChronicle.mergeAndWrite(tcc);
+//		ConceptChronicle.mergeAndWrite(tcc);
 		
 		
 		
@@ -223,6 +219,11 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		
 		sb.append("Examined " + examinedConcepts.get() + " concepts and added hierarchy linkages to " + totalRelCount + " concepts.  "
 				+ "Merged " + totalMergedCount + " concepts" + eol);
+		
+		if (rulesFailed.size() > 0)
+		{
+			sb.append("!!! - " + rulesFailed.size() + " Rules failed processing!" + eol);
+		}
 		
 		return sb.toString();
 	}
@@ -291,9 +292,13 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		bw.append("Examined " + examinedConcepts.get() + " concepts and added hierarchy linkages to " + totalRelCount + " concepts.  "
 				+ "Merged " + totalMergedCount + " concepts" + eol);
 		
-		if (rulesFailed.get() > 0)
+		if (rulesFailed.size() > 0)
 		{
-			bw.append("!!! - " + rulesFailed.get() + " Rules failed processing!" + eol);
+			bw.append("!!! - " + rulesFailed.size() + " Rules failed processing!" + eol);
+			for (Entry<Integer, AtomicInteger> fails : rulesFailed.entrySet())
+			{
+				bw.append("Rule " + fails.getKey() + " failed " + fails.getValue().get() + " times" + eol);
+			}
 		}
 		
 		bw.append("Rule,Concept Count,Concept UUID,Concept FSN,Concept UUID,Concept FSN" + eol);
