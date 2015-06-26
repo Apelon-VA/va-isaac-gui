@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 public class ViewCoordinateFactory {
 	private static final Logger LOG = LoggerFactory.getLogger(ViewCoordinateFactory.class);
 
+	private ViewCoordinateFactory() {}
+	
 	public static ViewCoordinate get(
 			UUID path,
 			StatedInferredOptions statedInferredOption,

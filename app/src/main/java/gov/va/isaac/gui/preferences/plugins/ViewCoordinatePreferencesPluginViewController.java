@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -134,7 +135,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	private boolean contentLoaded = false;
 
-	final ViewCoordinate viewCoordinate;
+	final ViewCoordinate panelViewCoordinate;
 	
 	final private ProgressIndicator progressIndicator = new ProgressIndicator();
 	{
@@ -174,7 +175,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	{
 		try {
-			viewCoordinate = ViewCoordinates.getDevelopmentStatedLatest();
+			panelViewCoordinate = ViewCoordinates.getDevelopmentStatedLatest();
 		} catch (IOException e) {
 			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to initialize ViewCoordinate";
 			log.error(msg, e);
@@ -238,9 +239,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 	private void setDatePickerFromCurrentTimeProperty() {
 		if (currentTimeProperty.get() != Long.MAX_VALUE) {
-			datePicker.setValue(getPriorDay(new Date(currentTimeProperty.get())).toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+			runLaterIfNotFXApplicationThread(() -> datePicker.setValue(getPriorDay(new Date(currentTimeProperty.get())).toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
 		} else {
-			datePicker.setValue(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+			runLaterIfNotFXApplicationThread(() -> datePicker.setValue(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
 		}
 	}
 
@@ -284,19 +285,19 @@ public class ViewCoordinatePreferencesPluginViewController {
 				} else {
 					switch (selectionMethod) {
 					case SPECIFY:
-						datePicker.setVisible(true);
+						runLaterIfNotFXApplicationThread(() -> datePicker.setVisible(true));
 						setText(selectionMethod.getDisplayName());
 						//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
 						// This should change if default time ever changes
-						dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify a date\nin the past representing an historical snapshot version of the database\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
+						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected.  Use date picker control to specify a date\nin the past representing an historical snapshot version of the database\nor click and select " + DateSelectionMethod.USE_LATEST.getDisplayName() + " to always use latest.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + ".")));
 						break;
 					case USE_LATEST:
-						datePicker.setVisible(false);
+						runLaterIfNotFXApplicationThread(() -> datePicker.setVisible(false));
 						setText(selectionMethod.getDisplayName());
 						//						log.debug("dateSelectorComboBox button cell set to " + getText() + ", datePicker has value=" + datePicker.getValue() + ", selectionMode=" + dateSelectionMethodComboBox.getSelectionModel().getSelectedItem() + " and current time=" + currentTimeProperty.get());
 
-						dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest (most recent) date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify a date\nin the past representing an historical snapshot version of the database.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + "."));
+						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.setTooltip(new Tooltip(getText() + " is selected, so latest (most recent) date will always be used.\nClick and select " + DateSelectionMethod.SPECIFY.getDisplayName() + " to use date picker control to specify a date\nin the past representing an historical snapshot version of the database.\nDefault is " + DateSelectionMethod.USE_LATEST.getDisplayName() + ".")));
 						break;
 					default:
 						// Should never happen
@@ -337,7 +338,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					if(c == null) {
 						setText(null);
 					} else {
-						String desc = OTFUtility.getDescription(c);
+						String desc = OTFUtility.getDescription(c, panelViewCoordinate);
 						setText(desc);
 					}
 				}
@@ -351,7 +352,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (emptyRow) {
 					setText("");
 				} else {
-					String desc = OTFUtility.getDescription(c);
+					String desc = OTFUtility.getDescription(c, panelViewCoordinate);
 					//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
@@ -363,7 +364,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (uuid == null){
 					return null;
 				} else {
-					return OTFUtility.getDescription(uuid);
+					return OTFUtility.getDescription(uuid, panelViewCoordinate);
 				}
 			}
 
@@ -533,7 +534,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 					TextErrorColorHelper.clearTextErrorColor(datePicker);
 				}
 
-				if (allModulesMarker.selectedProperty().get()
+				if (selectedModules.size() > 0) {
+					// Remove this check when modules supported by ViewCoordinateFactory.get()
+					this.setInvalidReason("Selection of specific module(s) not currently supported.  Currently, only ALL is supported.");
+					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
+					return false;
+				} else if (allModulesMarker.selectedProperty().get()
 						&& selectedModules.size() > 0) {
 					this.setInvalidReason("ALL module cannot be selected while any (currently " + selectedModules.size() + ") specific module selected");
 					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
@@ -564,10 +570,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 						contentLoaded = true;
 
 						// Populate selectableModules
-						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), viewCoordinate);
+						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
 						final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
 						try {
-							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), viewCoordinate, false));
+							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), panelViewCoordinate, false));
 						} catch (Exception e) {
 							log.error("Failed loading module concepts as children of " + moduleRootConcept, e);
 							e.printStackTrace();
@@ -606,10 +612,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 							}
 						}));
 						selectableModuleListView.getItems().clear();
-						selectableModuleListView.getItems().addAll(selectableModules);
 						selectableModuleListView.getItems().add(allModulesMarker);
+						Collections.sort(selectableModules);
+						selectableModuleListView.getItems().addAll(selectableModules);
 
-						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath(), viewCoordinate) + "\"")));
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
 						
 						pathComboBox.getItems().clear();
 						pathComboBox.getItems().addAll(getPathOptions());
@@ -618,33 +625,13 @@ public class ViewCoordinatePreferencesPluginViewController {
 					// Reload persisted values every time
 
 					UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath());
+					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath()));
 
 					// Reload storedStatedInferredOption
-					final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
-					for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
-						if (toggle.getUserData() == storedStatedInferredOption) {
-							toggle.setSelected(true);
-						}
-					}
+					runLaterIfNotFXApplicationThread(() -> loadStoredStatedInferredOption());
 
 					// Reload storedStatuses
-					final Set<Status> storedStatuses = getStoredStatuses();
-					if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
-						statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
-					} else if (storedStatuses.contains(Status.ACTIVE)) {
-						statusesToggleGroup.selectToggle(activeStatusButton);
-					} else if (storedStatuses.contains(Status.INACTIVE)) {
-						statusesToggleGroup.selectToggle(inactiveStatusButton);
-					} else if (storedStatuses.size() == 0) {
-						log.warn("UserProfile does not contain any view coordinate Status values");
-					} else {
-						log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
-						AppContext.getCommonDialogs().showErrorDialog(
-								"Unsupported View Coordinate Status",
-								"UserProfile contains unsupported view coordinate Status values",
-								Arrays.toString(storedStatuses.toArray()));
-					}
+					runLaterIfNotFXApplicationThread(() -> loadStoredStatuses());
 
 					// Reload storedModules
 					final Set<UUID> storedModuleUuids = getStoredModules();
@@ -686,7 +673,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					} else {
 						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
 						currentTimeProperty.set(storedTime);
-						runLaterIfNotFXApplicationThread(() -> setDatePickerFromCurrentTimeProperty());
+						setDatePickerFromCurrentTimeProperty();
 					}
 					
 					return null;
@@ -721,6 +708,36 @@ public class ViewCoordinatePreferencesPluginViewController {
 		Utility.execute(task);
 
 		return gridPaneInRootStackPane;
+	}
+	
+	private void loadStoredStatedInferredOption() {
+		// Reload storedStatedInferredOption
+		final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
+		for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
+			if (toggle.getUserData() == storedStatedInferredOption) {
+				toggle.setSelected(true);
+			}
+		}
+	}
+
+	private void loadStoredStatuses() {
+		// Reload storedStatuses
+		final Set<Status> storedStatuses = getStoredStatuses();
+		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
+			statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
+		} else if (storedStatuses.contains(Status.ACTIVE)) {
+			statusesToggleGroup.selectToggle(activeStatusButton);
+		} else if (storedStatuses.contains(Status.INACTIVE)) {
+			statusesToggleGroup.selectToggle(inactiveStatusButton);
+		} else if (storedStatuses.size() == 0) {
+			log.warn("UserProfile does not contain any view coordinate Status values");
+		} else {
+			log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
+			AppContext.getCommonDialogs().showErrorDialog(
+					"Unsupported View Coordinate Status",
+					"UserProfile contains unsupported view coordinate Status values",
+					Arrays.toString(storedStatuses.toArray()));
+		}
 	}
 	
 	private void addProgressIndicator() {
@@ -865,7 +882,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return currentPathProperty;
 	}
 
-	private class SelectableModule {
+	private class SelectableModule implements Comparable<SelectableModule> {
 		private final IntegerProperty nid = new SimpleIntegerProperty();
 		private final BooleanProperty selected = new SimpleBooleanProperty(false);
 		private final String description;
@@ -885,7 +902,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			String desc = null;
 			try {
-				desc = OTFUtility.getDescription(nid, viewCoordinate);
+				desc = OTFUtility.getDescription(nid, panelViewCoordinate);
 			} catch (Exception e) {
 				log.error("Failed to set description for concept with nid={}", nid);
 			}
@@ -893,7 +910,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			UUID aUuid = null;
 			try {
-				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, viewCoordinate);
+				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, panelViewCoordinate);
 				aUuid = cv.getPrimordialUuid();
 			} catch (Exception e) {
 				log.error("Failed to set uuid for concept with nid={} and desc={}", nid, description);
@@ -915,6 +932,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 		}
 		public UUID getUuid() {
 			return uuid;
+		}
+
+		@Override
+		public int compareTo(SelectableModule o) {
+			return description.compareTo(o.description);
 		}
 	}
 

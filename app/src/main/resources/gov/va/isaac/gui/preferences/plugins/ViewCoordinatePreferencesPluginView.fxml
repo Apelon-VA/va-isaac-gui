@@ -14,85 +14,55 @@
          </columnConstraints>
          <rowConstraints>
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints maxHeight="1.7976931348623157E308" vgrow="SOMETIMES" />
          </rowConstraints>
          <children>
             <GridPane fx:id="topGridPane">
               <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                <ColumnConstraints hgrow="NEVER" maxWidth="100.0" minWidth="10.0" />
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
               </columnConstraints>
               <rowConstraints>
                 <RowConstraints vgrow="ALWAYS" />
                   <RowConstraints vgrow="ALWAYS" />
-                  <RowConstraints vgrow="ALWAYS" />
+                  <RowConstraints fillHeight="false" vgrow="NEVER" />
               </rowConstraints>
                <children>
-                  <Label text="Provide view for (date)" wrapText="true" GridPane.vgrow="ALWAYS">
-                     <font>
-                        <Font name="System Bold" size="15.0" />
-                     </font>
+                  <Label maxWidth="100.0" text="Provide view for (date)" wrapText="true" GridPane.vgrow="ALWAYS">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
                   </Label>
                   <Label text="Path" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
-                     <font>
-                        <Font name="System Bold" size="15.0" />
-                     </font>
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
                   </Label>
                   <ComboBox fx:id="pathComboBox" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="SOMETIMES">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
                   </ComboBox>
                   <Label text="Modules" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
-                     <font>
-                        <Font name="System Bold" size="15.0" />
-                     </font>
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
                   </Label>
-                  <ScrollPane fitToWidth="true" maxHeight="300.0" minHeight="50.0" prefViewportHeight="400.0" prefViewportWidth="300.0" GridPane.columnIndex="1" GridPane.hgrow="NEVER" GridPane.rowIndex="2" GridPane.vgrow="SOMETIMES">
+                  <ScrollPane fitToWidth="true" maxHeight="200.0" minHeight="50.0" prefViewportHeight="200.0" prefViewportWidth="300.0" GridPane.columnIndex="1" GridPane.hgrow="NEVER" GridPane.rowIndex="2" GridPane.vgrow="SOMETIMES">
                      <content>
                         <ListView fx:id="selectableModuleListView" maxWidth="1.7976931348623157E308" minHeight="10.0" GridPane.columnIndex="1" GridPane.hgrow="NEVER" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
                            <GridPane.margin>
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                            </GridPane.margin>
-                           <padding>
-                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                           </padding>
                         </ListView>
                      </content>
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
                   </ScrollPane>
                   <FlowPane GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                      <children>
                         <ComboBox fx:id="dateSelectionMethodComboBox">
-                           <padding>
-                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                           </padding>
                            <FlowPane.margin>
                               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                            </FlowPane.margin>
@@ -101,9 +71,6 @@
                            <FlowPane.margin>
                               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                            </FlowPane.margin>
-                           <padding>
-                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                           </padding>
                         </DatePicker>
                      </children>
                      <GridPane.margin>
@@ -127,18 +94,12 @@
                      <children>
                         <HBox alignment="TOP_CENTER">
                            <children>
-                              <Label alignment="TOP_RIGHT" text="Active status">
-                                 <font>
-                                    <Font name="System Bold" size="15.0" />
-                                 </font>
-                                 <padding>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </padding>
+                              <Label alignment="TOP_RIGHT" text="Status">
                                  <HBox.margin>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
                               </Label>
-                              <VBox fx:id="statusesToggleGroupVBox">
+                              <VBox fx:id="statusesToggleGroupVBox" spacing="5.0">
                                  <padding>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </padding>
@@ -156,18 +117,12 @@
                         </HBox>
                         <HBox alignment="TOP_CENTER">
                            <children>
-                              <Label alignment="TOP_RIGHT" text="View">
-                                 <font>
-                                    <Font name="System Bold" size="15.0" />
-                                 </font>
-                                 <padding>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </padding>
+                              <Label alignment="TOP_RIGHT" text="Taxonomy Rel Type" wrapText="true">
                                  <HBox.margin>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
                               </Label>
-                              <VBox fx:id="statedInferredToggleGroupVBox">
+                              <VBox fx:id="statedInferredToggleGroupVBox" spacing="5.0">
                                  <padding>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </padding>
