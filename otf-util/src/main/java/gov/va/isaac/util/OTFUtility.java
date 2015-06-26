@@ -27,6 +27,7 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -125,7 +126,11 @@ public class OTFUtility {
 	public static TerminologyBuilderBI getBuilder(EditCoordinate ec, ViewCoordinate vc) {
 		return new Builder(ec, vc, AppContext.getService(PersistentStoreI.class));
 	}
-	
+
+	public static ViewCoordinate getSystemViewCoordinate() {
+		return ViewCoordinateFactory.getSystemViewCoordinate();
+	}
+
 	public static ViewCoordinate getViewCoordinate() {
 		ViewCoordinate vc = null;
 		try {
@@ -150,13 +155,13 @@ public class OTFUtility {
 			long time = userProfile.getViewCoordinateTime();
 			Set<UUID> modules = userProfile.getViewCoordinateModules();
 
-			vc = ViewCoordinateFactory.get(path, relAssertionType, statuses, time, modules);
+			vc = ViewCoordinateFactory.getViewCoordinate(path, relAssertionType, statuses, time, modules);
 
 			//LOG.info("Using ViewCoordinate policy={}, path nid={}, uuid={}, desc={}", policy, pathNid, pathUuid, OTFUtility.getDescription(pathChronicle));
-		} catch (NullPointerException e) {
-			LOG.error("View path UUID does not exist", e);
-		} catch (IOException e) {
-			LOG.error("Unexpected error fetching view coordinates!", e);
+		} catch (RuntimeException e) {
+			LOG.error("Failed fetching ViewCoordinate. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+			
+			throw e;
 		}
 
 		return vc;
