@@ -106,7 +106,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 				break;
 			}
 			
-			DescriptionVersionBI<?> currentDescription = OTFUtility.getLatestDescVersion(desc.getVersions());
+			DescriptionVersionBI<?> currentDescription = OTFUtility.getLatestDescVersion(desc.getVersionList());
 			
 			if (currentDescription == null)
 			{
@@ -126,7 +126,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 			{
 				for (RefexChronicleBI<?> refex : currentDescription.getRefexes())
 				{
-					RefexVersionBI<?> currentRefex = OTFUtility.getLatestRefexVersion(refex.getVersions());
+					RefexVersionBI<?> currentRefex = OTFUtility.getLatestRefexVersion(refex.getVersionList());
 					if (currentRefex instanceof RefexNidVersionBI)
 					{
 						if (((RefexNidVersionBI<?>)currentRefex).getNid1() == SnomedMetadataRf2.PREFERRED_RF2.getNid())
@@ -159,7 +159,7 @@ public class GenerateMissingPreferredTerms implements TransformConceptIterateI
 				//TODO figure out module/path mess (these params are wrong)
 				dCab.makePreferredNameDialectRefexes(fsnLC, null, null);
 				
-				ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), moduleNid, pathNid), 
+				ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getNid(), moduleNid, pathNid), 
 						ViewCoordinates.getDevelopmentStatedLatest()).construct(dCab);
 				ts.addUncommitted(cc);
 				generatedDescriptions.getAndIncrement();

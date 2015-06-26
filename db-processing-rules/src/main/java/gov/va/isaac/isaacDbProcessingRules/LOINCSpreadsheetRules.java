@@ -117,7 +117,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	public boolean transform(TerminologyStoreDI ts, ConceptChronicleBI cc) throws Exception
 	{
 		examinedConcepts.incrementAndGet();
-		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersions());
+		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersionList());
 		if (latest.getModuleNid() == getNid(IsaacMetadataAuxiliaryBinding.LOINC.getPrimodialUuid()))
 		{
 			//Rule for all other rules:
@@ -164,10 +164,10 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 					passed = componentIs(sc.getValue(), cc);
 					break;
 				case CONCEPT:
-					passed = cc.getConceptNid() == getLoincConceptNid(sc);
+					passed = cc.getNid() == getLoincConceptNid(sc);
 					break;
 				case DESCENDENT_OF:
-					passed = ts_.isKindOf(cc.getConceptNid(), getLoincConceptNid(sc), vc_);
+					passed = ts_.isKindOf(cc.getNid(), getLoincConceptNid(sc), vc_);
 					break;
 				case METHOD:
 					passed = methodTypeIs(sc.getValue(), cc);
@@ -261,7 +261,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 			}
 			for (DescriptionChronicleBI dc : cc.getDescriptions())
 			{
-				for (DescriptionVersionBI<?> dv : dc.getVersions())
+				for (DescriptionVersionBI<?> dv : dc.getVersionList())
 				{
 					if (dv.getText().equals(sc.getValue()))
 					{
