@@ -95,7 +95,10 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		final Set<UUID> forSetCustomCollection = new HashSet<>();
 
 		for (CompositeSearchResult result : results) {
-			forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+			if (result.getContainingConcept() != null)
+			{
+				forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+			}
 		}
 
 		SearchResultsFilterHelper.LOG.debug("Building Query to filter " + forSetCustomCollection.size() + " search results");
