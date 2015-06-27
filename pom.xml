@@ -60,7 +60,7 @@
 				<type>jar</type>
 			</dependency>
 
-                        <dependency>
+			<dependency>
 				<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
 				<artifactId>newtons-cradle</artifactId>
 				<version>${newtons-cradle.version}</version>
