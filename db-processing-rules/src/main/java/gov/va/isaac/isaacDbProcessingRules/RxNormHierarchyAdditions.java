@@ -125,7 +125,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 					{
 						break;
 					}
-					DescriptionVersionBI<?> currentDescription = OTFUtility.getLatestDescVersion(desc.getVersions());
+					DescriptionVersionBI<?> currentDescription = OTFUtility.getLatestDescVersion(desc.getVersionList());
 					
 					if (currentDescription == null)
 					{
@@ -134,7 +134,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 					
 					for (RefexDynamicChronicleBI<?> refex : currentDescription.getRefexesDynamic())
 					{
-						RefexDynamicVersionBI<?> currentRefex = OTFUtility.getLatestDynamicRefexVersion(refex.getVersions());
+						RefexDynamicVersionBI<?> currentRefex = OTFUtility.getLatestDynamicRefexVersion(refex.getVersionList());
 						if (currentRefex.getAssemblageNid() == rxNormDescTypeAssemblageNid)
 						{
 							if (((RefexDynamicUUID)currentRefex.getData()[0]).getDataUUID().equals(termTypeIN))
@@ -156,8 +156,8 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 					RelationshipCAB rCab = new RelationshipCAB(cc.getPrimordialUuid(), Snomed.IS_A.getUuids()[0], penicillinProduct,
 							0, RelationshipType.STATED_ROLE, IdDirective.GENERATE_HASH);
 					
-					ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
-							IsaacMetadataAuxiliaryBinding.MASTER.getNid()), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
+					ts.getTerminologyBuilder(new EditCoordinate(TermAux.USER.getLenient().getNid(), IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getNid(), 
+							IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getNid()), ViewCoordinates.getDevelopmentStatedLatest()).construct(rCab);
 					ts.addUncommitted(cc);
 					
 					int last = addedRels.getAndIncrement();

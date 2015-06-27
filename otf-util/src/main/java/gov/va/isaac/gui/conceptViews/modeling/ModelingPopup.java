@@ -149,7 +149,7 @@ public abstract class ModelingPopup extends Stage implements PopupViewI {
 	public void finishInit(ComponentVersionBI comp, PopupConceptViewI callingView)
 	{
 		origComp = comp;
-		conceptNid = comp.getConceptNid();
+		conceptNid = comp.getAssociatedConceptNid();
 		callingView_ = callingView;
 		
 		finishInit();

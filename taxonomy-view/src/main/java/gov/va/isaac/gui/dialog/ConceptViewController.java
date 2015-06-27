@@ -37,11 +37,7 @@ import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.LookupService;
-
 import java.util.UUID;
-
-import javax.swing.text.Utilities;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -66,12 +62,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesVersionDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.identifier.IdentifierDdo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,9 +75,9 @@ import org.slf4j.LoggerFactory;
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class SnomedConceptViewController {
+public class ConceptViewController {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SnomedConceptViewController.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ConceptViewController.class);
 
 	@FXML private AnchorPane anchorPane;
 	@FXML private Label conceptDefinedLabel;
@@ -107,54 +101,19 @@ public class SnomedConceptViewController {
 	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
 
 	private SctTreeViewIsaacView sctTree;
+	private RefexViewI refexView;
+	private DescriptionTableView dtv;
+	private RelationshipTableView rtv;
 	
 	private UUID conceptUuid;
 	private int conceptNid = 0;
-
-	public Region getRootNode()
+	
+	@FXML
+	void initialize()
 	{
-		return anchorPane;
-	}
-
-	public void setConcept(ConceptChronicleDdo concept) {
-		conceptUuid = concept.getPrimordialUuid();
-		splitPane.setDividerPositions(0.7);
-
-		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty();
-		fsnLabel.setGraphic(new ProgressBar());
-		
-		MenuItem copyFull = new MenuItem("Copy Full Concept");
-		copyFull.setGraphic(Images.COPY.createImageView());
-
-		// Update text of labels.
-		ConceptAttributesChronicleDdo attributeChronicle = concept.getConceptAttributes();
-		final ConceptAttributesVersionDdo conceptAttributes = attributeChronicle.getVersions().get(attributeChronicle.getVersions().size() - 1);
-		conceptDefinedLabel.setText(conceptAttributes.isDefined() + "");
-		conceptStatusLabel.setText(conceptAttributes.getStatus().name());
-		
-		fsnLabel.textProperty().bind(conceptDescriptionSSP);;
-		CopyableLabel.addCopyMenu(fsnLabel);
-		
-		fsnLabel.getContextMenu().getItems().add(copyFull);
-		
-		AppContext.getService(DragRegistry.class).setupDragOnly(fsnLabel, new SingleConceptIdProvider()
-		{
-			@Override
-			public String getConceptId()
-			{
-				return uuidLabel.getText();
-			}
-		});
-		uuidLabel.setText(concept.getPrimordialUuid().toString());
-		AppContext.getService(DragRegistry.class).setupDragOnly(uuidLabel, new SingleConceptIdProvider()
-		{
-			@Override
-			public String getConceptId()
-			{
-				return uuidLabel.getText();
-			}
-		});
-		CopyableLabel.addCopyMenu(uuidLabel);
+		ProgressBar pb = new ProgressBar();
+		pb.setMinWidth(300);
+		fsnLabel.setGraphic(pb);
 		
 		stampToggle.setText("");
 		stampToggle.setGraphic(Images.STAMP.createImageView());
@@ -198,41 +157,59 @@ public class SnomedConceptViewController {
 			}
 		});
 		
-		// TODOne OTF background - moved above
-		//ConceptVersionBI conceptVersionBI = OTFUtility.getConceptVersion(concept.getPrimordialUuid());
-		//AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersionBI));
+		splitPane.setDividerPositions(0.7);
+	}
+	
+	public Region getRootNode()
+	{
+		return anchorPane;
+	}
 
-		// Add context menu items for additional identifiers.
-		for (final IdentifierDdo id : attributeChronicle.getAdditionalIds()) {
+	public void setConcept(ConceptChronicleDdo concept) {
+		conceptUuid = concept.getPrimordialUuid();
 
-			MenuItem mi = new MenuItem("View Concept");
-			mi.setOnAction(new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(ActionEvent ignore) {
-					AppContext.getCommonDialogs().showConceptDialog(id.getAuthorityRef().getUuid());
-				}
-			});
-
-			CopyableLabel l = new CopyableLabel(id.getAuthorityRef().getText());
-			l.getContextMenu().getItems().add(mi);
-			l.getStyleClass().add("boldLabel");
-
-			HBox hbox = new HBox();
-			hbox.getChildren().add(l);
-			hbox.getChildren().add(new CopyableLabel(id.getDenotation().toString()));
-			hbox.setSpacing(5.0);
-
-			idVBox.getChildren().add(hbox);
-		}
+		// Update text of labels.
+		ConceptAttributesChronicleDdo attributeChronicle = concept.getConceptAttributes();
+		final ConceptAttributesVersionDdo conceptAttributes = attributeChronicle.getVersions().get(attributeChronicle.getVersions().size() - 1);
+		conceptDefinedLabel.setText(conceptAttributes.isDefined() + "");
+		conceptStatusLabel.setText(conceptAttributes.getStatus().name());
 		
-		final DescriptionTableView dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
-		descriptionsTableHolder.getChildren().add(dtv.getNode());
-		VBox.setVgrow(dtv.getNode(), Priority.ALWAYS);
+		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty("Loading...");
+		fsnLabel.textProperty().bind(conceptDescriptionSSP);
+		CopyableLabel.addCopyMenu(fsnLabel);
+		
+		MenuItem copyFull = new MenuItem("Copy Full Concept");
+		copyFull.setGraphic(Images.COPY.createImageView());
+		fsnLabel.getContextMenu().getItems().add(copyFull);
+		
+		AppContext.getService(DragRegistry.class).setupDragOnly(fsnLabel, new SingleConceptIdProvider()
+		{
+			@Override
+			public String getConceptId()
+			{
+				return uuidLabel.getText();
+			}
+		});
+		uuidLabel.setText(concept.getPrimordialUuid().toString());
+		AppContext.getService(DragRegistry.class).setupDragOnly(uuidLabel, new SingleConceptIdProvider()
+		{
+			@Override
+			public String getConceptId()
+			{
+				return uuidLabel.getText();
+			}
+		});
+		CopyableLabel.addCopyMenu(uuidLabel);
+
+		
+		dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
+		descriptionsTableHolder.getChildren().add(dtv.getView());
+		VBox.setVgrow(dtv.getView(), Priority.ALWAYS);
 		
 		//rel table section
-		final RelationshipTableView rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
-		relationshipsTableHolder.getChildren().add(rtv.getNode());
-		VBox.setVgrow(rtv.getNode(), Priority.ALWAYS);
+		rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
+		relationshipsTableHolder.getChildren().add(rtv.getView());
+		VBox.setVgrow(rtv.getView(), Priority.ALWAYS);
 
 		try
 		{
@@ -377,14 +354,13 @@ public class SnomedConceptViewController {
 			String conceptDescription = OTFUtility.getDescription(concept);
 			ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(concept.getPrimordialUuid());
 			conceptNid = conceptVersion.getNid();
+			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersion));
 
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);
 				fsnLabel.setGraphic(null);
 
 				copyFull.setOnAction(e -> CustomClipboard.set(conceptVersion.toLongString()));
-
-				AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersion));
 				
 				try {
 					dtv.setConcept(conceptVersion);
@@ -395,25 +371,20 @@ public class SnomedConceptViewController {
 				
 				try {
 					rtv.setConcept(conceptVersion);
-					
 				} catch (Exception e) {
 					LOG.error("Error configuring relationship view", e);
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring relationships view"));
 				}
 
-				RefexViewI v = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
-				v.setComponent(conceptVersion.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
-				v.getView().setMinHeight(100.0);
-				VBox.setVgrow(v.getView(), Priority.ALWAYS);
-				annotationsRegion.getChildren().add(v.getView());
-
+				refexView = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
+				refexView.setComponent(conceptVersion.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
+				refexView.getView().setMinHeight(100.0);
+				VBox.setVgrow(refexView.getView(), Priority.ALWAYS);
+				annotationsRegion.getChildren().add(refexView.getView());
 
 				stampToggle.setSelected(false);
 			});
-			
 		});
-		
-		
 	}
 
 	public StringProperty getTitle() {
@@ -432,12 +403,23 @@ public class SnomedConceptViewController {
 		
 		return conceptNid;
 	}
-
+	
 	/**
-	 * See  {@link SctTreeViewIsaacView#cancelOperations()}
+	 * Disconnects change listeners, prevents refresh
 	 */
-	public void stopOperations()
+	public void viewDiscarded()
 	{
-		sctTree.cancelOperations();
+		if (sctTree != null) {
+			sctTree.viewDiscarded();
+		}
+		if (refexView != null) {
+			refexView.viewDiscarded();
+		}
+		if (dtv != null) {
+			dtv.viewDiscarded();
+		}
+		if (rtv != null) {
+			rtv.viewDiscarded();
+		}
 	}
 }

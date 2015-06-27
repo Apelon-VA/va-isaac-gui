@@ -65,9 +65,4 @@ public interface TaxonomyViewI extends EmbeddableViewI
 	 * Rebuild the tree from scratch
 	 */
 	public void refresh();
-	
-	/**
-	 * Stop any operations occurring in a background thread
-	 */
-	public void cancelOperations();
 }

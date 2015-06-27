@@ -23,7 +23,6 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
-import gov.va.isaac.request.ContentRequestHandler;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.COLUMN;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Case_Significance;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Refinability;
@@ -32,48 +31,46 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Semantic_Tag;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
-
 import javafx.concurrent.Task;
-
 import javax.inject.Named;
-
 import org.glassfish.hk2.api.PerLookup;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeChronicleBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.relationship.RelAssertionType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
- * USCRS implementation of a {@link ContentRequestHandler}.
+ * USCRS implementation of a {@link ExportTaskHandlerI}.
  *
  * @author bcarlsenca
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
@@ -86,33 +83,48 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 {
 	Properties prop = new Properties();
 	boolean filter = false;
+	String invalidPropFound = "none";
 	Long previousReleaseTime;
 	
 	private UscrsContentRequestHandler() {
 		//hk2
 	}
 	
-	//TODO: Document these options in JavaDoc VERY well because ppl just look at javadocs
-	//TODO: Specify all instructions here, because this is how to config everything
-	//TODO: Throw an exception if an option was passed in that is unknown. Same with a 
-	//		required option, if not passed in, then throw an error again.
+	/*
+	 * Filters: Date (long) filters export to any modifications made after this date. Throwing
+	 * 	a filter that is not listed here will throw an exception
+	 * 
+	 * (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI#setOptions(java.util.Properties)
+	 */
 	@Override
-	public void setOptions(Properties options) {
+	public void setOptions(Properties options) throws Exception {
 		prop = options;
-	//	prop.getProperty("date", "none"); //This is a long
-		//prop.getProperty("mode", "none"); //IE: ListView, BatchExport
-		//IE: If an author property is set, use an author filter. Everytying can be optional
-		//IE: Path
-		// TODO: If nothing is set then just go with default, export everything
+
+		//Filters: date, author, etc...
+		ArrayList<String> propKeys = new ArrayList<String>();
+		propKeys.add("date");
 		
 		if(prop.containsKey("date")) { 
+			logger.debug("USCRS Handler - properties contains date key");
 			filter = true; 
 			previousReleaseTime = Long.parseLong(prop.getProperty("date")); 
+			logger.debug("USCRS Handler - previous release time is " + prop.getProperty("date"));
 		} else {
 			filter = false;
-			previousReleaseTime = (long) -1;
+			previousReleaseTime = Long.MIN_VALUE;
 		}
 		
+		//TODO: Throw an exception if an option is passed in that is not recognized
+//		prop.values().stream().forEach(p -> { 
+//											if(!propKeys.contains(p)) {
+//												invalidPropFound = String.valueOf(p);
+//											}
+//										});
+//		if(!invalidPropFound.equals("none")) {
+//			throw new Exception("Invalid property: " + invalidPropFound);
+//		}
+//		
 	}
 
 	@Override
@@ -131,28 +143,19 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	/** The Constant logger. */
 	private static final Logger logger = LoggerFactory.getLogger(UscrsContentRequestHandler.class);
 	
-	private int currentRequestId;
-	private LinkedHashMap<UUID, Integer> currentRequestUuidMap = new LinkedHashMap<UUID, Integer>();
+	//Maps NID to (generated) request ID, which is used in place of an SCTID
+	private LinkedHashMap<Integer, Integer> currentRequestMap = new LinkedHashMap<Integer, Integer>();
+	
+	// The list of (generated) ids that are in use on the new concept tab.
+	private HashSet<Integer> newConceptRequestIds = new HashSet<>();;
 	private USCRSBatchTemplate bt = null;
-	private int count = 0;
+	private int examinedConCount = 0;
 	private ViewCoordinate vcPreviousRelease;
 	private ViewCoordinate viewCoordinate;
 	
 	private IntStream conceptStream;
 	
-	public static void main(String[] args) {
-		UscrsContentRequestHandler ucrh = new UscrsContentRequestHandler();
-		
-		IntStream is = IntStream.of(-2147374144, 2143494493, -2147483620, -2147418042);
-		Properties p = new Properties();
-		p.setProperty("date", String.valueOf(System.currentTimeMillis()));
-		
-		ucrh.createTask(is, new File("C:\\Users\\vkaloidis\\Desktop\\").toPath());
-		
-	}
-	
 	//TODO: Document EVERYTHING
-	//TODO: Check everything passed in, and 
 	@Override
 	public Task<Integer> createTask(IntStream intStream, Path file) 
 	{
@@ -163,209 +166,298 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				updateTitle("Beginning Uscrs Content Request Export Operation");
 				
 				conceptStream = intStream;
-				currentRequestId = globalRequestCounter.getAndIncrement();
 				
 				try {
 					bt = new USCRSBatchTemplate(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
+					logger.info("Batch Template Generated");
 				} catch (IOException e) {
-					e.printStackTrace();
+					logger.error("Error generating USCRS Batch Template, or loading Excel template", e);
 				}
-				vcPreviousRelease = new ViewCoordinate();
-				vcPreviousRelease.getViewPosition().setTime(previousReleaseTime);
-				vcPreviousRelease.setAllowedStatus(EnumSet.of(Status.ACTIVE));
-				viewCoordinate = new ViewCoordinate();
+				
+				viewCoordinate = OTFUtility.getViewCoordinate();
+				viewCoordinate.getViewPosition().setTime(System.currentTimeMillis());
 				viewCoordinate.setAllowedStatus(EnumSet.of(Status.ACTIVE));
 				viewCoordinate.setRelationshipAssertionType(RelAssertionType.STATED);
 				
-				//	Also look at the relationships of the concept to see if any newer than the 
-				//		date passed in. If yes then export.
-				// If a description has been edited, then edited again, we are not sure if we
-				// 		put both in the export  or if we just want to export the latest version.
-				
 				conceptStream
-					.forEach( nid -> {
-						if(count % 50 == 0) { //TODO: Modify this based on what options are passed in above
-							updateTitle("Uscrs Content Request Exported " + count + " components");
+					.forEach( nid -> {				
+						
+						if(examinedConCount % 50 == 0) { //TODO: Modify this based on what options are passed in above
+							updateTitle("Uscrs Content Request Exported " + examinedConCount + " components");
 						}
 						if(isCancelled()) {
 							logger.info("User canceled Uscrs Export Operation");
 							throw new RuntimeException("User canceled operation");
 						}
 						
-						ConceptChronicleBI concept = OTFUtility.getConceptVersion(nid); 
+						ConceptVersionBI concept = OTFUtility.getConceptVersion(nid); 
 						
-						ArrayList<RelationshipVersionBI<?>> exportRels = new ArrayList<RelationshipVersionBI<?>>();
 						ArrayList<RelationshipVersionBI<?>> exportRelsUnFiltered = new ArrayList<RelationshipVersionBI<?>>();
 						
 						//TODO: Start breaking this code up into sub-methods. Because we will be adding more filters, so break up code.
 						if(filter) {
-							if(prop.containsKey("date") && previousReleaseTime > 0) { 
+							logger.debug("USCRS Handler - We are using a filter");
+							if(prop.containsKey("date") && previousReleaseTime != Long.MIN_VALUE) { 
+								logger.debug("USCRS Handler - We are using a Date Filter");
 								boolean conceptCreated = false;
 								try {
-									Collection<? extends ConceptAttributeChronicleBI> attributes = (Collection<? extends ConceptAttributeChronicleBI>) concept.getConceptAttributes();
-									for(ConceptAttributeChronicleBI cac : attributes) {
-										Optional<? extends ConceptAttributeVersionBI> caLatest = cac.getVersion(viewCoordinate);
-										Optional<? extends ConceptAttributeVersionBI> caInitial = cac.getVersion(vcPreviousRelease);
-										
-										if(caInitial.isPresent()) {
-											if(caLatest.isPresent()) {
-												ConceptAttributeVersionBI thisCaLatest = caLatest.get();
-												ConceptAttributeVersionBI thisCaInitial = caInitial.get();
-												
-												boolean conceptIsChanged = false;
-												if(thisCaInitial.isDefined() != thisCaLatest.isDefined()) {
-													conceptIsChanged = true;
-												}
-												
-												if(conceptIsChanged) {
-													//TODO: handleChangeConcept() Method
-													//exportRelsUnFiltered.addAll(caLatest.get()), bt));
-													//exportRelsUnFiltered.addAll(handleNewConcept(OTFUtility.getComponentChronicle(caLatest.get().getConceptNid()), bt));
-													conceptCreated = true;
-												} else {
-													//noop
-												}
+									vcPreviousRelease = OTFUtility.getViewCoordinate();
+									vcPreviousRelease.getViewPosition().setTime(previousReleaseTime);
+									vcPreviousRelease.setAllowedStatus(EnumSet.of(Status.ACTIVE));
+									
+									//Export Concept
+									ConceptAttributeChronicleBI cac = concept.getConceptAttributes();
+									//for(ConceptAttributeChronicleBI cac : attributes.getVersions()) {
+									Optional<? extends ConceptAttributeVersionBI> caLatest = cac.getVersion(viewCoordinate);
+									Optional<? extends ConceptAttributeVersionBI> caInitial = cac.getVersion(vcPreviousRelease);
+									
+									if(caInitial.isPresent()) {
+										if(caLatest.isPresent()) {
+											ConceptAttributeVersionBI<?> thisCaLatest = caLatest.get();
+											ConceptAttributeVersionBI<?> thisCaInitial = caInitial.get();
+											
+											boolean conceptIsChanged = false;
+											if(thisCaInitial.isDefined() != thisCaLatest.isDefined()) {
+												conceptIsChanged = true;
+											}
+											if(conceptIsChanged) {
+												//TODO: Handle Concept Changes
+												logger.error("Cannot Modify Concept, feature not available yet");
+												//ConceptChronicleBI thisConChronicle = OTFUtility.getConceptVersion(caLatest.get().getAssociatedConceptNid());
+												//exportRelsUnFiltered.addAll(handleNewConcept(thisConChronicle));
+												//conceptCreated = true;
 											} else {
-												handleRetireConcept(concept, bt);
+												//noop
 											}
 										} else {
-											if(caLatest.isPresent()) {
+											handleRetireConcept(concept);
+										}
+									} else {
+										if(caLatest.isPresent()) {
+											ViewCoordinate vcPrActiveInactive = vcPreviousRelease;
+											vcPrActiveInactive.setAllowedStatus(EnumSet.of(Status.INACTIVE, Status.ACTIVE));
+											
+											Optional<? extends ConceptAttributeVersionBI> cavRetiredCheck = cac.getVersion(vcPrActiveInactive);
+											if(cavRetiredCheck.isPresent()) {
+												// Place in the edit concept tab (un-retired)
+											} else {
+												exportRelsUnFiltered.addAll(handleNewConcept(concept));
+												conceptCreated = true;
+											}
+										} else {
+											//noop
+										}
+										
+									}
+									
+								} catch (Exception e) {
+									logger.error("Error getting concept " + nid + " attributes for date / time comparison", e);
+								}
+								
+								//Export Descriptions
+								try {
+									Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
+									for(DescriptionChronicleBI d : descriptions) {
+										//TODO: Suppress generic type inferment warnings of entire call(). Do last
+										Optional<? extends DescriptionVersionBI> dvLatest = d.getVersion(viewCoordinate);
+										Optional<? extends DescriptionVersionBI> dvInitial = d.getVersion(vcPreviousRelease);
+										
+										if(dvInitial.isPresent()) {
+											if(dvLatest.isPresent()){
+												DescriptionVersionBI<?> thisDvLatest = dvLatest.get();
+												DescriptionVersionBI<?> thisDvInitial = dvInitial.get();
+												
+												boolean hasChange = false;
+												if(!thisDvLatest.getLang().equals(thisDvInitial.getLang())) {
+													hasChange = true;
+												} else if(!thisDvLatest.getText().equals(thisDvInitial.getText())) {
+													hasChange = true;
+												} else if (thisDvLatest.isInitialCaseSignificant() != thisDvInitial.isInitialCaseSignificant()) {
+													hasChange = true;
+												}
+												if(hasChange) {
+													logger.info("USCRS - Description change detected");
+													handleChangeDesc(thisDvLatest);
+												}
+											} else {
+												handleRetireDescription(dvInitial.get());
+											}
+										} else {
+											if(dvLatest.isPresent()) {
 												ViewCoordinate vcPrActiveInactive = vcPreviousRelease;
 												vcPrActiveInactive.setAllowedStatus(EnumSet.of(Status.INACTIVE, Status.ACTIVE));
 												
-												Optional<? extends ConceptAttributeVersionBI> cavRetiredCheck = cac.getVersion(vcPrActiveInactive);
-												if(cavRetiredCheck.isPresent()) {
-													// Place in the edit concept tab (un-retired)
+												Optional<? extends DescriptionVersionBI> dvCheckRetired = d.getVersion(vcPrActiveInactive);
+												if(dvCheckRetired.isPresent()) {
+													handleChangeDesc(dvCheckRetired.get());
 												} else {
-													exportRelsUnFiltered.addAll(handleNewConcept(concept, bt));
-													conceptCreated = true;
+													handleNewSyn(dvLatest.get());
 												}
 											} else {
 												//noop
 											}
-											
 										}
 									}
-									
 								} catch (Exception e) {
-									logger.error("Error getting concept " + nid + " attributes for date / time comparison: " + e.getMessage());
-									e.printStackTrace();
+									logger.error("Description Export Error", e);
 								}
 								
-								//Export Descriptions
-								if(!conceptCreated){ //TODO DAN Question: Do we not do this if we created a new concept
+								//Export Relationships
+								if(conceptCreated) {
+									logger.info("USCRS Handler - Concept was already created, handeling components accordingly (skip first 3 ISA relationships");
+								} else {
+									logger.info("Concept NOT previously created - generating relationships now instead");
 									try {
-										Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
-										for(DescriptionChronicleBI d : descriptions) {
-											//TODO: Suppress generic type inferment warnings of entire call(). Do last
-											Optional<? extends DescriptionVersionBI> dvLatest = d.getVersion(viewCoordinate);
-											Optional<? extends DescriptionVersionBI> dvInitial = d.getVersion(vcPreviousRelease);
-											
-											if(dvInitial.isPresent()) {
-												if(dvLatest.isPresent()){
-													DescriptionVersionBI<?> thisDvLatest = dvLatest.get();
-													DescriptionVersionBI<?> thisDvInitial = dvInitial.get();
-													
-													boolean hasChange = false;
-													if(!thisDvLatest.getLang().equals(thisDvInitial.getLang())) {
-														hasChange = true;
-													} else if(!thisDvLatest.getText().equals(thisDvInitial.getText())) {
-														hasChange = true;
-													} else if (thisDvLatest.isInitialCaseSignificant() != thisDvInitial.isInitialCaseSignificant()) {
-														hasChange = true;
+										Collection<? extends RelationshipChronicleBI> outgoingRels = concept.getRelationshipsOutgoing();
+										
+										outgoingRels.stream()
+										.forEach( r -> {
+														Optional<? extends RelationshipVersionBI<?>> thisVersion = null;
+														try {
+															thisVersion = r.getVersion(viewCoordinate);
+														} catch (Exception e) {
+															logger.error("Error getting relationship version on the proper View Coordinate", e);
+														}
+														if(thisVersion.isPresent()) {
+															exportRelsUnFiltered.add(thisVersion.get()); 
+														}
+														
+													});
+									} catch (Exception e) {
+										logger.error("Error retreiving the incoming relationships", e);
+									}
+								}
+								for(RelationshipVersionBI<?> rv : exportRelsUnFiltered) {
+									try {
+										Optional<? extends RelationshipVersionBI<?>> rvLatest = rv.getVersion(viewCoordinate);
+										Optional<? extends RelationshipVersionBI<?>> rvInitial = rv.getVersion(vcPreviousRelease);
+										
+										if(rvInitial.isPresent()) {
+											if(rvLatest.isPresent()){
+												logger.info("USCRS Relationship Export - initial present > latest present");
+												RelationshipVersionBI<?> thisRvLatest = rvLatest.get();
+												RelationshipVersionBI<?> thisRvInitial = rvInitial.get();
+												
+												boolean hasRelAttrChange = false;
+												if(thisRvLatest.getCharacteristicNid() != thisRvInitial.getCharacteristicNid()) {
+													hasRelAttrChange = true;
+												} else if(thisRvLatest.getGroup() != thisRvInitial.getGroup()) {
+													hasRelAttrChange = true;
+												} else if (thisRvLatest.getRefinabilityNid() != thisRvInitial.getRefinabilityNid()) {
+													hasRelAttrChange = true;
+												} else if (thisRvLatest.isInferred() != thisRvInitial.isInferred()) {
+													hasRelAttrChange = true;
+												} else if (thisRvLatest.isStated() != thisRvInitial.isStated()) {
+													hasRelAttrChange = true;
+												}
+												
+												if(hasRelAttrChange) {
+													if (thisRvLatest.isActive() && (thisRvLatest.getTypeNid() == Snomed.IS_A.getLenient().getNid())) {
+														handleChangeParent(thisRvLatest);
+													} else {
+														handleChangeRels(thisRvLatest);
 													}
-													if(hasChange) {
-														handleChangeDesc(thisDvLatest, bt);
-													}
-												} else {
-													ArrayList<DescriptionVersionBI<?>> retiredDescs = new ArrayList<DescriptionVersionBI<?>>();
-													retiredDescs.add(dvInitial.get());
 												}
 											} else {
-												if(dvLatest.isPresent()) {
-													ViewCoordinate vcPrActiveInactive = vcPreviousRelease;
-													vcPrActiveInactive.setAllowedStatus(EnumSet.of(Status.INACTIVE, Status.ACTIVE));
-													
-													Optional<? extends DescriptionVersionBI> dvCheckRetired = d.getVersion(vcPrActiveInactive);
-													if(dvCheckRetired.isPresent()) {
-														handleChangeDesc(dvCheckRetired.get(), bt);
+												logger.info("USCRS Relationship Export - initial present > latest NOT present");
+												handleRetireRelationship(rvInitial.get());
+											}
+										} else {
+											if(rvLatest.isPresent()) {
+												RelationshipVersionBI<?> rvGetLatest = rvLatest.get();
+												ViewCoordinate rvPrActiveInactive = vcPreviousRelease;
+												rvPrActiveInactive.setAllowedStatus(EnumSet.of(Status.INACTIVE, Status.ACTIVE));
+												
+												Optional<? extends RelationshipVersionBI<?>> rvCheckRetired = rv.getVersion(rvPrActiveInactive);
+												if(rvCheckRetired.isPresent()) {
+													logger.info("USCRS Relationship Export - initial WAS inactive > latest is now active");
+													RelationshipVersionBI<?> retiredRel = rvCheckRetired.get();
+													if (retiredRel.isActive() && (retiredRel.getTypeNid() == Snomed.IS_A.getLenient().getNid())) {
+														handleChangeParent(retiredRel);
 													} else {
-														handleNewSyn(dvLatest.get(), bt);
+														handleChangeRels(retiredRel);
 													}
 												} else {
-													//noop
+													logger.info("USCRS Relationship Export - initial NOT present > latest IS present");
+													if (rvGetLatest.isActive() && (rvGetLatest.getTypeNid() == Snomed.IS_A.getLenient().getNid())) {
+														handleNewParent(rvGetLatest);
+													} else {
+														handleNewRel(rvGetLatest);  
+													}
 												}
+											} else {
+												//noop
 											}
 										}
 									} catch (Exception e) {
-										logger.error("Description Export Error: " + e.getMessage());
-										e.printStackTrace();
+										logger.info("USCRS Handler - Error exporting with a date filter", e);
 									}
 								}
-								
-								if(!conceptCreated) {
-									if(exportRelsUnFiltered.size() < 1){
-										try {
-											//Collection<? extends RelationshipChronicleBI> outgoingRels = concept.getRelationshipsOutgoing().stream().forEach(r -> { exportRelsUnFiltered.add(r.getVersion(viewCoordinate); } ));;
-//											for
-										} catch (Exception e) {
-											logger.error("Error retreiving the incoming relationshios: " + e.getMessage());
-											e.printStackTrace();
-										}
-										
-									}
-									
-								} else {
-									
-								}
-	
 							} else {
 								//No date filter, process everything that way
+								logger.info("USCRS Handler -Filter Set. Not a Date Filter. Exporting all concepts.");
+								try {
+									exportRelsUnFiltered.addAll(handleNewConcept(concept));
+									for (RelationshipVersionBI<?> r : exportRelsUnFiltered)
+									{
+										handleNewParent(r);
+										handleNewRel(r);
+									}
+									
+									Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
+									
+									for(DescriptionChronicleBI d : descriptions) {
+										if(d.getVersion(viewCoordinate).isPresent()) {
+											handleNewSyn(d.getVersion(viewCoordinate).get());
+										}
+									}
+								} catch (Exception e) {
+									logger.error("Could not export concept " + nid, e);
+								} 
 							}
-							
-							try {
-								handleNewParent(exportRelsUnFiltered, bt);
-								handleNewRels(exportRelsUnFiltered, bt);
-								//handleChangeDesc(descVersion, bt); Implement this
-							} catch (Exception e) {
-								logger.error("Could not export concept " + nid);
-								e.printStackTrace();
-							} 
 						} else {
+							 //Export ALL - (No Filter)
+							logger.info("USCRS Handler -Exporting all concepts, no filters");
 							try {
-								exportRelsUnFiltered.addAll(handleNewConcept(concept, bt));
-								handleNewParent(exportRelsUnFiltered, bt);
-								handleNewRels(exportRelsUnFiltered, bt);
+								exportRelsUnFiltered.addAll(handleNewConcept(concept));
+								
+								for (RelationshipVersionBI<?> r : exportRelsUnFiltered)
+								{
+									handleNewParent(r);
+									handleNewRel(r);
+								}
+								
+								Collection<? extends DescriptionChronicleBI> descriptions = concept.getDescriptions();
+								
+								for(DescriptionChronicleBI d : descriptions) {
+									if(d.getVersion(viewCoordinate).isPresent()) {
+										handleNewSyn(d.getVersion(viewCoordinate).get());
+									}
+									
+								}
+								
 							} catch (Exception e) {
-								logger.error("Could not export concept " + nid);
-								e.printStackTrace();
+								logger.error("Could not export concept " + nid, e);
 							} 
 							
 						}
-
-						try {
-							handleNewParent(exportRels, bt);
-							handleNewRels(exportRels, bt);
-							//TODO: THURSDAY TODO: **MAKE THIS DESC TAKE AN ARRAY LIST AND ADD TO IT. CHANGE THESE***
-							for (DescriptionChronicleBI desc : concept.getDescriptions())
-							{
-								DescriptionVersionBI<?> thisDesc = desc.getVersion(OTFUtility.getViewCoordinate()).get();
-								handleNewSyn(thisDesc, bt); 
-							}
-						} catch(Exception e) {
-							logger.error(e.getMessage());
-							throw new RuntimeException("Export failed on component nid " + nid);//isnt that bad?
-						}
-						count++;
+						examinedConCount++;
 				});
 				
+				//TODO: Enable this to check the ID's generated
+				for (int genId : currentRequestMap.values())
+				{
+					if (!newConceptRequestIds.contains(genId))
+					{
+						throw new Exception("We wrote out the generated ID: " + genId + " but failed to create a new concept for that ID.  Logic failure!");
+					}
+				}
+				
 				if(isCancelled()) {
-					return count;
+					return examinedConCount;
 				}
 				
 				//TODO: Update the return messages and the progress. Do it update every ~20 concepts
-				
-				//info.setName(OTFUtility.getConPrefTerm(concept.getNid()));
 				
 				logger.info("  file = " + file);
 				if (file != null)
@@ -378,294 +470,12 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					logger.error("File object is null, could not proceed");
 					throw new RuntimeException("The Operation could not be completed because the file is null");
 				}
-				return count;
+				return examinedConCount;
 			}
 		};
 	}
 	
 
-	/**
-	 * Creates a new row in the "New Concept" tab of the workbook passed in. It returns the ISA relationships
-	 * if there are more than 3.It also returns all non ISA relationships
-	 *
-	 * @param concept the concept
-	 * @param bt the wb
-	 * @return ArrayList<RelationshipVersionBI> extra relationships (if more than 3 ISA, those are returned), plus all non ISA
-	 * @throws Exception the exception
-	 */
-	private ArrayList<RelationshipVersionBI<?>> handleNewConcept(ConceptChronicleBI concept, USCRSBatchTemplate bt) throws Exception
-	{
-		ArrayList<RelationshipVersionBI<?>> extraRels = new ArrayList<RelationshipVersionBI<?>>();
-		// PARENTS
-		LinkedList<Integer> parentsSct = new LinkedList<Integer>();
-		LinkedList<Integer> parentsPathNid = new LinkedList<Integer>();
-		LinkedList<String> definitions = new LinkedList<String>();
-		
-		int count = 0;
-		for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing())
-		{
-			ViewCoordinate vc;
-			vc = OTFUtility.getViewCoordinate();
-			vc.setRelationshipAssertionType(RelAssertionType.STATED);
-			//RelationshipVersionBI<?> relVersion = rel.getVersion(vc); //TODO: This was leading to possible issues. Needs more testing..
-			
-			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
-			
-			if(relVersion != null) {
-				if(relVersion.isActive()) 
-				{
-					if ((relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid()))
-					{
-						int relDestNid = relVersion.getDestinationNid();
-						int parentSctId = this.getSct(relDestNid);
-						
-						parentsSct.add(count, parentSctId);
-						int pathNid = OTFUtility.getConceptVersion(relDestNid).getPathNid();
-						parentsPathNid.add(count, pathNid);
-						if(count > 2 && relVersion != null) {
-							extraRels.add(relVersion);
-						}
-						count++;
-					} else {
-						extraRels.add(relVersion);
-					}
-				}
-			}
-		}
-
-		//Synonyms
-		List<String> synonyms = new ArrayList<>();
-		for (DescriptionChronicleBI desc : concept.getDescriptions())
-		{
-			DescriptionVersionBI<?> descVersion = desc.getVersion(OTFUtility.getViewCoordinate()).get();
-			// Synonyms: find active, non FSN descriptions not matching the preferred name
-			if (descVersion.isActive() && (descVersion.getTypeNid() != Snomed.FULLY_SPECIFIED_DESCRIPTION_TYPE.getLenient().getNid())
-					&& !descVersion.getText().equals(OTFUtility.getConPrefTerm(concept.getNid())))
-			{
-				synonyms.add(descVersion.getText());
-			}
-			//Definition
-			if(descVersion.getTypeNid() == Snomed.DEFINITION_DESCRIPTION_TYPE.getLenient().getNid()
-					&& descVersion.isActive()){
-				definitions.add(descVersion.getText());
-			}
-		}
-
-		bt.selectSheet(SHEET.New_Concept);
-		bt.addRow();
-		for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Concept))
-		{
-			switch (column)
-			{
-				case Request_Id:
-					bt.addNumericCell(column, currentRequestId);
-					break;
-				case Topic:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				case Local_Code:
-					bt.addStringCell(column, concept.getPrimordialUuid().toString());
-					break;
-				case Local_Term: 
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
-					break;
-				case Fully_Specified_Name:
-					bt.addStringCell(column, this.getFsnWithoutSemTag(concept));
-					break;
-				case Semantic_Tag:
-					bt.addStringCell(column, this.getSemanticTag(concept));
-					break;
-				case Preferred_Term:
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
-					break;
-				case Terminology_1_:
-				case Terminology_2_:
-				case Terminology_3_:
-					if (parentsPathNid.size() >= 1)
-					{
-						bt.addStringCell(column, this.getTerminology(parentsPathNid.remove(0)));
-					}
-					else
-					{
-						bt.addStringCell(column, "");
-					}
-					break;
-				case Parent_Concept_Id_1_:
-				case Parent_Concept_Id_2_:
-				case Parent_Concept__Id_3_:
-					if(parentsSct.size() >= 1) 
-					{
-						bt.addNumericCell(column, parentsSct.remove(0));
-						
-					} else 
-					{
-						bt.addStringCell(column, "");
-					}
-					break;
-				case UMLS_CUI:
-					bt.addStringCell(column, ""); //Not in API
-					break;
-				case Definition:
-					if(definitions.size() > 0) 
-					{
-						bt.addStringCell(column, definitions.remove(0));
-					} else {
-						bt.addStringCell(column, "");
-					}
-					
-					break;
-				case Proposed_Use:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				case Justification:
-					//Probably not correct because justification needs to be specific to that row
-					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
-					break;
-				case Note:
-					StringBuilder sb = new StringBuilder();
-					
-					//sb.append("SCT ID:" + this.getSct(-2143244556));
-					
-					
-					if (concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinate()).get().isDefined())
-					{
-						sb.append("NOTE: this concept is fully defined. ");
-					}
-					
-					boolean firstDef = false;
-					
-					//Extra Definitions
-					if(definitions.size() > 0) {
-						sb.append("Note: This concept has multiple definitions: ");
-					}
-					boolean firstSyn = false;
-					while(definitions.size() > 0) 
-					{
-						if(firstDef) 
-						{
-							sb.append(", ");
-						}
-					}
-					
-					sb.append("Relationship Count: " + parentsSct.size());
-					
-					//Extra Synonyms
-					if(synonyms.size() > 2) 
-					{
-						sb.append("NOTE: this concept also has the following synonyms: ");
-					}
-					while (synonyms.size() > 2)
-					{
-						if (firstSyn)
-						{
-							sb.append(", ");
-						}
-						sb.append(synonyms.remove(0));
-						firstSyn = true;
-					}
-					bt.addStringCell(column, sb.toString());
-					break;
-				case Synonym:
-					bt.addStringCell(column, (synonyms.size() > 0 ? synonyms.remove(0) : ""));
-					break;
-				default :
-					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.New_Concept);
-			}
-		}
-		return extraRels;
-	}
-	
-
-	/**
-	 * Handle new Synonyms spreadsheet tab
-	 *
-	 * @param concept the concept
-	 * @param bt the wb
-	 * @throws Exception the exception
-	 */
-	private void handleNewSyn(DescriptionVersionBI<?> descVersion, USCRSBatchTemplate bt) throws Exception
-	{	
-		bt.selectSheet(SHEET.New_Synonym);
-		bt.addRow();
-
-		ConceptChronicleBI concept = OTFUtility.getConceptVersion(descVersion.getConceptNid());
-		
-		for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Synonym)) {
-			switch(column)
-			{
-			case Topic:
-				bt.addStringCell(column, ""); //User Input
-				break;
-			case Terminology:
-				bt.addStringCell(column, this.getTerminology(descVersion.getPathNid()));
-				break;
-			case Concept_Id:
-				bt.addNumericCell(column, this.getSct(concept.getNid()));
-				break;
-			case Term:
-				bt.addStringCell(column, descVersion.getText());
-				break;
-			case Case_Significance:
-				bt.addStringCell(column, this.getCaseSig(descVersion.isInitialCaseSignificant()));
-				break;
-			case Justification:
-				bt.addStringCell(column, ""); //User Input
-				break;
-			case Note: 
-				bt.addStringCell(column, "Description UUID: " + descVersion.getUUIDs().get(0).toString()); 
-				break;
-			default :
-				throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.New_Synonym);
-			}
-		}
-	}
-	
-	/**
-	 * Handle Change parent spreadsheet tab
-	 *
-	 * @param concept the concept
-	 * @param bt the wb
-	 * @throws Exception the exception
-	 */
-	@SuppressWarnings({ })
-	private void handleChangeParent(ConceptChronicleBI concept, RelationshipVersionBI<?> relVersion, USCRSBatchTemplate bt) throws Exception
-	{	
-		bt.selectSheet(SHEET.Change_Parent);
-		bt.addRow();
-		
-		ConceptVersionBI targetConcept = OTFUtility.getConceptVersion(relVersion.getConceptNid());
-		ConceptVersionBI thisConcept = OTFUtility.getConceptVersion(concept.getConceptNid());
-		
-		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Parent)) {
-			switch(column)
-			{
-				case Topic:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				case Source_Terminology:
-					bt.addStringCell(column,this.getTerminology(thisConcept.getPathNid()));
-					break;
-				case Concept_Id:
-					bt.addNumericCell(column, this.getSct(concept.getNid()));
-					break;
-				case New_Parent_Concept_Id:
-					bt.addNumericCell(column, this.getSct(targetConcept.getNid()));
-					break;
-				case New_Parent_Terminology:
-					bt.addStringCell(column, this.getTerminology(targetConcept.getPathNid()));
-					break;
-				case Justification:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				case Note:
-					bt.addStringCell(column, "");
-					break;
-				default :
-					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Change_Parent);
-			}
-		}
-	}
-	
 	private String getSemanticTag(ConceptChronicleBI concept) throws Exception {
 		String fsn = OTFUtility.getFullySpecifiedName(concept);
 		if (fsn.indexOf('(') != -1)
@@ -696,7 +506,11 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	}
 	
 	private String getRelType(int nid) {
-		return PICKLIST_Relationship_Type.find(OTFUtility.getConPrefTerm(nid)).toString();
+		String relType = OTFUtility.getConPrefTerm(nid);
+		if(relType.equalsIgnoreCase("is-a")) {
+			relType = "is a";
+		}
+		return PICKLIST_Relationship_Type.find(relType).toString();
 	}
 	
 	private String getCharType(int nid) {
@@ -733,131 +547,415 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			return PICKLIST_Case_Significance.Entire_term_case_insensitive.toString();
 		}
 	}
+	
+	/**
+	 * Figure out the appropriate terminology constant string for term related columns.
+	 * 
+	 * @param cv
+	 * @return
+	 * @throws Exception
+	 */
+	private String getTerminology(ComponentVersionBI cv) throws Exception {
+		int moduleNid = cv.getModuleNid();
+		int containingConceptNid = cv.getAssociatedConceptNid();
+		
+		if (currentRequestMap.containsKey(containingConceptNid))
+		{
+			return PICKLIST_Source_Terminology.Current_Batch_Requests.toString();
+		}
+
+		//If it was done on core or us extension - assume it was pre-existing.
+		//TODO This isn't 100% safe, as the user may have used this module when they did
+		//a previous submission - but at the moment, we don't have any way of knowing
+		//what IDs were previously submitted - so we can't choose between on of these 
+		//official constants, and "New Concept Request"
+		if(moduleNid == Snomed.CORE_MODULE.getNid()) {
+			return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();
+		}
+		else if (moduleNid == Snomed.US_EXTENSION_MODULE.getNid()) {
+			return PICKLIST_Source_Terminology.SNOMED_CT_National_US.toString();
+		}
+		//These, we know would be invalid
+		else if (moduleNid == IsaacMetadataAuxiliaryBinding.LOINC.getLenient().getNid()) {
+			throw new Exception("Cannot export LOINC Terminology");
+		}
+		else if (moduleNid == IsaacMetadataAuxiliaryBinding.RXNORM.getLenient().getNid()) {
+			throw new Exception("Cannot export RxNorm Terminology");
+		}
+		else if (!isChildOfSCT(cv.getAssociatedConceptNid())) {
+			throw new Exception("Cannot something that isn't part of the SCT hierarchy");
+		}
+		else
+		{
+			//The only thing we can do at this point, is assume it was a previously submitted
+			//item.
+			//TODO this isn't 100% safe - we need to have a permanent store of IDs that were 
+			//previously submitted.
+			return PICKLIST_Source_Terminology.New_Concept_Requests.toString();
+		}
+	}
+	
+	
+	private long getSct(int nid) throws ContradictionException, ValidationException {
+		Optional<? extends Long> sct = OTFUtility.getSctId(nid);
+		if(sct.isPresent()) {
+			return sct.get();
+		}
+		
+		//TODO this isn't 100% safe - we shouldn't just assume that it is going to be a new request.
+		//It may be a request from a previous submission.  We need to have someplace to store the IDs 
+		//we used in previous submissions.
+		if(!currentRequestMap.containsKey(nid)) {
+			currentRequestMap.put(nid, globalRequestCounter.getAndIncrement());
+		}
+		
+		return currentRequestMap.get(nid);
+	}
+	
+	private static boolean isChildOfSCT(int conceptNid) throws IOException, ContradictionException 
+	{
+		return ExtendedAppContext.getDataStore().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), OTFUtility.getViewCoordinate());
+	}
+	
+	
+	/**
+	 * Creates a new row in the "New Concept" tab of the workbook passed in. It returns the ISA relationships
+	 * if there are more than 3.It also returns all non ISA relationships
+	 *
+	 * @param concept the concept
+	 * @param bt the wb
+	 * @return ArrayList<RelationshipVersionBI> extra relationships (if more than 3 ISA, those are returned), plus all non ISA
+	 * @throws Exception the exception
+	 */
+	private ArrayList<RelationshipVersionBI<?>> handleNewConcept(ConceptChronicleBI concept) throws Exception
+	{
+		logger.info("Creating new Concept");
+		ArrayList<RelationshipVersionBI<?>> extraRels = new ArrayList<RelationshipVersionBI<?>>();
+		// PARENTS
+		LinkedList<Integer> parentNids = new LinkedList<Integer>();
+		LinkedList<String> parentsTerms = new LinkedList<String>();
+		
+		LinkedList<String> definitions = new LinkedList<String>();
+		
+		int count = 0;
+		for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing())
+		{
+			ViewCoordinate vc;
+			vc = OTFUtility.getViewCoordinate();
+			vc.setRelationshipAssertionType(RelAssertionType.STATED);
+			//RelationshipVersionBI<?> relVersion = rel.getVersion(vc); //TODO: This was leading to possible issues. Needs more testing..
+			
+			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
+			
+			if(relVersion != null) {
+				if(relVersion.isActive()) 
+				{
+					if ((relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid()))
+					{
+						int relDestNid = relVersion.getDestinationNid();
+						parentNids.add(count, relDestNid);
+
+						parentsTerms.add(count, this.getTerminology(
+								ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), relDestNid).get()));
+						
+						if(count > 2 && relVersion != null) {
+							extraRels.add(relVersion);
+						}
+						count++;
+					} else {
+						extraRels.add(relVersion);
+					}
+				}
+			}
+		}
+
+		//Synonyms
+		List<String> synonyms = new ArrayList<>();
+		for (DescriptionChronicleBI desc : concept.getDescriptions())
+		{
+			DescriptionVersionBI<?> descVersion = desc.getVersion(OTFUtility.getViewCoordinate()).get();
+			// Synonyms: find active, non FSN descriptions not matching the preferred name
+			if (descVersion.isActive() && (descVersion.getTypeNid() != Snomed.FULLY_SPECIFIED_DESCRIPTION_TYPE.getLenient().getNid())
+					&& !descVersion.getText().equals(OTFUtility.getConPrefTerm(concept.getNid())))
+			{
+				synonyms.add(descVersion.getText());
+			}
+			//Definition
+			if(descVersion.getTypeNid() == Snomed.DEFINITION_DESCRIPTION_TYPE.getLenient().getNid()
+					&& descVersion.isActive()){
+				definitions.add(descVersion.getText());
+			}
+		}
+
+		bt.selectSheet(SHEET.New_Concept);
+		bt.addRow();
+		for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Concept))
+		{
+			switch (column)
+			{
+				case Request_Id:
+					long reqId = getSct(concept.getNid());
+					if (reqId > Integer.MAX_VALUE)
+					{
+						throw new RuntimeException("We appear to have found an SCTID when we only expected a generated sequence ID");
+					}
+					newConceptRequestIds.add((int)reqId);
+					bt.addNumericCell(column, reqId);
+					break;
+				case Topic:
+					bt.addStringCell(column, this.getSemanticTag(concept));
+					break;
+				case Local_Code:
+					bt.addStringCell(column, concept.getPrimordialUuid().toString());
+					break;
+				case Local_Term: 
+					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
+					break;
+				case Fully_Specified_Name:
+					bt.addStringCell(column, this.getFsnWithoutSemTag(concept));
+					break;
+				case Semantic_Tag:
+					bt.addStringCell(column, this.getSemanticTag(concept));
+					break;
+				case Preferred_Term:
+					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
+					break;
+				//Note that this logic is fragile, and will break, if we encounter a parentConcept column before the corresponding terminology column....
+				//but we should be processing them in order, as far as I know.
+				case Terminology_1_:
+				case Terminology_2_:
+				case Terminology_3_:
+					if (parentNids.size() >= 1)
+					{
+						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(parentNids.get(0))));
+					}
+					else
+					{
+						bt.addStringCell(column, "");
+					}
+					break;
+				case Parent_Concept_Id_1_:
+				case Parent_Concept_Id_2_:
+				case Parent_Concept__Id_3_:
+					if(parentNids.size() >= 1) 
+					{
+						bt.addNumericCell(column, getSct(parentNids.remove(0)));
+						
+					} else 
+					{
+						bt.addStringCell(column, "");
+					}
+					break;
+				case UMLS_CUI:
+					bt.addStringCell(column, ""); //Not in API
+					break;
+				case Definition:
+					if(definitions.size() > 0) 
+					{
+						bt.addStringCell(column, definitions.remove(0));
+					} else {
+						bt.addStringCell(column, "");
+					}
+					
+					break;
+				case Proposed_Use:
+					bt.addStringCell(column, ""); //User Input
+					break;
+				case Justification:
+					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+					break;
+				case Note:
+					StringBuilder sb = new StringBuilder();
+					
+					//sb.append("SCT ID:" + this.getSct(-2143244556));
+					
+					
+					if (concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinate()).get().isDefined())
+					{
+						sb.append("NOTE: this concept is fully defined. ");
+					}
+					
+					boolean firstDef = false;
+					
+					//Extra Definitions
+					if(definitions.size() > 0) {
+						sb.append("Note: This concept has multiple definitions: ");
+					}
+					boolean firstSyn = false;
+					while(definitions.size() > 0) 
+					{
+						if(firstDef) 
+						{
+							sb.append(", ");
+						}
+					}
+					
+					
+					//Extra Synonyms
+					if(synonyms.size() > 2) 
+					{
+						sb.append("NOTE: this concept also has the following synonyms: ");
+					}
+					while (synonyms.size() > 2)
+					{
+						if (firstSyn)
+						{
+							sb.append(", ");
+						}
+						sb.append(synonyms.remove(0));
+						firstSyn = true;
+					}
+					bt.addStringCell(column, sb.toString());
+					break;
+				case Synonym:
+					bt.addStringCell(column, (synonyms.size() > 0 ? synonyms.remove(0) : ""));
+					break;
+				default :
+					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.New_Concept);
+			}
+		}
+		return extraRels;
+	}
+	
 
 	/**
-	 * Handle new rels spreadsheet tab
+	 * Handle new Synonyms spreadsheet tab
 	 *
 	 * @param concept the concept
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	@SuppressWarnings("rawtypes")
-	public void handleNewRels(ArrayList<RelationshipVersionBI<?>> extraRels, USCRSBatchTemplate bt) throws Exception {
-		bt.selectSheet(SHEET.New_Relationship);
-		for(RelationshipVersionBI rel : extraRels) {
-			if (rel.isActive() && (rel.getTypeNid() != Snomed.IS_A.getLenient().getNid())) 
+	private void handleNewSyn(DescriptionVersionBI<?> descVersion) throws Exception
+	{	
+		logger.info("Creating new Synonym (Description)");
+		bt.selectSheet(SHEET.New_Synonym);
+		bt.addRow();
+		for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Synonym)) {
+			switch(column)
 			{
-				int destNid = rel.getDestinationNid();
-				ConceptVersionBI destConcept = OTFUtility.getConceptVersion(destNid);
-				ConceptVersionBI concept = OTFUtility.getConceptVersion(rel.getConceptNid());
-				bt.addRow();
-				for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Relationship)) {
-					switch (column) {
-						case Topic:
-							bt.addStringCell(column, ""); //User Input
-							break;
-						case Source_Terminology:
-							bt.addStringCell(column, this.getTerminology(concept.getPathNid()));
-							break;
-						case Source_Concept_Id:
-							bt.addNumericCell(column, this.getSct(concept.getNid()));
-							break;
-						case Relationship_Type:
-							bt.addStringCell(column, this.getRelType(rel.getTypeNid()));
-							break;
-						case Destination_Terminology:
-							bt.addStringCell(column, this.getTerminology(destConcept.getPathNid()));
-							break;
-						case Destination_Concept_Id:
-							bt.addNumericCell(column, this.getSct(destNid));
-							break;
-						case Characteristic_Type:
-							bt.addStringCell(column, this.getCharType(rel.getCharacteristicNid()));
-							break;
-						case Refinability:
-							bt.addStringCell(column, this.getRefinability(rel.getRefinabilityNid()));
-							break;
-						case Relationship_Group:
-							bt.addNumericCell(column, rel.getGroup());
-							break;
-						case Justification:
-							bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
-							break;
-						case Note:
-							bt.addStringCell(column, "This is a defining relationship expressed for the corresponding new concept request in the other tab");
-							break;
-						default :
-							throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.New_Relationship);
-					}
-				}
+			case Topic:
+				bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(descVersion.getConceptNid())));
+				break;
+			case Terminology:
+				bt.addStringCell(column, getTerminology(descVersion));
+				break;
+			case Concept_Id:
+				bt.addNumericCell(column, getSct(descVersion.getConceptNid()));
+				break;
+			case Term:
+				bt.addStringCell(column, descVersion.getText());
+				break;
+			case Case_Significance:
+				bt.addStringCell(column, this.getCaseSig(descVersion.isInitialCaseSignificant()));
+				break;
+			case Justification:
+				bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+				break;
+			case Note: 
+				bt.addStringCell(column, "Description UUID: " + descVersion.getPrimordialUuid().toString()); 
+				break;
+			default :
+				throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.New_Synonym);
 			}
 		}
 	}
 	
-	private String getTerminology(int pathNid) throws Exception {
-		ConceptVersionBI path = OTFUtility.getConceptVersion(pathNid);
-		if(path != null) {
-			UUID pathUUID = path.getPrimordialUuid();
-			UUID snomedCtInternational = Snomed.CORE_MODULE.getUuids()[0];
-			if(pathUUID.equals(snomedCtInternational) 
-					|| pathNid == TermAux.SNOMED_CORE.getLenient().getNid()
-					) {
-				return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();
-			} else {
-				logger.error("Terminology Lib Error - NOT Snomed CT Core");
-				return "Not SNOMED CT Core";
-				//throw new RuntimeException("TERMINOLOGY LIB ERROR - NOT SNOMED CT CORE");
-			}
-		} else {
-			throw new RuntimeException("Could not create a concept version from PATH NID: " + pathNid);
-		}
-	}
-	
-	
-	private int getSct(int nid) {
-		
-		int descIdAttempt = 0, relIdAttempt = 0;
-		try {
-			descIdAttempt = Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate()).get()));
-		} catch(Exception e) {
-			//Eat it
-			//TODO - no - you shouldn't be taking an error here.  the poorly written ConceptViewerHelper is going to return the String "Unreleased" if it 
-			//doesn't find one - we should fix the API to be proper.  It should return an int and throw a checked exception if none is available, or perhaps, 
-			//return an Integer, and return null if none is available.
-		}
-		
-		try {
-			relIdAttempt = Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentVersion(nid)));
-		} catch(Exception e) {
-			//Eat it
-		}
-		
-		try 
+	/**
+	 * Handle Change parent spreadsheet tab
+	 *
+	 * @param concept the concept
+	 * @throws Exception the exception
+	 */
+	private void handleChangeParent(RelationshipVersionBI<?> rel) throws Exception
+	{	
+		if (rel.getTypeNid() == Snomed.IS_A.getLenient().getNid()) 
 		{
-			//TODO get rid of these sysouts - put in log statements if you want debug output
-			if(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate()) != null && descIdAttempt != 0) { //Description
-				System.out.println("Fetching SCT of a Description");
-				return Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentChronicle(nid).getVersion(OTFUtility.getViewCoordinate()).get()));
-				
-			} else if(OTFUtility.getComponentVersion(nid) != null && relIdAttempt != 0) { //Relationship
-				System.out.println("Fetching SCT of a Relationship");
-				return Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getComponentVersion(nid)));
-			} else { 
-				System.out.println("Fetching SCT of a Concept (Probably)");
-				if(Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getConceptVersion(nid))) != 0) { //Concept
-					return Integer.parseInt(ConceptViewerHelper.getSctId(OTFUtility.getConceptVersion(nid)));
-				} else {
-					return currentRequestUuidMap.get(OTFUtility.getConceptVersion(nid).getPrimordialUuid());
+			logger.info("Change Parent Handler");
+			bt.selectSheet(SHEET.Change_Parent);
+			bt.addRow();
+			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Parent)) {
+				switch(column)
+				{
+					case Topic:
+						bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(rel.getConceptNid())));
+						break;
+					case Source_Terminology:
+						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(rel.getConceptNid())));
+						break;
+					case Concept_Id:
+						bt.addNumericCell(column, getSct(rel.getConceptNid()));
+						break;
+					case New_Parent_Concept_Id:
+						bt.addNumericCell(column, getSct(rel.getDestinationNid()));
+						break;
+					case New_Parent_Terminology:
+						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(rel.getDestinationNid())));
+						break;
+					case Justification:
+						bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+						break;
+					case Note:
+						bt.addStringCell(column, "");
+						break;
+					default :
+						throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Change_Parent);
 				}
 			}
-			
-			
-		} catch(Exception e) 
-		{ 
-			logger.error("We could not get the SCT from the Given NID", e);
-			return 0;  //document the failure behavior - is 0 an appropriate thing to return if no sctid could be found?
 		}
-		
+	}
+
+	/**
+	 * Handle new rels spreadsheet tab
+	 *
+	 * @param concept the concept
+	 * @throws Exception the exception
+	 */
+	public void handleNewRel(RelationshipVersionBI<?> rel) throws Exception {
+		if (rel.getTypeNid() != Snomed.IS_A.getLenient().getNid()) 
+		{
+			logger.info("New Relationship Handler");
+			bt.selectSheet(SHEET.New_Relationship);
+			bt.addRow();
+			for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Relationship)) {
+				switch (column) {
+					case Topic:
+						bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(rel.getConceptNid())));
+						break;
+					case Source_Terminology:
+						bt.addStringCell(column, getTerminology(rel));
+						break;
+					case Source_Concept_Id:
+						bt.addNumericCell(column, getSct(rel.getConceptNid()));
+						break;
+					case Relationship_Type:
+						bt.addStringCell(column, getRelType(rel.getTypeNid()));
+						break;
+					case Destination_Terminology:
+						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(rel.getDestinationNid())));
+						break;
+					case Destination_Concept_Id:
+						bt.addNumericCell(column, getSct(rel.getDestinationNid()));
+						break;
+					case Characteristic_Type:
+						bt.addStringCell(column, getCharType(rel.getCharacteristicNid()));
+						break;
+					case Refinability:
+						bt.addStringCell(column, getRefinability(rel.getRefinabilityNid()));
+						break;
+					case Relationship_Group:
+						bt.addNumericCell(column, rel.getGroup());
+						break;
+					case Justification:
+						bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+						break;
+					case Note:
+						bt.addStringCell(column, "This is a defining relationship expressed for the corresponding new concept request in the other tab");
+						break;
+					default :
+						throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.New_Relationship);
+				}
+			}
+		}
 	}
 	
 	/**
@@ -867,56 +965,57 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleChangeRels(ConceptChronicleBI concept, RelationshipVersionBI<?> relVersion, USCRSBatchTemplate bt) throws Exception
+	private void handleChangeRels(RelationshipVersionBI<?> relVersion) throws Exception
 	{
-		bt.selectSheet(SHEET.Change_Relationship);
-		ConceptVersionBI destConcept = OTFUtility.getConceptVersion(relVersion.getDestinationNid());
-		ConceptVersionBI sourceConcept = OTFUtility.getConceptVersion(concept.getConceptNid());
-		bt.addRow();
-		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Relationship))
+		if (relVersion.getTypeNid() != Snomed.IS_A.getLenient().getNid()) 
 		{
-			switch (column)
+			logger.info("Change Relationship Handler");
+			bt.selectSheet(SHEET.Change_Relationship);
+			bt.addRow();
+			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Relationship))
 			{
-				case Topic:
-					bt.addStringCell(column, "");
-					break;
-				case Source_Concept_Id:
-					bt.addNumericCell(column, this.getSct(sourceConcept.getNid()));
-					break;
-				case Relationship_Id:  
-					bt.addNumericCell(column, this.getSct(relVersion.getNid()));
-					break;
-				case Relationship_Type: 
-					bt.addStringCell(column, this.getRelType(relVersion.getTypeNid()));
-					break;
-				case Source_Terminology:
-					bt.addStringCell(column, this.getTerminology(sourceConcept.getPathNid()));
-					break;
-				case Destination_Concept_Id:
-					bt.addNumericCell(column, this.getSct(relVersion.getDestinationNid()));
-					break;
-				case Destination_Terminology:
-					bt.addStringCell(column, this.getTerminology(destConcept.getPathNid()));
-					break;
-				case Characteristic_Type:
-					bt.addStringCell(column, this.getCharType(relVersion.getCharacteristicNid()));
-					break;
-				case Refinability:
-					bt.addStringCell(column, this.getRefinability(relVersion.getRefinabilityNid()));
-					break;
-				case Relationship_Group:
-					bt.addNumericCell(column, relVersion.getGroup());
-					break;
-				case Justification:
-					bt.addStringCell(column, ""); ///User Input
-					break;
-				case Note:
-					bt.addStringCell(column, ""); //User Input
-					break;
-				default :
-					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Change_Relationship);
+				switch (column)
+				{
+					case Topic:
+						bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(relVersion.getConceptNid())));
+						break;
+					case Source_Concept_Id:
+						bt.addNumericCell(column, getSct(relVersion.getConceptNid()));
+						break;
+					case Relationship_Id:  
+						bt.addNumericCell(column, getSct(relVersion.getNid()));
+						break;
+					case Relationship_Type: 
+						bt.addStringCell(column, getRelType(relVersion.getTypeNid()));
+						break;
+					case Source_Terminology:
+						bt.addStringCell(column, getTerminology(relVersion));
+						break;
+					case Destination_Concept_Id:
+						bt.addNumericCell(column, getSct(relVersion.getDestinationNid()));
+						break;
+					case Destination_Terminology:
+						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(relVersion.getDestinationNid())));
+						break;
+					case Characteristic_Type:
+						bt.addStringCell(column, getCharType(relVersion.getCharacteristicNid()));
+						break;
+					case Refinability:
+						bt.addStringCell(column, getRefinability(relVersion.getRefinabilityNid()));
+						break;
+					case Relationship_Group:
+						bt.addNumericCell(column, relVersion.getGroup());
+						break;
+					case Justification:
+						bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+						break;
+					case Note:
+						bt.addStringCell(column, ""); //User Input
+						break;
+					default :
+						throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Change_Relationship);
+				}
 			}
-
 		}
 	}
 	
@@ -928,8 +1027,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleChangeDesc(DescriptionVersionBI<?> d, USCRSBatchTemplate bt) throws Exception
+	private void handleChangeDesc(DescriptionVersionBI<?> d) throws Exception
 	{
+		logger.info("Change Description Handler");
 		bt.selectSheet(SHEET.Change_Description);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Description))
@@ -937,26 +1037,25 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			switch (column)
 			{
 				case Topic:
-					bt.addStringCell(column, "");
+					bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(d.getConceptNid())));
 					break;
 				case Terminology:
-					bt.addStringCell(column, this.getTerminology(d.getPathNid()));
+					bt.addStringCell(column, getTerminology(d));
 					break;
 				case Concept_Id:
-					bt.addNumericCell(column, this.getSct(d.getConceptNid()));
+					bt.addNumericCell(column, getSct(d.getConceptNid()));
 					break;
 				case Description_Id:
-					bt.addNumericCell(column, this.getSct(d.getNid()));
+					bt.addNumericCell(column, getSct(d.getNid()));
 					break;
 				case Term: 
-					//TODO nope - can't use OTF Utility to get this - you need to get the text from the description version passed in
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(d.getConceptNid()));
+					bt.addStringCell(column, d.getText());
 					break;
 				case Case_Significance:
-					bt.addStringCell(column, this.getCaseSig(d.isInitialCaseSignificant()));
+					bt.addStringCell(column, getCaseSig(d.isInitialCaseSignificant()));
 					break;
 				case Justification:
-					bt.addStringCell(column, "");
+					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
 					break;
 				case Note:
 					bt.addStringCell(column, "");
@@ -974,22 +1073,23 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleRetireConcept(ConceptChronicleBI concept, USCRSBatchTemplate bt) throws Exception
+	private void handleRetireConcept(ConceptVersionBI concept) throws Exception
 	{
+		logger.info("Retire Concept Handler");
 		bt.selectSheet(SHEET.Retire_Concept);
 		bt.addRow();
-		ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(concept.getNid());
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Concept))
 		{
 			switch (column)
 			{
 				case Topic:
+					bt.addStringCell(column, this.getSemanticTag(concept));
 					break;
 				case Terminology:
-					bt.addStringCell(column, this.getTerminology(conceptVersion.getPathNid()));
+					bt.addStringCell(column, getTerminology(concept));
 					break;
 				case Concept_Id:
-					bt.addNumericCell(column, this.getSct(concept.getNid()));
+					bt.addNumericCell(column, getSct(concept.getNid()));
 					break;
 				case Change_Concept_Status_To: 
 					bt.addStringCell(column, "");
@@ -998,7 +1098,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, "");
 					break;
 				case Justification:
-					bt.addStringCell(column, "");
+					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
 					break;
 				case Note:
 					bt.addStringCell(column, "");
@@ -1016,39 +1116,37 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleRetireDescription(ArrayList<DescriptionVersionBI<?>> descVersions, USCRSBatchTemplate bt) throws Exception
+	private void handleRetireDescription(DescriptionVersionBI<?> d) throws Exception
 	{
+		logger.info("Retire Description Handler");
 		bt.selectSheet(SHEET.Retire_Description);
-		for(DescriptionVersionBI<?> d : descVersions) {
-			bt.addRow();
-			ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(d.getConceptNid());
-			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Description))
+		bt.addRow();
+		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Description))
+		{
+			switch (column)
 			{
-				switch (column)
-				{
-					case Topic:
-						bt.addStringCell(column, ""); //User Input
-						break;
-					case Terminology:
-						bt.addStringCell(column, this.getTerminology(conceptVersion.getPathNid()));
-						break;
-					case Concept_Id:
-						bt.addNumericCell(column, this.getSct(conceptVersion.getNid()));
-						break;
-					case Description_Id:
-						bt.addNumericCell(column, this.getSct(d.getNid()));
-						break;
-					case Change_Description_Status_To:  //TODO talk to Jaqui / NLM - same status question as above
-						break;
-					case Justification:
-						bt.addStringCell(column, ""); //User Input
-						break;
-					case Note:
-						bt.addStringCell(column, ""); //User Input
-						break;
-					default :
-						throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Retire_Description);
-				}
+				case Topic:
+					bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(d.getConceptNid())));
+					break;
+				case Terminology:
+					bt.addStringCell(column, getTerminology(d));
+					break;
+				case Concept_Id:
+					bt.addNumericCell(column, this.getSct(d.getConceptNid()));
+					break;
+				case Description_Id:
+					bt.addNumericCell(column, this.getSct(d.getNid()));
+					break;
+				case Change_Description_Status_To:  //TODO talk to Jaqui / NLM - same status question as above
+					break;
+				case Justification:
+					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+					break;
+				case Note:
+					bt.addStringCell(column, ""); //User Input
+					break;
+				default :
+					throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Retire_Description);
 			}
 		}
 	}
@@ -1060,40 +1158,39 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	@SuppressWarnings({"rawtypes" })
-	private void handleRetireRelationship(RelationshipVersionBI<?> relVersion, USCRSBatchTemplate bt) throws Exception
+	private void handleRetireRelationship(RelationshipVersionBI<?> relVersion) throws Exception
 	{
+		logger.info("Retire Relationship Handler");
 		bt.selectSheet(SHEET.Retire_Relationship);
 		bt.addRow();
-		ConceptVersionBI destConcept = OTFUtility.getConceptVersion(relVersion.getDestinationNid());
-		ConceptVersionBI sourceConcept = OTFUtility.getConceptVersion(relVersion.getConceptNid());
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Relationship))
 		{
 			switch (column)
 			{
 				case Topic:
-					bt.addStringCell(column, ""); //User Input
+					bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(relVersion.getConceptNid())));
 					break;
 				case Source_Terminology:
-					bt.addStringCell(column, this.getTerminology(sourceConcept.getPathNid()));
+					bt.addStringCell(column, getTerminology(relVersion));
 					break;
 				case Source_Concept_Id:
-					bt.addNumericCell(column, this.getSct(sourceConcept.getNid()));
+					//Yes, the relVersion conceptNid is the same as the source concept (at least, it should be)
+					bt.addNumericCell(column, getSct(relVersion.getConceptNid()));
 					break;
 				case Relationship_Id:  
-					bt.addNumericCell(column, this.getSct(relVersion.getNid()));
+					bt.addNumericCell(column, getSct(relVersion.getNid()));
 					break;
 				case Destination_Terminology:
-					bt.addStringCell(column, this.getTerminology(destConcept.getPathNid()));
+					bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(relVersion.getDestinationNid())));
 					break;
 				case Destination_Concept_Id:
-					bt.addNumericCell(column, this.getSct(destConcept.getNid()));
+					bt.addNumericCell(column, getSct(relVersion.getDestinationNid()));
 					break;
 				case Relationship_Type:
 					bt.addStringCell(column, this.getRelType(relVersion.getTypeNid()));
 					break;
 				case Justification:
-					bt.addStringCell(column, ""); //User Input
+					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
 					break;
 				case Note:
 					bt.addStringCell(column, ""); //User Input
@@ -1112,44 +1209,40 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param bt the wb
 	 * @throws Exception the exception
 	 */
-	private void handleNewParent(ArrayList<RelationshipVersionBI<?>> extraRels, USCRSBatchTemplate bt) throws Exception
+	private void handleNewParent(RelationshipVersionBI<?> rel) throws Exception
 	{
-		bt.selectSheet(SHEET.Add_Parent);
-		for(RelationshipVersionBI rel : extraRels) {
-			if (rel.isActive() && (rel.getTypeNid() == Snomed.IS_A.getLenient().getNid())) 
+		if (rel.isActive() && (rel.getTypeNid() == Snomed.IS_A.getLenient().getNid())) 
+		{
+			logger.info("New Parent Handler");
+			bt.selectSheet(SHEET.Add_Parent);
+			bt.addRow();
+			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Add_Parent))
 			{
-				int destNid = rel.getDestinationNid();
-				ConceptVersionBI destConcept = OTFUtility.getConceptVersion(destNid);
-				ConceptVersionBI concept = OTFUtility.getConceptVersion(rel.getConceptNid());
-				bt.addRow();
-				for (COLUMN column : bt.getColumnsOfSheet(SHEET.Add_Parent))
+				switch (column)
 				{
-					switch (column)
-					{
-						case Topic:
-							bt.addStringCell(column, "");
-							break;
-						case Source_Terminology: 
-							bt.addStringCell(column, this.getTerminology(OTFUtility.getConceptVersion(concept.getConceptNid()).getPathNid()));
-							break;
-						case Child_Concept_Id:
-							bt.addNumericCell(column, this.getSct(concept.getNid()));
-							break;
-						case Destination_Terminology:
-							bt.addStringCell(column, this.getTerminology(OTFUtility.getConceptVersion(destConcept.getConceptNid()).getPathNid()));
-							break;
-						case Parent_Concept_Id:  
-							bt.addNumericCell(column, this.getSct(destConcept.getConceptNid()));
-							break;
-						case Justification:
-							bt.addStringCell(column, "");
-							break;
-						case Note:
-							bt.addStringCell(column, "");
-							break;
-						default :
-							throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Add_Parent);
-					}
+					case Topic:
+						bt.addStringCell(column, this.getSemanticTag(OTFUtility.getConceptVersion(rel.getDestinationNid())));
+						break;
+					case Source_Terminology: 
+						bt.addStringCell(column, getTerminology(rel));
+						break;
+					case Child_Concept_Id:
+						bt.addNumericCell(column, getSct(rel.getConceptNid()));
+						break;
+					case Destination_Terminology:
+						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(rel.getDestinationNid())));
+						break;
+					case Parent_Concept_Id:  
+						bt.addNumericCell(column, getSct(rel.getDestinationNid()));
+						break;
+					case Justification:
+						bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
+						break;
+					case Note:
+						bt.addStringCell(column, "");
+						break;
+					default :
+						throw new RuntimeException("Unexpected column type found in Sheet: " + column + " - " + SHEET.Add_Parent);
 				}
 			}
 		}
@@ -1163,8 +1256,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception the exception
 	 */
 	@SuppressWarnings("unused")
-	private void handleOther(ConceptChronicleBI concept, USCRSBatchTemplate bt) throws Exception
+	private void handleOther(ConceptChronicleBI concept) throws Exception
 	{
+		logger.info("Other Spreadsheet Handler");
 		bt.selectSheet(SHEET.Other);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Other))
@@ -1172,12 +1266,12 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			switch (column)
 			{
 				case Topic:
-					bt.addStringCell(column, ""); //User Input
+					bt.addStringCell(column, this.getSemanticTag(concept));
 					break;
 				case Description:
 					break;
 				case Justification:
-					bt.addStringCell(column, ""); //User Input
+					bt.addStringCell(column, "Developed as part of extension namespace " + ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace());
 					break;
 				case Note:
 					bt.addStringCell(column, ""); //User Input
@@ -1187,4 +1281,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			}
 		}
 	}
+	
+
 }

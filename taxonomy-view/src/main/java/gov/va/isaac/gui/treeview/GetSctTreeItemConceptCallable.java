@@ -33,7 +33,6 @@ import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronic
 import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.VersionPolicy;
 import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,6 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
 
     private final SctTreeItem treeItem;
     private final boolean addChildren;
-    private final VersionPolicy versionPolicy;
     private final RefexPolicy refexPolicy;
     private final RelationshipPolicy relationshipPolicy;
     private final ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
@@ -62,17 +60,19 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     }
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren) {
-        this(treeItem, addChildren, VersionPolicy.ACTIVE_VERSIONS,
+        this(treeItem, addChildren, 
                 RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
     }
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren,
-            VersionPolicy versionPolicy, RefexPolicy refexPolicy, RelationshipPolicy relationshipPolicy) {
+            RefexPolicy refexPolicy, RelationshipPolicy relationshipPolicy) {
         this.treeItem = treeItem;
         this.addChildren = addChildren;
-        this.versionPolicy = versionPolicy;
         this.refexPolicy = refexPolicy;
         this.relationshipPolicy = relationshipPolicy;
+        if (addChildren) {
+            treeItem.childLoadStarts();
+        }
     }
 
     @Override
@@ -101,7 +101,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
             }
     
             FxTerminologyStoreDI dataStore = LookupService.getService(FxTerminologyStoreDI.class);
-            concept = dataStore.getFxConcept(reference, OTFUtility.getViewCoordinate(), versionPolicy, refexPolicy, relationshipPolicy);
+            concept = dataStore.getFxConcept(reference, OTFUtility.getViewCoordinate(), refexPolicy, relationshipPolicy);
     
             if ((concept.getConceptAttributes() == null)
                     || concept.getConceptAttributes().getVersions().isEmpty()

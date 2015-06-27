@@ -1,10 +1,9 @@
 package gov.va.isaac.classifier;
 
-import java.io.IOException;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 
 /**
  * SnomedClassifier.
@@ -24,7 +23,7 @@ public class SnomedClassifier implements ProcessUnfetchedConceptDataBI {
   }
 
   @Override
-  public NativeIdSetBI getNidSet() throws IOException {
+  public NidSet getNidSet() {
     // TODO Auto-generated method stub
     return null;
   }

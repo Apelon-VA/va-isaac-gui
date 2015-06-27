@@ -19,6 +19,7 @@ package gov.va.isaac.drools.evaluators;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.drools.evaluators.facts.ConceptFact;
 import gov.va.isaac.drools.evaluators.facts.DescFact;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 
 import java.io.IOException;
 
@@ -87,7 +88,7 @@ public class IsKindOfInferredEvaluatorDefinition extends IsaacBaseEvaluatorDefin
 					throw new UnsupportedOperationException("Can't convert: " + value1);
 				}
 				ViewCoordinate coordinate = possibleKind.getViewCoordinate();
-				ConceptVersionBI parentKind = null;
+				ConceptSnapshot parentKind = null;
 
 				if (ConceptVersionBI.class.isAssignableFrom(value2.getClass()))
 				{

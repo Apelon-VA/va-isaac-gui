@@ -175,7 +175,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
                     pi.setPrefSize(16, 16);
                     pi.setMaxSize(16, 16);
                     pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
-                    pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0));
+                    pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
                     pi.setMouseTransparent(true);
                     spacerProgressStack.getChildren().add(pi);
                     StackPane.setAlignment(pi, Pos.CENTER_RIGHT);
@@ -216,7 +216,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
             pi.setPrefSize(16, 16);
             pi.setMaxSize(16, 16);
             pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
-            pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0));
+            pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
             pi.setMouseTransparent(true);
             spacerProgressStack.getChildren().add(pi);
             StackPane.setAlignment(pi, Pos.CENTER_LEFT);

@@ -24,6 +24,7 @@
  */
 package gov.va.isaac.gui.dragAndDrop;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -36,7 +37,7 @@ public interface ConceptIdProvider {
 	/**
 	 * Convenience method that will fail if it isn't overridden
 	 */
-	public default String getSctId() { return null; }
+	public default Optional<Long> getSctId() { return Optional.empty(); }
 
 	/**
 	 * Convenience method that will fail if it isn't overridden

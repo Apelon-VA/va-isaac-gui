@@ -63,6 +63,10 @@ public class Utility {
     public static <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
         return scheduledExecutor_.schedule(callable, delay, unit);
     }
+    
+    public static ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        return scheduledExecutor_.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
 
     public static UUID getUUID(String string) {
         if (string == null)

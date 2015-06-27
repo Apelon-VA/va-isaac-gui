@@ -22,9 +22,9 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 
 public class MappingItemDAO extends MappingDAO
 {
@@ -69,7 +69,7 @@ public class MappingItemDAO extends MappingDAO
 			
 			return new MappingItem((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));
 		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException | NoSuchAlgorithmException e)
+		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{
 			LOG.error("Unexpected", e);
 			throw new IOException("Invalid mapping. Check Source, Target, and Qualifier.", e);
@@ -180,7 +180,7 @@ public class MappingItemDAO extends MappingDAO
 			mappingItemCab.validate(OTFUtility.getViewCoordinateAllowInactive());
 			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingItemCab);
 
-			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getConceptNid());
+			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
 			ExtendedAppContext.getDataStore().commit(/* cc */);

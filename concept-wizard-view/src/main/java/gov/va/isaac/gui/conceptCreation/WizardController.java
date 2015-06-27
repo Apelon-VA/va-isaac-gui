@@ -21,6 +21,7 @@ package gov.va.isaac.gui.conceptCreation;
 import gov.va.isaac.gui.conceptCreation.wizardPages.TermRow;
 import gov.va.isaac.gui.conceptCreation.wizardPages.RelRow;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -161,8 +162,7 @@ public class WizardController {
 		LanguageCode lc = LanguageCode.EN_US;
 		UUID module = Snomed.CORE_MODULE.getLenient().getPrimordialUuid();
 		
-		//TODO OCHRE deal with paths
-		ConceptCB newConCB = new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentCons);
+		ConceptCB newConCB = new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), parentCons);
 										
 		newConCB.setDefined(!isPrimitive);
 		

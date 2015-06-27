@@ -26,6 +26,7 @@ package gov.va.isaac.gui.enhancedsearchview.filters;
 
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.util.HashSet;
 import java.util.Set;
 import javafx.beans.property.IntegerProperty;
@@ -52,10 +53,14 @@ public abstract class NonSearchTypeFilter<T extends NonSearchTypeFilter<T>> impl
 
 		try {
 			ConceptVersionBI con = OTFUtility.getConceptVersion(getSingleNid().get());
-			ConceptVersionBI rootCon = OTFUtility.getRootConcept(con);
 
+			//TODO   um... really?  This may be the most inefficient code I've ever seen.
+			//Why on earth are we building an all concept searcher by iterating all concepts in the DB, but then checking every single concept 
+			//in the DB to see if it extends from ISAAC_ROOT?  The only thing that would do is exclude orphans... which, certainly doesn't seem 
+			//to be the intent... On top of that... it doesn't even start with the startList... rather starting with the entire DB.
+			//This needs to be completely thrown out / rewritten from scratch.
 			NativeIdSetBI allConcepts = ExtendedAppContext.getDataStore().getAllConceptNids();
-			NoSearchTermConcurrentSearcher searcher = new NoSearchTermConcurrentSearcher(allConcepts, rootCon.getConceptNid());
+			NoSearchTermConcurrentSearcher searcher = new NoSearchTermConcurrentSearcher(allConcepts, IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getNid());
 			ExtendedAppContext.getDataStore().iterateConceptDataInParallel(searcher);
 
 			if (!startList.isEmpty()) {

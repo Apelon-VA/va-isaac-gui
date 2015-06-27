@@ -54,7 +54,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.api.uuid.UuidT5Generator;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -202,11 +202,11 @@ public class GenerateUsers
 	
 			LanguageCode lc = LanguageCode.EN_US;
 			UUID isA = IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid();
-			IdDirective idDir = IdDirective.GENERATE_RANDOM;  //TODO OCHRE fix this
+			IdDirective idDir = IdDirective.PRESERVE;
 			UUID module = IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getPrimodialUuid();
 			UUID parents[] = new UUID[] {IsaacMetadataAuxiliaryBinding.USER.getPrimodialUuid()};
 	
-			ConceptCB cab = new ConceptCB(fsn, preferredName, lc, isA, idDir, module, userUUID, parents);
+			ConceptCB cab = new ConceptCB(fsn, preferredName, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), userUUID, parents);
 	
 			DescriptionCAB dCab = new DescriptionCAB(cab.getComponentUuid(), IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid(), lc, logonName, true,
 					IdDirective.GENERATE_HASH);
@@ -226,7 +226,7 @@ public class GenerateUsers
 			//Build this on the lowest level path, otherwise, other code that references this will fail (as it doesn't know about custom paths)
 			ConceptChronicleBI newCon = ts.getTerminologyBuilder(
 					new EditCoordinate(IsaacMetadataAuxiliaryBinding.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(), 
-							IsaacMetadataAuxiliaryBinding.MASTER.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
+							IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
 			ts.addUncommitted(newCon);
 			ts.commit();  //TODO OCHRE change back to a concept commit
 		}
@@ -293,15 +293,7 @@ public class GenerateUsers
 
 	public static UUID calculateUserUUID(String uniqueLogonName)
 	{
-		try
-		{
-			return UuidT5Generator.get(USER_LOGON_NAMESPACE, uniqueLogonName);
-		}
-		catch (NoSuchAlgorithmException | UnsupportedEncodingException e)
-		{
-			logger.error("Unexpected", e);
-			throw new RuntimeException(e);
-		}
+            return UuidT5Generator.get(USER_LOGON_NAMESPACE, uniqueLogonName);
 	}
 
 	static String toString(User user)

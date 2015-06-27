@@ -24,6 +24,7 @@
  */
 package gov.va.isaac.gui.index;
 
+import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
@@ -33,6 +34,9 @@ import gov.va.isaac.util.Utility;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import javafx.concurrent.Task;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
 import javax.inject.Singleton;
@@ -68,18 +72,19 @@ public class IndexView implements IsaacViewWithMenusI {
 		{
 			
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				Utility.execute(() ->
 				{
 					try
 					{
-						//TODO should have a status bar somewhere to put this progress in
 						LOG.info("Full reindex launched");
-						ExtendedAppContext.getDataStore().index(null);
+						Task<?> task = ExtendedAppContext.getDataStore().index((Class[])null);
+						AppContext.getMainApplicationWindow().addBackgroundTask(task);
+						task.get();
 						LOG.info("Full reindex complete");
 					}
-					catch (IOException e)
+					catch (ExecutionException | InterruptedException e)
 					{
 						LOG.error("Error launching reindex", e);
 					}

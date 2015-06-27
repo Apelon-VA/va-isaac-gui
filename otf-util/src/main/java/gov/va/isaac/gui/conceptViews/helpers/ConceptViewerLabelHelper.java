@@ -34,9 +34,11 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
+
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -55,6 +57,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -264,7 +267,7 @@ public class ConceptViewerLabelHelper {
 							LOG.error("HK2 FAILED to provide requested service: " + WorkflowInitiationViewI.class);
 						}
 						if (type == ComponentType.CONCEPT) {
-							view.setComponent(comp.getConceptNid());
+							view.setComponent(comp.getAssociatedConceptNid());
 						} else {
 							view.setComponent(comp.getNid());
 						}
@@ -291,7 +294,7 @@ public class ConceptViewerLabelHelper {
 					@Override
 					public void handle(ActionEvent event)
 					{
-						previousConceptStack.add(comp.getConceptNid());
+						previousConceptStack.add(comp.getAssociatedConceptNid());
 						if (conceptView == null) {
 							AppContext.getService(EnhancedConceptView.class).setConcept(refConNid);
 						} else {
@@ -364,7 +367,7 @@ public class ConceptViewerLabelHelper {
 			{
 				try {
 					if (type == ComponentType.CONCEPT) {
-						ConceptVersionBI con = OTFUtility.getConceptVersion(comp.getConceptNid());
+						ConceptVersionBI con = OTFUtility.getConceptVersion(comp.getAssociatedConceptNid());
 
 						if (!OTFUtility.getAllChildrenOfConcept(con, false).isEmpty()) {
 							AppContext.getCommonDialogs().showInformationDialog("Retire Concept Failure", "Cannot retire concept until it has no children");
@@ -392,7 +395,7 @@ public class ConceptViewerLabelHelper {
 								
 								ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 								
-								ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getConceptNid()));
+								ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getAssociatedConceptNid()));
 								
 								// Commit
 								ExtendedAppContext.getDataStore().commit(/* con */);
@@ -422,7 +425,7 @@ public class ConceptViewerLabelHelper {
 						retireRelationship(rel);
 					}
 					
-					conceptView.setConcept(comp.getConceptNid());
+					conceptView.setConcept(comp.getAssociatedConceptNid());
 				} catch (Exception e) {
 					LOG.error("Failure in retiring comp: " + comp.getPrimordialUuid(), e);
 				}
@@ -437,7 +440,7 @@ public class ConceptViewerLabelHelper {
 				
 				RelationshipChronicleBI rcbi = OTFUtility.getBuilder().constructIfNotCurrent(rcab);
 				
-				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rcbi.getConceptNid()));
+				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rcbi.getAssociatedConceptNid()));
 			}
 		});
 
@@ -459,7 +462,7 @@ public class ConceptViewerLabelHelper {
 					} else if (type == ComponentType.RELATIONSHIP) {
 						ExtendedAppContext.getDataStore().forget((RelationshipVersionBI<?>)comp);
 					}
-					conceptView.setConcept(comp.getConceptNid());
+					conceptView.setConcept(comp.getAssociatedConceptNid());
 				} catch (Exception e) {
 					LOG.error("Unable to cancel comp: " + comp.getNid(), e);
 				}
@@ -520,7 +523,13 @@ public class ConceptViewerLabelHelper {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				CustomClipboard.set(ConceptViewerHelper.getSctId(comp));
+				Optional<Long> thisSct = ConceptViewerHelper.getSctId(comp.getNid());
+				if(thisSct.isPresent()) {
+					CustomClipboard.set(thisSct.get().toString());
+				} else {
+					LOG.error("Could not fetch an SCT ID");
+				}
+				
 			}
 		});
 

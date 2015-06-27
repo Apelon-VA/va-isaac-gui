@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.interfaces.gui.views.commonFunctionality;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.stream.IntStream;
@@ -34,7 +35,7 @@ public interface ExportTaskHandlerI {
 	 * 
 	 * @param options
 	 */
-	public void setOptions(Properties options);
+	public void setOptions(Properties options) throws Exception;
 	
 	/**
 	 * Exporter Title
@@ -54,7 +55,7 @@ public interface ExportTaskHandlerI {
 	 * @param filePath
 	 * @return
 	 */
-	public Task<Integer> createTask(IntStream nidList, Path file);
+	public Task<Integer> createTask(IntStream nidList, Path file) throws FileNotFoundException;
 	
 
 }

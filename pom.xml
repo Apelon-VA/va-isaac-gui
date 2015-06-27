@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>gov.vha.isaac</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>1.6</version>
+		<version>1.7</version>
 	</parent>
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>23.1.1</version>
+	<version>23.2</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
@@ -32,11 +32,12 @@
 	</distributionManagement>
 
 	<properties>
-		<query.version>2.13</query.version>
-		<ochre.version>2.28</ochre.version>
-		<isaac-mojo.version>1.7</isaac-mojo.version>
-		<isaac-metadata.version>1.30</isaac-metadata.version>
-		<newtons-cradle.version>1.18</newtons-cradle.version>
+		<logic.version>1.14</logic.version>
+		<query.version>2.14</query.version>
+		<ochre.version>2.29</ochre.version>
+		<isaac-mojo.version>1.8</isaac-mojo.version>
+		<isaac-metadata.version>1.31</isaac-metadata.version>
+		<newtons-cradle.version>1.19</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>
@@ -52,6 +53,13 @@
 				<type>jar</type>
 			</dependency>
 		
+			<dependency>
+				<groupId>gov.vha.isaac.logic.modules</groupId>
+				<artifactId>logic</artifactId>
+				<version>${logic.version}</version>
+				<type>jar</type>
+			</dependency>
+
 			<dependency>
 				<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
 				<artifactId>newtons-cradle</artifactId>
@@ -120,25 +128,6 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
-		
-            <plugin>
-                <groupId>external.atlassian.jgitflow</groupId>
-                <artifactId>jgitflow-maven-plugin</artifactId>
-                <version>1.0-m4.3</version>
-                <configuration>
-                    <pushReleases>true</pushReleases>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <scmCommentPrefix>[jgitflow-plugin]</scmCommentPrefix>
-                    <enableSshAgent>true</enableSshAgent>
-                    <allowSnapshots>false</allowSnapshots>
-                    <enableFeatureVersions>true</enableFeatureVersions>
-                  	<flowInitContext>
-                  		<developBranchName>develop-2</developBranchName>
-                  	</flowInitContext>
-                    
-                </configuration>
-            </plugin>
-		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
@@ -214,5 +203,6 @@
 		<module>sync-svn</module>
 		<module>db-processing-rules</module>
 		<module>mapping</module>
+		<module>logic-view</module>
 	</modules>
 </project>

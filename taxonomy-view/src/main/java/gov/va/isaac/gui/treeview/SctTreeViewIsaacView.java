@@ -112,10 +112,10 @@ public class SctTreeViewIsaacView  implements TaxonomyViewI
 	}
 
 	/**
-	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI#cancelOperations()
+	 * @see gov.va.isaac.interfaces.gui.views.EmbeddableViewI#viewDiscarded()
 	 */
 	@Override
-	public void cancelOperations()
+	public void viewDiscarded()
 	{
 		sctTreeView_.shutdownInstance();
 	}

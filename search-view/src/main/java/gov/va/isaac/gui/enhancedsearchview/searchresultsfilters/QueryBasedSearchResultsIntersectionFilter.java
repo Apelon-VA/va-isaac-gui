@@ -32,11 +32,10 @@ import gov.va.isaac.gui.enhancedsearchview.filters.NonSearchTypeFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
-import java.io.IOException;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,7 +46,6 @@ import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
 import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +95,10 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		final Set<UUID> forSetCustomCollection = new HashSet<>();
 
 		for (CompositeSearchResult result : results) {
-			forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+			if (result.getContainingConcept() != null)
+			{
+				forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+			}
 		}
 
 		SearchResultsFilterHelper.LOG.debug("Building Query to filter " + forSetCustomCollection.size() + " search results");
@@ -109,7 +110,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 
 		q = new Query() {
 			@Override
-			public void Let() throws IOException {
+			public void Let() {
 				for (NonSearchTypeFilter<?> filter : filters) {
 					if (filter instanceof IsDescendantOfFilter) {
 						ConceptVersionBI concept = OTFUtility.getConceptVersion(((IsDescendantOfFilter)filter).getNid());
@@ -186,16 +187,16 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 			}
 
 			@Override
-			protected ForSetSpecification ForSetSpecification() throws IOException {
+			protected ForSetSpecification ForSetSpecification() {
 				return forSetSpecification;
 			}
 		};
 
-		NativeIdSetBI outputNids = null;
+		NidSet outputNids = null;
 		try {
 			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + forSetCustomCollection.size() + " uuids");
 
-			q.setViewCoordinate(OTFUtility.getViewCoordinate());
+			q.setStampCoordinate(OTFUtility.getViewCoordinate());
 			outputNids = q.compute();
 			
 			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection.size() + " uuids");

@@ -1,4 +1,4 @@
-/**
+									/**
  * Copyright Notice
  * 
  * This is a work of the U.S. Government and is not subject to copyright
@@ -25,6 +25,7 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
@@ -75,8 +77,8 @@ public class CommonMenus
 	public static enum CommonMenuItem {
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
-		CONCEPT_VIEW("View Concept", Images.CONCEPT_VIEW),
-		CONCEPT_VIEW_LEGACY("View Concept 2", Images.CONCEPT_VIEW),
+		CONCEPT_VIEW("Model Concept", Images.CONCEPT_VIEW),
+		CONCEPT_VIEW_LEGACY("View Concept", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
 		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
@@ -121,7 +123,7 @@ public class CommonMenus
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW_LEGACY, PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.TAXONOMY_VIEW, TaxonomyViewI.class, SharedServiceNames.DOCKED);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW, WorkflowTaskDetailsViewI.class);
-		CommonMenusServices.setServiceCallParameters(CommonMenuItem.USCRS_REQUEST_VIEW, ContentRequestHandlerI.class, SharedServiceNames.USCRS);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.USCRS_REQUEST_VIEW, ExportTaskViewI.class, SharedServiceNames.USCRS);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LOINC_REQUEST_VIEW, ContentRequestHandlerI.class, SharedServiceNames.LOINC);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LIST_VIEW, ListBatchViewI.class, SharedServiceNames.DOCKED);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, WorkflowInitiationViewI.class);
@@ -453,7 +455,7 @@ public class CommonMenus
 					menuItems.add(enhancedConceptViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -485,7 +487,7 @@ public class CommonMenus
 					menuItems.add(legacyConceptViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW_LEGACY) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW_LEGACY.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -508,7 +510,7 @@ public class CommonMenus
 					menuItems.add(findInTaxonomyViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.TAXONOMY_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.TAXONOMY_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -537,7 +539,7 @@ public class CommonMenus
 					menuItems.add(openTaskViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -566,7 +568,7 @@ public class CommonMenus
 					menuItems.add(uscrsRequestViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.USCRS_REQUEST_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.USCRS_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -595,7 +597,7 @@ public class CommonMenus
 					menuItems.add(loincRequestViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOINC_REQUEST_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOINC_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -631,7 +633,7 @@ public class CommonMenus
 					menuItems.add(newReleaseWorkflowTaskItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.RELEASE_WORKFLOW_TASK) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.RELEASE_WORKFLOW_TASK.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -764,7 +766,7 @@ public class CommonMenus
 					menuItems.add(listViewMenuItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LIST_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getSendToMenuItems() failed adding CommonMenuItem.LIST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -797,7 +799,7 @@ public class CommonMenus
 					menuItems.add(newWorkflowInstanceInitializationItem);
 				}
 			} else {
-				LOG.debug("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW) returned false");
 			}
 		} catch (Exception e) {
 			LOG.error("getSendToMenuItems() failed adding CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -854,7 +856,7 @@ public class CommonMenus
 		//Then, each of the following calls should be changed to pull data from the new observables, rather than this out-of-date cache / nid list
 		
 		ArrayList<UUID> uuids = new ArrayList<>();
-		ArrayList<String> sctIds = new ArrayList<>();
+		ArrayList<Long> sctIds = new ArrayList<>();
 
 		for (Integer i : nids.getNIds()) {
 			ComponentChronicleBI<?> component = OTFUtility.getComponentChronicle(i);
@@ -864,9 +866,12 @@ public class CommonMenus
 				if (component instanceof ConceptChronicleBI)
 				{
 					ConceptVersionBI concept = OTFUtility.getConceptVersion(i);
-					if (concept != null)
-					{
-						sctIds.add(ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept)).trim());
+					if (concept != null) {
+						Optional<Long> conceptSct = ConceptViewerHelper.getSctId(concept.getNid());
+						if(conceptSct.isPresent()) {
+							sctIds.add(conceptSct.get());
+						}
+						
 					}
 				}
 			}
@@ -878,7 +883,7 @@ public class CommonMenus
 				builder,
 				() -> {return sctIds != null && sctIds.size() == 1 && sctIds.get(0) != null;}, // canHandle
 				nids.getObservableNidCount().isEqualTo(1),
-				() -> { CustomClipboard.set(sctIds.get(0)); } // onHandlable
+				() -> { CustomClipboard.set(sctIds.get(0).toString()); } // onHandlable
 				);
 		// Add menu separator IFF there were non-ID items AND this is the first ID item
 		
@@ -954,7 +959,7 @@ public class CommonMenus
 					return nid;
 				}
 			} else 	{
-				return cc.getConceptNid();
+				return cc.getEnclosingConceptNid();
 			}
 		}
 		else

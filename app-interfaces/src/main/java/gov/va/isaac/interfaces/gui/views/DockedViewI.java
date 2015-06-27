@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.interfaces.gui.views;
 
-import gov.va.isaac.interfaces.gui.MenuItemI;
+import gov.va.isaac.interfaces.gui.CheckMenuItemI;
 import org.jvnet.hk2.annotations.Contract;
 
 /**
@@ -44,7 +44,7 @@ public interface DockedViewI extends EmbeddableViewI, IsaacViewWithMenusI
 	 * 
 	 * @return the menu details - may return null, if no menu is requested to launch this view.
 	 */
-	public MenuItemI getMenuBarMenuToShowView();
+	public CheckMenuItemI getMenuBarMenuToShowView();
 	
 	/**
 	 * A string suitable for use as the title of the window showing the view

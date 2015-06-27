@@ -23,15 +23,12 @@ import gov.va.isaac.interfaces.gui.ApplicationMenus;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
+import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +40,6 @@ import org.slf4j.LoggerFactory;
  */
 @Service
 @Singleton
-@SuppressWarnings("restriction")
 public class ClassifierDialogView implements PopupViewI, IsaacViewWithMenusI {
 
   /** The log. */
@@ -60,7 +56,7 @@ public class ClassifierDialogView implements PopupViewI, IsaacViewWithMenusI {
     ArrayList<MenuItemI> menus = new ArrayList<>();
     menus.add(new MenuItemI() {
       @Override
-      public void handleMenuSelection(Window parent) {
+      public void handleMenuSelection(Window parent, MenuItem menuItem) {
         showView(parent);
       }
 

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javafx.beans.property.SimpleDoubleProperty;
@@ -196,7 +197,13 @@ public class SearchResultsTable  {
 		// Optional SCT ID
 		sctIdCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(param.getValue().getContainingConcept())).trim());
+				Optional<? extends Long> sctId = ConceptViewerHelper.getSctId(param.getValue().getContainingConcept().getNid());
+				if(sctId.isPresent()) {
+					return new SimpleStringProperty(String.valueOf(sctId.get()));
+				} else {
+					return new SimpleStringProperty("");
+				}
+				
 			} catch (Exception e) {
 				LOG.error("initializeSctIdColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 

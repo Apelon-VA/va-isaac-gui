@@ -31,6 +31,7 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.va.isaac.util.OTFUtility;
 
@@ -40,9 +41,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -65,8 +71,14 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @Singleton
-public class EditCoordinatePreferencesPluginView extends CoordinatePreferencesPluginView {
+public class EditCoordinatePreferencesPluginView  implements PreferencesPluginViewI {
 	private Logger logger = LoggerFactory.getLogger(EditCoordinatePreferencesPluginView.class);
+
+	// BEGIN CoordinatePreferencesPluginView
+	private HBox hBox = null;
+	private ValidBooleanBinding allValid_ = null;
+	
+	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
 
 	/**
 	 * 
@@ -139,7 +151,7 @@ public class EditCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 			// ComboBox
 			final UUID storedPath = getStoredPath();
 			pathComboBox.getSelectionModel().select(storedPath);
-			pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
+			//pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath()) + "\""));
 
 			hBox = new HBox();
 			hBox.getChildren().addAll(pathComboBox);
@@ -175,10 +187,6 @@ public class EditCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getCoordinatePathOptions()
-	 */
-	@Override
 	protected Collection<UUID> getPathOptions() {
 		List<UUID> list = new ArrayList<>();
 
@@ -201,39 +209,14 @@ public class EditCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		return list;
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getStoredPath()
-	 */
-	@Override
 	protected UUID getStoredPath() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getEditCoordinatePath();
 	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getStoredStatedInferredOption()
-	 */
-	@Override
-	protected StatedInferredOptions getStoredStatedInferredOption() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getDefaultPath()
-	 */
-	@Override
+	
 	protected UUID getDefaultPath() {
 		return UserProfileDefaults.getDefaultEditCoordinatePath();
 	}
-
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.preferences.plugins.CoordinatePreferencesPluginView#getDefaultStatedInferredOption()
-	 */
-	@Override
-	protected StatedInferredOptions getDefaultStatedInferredOption() {
-		return null;
-	}
-
 	/**
 	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getTabOrder()
 	 */
@@ -243,16 +226,15 @@ public class EditCoordinatePreferencesPluginView extends CoordinatePreferencesPl
 		return 20;
 	}
 
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getValidationFailureMessage()
+	 */
 	@Override
-    protected Long getStoredTime() {
-	    // TODO Auto-generated method stub
-	    return null;
-    }
-
-	@Override
-    protected Long getDefaultTime() {
-	    // TODO Auto-generated method stub
-	    return null;
-    }
-
+	public ReadOnlyStringProperty validationFailureMessageProperty() {
+		return allValid_.getReasonWhyInvalid();
+	}
+	
+	public ReadOnlyObjectProperty<UUID> currentPathProperty() {
+		return currentPathProperty;
+	}
 }

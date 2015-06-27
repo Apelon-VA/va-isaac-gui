@@ -28,6 +28,7 @@ import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -63,7 +64,7 @@ import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,7 +183,7 @@ public class BdbInformationModelService implements InformationModelService {
       // Results are descriptions, need to look up concepts
       for (SearchResult result : searchResults) {
         int conceptNid =
-            dataStore.getComponent(result.getNid()).getConceptNid();
+            dataStore.getComponent(result.getNid()).getEnclosingConceptNid();
         ConceptVersionBI conceptVersion =
             OTFUtility.getConceptVersion(conceptNid);
         LOG.debug("    Check " + conceptVersion.getPrimordialUuid() + ", "
@@ -810,6 +811,6 @@ public class BdbInformationModelService implements InformationModelService {
     UUID parentUUIDs[] = new UUID[1];
     parentUUIDs[0] = parent.getPrimordialUuid();
     //TODO OCHRE deal with path
-    return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, null, parentUUIDs);
+    return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), parentUUIDs);
   }
 }

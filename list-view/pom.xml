@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
-		<version>23.1.1</version>
+		<version>23.2</version>
 	</parent>
 	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>list-view</artifactId>
@@ -31,19 +31,6 @@
 			<groupId>net.sf.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
 			<version>2.3</version>
-		</dependency>
-		
-		<!--  TODO get rid of the following dependencies, add dependency injection + an interface -->
-		<dependency>
-			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>content-request</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>import-export</artifactId>
-			<version>${project.parent.version}</version>
 		</dependency>
 		
 		<!-- TODO get rid of this dependency... we only use one thing from it... -->

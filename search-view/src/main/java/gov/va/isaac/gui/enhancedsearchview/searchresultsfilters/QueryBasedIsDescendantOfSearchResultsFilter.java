@@ -28,6 +28,7 @@ import gov.va.isaac.gui.enhancedsearchview.filters.IsDescendantOfFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 
 		Query q = new Query() {
 			@Override
-			public void Let() throws IOException {
+			public void Let()  {
 				let(concept.getPrimordialUuid().toString(), new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
 			}
 
@@ -90,12 +91,12 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 			}
 
 			@Override
-			protected ForSetSpecification ForSetSpecification() throws IOException {
+			protected ForSetSpecification ForSetSpecification()  {
 				return forSetSpecification;
 			}
 		};
 
-		NativeIdSetBI outputNids = null;
+		NidSet outputNids = null;
 		try {
 			SearchResultsFilterHelper.LOG.debug("Applying " + (filter.getInvert() ? "Not(ConceptIsDescendentOf())" : "ConceptIsDescendentOf()") + filter + " to " + forSetCustomCollection.size() + " uuids");
 

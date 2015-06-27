@@ -24,15 +24,12 @@ import gov.va.isaac.interfaces.gui.ApplicationMenus;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
-
 import java.util.ArrayList;
 import java.util.List;
-
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +54,7 @@ public class ExportFileSettingsDialogView implements PopupViewI,
     ArrayList<MenuItemI> menus = new ArrayList<>();
     menus.add(new MenuItemI() {
       @Override
-      public void handleMenuSelection(Window parent) {
+      public void handleMenuSelection(Window parent, MenuItem menuItem) {
         showView(parent);
       }
 

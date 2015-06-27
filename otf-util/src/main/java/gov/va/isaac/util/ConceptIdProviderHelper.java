@@ -29,6 +29,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.gui.dragAndDrop.ConceptIdProvider;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -41,9 +42,9 @@ public class ConceptIdProviderHelper {
 	private static class ConceptIdProviderBean implements ConceptIdProvider {
 		private final Integer nid;
 		private final UUID uuid;
-		private final String sctId;
+		private final Optional<Long> sctId;
 		
-		private ConceptIdProviderBean(Integer nid, UUID uuid, String sctId) {
+		private ConceptIdProviderBean(Integer nid, UUID uuid, Optional<Long> sctId) {
 			super();
 			this.nid = nid;
 			this.uuid = uuid;
@@ -51,7 +52,7 @@ public class ConceptIdProviderHelper {
 		}
 
 		@Override
-		public String getSctId() {
+		public Optional<Long> getSctId() {
 			return sctId;
 		}
 		@Override
@@ -66,7 +67,7 @@ public class ConceptIdProviderHelper {
 	public static ConceptIdProvider getPopulatedConceptIdProvider(ConceptIdProvider idProvider) {
 		Integer tmpNid = idProvider != null ? idProvider.getNid() : null;
 		UUID tmpUuid = idProvider != null ? idProvider.getUUID() : null;
-		String tmpSctId = idProvider != null ? idProvider.getSctId() : null;
+		Optional<Long> tmpSctId = idProvider != null ? idProvider.getSctId() : Optional.empty();
 
 		ConceptVersionBI concept = null;
 		if (tmpNid != null) {
@@ -74,16 +75,20 @@ public class ConceptIdProviderHelper {
 			if (tmpUuid == null) {
 				tmpUuid = concept != null ? concept.getPrimordialUuid() : null;
 			}
-			if (tmpSctId == null) {
-				tmpSctId = concept != null ? ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept)).trim() : null;
+			if (!tmpSctId.isPresent()) {
+				if(concept != null) {
+					tmpSctId = ConceptViewerHelper.getSctId(concept.getNid());
+				}
 			}
 		} else if (tmpUuid != null) {
 			concept = OTFUtility.getConceptVersion(tmpUuid);
 			if (tmpNid == null) {
 				tmpNid = concept != null ? concept.getConceptNid() : null;
 			}
-			if (tmpSctId == null) {
-				tmpSctId = concept != null ? ConceptViewerHelper.getSctId(ConceptViewerHelper.getConceptAttributes(concept)).trim() : null;
+			if (!tmpSctId .isPresent()) {
+				if(concept != null) {
+					tmpSctId = ConceptViewerHelper.getSctId(concept.getNid());
+				}
 			}
 		}
 

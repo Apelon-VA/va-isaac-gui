@@ -17,6 +17,7 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +25,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
@@ -39,7 +42,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+
 import javax.validation.ValidationException;
+
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -113,7 +118,14 @@ public class EnhancedConceptBuilder {
 			
 		
 			// SCT Id
-			labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, ConceptViewerHelper.getSctId(attr), 0);
+			Optional<Long> thisSct = ConceptViewerHelper.getSctId(attr.getNid());
+			if(thisSct.isPresent()) {
+				labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, String.valueOf(thisSct.get()), 0);
+			} else {
+				//TODO unreleased doesn't really make sense, this should look up and use a Loinc, or RxNorm ID, for example.
+				labelHelper.initializeLabel(releaseIdLabel, attr, ComponentType.CONCEPT, "Unreleased", 0);
+			}
+			
 			Rectangle conRec = AnnotationRectangle.create(con);
 			conAnnotVBox.getChildren().add(conRec);
 

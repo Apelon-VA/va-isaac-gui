@@ -19,6 +19,7 @@
 package gov.va.isaac.interfaces.gui;
 
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
+import javafx.concurrent.Task;
 import javafx.stage.Stage;
 import org.jvnet.hk2.annotations.Contract;
 
@@ -47,4 +48,10 @@ public interface ApplicationWindowI
 	 * @param url
 	 */
 	public void browseURL(String url);
+	
+	/**
+	 * Show a task status in the progress bar, in the joint background task area.
+	 * @param task
+	 */
+	public void addBackgroundTask(Task<?> task);
 }

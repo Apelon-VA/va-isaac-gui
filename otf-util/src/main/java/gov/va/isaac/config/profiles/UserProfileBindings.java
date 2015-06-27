@@ -19,17 +19,29 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
+
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
+
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlySetWrapper;
+import javafx.beans.property.SimpleSetProperty;
+import javafx.beans.property.SetProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import com.sun.javafx.collections.ObservableSetWrapper;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -50,11 +62,25 @@ public class UserProfileBindings
 	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
 	
-	public Property<?>[] getAll()
-	{
-		return new Property<?>[] {statedInferredPolicy, displayFSN, displayRelDirection, workflowUsername, viewCoordinatePath, editCoordinatePath};
+	private final SetProperty<Status> viewCoordinateStatuses = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
+
+	private final SetProperty<UUID> viewCoordinateModules = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
+	ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
+
+	public Property<?>[] getAll() {
+		return new Property<?>[] {
+				statedInferredPolicy,
+				displayFSN,
+				displayRelDirection,
+				workflowUsername,
+				viewCoordinatePath,
+				editCoordinatePath,
+				readOnlyViewCoordinateStatuses,
+				readOnlyViewCoordinateModules
+		};
 	}
-	
+
 	/**
 	 * @return the statedInferredPolicy
 	 */
@@ -98,6 +124,22 @@ public class UserProfileBindings
 	{
 		return editCoordinatePath.getReadOnlyProperty();
 	}
+
+	/**
+	 * @return the viewCoordinateStatuses
+	 */
+	public ReadOnlySetProperty<Status> getViewCoordinateStatuses()
+	{
+		return readOnlyViewCoordinateStatuses;
+	}
+
+	/**
+	 * @return the viewCoordinateModules
+	 */
+	public ReadOnlySetProperty<UUID> getViewCoordinateModules()
+	{
+		return readOnlyViewCoordinateModules;
+	}
 	
 	protected void update(UserProfile up)
 	{
@@ -124,6 +166,24 @@ public class UserProfileBindings
 		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
 		{
 			workflowUsername.set(up.getWorkflowUsername());
+		}
+		
+		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
+		// and that viewCoordinateStatuses is initialized with an empty SimpleSetProperty<Status>
+		if (readOnlyViewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
+				|| ! readOnlyViewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
+				|| ! up.getViewCoordinateStatuses().containsAll(readOnlyViewCoordinateStatuses.get())) {
+			viewCoordinateStatuses.get().clear();
+			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
+		}
+
+		// This depends on the fact that UserProfile.getViewCoordinateModules() never returns null
+		// and that viewCoordinateModules is initialized with an empty SimpleSetProperty<UUID>
+		if (readOnlyViewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
+				|| ! readOnlyViewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
+				|| ! up.getViewCoordinateModules().containsAll(readOnlyViewCoordinateModules.get())) {
+			viewCoordinateModules.get().clear();
+			viewCoordinateModules.get().addAll(up.getViewCoordinateModules());
 		}
 	}
 }

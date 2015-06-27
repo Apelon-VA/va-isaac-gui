@@ -19,7 +19,6 @@
 package gov.va.isaac.gui;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dialog.CommonDialogs;
 import gov.va.isaac.gui.download.DownloadDialog;
 import gov.va.isaac.init.SystemInit;
@@ -36,9 +35,12 @@ import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import org.glassfish.hk2.api.Rank;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
@@ -50,22 +52,31 @@ import org.slf4j.LoggerFactory;
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class App extends Application implements ApplicationWindowI{
 
+//Note - do NOT annotate this with @Service, as one normally would - JavaFX must construct this class, not HK2.  
+//HK2 gets confused, and makes an extra one, if this gets an annotation....
+@Rank (value = 100)
+public class App extends Application implements ApplicationWindowI {
+    
     private final Logger LOG = LoggerFactory.getLogger(App.class);
 
     private AppController controller;
     private boolean shutdown = false;
     private Stage primaryStage_;
-    private CommonDialogs commonDialog_;
     private static Exception dataStoreLocationInitException_ = null;
+    
+    /**
+     * Contructor for JavaFX only
+     */
+    public App()
+    {
+        //install this instance into HK2
+        ServiceLocatorUtilities.addOneConstant(AppContext.getServiceLocator(), this);
+    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage_ = primaryStage;
-        ServiceLocatorUtilities.addOneConstant(AppContext.getServiceLocator(), this);
-        //Set up the CommonDialogs class (which needs a references to primaryStage_ and gets it via injection)
-        commonDialog_ = AppContext.getServiceLocator().getService(CommonDialogs.class);
 
         this.controller = new AppController();
 
@@ -86,10 +97,37 @@ public class App extends Application implements ApplicationWindowI{
         // Handle window close event.
         primaryStage.setOnHiding(new EventHandler<WindowEvent>() {
 
+            /*
             @Override
             public void handle(WindowEvent event) {
                 shutdown();
             }
+            */
+
+            @Override
+            public void handle(WindowEvent event) {
+                final Stage dialog = new Stage(StageStyle.UNDECORATED);
+                dialog.initModality(Modality.APPLICATION_MODAL);
+
+                dialog.setScene(new Scene(LightWeightDialogs.buildWaitDialog("Closing the ISAAC database")));
+                dialog.getScene().getStylesheets().add(App.class.getResource("/isaac-shared-styles.css").toString());
+                dialog.getScene().getStylesheets().add(App.class.getResource("App.css").toString());
+                dialog.show();
+
+                Runnable shutdownTask = () -> { 
+                    shutdown();
+                    Platform.runLater(() -> {
+                        dialog.close();
+                        Platform.exit();
+                    });
+                };
+                
+                Thread shutdownThread = new Thread(shutdownTask);
+                shutdownThread.setDaemon(false);
+                shutdownThread.setName("ISAAC Shutdown");
+                shutdownThread.start();
+            }
+        
         });
 
         primaryStage.show();
@@ -151,6 +189,39 @@ public class App extends Application implements ApplicationWindowI{
             });
         }
     }
+    
+    /**
+     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#getPrimaryStage()
+     */
+    @Override
+    public Stage getPrimaryStage()
+    {
+        return primaryStage_;
+    }
+
+    /**
+     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#ensureDockedViewIsVisble(gov.va.isaac.interfaces.gui.views.DockedViewI)
+     */
+    @Override
+    public void ensureDockedViewIsVisble(DockedViewI view)
+    {
+        controller.ensureDockedViewIsVisible(view);
+    }
+
+    /**
+     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#browseURL(java.lang.String)
+     */
+    @Override
+    public void browseURL(String url)
+    {
+        getHostServices().showDocument(url);
+    }
+
+    @Override
+    public void addBackgroundTask(Task<?> task)
+    {
+        controller.addBackgroundTask(task);
+    }
 
     private void loadDataStore() {
 
@@ -187,7 +258,7 @@ public class App extends Application implements ApplicationWindowI{
                 String msg = ex.getClass().getName();
                 String details = ex.getMessage();
                 LOG.error(title, ex);
-                commonDialog_.showErrorDialog(title, msg, details);
+                AppContext.getServiceLocator().getService(CommonDialogs.class).showErrorDialog(title, msg, details);
             }
         };
 
@@ -196,10 +267,7 @@ public class App extends Application implements ApplicationWindowI{
         t.start();
     }
 
-
-
     protected void shutdown() {
-    	controller.showExitWait();
         LOG.info("Shutting down");
         shutdown = true;
         if (primaryStage_.isShowing())
@@ -208,9 +276,6 @@ public class App extends Application implements ApplicationWindowI{
         }
         try {
             Utility.shutdownThreadPools();
-            //TODO OTF fix note - the current BDB access model gives me no way to know if I should call shutdown, as I don't know if it was started.
-            //If it wasn't started, calling shutdown tries to start the DB, because it inits in the constructor call.  https://jira.ihtsdotools.org/browse/OTFISSUE-13
-            //don't bother with shutdown if we know the path was bad... other wise, this actually tries to init the DB.  Sigh.
             if (dataStoreLocationInitException_ == null)
             {
                 LookupService.shutdownIsaac();
@@ -219,38 +284,11 @@ public class App extends Application implements ApplicationWindowI{
         } catch (Throwable ex) {
             String message = "Trouble shutting down";
             LOG.warn(message, ex);
-            commonDialog_.showErrorDialog("Oops!", message, ex.getMessage());
+            AppContext.getServiceLocator().getService(CommonDialogs.class).showErrorDialog("Oops!", message, ex.getMessage());
         }
         LOG.info("Finished shutting down");
-        Platform.exit();
     }
     
-    /**
-     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#getPrimaryStage()
-     */
-    @Override
-    public Stage getPrimaryStage()
-    {
-        return primaryStage_;
-    }
-    
-    /**
-     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#ensureDockedViewIsVisble(gov.va.isaac.interfaces.gui.views.DockedViewI)
-     */
-    @Override
-    public void ensureDockedViewIsVisble(DockedViewI view)
-    {
-        controller.ensureDockedViewIsVisible(view);
-    }
-
-    /**
-     * @see gov.va.isaac.interfaces.gui.ApplicationWindowI#browseURL(java.lang.String)
-     */
-    @Override
-    public void browseURL(String url)
-    {
-        this.getHostServices().showDocument(url);
-    }
 
     public static void main(String[] args) throws Exception {
         dataStoreLocationInitException_ = SystemInit.doBasicSystemInit(new File(""));

@@ -341,7 +341,6 @@ public class SnomedSnorocketClassifier implements Classifier {
 
     // Run garbage collector
     System.gc();
-    System.gc();
 
     // Classify
     fireProgressEvent(71, "Classify");
@@ -389,7 +388,6 @@ public class SnomedSnorocketClassifier implements Classifier {
     pr = null;
     // save for incremental classification
     // rocket_123 = null;
-    System.gc();
     System.gc();
 
     // Write back results - disable commit listeners during this

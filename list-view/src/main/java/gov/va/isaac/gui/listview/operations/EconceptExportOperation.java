@@ -29,6 +29,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,6 +54,7 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -83,11 +85,13 @@ public class EconceptExportOperation extends Operation
 	private String fileName = "";
 	private String filePath = "";
 	private String fileExtension = null;
+	private String plainFilePath;
 	private ToggleGroup toggleGroup = new ToggleGroup();
 	private TextField outputField = new TextField();
 	
 	private ValidBooleanBinding allFieldsValid;
 	private DataOutputStream dos_;
+	PrintWriter pos_ = null;
 	private String toggleSelected = null;
 	
 	public enum ExportFileExtensionEnum
@@ -170,17 +174,28 @@ public class EconceptExportOperation extends Operation
 				{
 					if(!filePath.equals(""))
 					{
-						String path = filePath.substring(0, filePath.lastIndexOf(File.separator));
-						logger_.debug("Output Directory: " + path);
-						File f = new File(path);
-						if(file.isFile()) {
-							this.setInvalidReason("The file " + filePath + " already exists");
-							return false;
-						}
-						else if(f.isDirectory()){
-							return true;
+						String fieldOutput = outputField.getText();
+						if(filePath != null && !fieldOutput.isEmpty() && file != null) //fieldOutput is repetetive but necessary
+						{	
+							String path = filePath.substring(0, filePath.lastIndexOf(File.separator));
+							logger_.debug("Output Directory: " + path);
+							File f = new File(path);
+							if(file != null) {
+								if(file.isFile()) {
+									this.setInvalidReason("The file " + filePath + " already exists");
+									return false;
+								}
+								else if(f.isDirectory()){
+									return true;
+								} else {
+									this.setInvalidReason("Output Path is not a directory");
+									return false;
+								}
+							} else {
+								this.setInvalidReason("file object is null");
+								return false;
+							}
 						} else {
-							this.setInvalidReason("Output Path is not a directory");
 							return false;
 						}
 					} else {
@@ -206,6 +221,7 @@ public class EconceptExportOperation extends Operation
 		
 		StackPane sp = ErrorMarkerUtils.setupErrorMarker(outputField, null, allFieldsValid);
 		root.add(sp, 1, 0);
+		GridPane.setHgrow(sp, Priority.ALWAYS);
 		GridPane.setHalignment(sp, HPos.LEFT);
 		
 		Label eConChangesetLabel = new Label("EConcept / Changeset");
@@ -242,7 +258,12 @@ public class EconceptExportOperation extends Operation
 				{
 					RadioButton selectedRadio = (RadioButton)newValue.getToggleGroup().getSelectedToggle();
 					String theSelectedValue = selectedRadio.getText().trim();
-					String plainFilePath = filePath.substring(0, filePath.lastIndexOf("."));
+					if(!filePath.isEmpty()) {
+						plainFilePath = filePath.substring(0, filePath.lastIndexOf("."));
+					} else {
+						plainFilePath = "";
+					}
+					
 					fileChooser.getExtensionFilters().clear();
 					if(theSelectedValue.equalsIgnoreCase("econcept"))
 					{
@@ -250,7 +271,7 @@ public class EconceptExportOperation extends Operation
 						fileName = ExportFileExtensionEnum.Econcept.name + "_Export";
 						fileExtension =	ExportFileExtensionEnum.Econcept.extensionFormat;
 						fileChooser.setInitialFileName(fileName);
-						filePath = plainFilePath +  ExportFileExtensionEnum.Econcept.extensionFormat;
+						filePath = plainFilePath + ExportFileExtensionEnum.Econcept.extensionFormat;
 						file = new File(filePath);
 						outputField.clear();
 						outputField.setText(filePath);
@@ -311,7 +332,6 @@ public class EconceptExportOperation extends Operation
 	@Override
 	protected void conceptListChanged()
 	{
-		//TODO: DO we want to also populate this list with exported concepts ?
 	}
 
 	/**
@@ -345,8 +365,7 @@ public class EconceptExportOperation extends Operation
 			{
 				if(file != null) 
 				{
-					double i = 0;
-					boolean firstValue = true;
+					double count = 0;
 					dos_ = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
 					for (SimpleDisplayConcept concept : conceptList_)
 					{
@@ -358,36 +377,48 @@ public class EconceptExportOperation extends Operation
 							{
 								return new OperationResult(EconceptExportOperation.this.getTitle(), cancelRequested_);
 							}
-							updateProgress(i, conceptList_.size());
-							if (i % 100 == 0) {
-								updateMessage("Creating Data Ouput Stream for Export: " + concept.getDescription());
-							}
+							updateProgress(count, conceptList_.size());
+							//if (i % 100 == 0) { } //TODO: Fix update message print frequency for large stream size
+							updateMessage("Creating Data Ouput Stream for Export: " + concept.getDescription());
 							
-							new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).writeExternal(dos_);
-							
-							if(toggleSelected.equalsIgnoreCase("changeset")) {
+							if(toggleSelected.equalsIgnoreCase("changeset")) 
+							{
+								logger_.info("Changeset Exporter - we are executing a changeset export");
 								new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).writeExternal(dos_);
 								dos_.writeLong(System.currentTimeMillis());
-							} else if(toggleSelected.equalsIgnoreCase("econcept")) {
+							} 
+							else if(toggleSelected.equalsIgnoreCase("econcept")) 
+							{
+								logger_.info("EConcept Exporter - we are executing a econcept export");
 								new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).writeExternal(dos_);
-							} else {
-								new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).toXml();
-								if(firstValue) {
-									firstValue = false;
+							} 
+							else 
+							{
+								logger_.info("XML Exporter - we are executing an XML export");
+								try {
+									pos_ = new PrintWriter(new FileOutputStream(file));
+									String xmlOutput = new TtkConceptChronicle(OTFUtility.getConceptVersion(concept.getNid())).toXml();
+									pos_.print(xmlOutput);
+								} catch(Exception e) {
+									logger_.error("EConcept / Changeset / XML Exporter Task - Error generating XML " + e.getMessage(), e);
+									e.printStackTrace();
+								} finally {
+									pos_.close();
 								}
+								
 							}
 
 							if (cancelRequested_) {
 								return new OperationResult(  EconceptExportOperation.this.getTitle(), cancelRequested_);
 							}
-							if (i % 100 == 0) {
-								updateMessage("Exporting Database to EConcepts " + concept.getDescription());
-							}
+//							if (count % 100 == 0) { } //TODO: Fix update frequency
+							updateMessage("Exporting Database to EConcepts " + concept.getDescription());
 
 							if (cancelRequested_) {
 								return new OperationResult(  EconceptExportOperation.this.getTitle(), cancelRequested_);
 							}
-							updateProgress(++i, conceptList_.size());
+							count++;
+							updateProgress(count, conceptList_.size());
 						} catch (Exception e) {
 							logger_.error(e.getMessage());
 							e.printStackTrace();
@@ -399,7 +430,14 @@ public class EconceptExportOperation extends Operation
 				} else {
 					throw new Exception( "File Location path was not set correctly");
 				}
-				return new OperationResult("The export was completed succesfully", new HashSet<SimpleDisplayConcept>(), "The USCRS content request was succesfully generated");
+				
+				if(toggleSelected.equalsIgnoreCase("changeset")) {
+					return new OperationResult("The Changeset export was completed succesfully", new HashSet<SimpleDisplayConcept>(), "The Changeset was succesfully generated");
+				} else if(toggleSelected.equalsIgnoreCase("econcept")) {
+					return new OperationResult("The EConcept export was completed succesfully", new HashSet<SimpleDisplayConcept>(), "The EConcept was succesfully generated");
+				} else {
+					return new OperationResult("The XML export was completed succesfully", new HashSet<SimpleDisplayConcept>(), "The XML was succesfully generated");
+				}
 			}
 		};
 	}

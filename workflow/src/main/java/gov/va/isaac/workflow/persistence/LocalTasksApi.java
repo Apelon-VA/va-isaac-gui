@@ -45,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.inject.Singleton;
 import javax.sql.DataSource;
+
 import org.jvnet.hk2.annotations.Service;
 import org.kie.api.task.model.Status;
 import org.slf4j.Logger;
@@ -93,10 +95,23 @@ public class LocalTasksApi implements LocalTasksServiceBI {
     	return dataSource;
     }
     
-    public void changeUserName(String oldWFUsername, String newWFUsername)
+    public void changeUserName(String oldWFUsername, String newWFUsername) throws DatastoreException
     {
-        //TODO (artf231902) DAN THIS MUST BE IMPLEMENTED before changing a WF username will work properly!!!!!
-        log.error("The change username functionality is not yet complete - WF state is now corrupt!!!!!!!");
+        //(Done) (artf231902) DAN THIS MUST BE IMPLEMENTED before changing a WF username will work properly!!!!!
+
+    	// TODO this needs to be tested - DT
+    	try {
+	        Connection conn = getDataSource().getConnection();
+	        PreparedStatement psUpdateUser = conn.prepareStatement("update local_tasks set owner = ? where owner = ?");
+	        psUpdateUser.setString(1, newWFUsername);
+	        psUpdateUser.setString(2, oldWFUsername);
+	        int updatedRowCount = psUpdateUser.executeUpdate();
+	        log.info(Integer.toString(updatedRowCount) + " rows updated in local_tasks"); 
+	        conn.commit();
+    	} catch (SQLException e) {
+    		log.error("Change username on local_tasks table failed", e);
+	        throw new DatastoreException("Change username on local_tasks table failed", e);
+    	}
     }
     
 

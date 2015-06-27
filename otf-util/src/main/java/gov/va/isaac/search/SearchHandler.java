@@ -23,8 +23,8 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import java.io.IOException;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
@@ -46,7 +47,6 @@ import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.index.service.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,25 +62,6 @@ import org.slf4j.LoggerFactory;
 public class SearchHandler
 {
 	private static final Logger LOG = LoggerFactory.getLogger(SearchHandler.class);
-	
-	private static ViewCoordinate vc_;
-	
-	private static ViewCoordinate getViewCoordinate()
-	{
-		if (vc_ == null)
-		{
-			try
-			{
-				vc_ = ViewCoordinates.getDevelopmentStatedLatest();
-			}
-			catch (IOException e)
-			{
-				throw new RuntimeException("Unexpected", e);
-			}
-		}
-		return vc_;
-	}
-	
 
 	/**
 	 * Execute a Query against the description indexes in a background thread, hand back a handle to the search object which will 
@@ -283,6 +264,7 @@ public class SearchHandler
 			Comparator<CompositeSearchResult> comparator,
 			boolean mergeOnConcepts)
 	{
+		ViewCoordinate vc = OTFUtility.getViewCoordinate();
 		
 		final SearchHandle searchHandle = new SearchHandle();
 
@@ -357,7 +339,7 @@ public class SearchHandler
 
 									// Get the description object.
 									//TODO figure out how we handle view coordinate for search
-									Optional<? extends ComponentVersionBI> cc = dataStore.getComponent(searchResult.getNid()).getVersion(ViewCoordinates.getDevelopmentStatedLatest());
+									Optional<? extends ComponentVersionBI> cc = dataStore.getComponentVersion(vc, searchResult.getNid());
 
 									// normalize the scores between 0 and 1
 									float normScore = (searchResult.getScore() / maxScore);
@@ -443,6 +425,8 @@ public class SearchHandler
 	{
 		final SearchHandle searchHandle = new SearchHandle();
 
+		ViewCoordinate vc = OTFUtility.getViewCoordinate();
+		
 		// Do search in background.
 		Runnable r = new Runnable()
 		{
@@ -504,7 +488,7 @@ public class SearchHandler
 								Optional<? extends ComponentVersionBI> cv;
 								if (cc != null)
 								{
-									cv = cc.getVersion(getViewCoordinate());
+									cv = cc.getVersion(vc);
 								}
 								else
 								{

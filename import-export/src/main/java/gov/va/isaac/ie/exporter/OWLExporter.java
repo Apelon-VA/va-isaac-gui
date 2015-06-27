@@ -6,6 +6,8 @@ import gov.va.isaac.models.util.CommonBase;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.collections.NidSet;
+
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -18,6 +20,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
+
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
@@ -276,8 +279,12 @@ public class OWLExporter extends CommonBase implements Exporter,
    * org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI#getNidSet()
    */
   @Override
-  public NativeIdSetBI getNidSet() throws IOException {
-    return dataStore.getAllConceptNids();
+  public NidSet getNidSet() {
+            try {
+                return NidSet.of(dataStore.getAllConceptNids().toConceptSequenceSet());
+            } catch (IOException ex) {
+               throw new RuntimeException(ex);
+            }
   }
 
   /*
@@ -581,13 +588,14 @@ public class OWLExporter extends CommonBase implements Exporter,
    */
   private String getSnomedConceptID(ConceptVersionBI conceptVersionBI)
     throws Exception {
-    String id = ConceptViewerHelper.getSctId(conceptVersionBI).trim();
-    if ("Unreleased".equalsIgnoreCase(id)) {
-      return conceptVersionBI.getPrimordialUuid().toString();
+    
+    Optional<Long> sctId = ConceptViewerHelper.getSctId(conceptVersionBI.getNid());
+    if (sctId.isPresent()) {
+        return sctId.get().toString();
     } else {
-      // do nothing
+        return conceptVersionBI.getPrimordialUuid().toString();
     }
-    return id;
+   
   }
 
   /**

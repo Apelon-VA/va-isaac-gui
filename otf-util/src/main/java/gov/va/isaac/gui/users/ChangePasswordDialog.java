@@ -32,6 +32,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -88,7 +89,7 @@ public class ChangePasswordDialog extends Stage implements IsaacViewWithMenusI, 
 		{
 			
 			@Override
-			public void handleMenuSelection(Window parent)
+			public void handleMenuSelection(Window parent, MenuItem menuItem)
 			{
 				ChangePasswordDialog.this.showView(parent);
 			}

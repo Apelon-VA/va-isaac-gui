@@ -5,6 +5,7 @@ import gov.va.isaac.models.util.CommonBase;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -18,7 +19,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
 import org.slf4j.Logger;
@@ -184,8 +184,12 @@ public class EConceptExporter extends CommonBase implements
    * org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI#getNidSet()
    */
   @Override
-  public NativeIdSetBI getNidSet() throws IOException {
-    return dataStore.getAllConceptNids();
+  public NidSet getNidSet() {
+            try {
+                return NidSet.of(dataStore.getAllConceptNids().toConceptSequenceSet());
+            } catch (IOException ex) {
+               throw new RuntimeException(ex);
+            }
   }
 
   /*

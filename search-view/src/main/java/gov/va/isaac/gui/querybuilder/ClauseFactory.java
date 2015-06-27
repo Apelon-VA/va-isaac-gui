@@ -24,7 +24,6 @@
  */
 package gov.va.isaac.gui.querybuilder;
 
-import java.io.IOException;
 import gov.va.isaac.gui.querybuilder.node.InvertableNode;
 import gov.va.isaac.gui.querybuilder.node.LogicalNode;
 import gov.va.isaac.gui.querybuilder.node.NodeDraggable;
@@ -85,206 +84,204 @@ public class ClauseFactory {
 	public static Clause createClause(Query query, TreeItem<NodeDraggable> treeItem) {
 		QueryNodeType itemType = QueryNodeType.valueOf(treeItem.getValue());
 
-		try
-		{
-			switch(itemType) {
-			case AND:
-			case OR: 
-			case XOR: {
-				LogicalNode node = (LogicalNode)treeItem.getValue();
-				Clause[] subClauses = new Clause[treeItem.getChildren().size()];
-				for (int i = 0; i < treeItem.getChildren().size(); ++i) {
-					subClauses[i] = createClause(query, treeItem.getChildren().get(i));
-				}
-				Clause clause = null;
-				
-				if (itemType == QueryNodeType.AND) {
-					clause = new org.ihtsdo.otf.query.implementation.And(query, subClauses);
-				} else if (itemType == QueryNodeType.OR) {
-					clause = new org.ihtsdo.otf.query.implementation.Or(query, subClauses);
-				} else if (itemType == QueryNodeType.XOR) {
-					clause = new org.ihtsdo.otf.query.implementation.Xor(query, subClauses);
-				} else {
-					// Programmer error.  Should never happen.
-					throw new IllegalArgumentException("Unhandled LogicalNode QueryNodeType " + itemType);
-				}
-
-				logger.debug("Constructed {} clause with {} child subclauses", clause.getClass().getName(), subClauses.length);
-				
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-
-			case CONCEPT_IS: 
-			case CONCEPT_IS_CHILD_OF:
-			case CONCEPT_IS_DESCENDANT_OF: 
-			case CONCEPT_IS_KIND_OF: {
-				SingleConceptAssertionNode node = (SingleConceptAssertionNode)treeItem.getValue();
-				ConceptVersionBI concept = OTFUtility.getConceptVersion(node.getNid());
-				final String conceptSpecKey = "UUIDKeyFor" + node.getTemporaryUniqueId();
-				final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(conceptSpecKey, new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
-				query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
-				Clause clause = null;
-				
-				if (itemType == QueryNodeType.CONCEPT_IS) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIs(query, conceptSpecKey, vcKey);
-				} else if (itemType == QueryNodeType.CONCEPT_IS_CHILD_OF) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIsChildOf(query, conceptSpecKey, vcKey);
-				} else if (itemType == QueryNodeType.CONCEPT_IS_DESCENDANT_OF) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIsDescendentOf(query, conceptSpecKey, vcKey);
-				} else if (itemType == QueryNodeType.CONCEPT_IS_KIND_OF) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIsKindOf(query, conceptSpecKey, vcKey);
-				} else {
-					// Programmer error.  Should never happen.
-					throw new IllegalArgumentException("Unhandled SingleConceptAssertionNode QueryNodeType " + itemType);
-				}
-
-				logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
-
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-
-			case DESCRIPTION_CONTAINS:
-			case DESCRIPTION_LUCENE_MATCH:
-			case DESCRIPTION_REGEX_MATCH:  {
-				SingleStringAssertionNode node = (SingleStringAssertionNode)treeItem.getValue();
-				final String stringMatchKey = "StringMatchKeyFor" + node.getTemporaryUniqueId();
-				final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(stringMatchKey, node.getString());
-				query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
-				
-				Clause clause = null;
-				if (itemType == QueryNodeType.DESCRIPTION_CONTAINS) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.DescriptionActiveLuceneMatch(query, stringMatchKey, vcKey);
-				} else if (itemType == QueryNodeType.DESCRIPTION_LUCENE_MATCH) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.DescriptionLuceneMatch(query, stringMatchKey, vcKey);
-				} else if (itemType == QueryNodeType.DESCRIPTION_REGEX_MATCH) {
-					clause = new org.ihtsdo.otf.query.implementation.clauses.DescriptionRegexMatch(query, stringMatchKey, vcKey);
-				} else {
-					// Programmer error.  Should never happen.
-					throw new IllegalArgumentException("Unhandled SingleStringAssertionNode QueryNodeType " + itemType);
-				}
-				
-				logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
-
-				clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptForComponent(query, clause);
-				
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-
-			case REFSET_CONTAINS_CONCEPT: {
-				RefsetContainsConcept node = (RefsetContainsConcept)treeItem.getValue();
-				
-				final ConceptVersionBI refsetConcept = OTFUtility.getConceptVersion(node.getRefsetConceptNid());
-				final String refsetConceptSpecKey = "RefsetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(refsetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(refsetConcept), refsetConcept.getPrimordialUuid()));
-
-				final ConceptVersionBI targetConcept = OTFUtility.getConceptVersion(node.getConceptNid());
-				final String targetConceptSpecKey = "TargetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
-
-				final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
-				
-				Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsConcept(
-					/* Query */		query,
-					/* String */	refsetConceptSpecKey,
-					/* String */	targetConceptSpecKey,
-					/* String */	vcKey);
-
-				logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
-
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-			
-			case REFSET_CONTAINS_KIND_OF_CONCEPT: {
-				RefsetContainsKindOfConcept node = (RefsetContainsKindOfConcept)treeItem.getValue();
-				
-				final ConceptVersionBI refsetConcept = OTFUtility.getConceptVersion(node.getRefsetConceptNid());
-				final String refsetConceptSpecKey = "RefsetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(refsetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(refsetConcept), refsetConcept.getPrimordialUuid()));
-
-				final ConceptVersionBI targetConcept = OTFUtility.getConceptVersion(node.getConceptNid());
-				final String targetConceptSpecKey = "TargetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
-
-				final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
-				
-				Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsKindOfConcept(
-					/* Query */		query,
-					/* String */	refsetConceptSpecKey,
-					/* String */	targetConceptSpecKey,
-					/* String */	vcKey);
-
-				logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
-
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-			case REFSET_CONTAINS_STRING: {
-				RefsetContainsString node = (RefsetContainsString)treeItem.getValue();
-				
-				final ConceptVersionBI refsetConcept = OTFUtility.getConceptVersion(node.getRefsetConceptNid());
-				final String refsetConceptSpecKey = "RefsetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(refsetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(refsetConcept), refsetConcept.getPrimordialUuid()));
-
-				final String queryText = node.getQueryText();
-				final String queryTextKey = "QueryTextKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(queryTextKey, queryText);
-
-				final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
-				
-				Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsString(
-					/* Query */		query,
-					/* String */	refsetConceptSpecKey,
-					/* String */	queryTextKey,
-					/* String */	vcKey);
-
-				logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
-
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-
-			case REL_RESTRICTION: {
-				RelRestriction node = (RelRestriction)treeItem.getValue();
-				
-				final ConceptVersionBI relRestrictionConcept = OTFUtility.getConceptVersion(node.getRelRestrictionConceptNid());
-				final String relRestrictionConceptSpecKey = "RelRestrictionConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(relRestrictionConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(relRestrictionConcept), relRestrictionConcept.getPrimordialUuid()));
-				
-				final ConceptVersionBI relTypeConcept = OTFUtility.getConceptVersion(node.getRelTypeConceptNid());
-				final String relTypeConceptSpecKey = "RelTypeConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(relTypeConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(relTypeConcept), relTypeConcept.getPrimordialUuid()));
-
-				final ConceptVersionBI sourceConcept = OTFUtility.getConceptVersion(node.getSourceConceptNid());
-				final String sourceConceptSpecKey = "SourceConceptUUIDKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(sourceConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(sourceConcept), sourceConcept.getPrimordialUuid()));
-
-				final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
-				
-				final String useDestinationSubsumptionKey = "UseDestinationSubsumptionBooleanKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(useDestinationSubsumptionKey, node.getUseDestinationSubsumption());
-				
-				final String useRelTypeSubsumptionKey = "UseRelTypeSubsumptionBooleanKeyFor" + node.getTemporaryUniqueId();
-				query.getLetDeclarations().put(useRelTypeSubsumptionKey, node.getUseRelTypeSubsumption());
-
-				Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RelRestriction(
-					/* Query */		query,
-//			/* String */	relRestrictionConceptSpecKey,  //TODO OCHRE untested edit 
-					/* String */	relTypeConceptSpecKey,
-					/* String */	sourceConceptSpecKey,
-					/* String */	vcKey,
-					/* String */	useDestinationSubsumptionKey,
-					/* String */	useRelTypeSubsumptionKey);
-
-				logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
-
-				return addInversionClauseIfNecessary(query, node, clause);
-			}
-
-			//TODO OCHRE - This merged into relRestriction
+                switch(itemType) {
+                    case AND:
+                    case OR:
+                    case XOR: {
+                        LogicalNode node = (LogicalNode)treeItem.getValue();
+                        Clause[] subClauses = new Clause[treeItem.getChildren().size()];
+                        for (int i = 0; i < treeItem.getChildren().size(); ++i) {
+                            subClauses[i] = createClause(query, treeItem.getChildren().get(i));
+                        }
+                        Clause clause = null;
+                        
+                        if (itemType == QueryNodeType.AND) {
+                            clause = new org.ihtsdo.otf.query.implementation.And(query, subClauses);
+                        } else if (itemType == QueryNodeType.OR) {
+                            clause = new org.ihtsdo.otf.query.implementation.Or(query, subClauses);
+                        } else if (itemType == QueryNodeType.XOR) {
+                            clause = new org.ihtsdo.otf.query.implementation.Xor(query, subClauses);
+                        } else {
+                            // Programmer error.  Should never happen.
+                            throw new IllegalArgumentException("Unhandled LogicalNode QueryNodeType " + itemType);
+                        }
+                        
+                        logger.debug("Constructed {} clause with {} child subclauses", clause.getClass().getName(), subClauses.length);
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    
+                    case CONCEPT_IS:
+                    case CONCEPT_IS_CHILD_OF:
+                    case CONCEPT_IS_DESCENDANT_OF:
+                    case CONCEPT_IS_KIND_OF: {
+                        SingleConceptAssertionNode node = (SingleConceptAssertionNode)treeItem.getValue();
+                        ConceptVersionBI concept = OTFUtility.getConceptVersion(node.getNid());
+                        final String conceptSpecKey = "UUIDKeyFor" + node.getTemporaryUniqueId();
+                        final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(conceptSpecKey, new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
+                        Clause clause = null;
+                        
+                        if (itemType == QueryNodeType.CONCEPT_IS) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIs(query, conceptSpecKey, vcKey);
+                        } else if (itemType == QueryNodeType.CONCEPT_IS_CHILD_OF) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIsChildOf(query, conceptSpecKey, vcKey);
+                        } else if (itemType == QueryNodeType.CONCEPT_IS_DESCENDANT_OF) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIsDescendentOf(query, conceptSpecKey, vcKey);
+                        } else if (itemType == QueryNodeType.CONCEPT_IS_KIND_OF) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptIsKindOf(query, conceptSpecKey, vcKey);
+                        } else {
+                            // Programmer error.  Should never happen.
+                            throw new IllegalArgumentException("Unhandled SingleConceptAssertionNode QueryNodeType " + itemType);
+                        }
+                        
+                        logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    
+                    case DESCRIPTION_CONTAINS:
+                    case DESCRIPTION_LUCENE_MATCH:
+                    case DESCRIPTION_REGEX_MATCH:  {
+                        SingleStringAssertionNode node = (SingleStringAssertionNode)treeItem.getValue();
+                        final String stringMatchKey = "StringMatchKeyFor" + node.getTemporaryUniqueId();
+                        final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(stringMatchKey, node.getString());
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
+                        
+                        Clause clause = null;
+                        if (itemType == QueryNodeType.DESCRIPTION_CONTAINS) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.DescriptionActiveLuceneMatch(query, stringMatchKey, vcKey);
+                        } else if (itemType == QueryNodeType.DESCRIPTION_LUCENE_MATCH) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.DescriptionLuceneMatch(query, stringMatchKey, vcKey);
+                        } else if (itemType == QueryNodeType.DESCRIPTION_REGEX_MATCH) {
+                            clause = new org.ihtsdo.otf.query.implementation.clauses.DescriptionRegexMatch(query, stringMatchKey, vcKey);
+                        } else {
+                            // Programmer error.  Should never happen.
+                            throw new IllegalArgumentException("Unhandled SingleStringAssertionNode QueryNodeType " + itemType);
+                        }
+                        
+                        logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
+                        
+                        clause = new org.ihtsdo.otf.query.implementation.clauses.ConceptForComponent(query, clause);
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    
+                    case REFSET_CONTAINS_CONCEPT: {
+                        RefsetContainsConcept node = (RefsetContainsConcept)treeItem.getValue();
+                        
+                        final ConceptVersionBI refsetConcept = OTFUtility.getConceptVersion(node.getRefsetConceptNid());
+                        final String refsetConceptSpecKey = "RefsetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(refsetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(refsetConcept), refsetConcept.getPrimordialUuid()));
+                        
+                        final ConceptVersionBI targetConcept = OTFUtility.getConceptVersion(node.getConceptNid());
+                        final String targetConceptSpecKey = "TargetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
+                        
+                        final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
+                        
+                        Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsConcept(
+                                /* Query */		query,
+                                /* String */	refsetConceptSpecKey,
+                                /* String */	targetConceptSpecKey,
+                                /* String */	vcKey);
+                        
+                        logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    
+                    case REFSET_CONTAINS_KIND_OF_CONCEPT: {
+                        RefsetContainsKindOfConcept node = (RefsetContainsKindOfConcept)treeItem.getValue();
+                        
+                        final ConceptVersionBI refsetConcept = OTFUtility.getConceptVersion(node.getRefsetConceptNid());
+                        final String refsetConceptSpecKey = "RefsetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(refsetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(refsetConcept), refsetConcept.getPrimordialUuid()));
+                        
+                        final ConceptVersionBI targetConcept = OTFUtility.getConceptVersion(node.getConceptNid());
+                        final String targetConceptSpecKey = "TargetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
+                        
+                        final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
+                        
+                        Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsKindOfConcept(
+                                /* Query */		query,
+                                /* String */	refsetConceptSpecKey,
+                                /* String */	targetConceptSpecKey,
+                                /* String */	vcKey);
+                        
+                        logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    case REFSET_CONTAINS_STRING: {
+                        RefsetContainsString node = (RefsetContainsString)treeItem.getValue();
+                        
+                        final ConceptVersionBI refsetConcept = OTFUtility.getConceptVersion(node.getRefsetConceptNid());
+                        final String refsetConceptSpecKey = "RefsetConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(refsetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(refsetConcept), refsetConcept.getPrimordialUuid()));
+                        
+                        final String queryText = node.getQueryText();
+                        final String queryTextKey = "QueryTextKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(queryTextKey, queryText);
+                        
+                        final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
+                        
+                        Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RefsetContainsString(
+                                /* Query */		query,
+                                /* String */	refsetConceptSpecKey,
+                                /* String */	queryTextKey,
+                                /* String */	vcKey);
+                        
+                        logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    
+                    case REL_RESTRICTION: {
+                        RelRestriction node = (RelRestriction)treeItem.getValue();
+                        
+                        final ConceptVersionBI relRestrictionConcept = OTFUtility.getConceptVersion(node.getRelRestrictionConceptNid());
+                        final String relRestrictionConceptSpecKey = "RelRestrictionConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(relRestrictionConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(relRestrictionConcept), relRestrictionConcept.getPrimordialUuid()));
+                        
+                        final ConceptVersionBI relTypeConcept = OTFUtility.getConceptVersion(node.getRelTypeConceptNid());
+                        final String relTypeConceptSpecKey = "RelTypeConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(relTypeConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(relTypeConcept), relTypeConcept.getPrimordialUuid()));
+                        
+                        final ConceptVersionBI sourceConcept = OTFUtility.getConceptVersion(node.getSourceConceptNid());
+                        final String sourceConceptSpecKey = "SourceConceptUUIDKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(sourceConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(sourceConcept), sourceConcept.getPrimordialUuid()));
+                        
+                        final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
+                        
+                        final String useDestinationSubsumptionKey = "UseDestinationSubsumptionBooleanKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(useDestinationSubsumptionKey, node.getUseDestinationSubsumption());
+                        
+                        final String useRelTypeSubsumptionKey = "UseRelTypeSubsumptionBooleanKeyFor" + node.getTemporaryUniqueId();
+                        query.getLetDeclarations().put(useRelTypeSubsumptionKey, node.getUseRelTypeSubsumption());
+                        
+                        Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RelRestriction(
+                                /* Query */		query,
+//			/* String */	relRestrictionConceptSpecKey,  //TODO OCHRE untested edit
+                                /* String */	relTypeConceptSpecKey,
+                                /* String */	sourceConceptSpecKey,
+                                /* String */	vcKey,
+                                /* String */	useDestinationSubsumptionKey,
+                                /* String */	useRelTypeSubsumptionKey);
+                        
+                        logger.debug("Constructed {} clause for {}", clause.getClass().getName(), node.getDescription());
+                        
+                        return addInversionClauseIfNecessary(query, node, clause);
+                    }
+                    
+                    //TODO OCHRE - This merged into relRestriction
 //		case REL_TYPE: {
 //			RelType node = (RelType)treeItem.getValue();
 //			
@@ -297,7 +294,7 @@ public class ClauseFactory {
 //			query.getLetDeclarations().put(targetConceptSpecKey, new ConceptSpec(OTFUtility.getDescription(targetConcept), targetConcept.getPrimordialUuid()));
 //
 //			final String vcKey = "VCKeyFor" + node.getTemporaryUniqueId();
-//			query.getLetDeclarations().put(vcKey, query.getViewCoordinate());
+//			query.getLetDeclarations().put(vcKey, query.getStampCoordinate());
 //			
 //			Clause clause = new org.ihtsdo.otf.query.implementation.clauses.RelRestriction(
 //				/* Query */		query,
@@ -310,15 +307,10 @@ public class ClauseFactory {
 //
 //			return addInversionClauseIfNecessary(query, node, clause);
 //		}
-
-			default:
-				throw new RuntimeException("Unsupported QueryNodeType " + itemType);
-			}
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Oops", e);
-		}
+                    
+                    default:
+                        throw new RuntimeException("Unsupported QueryNodeType " + itemType);
+                }
 	}
 
 	private static Clause addInversionClauseIfNecessary(Query query, InvertableNode node, Clause clause) {

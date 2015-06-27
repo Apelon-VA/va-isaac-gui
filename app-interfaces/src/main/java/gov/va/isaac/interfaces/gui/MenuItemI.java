@@ -19,6 +19,7 @@
 package gov.va.isaac.interfaces.gui;
 
 import javafx.beans.value.ObservableValue;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
 
@@ -26,7 +27,7 @@ import javafx.stage.Window;
  * MenuItemI
  * 
  * An interface for views to provide specs for a menu that should be created on behalf of the view
- * in the main appliation
+ * in the main application
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
@@ -62,9 +63,9 @@ public abstract class MenuItemI implements Comparable<MenuItemI>
 	public abstract int getSortOrder();
 	
 	/**
-	 * Called when the user selects the menu
+	 * Called when the user selects the menu.  Hands back a reference to the JavaFX menu.
 	 */
-	public abstract void handleMenuSelection(Window parent);
+	public abstract void handleMenuSelection(Window parent, MenuItem menuItem);
 	
 	/**
 	 * The image that should be used with this menu.  Null is allowed.
