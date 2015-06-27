@@ -207,8 +207,11 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		}
 		
 		for (CompositeSearchResult result : results) {
-			if (outputNids.contains(result.getContainingConcept().getNid())) {
-				filteredResults.add(result);
+			if (result.getContainingConcept() != null)
+			{
+				if (outputNids.contains(result.getContainingConcept().getNid())) {
+					filteredResults.add(result);
+				}
 			}
 		}
 		
