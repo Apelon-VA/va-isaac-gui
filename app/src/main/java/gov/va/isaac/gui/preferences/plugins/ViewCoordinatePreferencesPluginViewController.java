@@ -724,11 +724,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 		// Reload storedStatuses
 		final Set<Status> storedStatuses = getStoredStatuses();
 		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
-			statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
+			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(activeAndInactiveStatusButton));
 		} else if (storedStatuses.contains(Status.ACTIVE)) {
-			statusesToggleGroup.selectToggle(activeStatusButton);
+			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(activeStatusButton));
 		} else if (storedStatuses.contains(Status.INACTIVE)) {
-			statusesToggleGroup.selectToggle(inactiveStatusButton);
+			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(inactiveStatusButton));
 		} else if (storedStatuses.size() == 0) {
 			log.warn("UserProfile does not contain any view coordinate Status values");
 		} else {
