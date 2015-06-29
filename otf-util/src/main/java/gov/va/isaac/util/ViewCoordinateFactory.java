@@ -24,6 +24,10 @@ import org.slf4j.LoggerFactory;
 public class ViewCoordinateFactory {
 	private static final Logger LOG = LoggerFactory.getLogger(ViewCoordinateFactory.class);
 
+	public static interface ViewCoordinateProvider {
+		public ViewCoordinate getViewCoordinate();
+	}
+	
 	private ViewCoordinateFactory() {}
 
 	public static ViewCoordinate getSystemViewCoordinate() {
