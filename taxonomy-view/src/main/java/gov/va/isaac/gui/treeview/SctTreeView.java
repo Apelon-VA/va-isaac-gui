@@ -29,7 +29,6 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.ViewCoordinateFactory.ViewCoordinateProvider;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
 import java.io.IOException;
@@ -644,7 +643,7 @@ class SctTreeView {
         }
 
         TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
-        ViewCoordinate viewCoordinate = OTFUtility.getViewCoordinate();
+        ViewCoordinate viewCoordinate = getViewCoordinate();
         TerminologySnapshotDI snapshot = dataStore.getSnapshot(viewCoordinate);
 
         return new ConceptChronicleDdo(
