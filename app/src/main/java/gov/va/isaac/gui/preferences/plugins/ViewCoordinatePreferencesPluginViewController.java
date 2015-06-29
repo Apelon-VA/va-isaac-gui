@@ -625,7 +625,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					// Reload persisted values every time
 
 					UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath());
+					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath()));
 
 					// Reload storedStatedInferredOption
 					loadStoredStatedInferredOption();
