@@ -21,20 +21,24 @@ package gov.va.isaac.gui.treeview;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemI;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.ViewCoordinateFactory.ViewCoordinateProvider;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.util.WorkExecutors;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Node;
 import javafx.scene.control.TreeItem;
+
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.ddo.ComponentReference;
 import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
@@ -64,8 +68,13 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     private int multiParentDepth = 0;
     private boolean secondaryParentOpened = false;
     private SctTreeItemDisplayPolicies displayPolicies;
+    private final ViewCoordinateProvider viewCoordinateProvider;
     
     private static WorkExecutors workExecutors_ = null;
+    
+    public ViewCoordinateProvider getViewCoordinateProvider() {
+    	return viewCoordinateProvider;
+    }
     
     private static WorkExecutors getWorkExecutors()
     {
@@ -86,12 +95,13 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
         }
     }
     
-    SctTreeItem(TaxonomyReferenceWithConcept taxRef, SctTreeItemDisplayPolicies displayPolicies) {
-        this(taxRef, displayPolicies, (Node) null);
+    SctTreeItem(TaxonomyReferenceWithConcept taxRef, SctTreeItemDisplayPolicies displayPolicies, ViewCoordinateProvider vcp) {
+        this(taxRef, displayPolicies, vcp, (Node) null);
     }
 
-    SctTreeItem(TaxonomyReferenceWithConcept t, SctTreeItemDisplayPolicies displayPolicies, Node node) {
+    SctTreeItem(TaxonomyReferenceWithConcept t, SctTreeItemDisplayPolicies displayPolicies, ViewCoordinateProvider vcp, Node node) {
         super(t, node);
+        this.viewCoordinateProvider = vcp;
         this.displayPolicies = displayPolicies;
     }
 
@@ -121,7 +131,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                         }
                         try {
                             TaxonomyReferenceWithConcept fxtrc = new TaxonomyReferenceWithConcept(rv);
-                            SctTreeItem childItem = new SctTreeItem(fxtrc, displayPolicies);
+                            SctTreeItem childItem = new SctTreeItem(fxtrc, displayPolicies, viewCoordinateProvider);
                             if (childItem.shouldDisplay()) {
                                 childrenToAdd.add(childItem);
                                 childrenToProcess.add(new GetSctTreeItemConceptCallable(childItem));
@@ -192,7 +202,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                                     for (RelationshipVersionDdo rv : r.getVersions()) {
                                         try {
                                             TaxonomyReferenceWithConcept taxRef = new TaxonomyReferenceWithConcept(rv);
-                                            SctTreeItem grandChildItem = new SctTreeItem(taxRef, displayPolicies);
+                                            SctTreeItem grandChildItem = new SctTreeItem(taxRef, displayPolicies, viewCoordinateProvider);
     
                                             if (grandChildItem.shouldDisplay()) {
                                                 grandChildrenToProcess.add(new GetSctTreeItemConceptCallable(grandChildItem));
@@ -323,7 +333,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
             if (item.getValue().getRelationshipVersion() != null) {
                 if (item.getMultiParentDepth() > 0) {
                     ComponentReference destRef = item.getValue().getRelationshipVersion().getDestinationReference();
-                    String temp = OTFUtility.getDescription(destRef.getUuid());
+                    String temp = OTFUtility.getDescription(destRef.getUuid(), item.viewCoordinateProvider.getViewCoordinate());
                     if (temp == null) {
                         return destRef.getText();
                     } else {
@@ -331,7 +341,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                     }
                 } else {
                     ComponentReference originRef = item.getValue().getRelationshipVersion().getOriginReference();
-                    String temp = OTFUtility.getDescription(originRef.getUuid());
+                    String temp = OTFUtility.getDescription(originRef.getUuid(), item.viewCoordinateProvider.getViewCoordinate());
                     if (temp == null) {
                         return originRef.getText();
                     } else {

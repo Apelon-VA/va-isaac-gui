@@ -117,8 +117,12 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
                 for (RelationshipChronicleDdo extraParent : extraParents) {
                     for (RelationshipVersionDdo extraParentVersion : extraParent.getVersions()) {
                         SctTreeItem extraParentItem =
-                                new SctTreeItem(new TaxonomyReferenceWithConcept(extraParentVersion,
-                                                TaxonomyReferenceWithConcept.WhichConcept.DESTINATION), treeItem.getDisplayPolicies());
+                                new SctTreeItem(
+                                		new TaxonomyReferenceWithConcept(
+                                				extraParentVersion,
+                                                TaxonomyReferenceWithConcept.WhichConcept.DESTINATION),
+                                                treeItem.getDisplayPolicies(),
+                                                treeItem.getViewCoordinateProvider());
                         extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
                         extraParentItems.add(extraParentItem);
                     }

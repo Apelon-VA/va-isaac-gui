@@ -101,7 +101,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
             }
     
             FxTerminologyStoreDI dataStore = LookupService.getService(FxTerminologyStoreDI.class);
-            concept = dataStore.getFxConcept(reference, OTFUtility.getViewCoordinate(), refexPolicy, relationshipPolicy);
+            concept = dataStore.getFxConcept(reference, treeItem.getViewCoordinateProvider().getViewCoordinate(), refexPolicy, relationshipPolicy);
     
             if ((concept.getConceptAttributes() == null)
                     || concept.getConceptAttributes().getVersions().isEmpty()
@@ -128,7 +128,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                     }
                     for (RelationshipVersionDdo rv : destRel.getVersions()) {
                         TaxonomyReferenceWithConcept taxRef = new TaxonomyReferenceWithConcept(rv);
-                        SctTreeItem childItem = new SctTreeItem(taxRef, treeItem.getDisplayPolicies());
+                        SctTreeItem childItem = new SctTreeItem(taxRef, treeItem.getDisplayPolicies(), treeItem.getViewCoordinateProvider());
                         if (childItem.shouldDisplay()) {
                             childrenToAdd.add(childItem);
                         }
