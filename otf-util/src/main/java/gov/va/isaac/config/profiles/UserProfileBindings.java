@@ -55,13 +55,16 @@ public class UserProfileBindings
 {
 	public enum RelationshipDirection {SOURCE, TARGET, SOURCE_AND_TARGET};
 	
-	ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
 	ReadOnlyBooleanWrapper displayFSN = new ReadOnlyBooleanWrapper();
 	ReadOnlyObjectWrapper<RelationshipDirection> displayRelDirection = new ReadOnlyObjectWrapper<>();
 	ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
-	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
-	
+
+	// View Coordinate Components
+	ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
+	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
+	ReadOnlyObjectWrapper<Long> viewCoordinateTime = new ReadOnlyObjectWrapper<>();
+
 	private final SetProperty<Status> viewCoordinateStatuses = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
 	ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
 
@@ -70,24 +73,19 @@ public class UserProfileBindings
 
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
-				statedInferredPolicy,
 				displayFSN,
 				displayRelDirection,
 				workflowUsername,
-				viewCoordinatePath,
 				editCoordinatePath,
+				
+				statedInferredPolicy,
+				viewCoordinatePath,
+				viewCoordinateTime,
 				readOnlyViewCoordinateStatuses,
 				readOnlyViewCoordinateModules
 		};
 	}
 
-	/**
-	 * @return the statedInferredPolicy
-	 */
-	public ReadOnlyObjectProperty<StatedInferredOptions> getStatedInferredPolicy()
-	{
-		return statedInferredPolicy.getReadOnlyProperty();
-	}
 	/**
 	 * @return displayFSN when true, display the preferred term when false
 	 */
@@ -110,13 +108,7 @@ public class UserProfileBindings
 	{
 		return workflowUsername.getReadOnlyProperty();
 	}
-	/**
-	 * @return the viewCoordinatePath
-	 */
-	public ReadOnlyProperty<UUID> getViewCoordinatePath()
-	{
-		return viewCoordinatePath.getReadOnlyProperty();
-	}
+
 	/**
 	 * @return the editCoordinatePath
 	 */
@@ -125,6 +117,27 @@ public class UserProfileBindings
 		return editCoordinatePath.getReadOnlyProperty();
 	}
 
+	/**
+	 * @return the statedInferredPolicy
+	 */
+	public ReadOnlyObjectProperty<StatedInferredOptions> getStatedInferredPolicy()
+	{
+		return statedInferredPolicy.getReadOnlyProperty();
+	}
+	/**
+	 * @return the viewCoordinatePath
+	 */
+	public ReadOnlyProperty<UUID> getViewCoordinatePath()
+	{
+		return viewCoordinatePath.getReadOnlyProperty();
+	}
+	/**
+	 * @return the viewCoordinateTime
+	 */
+	public ReadOnlyProperty<Long> getViewCoordinateTime()
+	{
+		return viewCoordinateTime.getReadOnlyProperty();
+	}
 	/**
 	 * @return the viewCoordinateStatuses
 	 */
@@ -155,6 +168,11 @@ public class UserProfileBindings
 		{
 			editCoordinatePath.set(up.getEditCoordinatePath());
 		}
+		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
+		{
+			workflowUsername.set(up.getWorkflowUsername());
+		}
+
 		if (statedInferredPolicy.get() != up.getStatedInferredPolicy())
 		{
 			statedInferredPolicy.set(up.getStatedInferredPolicy());
@@ -163,11 +181,10 @@ public class UserProfileBindings
 		{
 			viewCoordinatePath.set(up.getViewCoordinatePath());
 		}
-		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
+		if (viewCoordinateTime.get() != up.getViewCoordinateTime())
 		{
-			workflowUsername.set(up.getWorkflowUsername());
+			viewCoordinateTime.set(up.getViewCoordinateTime());
 		}
-		
 		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
 		// and that viewCoordinateStatuses is initialized with an empty SimpleSetProperty<Status>
 		if (readOnlyViewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
