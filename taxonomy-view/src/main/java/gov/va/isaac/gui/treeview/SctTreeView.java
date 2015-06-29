@@ -29,6 +29,8 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.va.isaac.util.ViewCoordinateFactory;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
 import java.io.IOException;
@@ -107,8 +109,7 @@ class SctTreeView {
     private TreeView<TaxonomyReferenceWithConcept> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
     
-    private UpdateableBooleanBinding refreshRequiredByFSNChangeListenerHack;
-    private UpdateableBooleanBinding refreshRequiredByViewCoordinateChangeListenerHack;
+    private UpdateableBooleanBinding refreshRequiredListenerHack;
 
     private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
@@ -331,7 +332,7 @@ class SctTreeView {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
                 ConceptChronicleDdo rootConceptCC = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(
                         rootConcept,
-                        getViewCoordinate(),
+                        ViewCoordinates.getDevelopmentStatedLatest(),
                         RefexPolicy.NONE,
                         RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
                 LOG.debug("Finished loading root concept");
@@ -351,12 +352,14 @@ class SctTreeView {
                 ConceptChronicleDdo result = this.getValue();
                 SctTreeView.this.finishTreeSetup(result);
 
-                refreshRequiredByFSNChangeListenerHack = new UpdateableBooleanBinding()
+                refreshRequiredListenerHack = new UpdateableBooleanBinding()
                 {
                     private volatile boolean enabled = false;
                     {
                         setComputeOnInvalidate(true);
-                        addBinding(AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+                        addBinding(
+                        		AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
+                        		AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents());
                         enabled = true;
                     }
 
@@ -368,34 +371,8 @@ class SctTreeView {
                             LOG.debug("Skip initial spurious refresh calls");
                             return false;
                         }
-                        LOG.debug("Kicking off tree refresh() due to change of user FSN display property");
-                        SctTreeView.this.refresh();
-                        return false;
-                    }
-                };
-                refreshRequiredByViewCoordinateChangeListenerHack = new UpdateableBooleanBinding()
-                {
-                    private volatile boolean enabled = false;
-                    {
-                        setComputeOnInvalidate(true);
-                        addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(), 
-                                AppContext.getService(UserProfileBindings.class).getViewCoordinateModules(), 
-                                AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy(), 
-                                AppContext.getService(UserProfileBindings.class).getViewCoordinateStatuses(), 
-                                AppContext.getService(UserProfileBindings.class).getViewCoordinateTime());
-                        enabled = true;
-                    }
-
-                    @Override
-                    protected boolean computeValue()
-                    {
-                        if (!enabled)
-                        {
-                            LOG.debug("Skip initial spurious refresh calls");
-                            return false;
-                        }
-                        LOG.debug("Kicking off tree refresh() due to change of an observed user property");
-                        vc_ = OTFUtility.getViewCoordinate();
+                        LOG.debug("Kicking off tree refresh() due to change of user preference property");
+                        vc_ = ViewCoordinateFactory.getViewCoordinate(AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents().get());
                         SctTreeView.this.refresh();
                         return false;
                     }
@@ -637,7 +614,7 @@ class SctTreeView {
     private ConceptChronicleDdo buildFxConcept(UUID conceptUUID)
             throws IOException, ContradictionException {
 
-        ConceptVersionBI wbConcept = OTFUtility.getConceptVersion(conceptUUID);
+        ConceptVersionBI wbConcept = OTFUtility.getConceptVersion(conceptUUID, getViewCoordinate());
         if (wbConcept == null) {
             return null;
         }
@@ -678,8 +655,7 @@ class SctTreeView {
         synchronized (refreshInProgress_) {  //hack way to disable future refresh calls
             refreshInProgress_.set(true);
         }
-        refreshRequiredByFSNChangeListenerHack.clearBindings();
-        refreshRequiredByViewCoordinateChangeListenerHack.clearBindings();
+        refreshRequiredListenerHack.clearBindings();
 
         if (rootTreeItem != null)
         {

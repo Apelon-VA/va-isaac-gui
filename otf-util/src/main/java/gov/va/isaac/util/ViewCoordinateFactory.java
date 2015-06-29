@@ -38,13 +38,20 @@ public class ViewCoordinateFactory {
 		}
 	}
 
+	public static ViewCoordinate getViewCoordinate(ViewCoordinateComponents components) {
+		return getViewCoordinate(
+				components.getPath(),
+				components.getStatedInferredOption(), 
+				components.getStatuses(), 
+				components.getTime(), 
+				components.getModules());
+	}
 	public static ViewCoordinate getViewCoordinate(
 			UUID path,
 			StatedInferredOptions statedInferredOption,
 			Set<Status> statusesSet,
 			long time,
 			Set<UUID> modules) {
-
 		final EnumSet<Status> statuses = EnumSet.allOf(Status.class); // Have to have non-empty set to create
 		statuses.clear();
 		statuses.addAll(statusesSet);

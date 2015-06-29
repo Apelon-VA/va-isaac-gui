@@ -19,30 +19,31 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.util.ViewCoordinateComponents;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlySetWrapper;
-import javafx.beans.property.SimpleSetProperty;
-import javafx.beans.property.SetProperty;
 import javafx.beans.property.ReadOnlyProperty;
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import com.sun.javafx.collections.ObservableSetWrapper;
+import javafx.beans.property.SetProperty;
+import javafx.beans.property.SimpleSetProperty;
 
 import javax.inject.Singleton;
 
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.jvnet.hk2.annotations.Service;
+
+import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * {@link UserProfileBindings}
@@ -71,6 +72,8 @@ public class UserProfileBindings
 	private final SetProperty<UUID> viewCoordinateModules = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
 	ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
 
+	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
+
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
 				displayFSN,
@@ -82,7 +85,9 @@ public class UserProfileBindings
 				viewCoordinatePath,
 				viewCoordinateTime,
 				readOnlyViewCoordinateStatuses,
-				readOnlyViewCoordinateModules
+				readOnlyViewCoordinateModules,
+				
+				viewCoordinateComponents
 		};
 	}
 
@@ -153,9 +158,19 @@ public class UserProfileBindings
 	{
 		return readOnlyViewCoordinateModules;
 	}
+
+	/**
+	 * @return the viewCoordinateModules
+	 */
+	public ReadOnlyObjectProperty<ViewCoordinateComponents> getViewCoordinateComponents()
+	{
+		return viewCoordinateComponents.getReadOnlyProperty();
+	}
 	
 	protected void update(UserProfile up)
 	{
+		boolean updateViewCoordinateComponents = false;
+		
 		if (displayFSN.get() != up.getDisplayFSN())
 		{
 			displayFSN.set(up.getDisplayFSN());
@@ -164,25 +179,28 @@ public class UserProfileBindings
 		{
 			displayRelDirection.set(up.getDisplayRelDirection());
 		}
-		if ((editCoordinatePath.get() == null && up.getEditCoordinatePath() != null) || !Objects.equals(editCoordinatePath.get(), up.getEditCoordinatePath()))
+		if (!Objects.equals(editCoordinatePath.get(), up.getEditCoordinatePath()))
 		{
 			editCoordinatePath.set(up.getEditCoordinatePath());
 		}
-		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
+		if (!Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
 		{
 			workflowUsername.set(up.getWorkflowUsername());
 		}
 
 		if (statedInferredPolicy.get() != up.getStatedInferredPolicy())
 		{
+			updateViewCoordinateComponents = true;
 			statedInferredPolicy.set(up.getStatedInferredPolicy());
 		}
-		if ((viewCoordinatePath.get() == null && up.getViewCoordinatePath() != null) || !Objects.equals(viewCoordinatePath.get(), up.getViewCoordinatePath()))
+		if (!Objects.equals(viewCoordinatePath.get(), up.getViewCoordinatePath()))
 		{
+			updateViewCoordinateComponents = true;
 			viewCoordinatePath.set(up.getViewCoordinatePath());
 		}
-		if (viewCoordinateTime.get() != up.getViewCoordinateTime())
+		if (!Objects.equals(viewCoordinateTime.get(), up.getViewCoordinateTime()))
 		{
+			updateViewCoordinateComponents = true;
 			viewCoordinateTime.set(up.getViewCoordinateTime());
 		}
 		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
@@ -190,6 +208,7 @@ public class UserProfileBindings
 		if (readOnlyViewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
 				|| ! readOnlyViewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
 				|| ! up.getViewCoordinateStatuses().containsAll(readOnlyViewCoordinateStatuses.get())) {
+			updateViewCoordinateComponents = true;
 			viewCoordinateStatuses.get().clear();
 			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
 		}
@@ -199,8 +218,19 @@ public class UserProfileBindings
 		if (readOnlyViewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
 				|| ! readOnlyViewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
 				|| ! up.getViewCoordinateModules().containsAll(readOnlyViewCoordinateModules.get())) {
+			updateViewCoordinateComponents = true;
 			viewCoordinateModules.get().clear();
 			viewCoordinateModules.get().addAll(up.getViewCoordinateModules());
+		}
+		
+		if (updateViewCoordinateComponents) {
+			ViewCoordinateComponents vcc = new ViewCoordinateComponents(
+					statedInferredPolicy.get(),
+					viewCoordinatePath.get(),
+					readOnlyViewCoordinateStatuses,
+					viewCoordinateTime.get(),
+					readOnlyViewCoordinateModules);
+			viewCoordinateComponents.set(vcc);
 		}
 	}
 }
