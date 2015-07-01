@@ -29,6 +29,7 @@ import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -489,7 +490,7 @@ public class OTFUtility {
 				//sanity check:
 				if (Utility.isInt(localIdentifier))
 				{
-					int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+					int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
 					if (nidFromSequence != 0)
 					{
 						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
@@ -501,7 +502,7 @@ public class OTFUtility {
 		else if (Utility.isInt(localIdentifier))
 		{
 			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
-			int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+			int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
 			if (nidFromSequence != 0)
 			{
 				return getConceptVersion(nidFromSequence, vc);
