@@ -76,6 +76,8 @@ public class App extends Application implements ApplicationWindowI {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        LookupService.startupWorkExecutors();
+
         primaryStage_ = primaryStage;
 
         this.controller = new AppController();
