@@ -118,8 +118,8 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
                     for (RelationshipVersionDdo extraParentVersion : extraParent.getVersions()) {
                         SctTreeItem extraParentItem =
                                 new SctTreeItem(
-                                		new TaxonomyReferenceWithConcept(
-                                				extraParentVersion,
+                                        new TaxonomyReferenceWithConcept(
+                                                extraParentVersion,
                                                 TaxonomyReferenceWithConcept.WhichConcept.DESTINATION),
                                                 treeItem.getDisplayPolicies(),
                                                 treeItem.getViewCoordinateProvider());
