@@ -276,11 +276,11 @@ public class App extends Application implements ApplicationWindowI {
         }
         try {
             Utility.shutdownThreadPools();
+            controller.shutdown();
             if (dataStoreLocationInitException_ == null)
             {
                 LookupService.shutdownIsaac();
             }
-            controller.shutdown();
         } catch (Throwable ex) {
             String message = "Trouble shutting down";
             LOG.warn(message, ex);
