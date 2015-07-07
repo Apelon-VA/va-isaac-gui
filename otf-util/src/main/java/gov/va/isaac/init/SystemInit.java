@@ -48,6 +48,8 @@ public class SystemInit
 		
 		//Make sure the service Locator comes up ok
 		LookupService.get();
+		
+		LookupService.startupWorkExecutors();
 
 		try
 		{
