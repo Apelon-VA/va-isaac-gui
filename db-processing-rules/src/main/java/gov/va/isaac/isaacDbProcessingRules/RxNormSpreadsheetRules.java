@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
@@ -73,7 +74,7 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	@Override
 	public void configure(File configFile, TerminologyStoreDI ts) throws IOException
 	{
-		super.configure("/SOLOR RxNorm Rules.xlsx", ts);
+		super.configure("/SOLOR RxNorm Rules v2.xlsx", ts);
 	}
 	
 
@@ -86,11 +87,11 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	public boolean transform(TerminologyStoreDI ts, ConceptChronicleBI cc) throws Exception
 	{
 		examinedConcepts.incrementAndGet();
-		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersions());
+		ConceptAttributeVersionBI<?> latest = OTFUtility.getLatestAttributes(cc.getConceptAttributes().getVersionList());
 		if (latest.getModuleNid() == getNid(IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid()))
 		{
-			//Rule for all other rules:
-			if (ttyIs(IN, cc))
+			//Rule for all other rules - but only check for v 1
+			if (spreadsheetVersion_ == 2 || ttyIs(IN, cc))
 			{
 				boolean commitRequired = false;
 				
@@ -106,7 +107,19 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 					}
 					catch (Exception e)
 					{
-						throw new RuntimeException("Failure processing rule " + rd.getId(), e);
+						AtomicInteger failCount = rulesFailed.get(rd.getId());
+						if (failCount == null)
+						{
+							failCount = new AtomicInteger();
+							rulesFailed.put(rd.getId(), failCount);
+						}
+						failCount.incrementAndGet();
+						//Only dump the error the first time it happens (will happen many times, if the rule is bad)
+						if (failCount.get() == 1)
+						{
+							System.err.println("!!! Failure processing rule " + rd.getId());
+							e.printStackTrace();
+						}
 					}
 				}
 				return commitRequired;
@@ -167,6 +180,10 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 			case CHILD_OF:
 				addRel(cc, sctTargetConcept);
 				generatedRels.get(rd.getId()).getAndIncrement();
+				break;
+			case MERGE:
+				mergeConcepts(cc, sctTargetConcept, IsaacMetadataAuxiliaryBinding.RXNORM.getPrimodialUuid());
+				mergedConcepts.get(rd.getId()).incrementAndGet();
 				break;
 			default :
 				throw new RuntimeException("Unhandled Action");

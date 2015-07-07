@@ -27,7 +27,9 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -125,7 +127,11 @@ public class OTFUtility {
 	public static TerminologyBuilderBI getBuilder(EditCoordinate ec, ViewCoordinate vc) {
 		return new Builder(ec, vc, AppContext.getService(PersistentStoreI.class));
 	}
-	
+
+	public static ViewCoordinate getSystemViewCoordinate() {
+		return ViewCoordinateFactory.getSystemViewCoordinate();
+	}
+
 	public static ViewCoordinate getViewCoordinate() {
 		ViewCoordinate vc = null;
 		try {
@@ -150,9 +156,13 @@ public class OTFUtility {
 			long time = userProfile.getViewCoordinateTime();
 			Set<UUID> modules = userProfile.getViewCoordinateModules();
 
-			vc = ViewCoordinateFactory.get(path, statuses, time, relAssertionType, modules);
-		} catch (IOException e) {
-			LOG.error("Unexpected error fetching view coordinates!", e);
+			vc = ViewCoordinateFactory.getViewCoordinate(path, relAssertionType, statuses, time, modules);
+
+			//LOG.info("Using ViewCoordinate policy={}, path nid={}, uuid={}, desc={}", policy, pathNid, pathUuid, OTFUtility.getDescription(pathChronicle));
+		} catch (RuntimeException e) {
+			LOG.error("Failed fetching ViewCoordinate. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+			
+			throw e;
 		}
 
 		return vc;
@@ -200,11 +210,15 @@ public class OTFUtility {
 	/**
 	 * Returns null if no concept exists with this nid
 	 */
-	public static String getDescriptionIfConceptExists(UUID uuid)
+	public static String getDescriptionIfConceptExists(UUID uuid, ViewCoordinate vc)
 	{
-		ConceptVersionBI result = getConceptVersion(uuid);
+		ConceptVersionBI result = getConceptVersion(uuid, vc);
 		return (result == null ? null : getDescription(result));
 	}
+	public static String getDescriptionIfConceptExists(UUID uuid) {
+		return getDescriptionIfConceptExists(uuid, getViewCoordinate());
+	}
+
 
 	public static String getDescription(UUID uuid, ViewCoordinate vc) {
 		try {
@@ -222,10 +236,13 @@ public class OTFUtility {
 	/**
 	 * Returns null if no concept exists with this nid
 	 */
-	public static String getDescriptionIfConceptExists(int nid)
+	public static String getDescriptionIfConceptExists(int nid, ViewCoordinate vc)
 	{
-		ConceptVersionBI result = getConceptVersion(nid);
+		ConceptVersionBI result = getConceptVersion(nid, vc);
 		return (result == null ? null : getDescription(result));
+	}
+	public static String getDescriptionIfConceptExists(int nid) {
+		return getDescriptionIfConceptExists(nid, getViewCoordinate());
 	}
 	
 	public static String getDescription(int nid, ViewCoordinate vc) {
@@ -440,7 +457,7 @@ public class OTFUtility {
 	 * 
 	 * 
 	 */
-	public static ConceptVersionBI lookupIdentifier(String identifier)
+	public static ConceptVersionBI lookupIdentifier(String identifier, ViewCoordinate vc)
 	{
 		LOG.debug("WB DB String Lookup '{}'", identifier);
 
@@ -453,13 +470,13 @@ public class OTFUtility {
 		UUID uuid = Utility.getUUID(localIdentifier);
 		if (uuid != null)
 		{
-			return getConceptVersion(uuid);
+			return getConceptVersion(uuid, vc);
 		}
 		
 		//if it is a negative integer, assume nid
 		Optional<Integer> nid = Utility.getNID(localIdentifier);
 		if (nid.isPresent()) {
-			return getConceptVersion(nid.get());
+			return getConceptVersion(nid.get(), vc);
 		}
 		
 		if (SctId.isValidSctId(localIdentifier))
@@ -467,13 +484,13 @@ public class OTFUtility {
 			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
 			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
 			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
-			ConceptVersionBI cv = getConceptVersion(alternateUUID);
+			ConceptVersionBI cv = getConceptVersion(alternateUUID, vc);
 			if (cv != null)
 			{
 				//sanity check:
 				if (Utility.isInt(localIdentifier))
 				{
-					int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+					int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
 					if (nidFromSequence != 0)
 					{
 						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
@@ -485,13 +502,16 @@ public class OTFUtility {
 		else if (Utility.isInt(localIdentifier))
 		{
 			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
-			int nidFromSequence = LookupService.getService(IdentifierService.class).getConceptNid(Integer.parseInt(localIdentifier));
+			int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
 			if (nidFromSequence != 0)
 			{
-				return getConceptVersion(nidFromSequence);
+				return getConceptVersion(nidFromSequence, vc);
 			}
 		}
 		return null;
+	}
+	public static ConceptVersionBI lookupIdentifier(String identifier) {
+		return lookupIdentifier(identifier, getViewCoordinate());
 	}
 	
 	/**
@@ -506,7 +526,11 @@ public class OTFUtility {
 	 * @param callback - who to inform when lookup completes
 	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
 	 */
-	public static void lookupIdentifier(final String identifier, final ConceptLookupCallback callback, final Integer callId)
+	public static void lookupIdentifier(
+			final String identifier,
+			final ConceptLookupCallback callback,
+			final Integer callId,
+			ViewCoordinate vc)
 	{
 		LOG.debug("Threaded Lookup: '{}'", identifier);
 		final long submitTime = System.currentTimeMillis();
@@ -515,11 +539,14 @@ public class OTFUtility {
 			@Override
 			public void run()
 			{
-				ConceptVersionBI c = lookupIdentifier(identifier);
+				ConceptVersionBI c = lookupIdentifier(identifier, vc);
 				callback.lookupComplete(c, submitTime, callId);
 			}
 		};
 		Utility.execute(r);
+	}
+	public static void lookupIdentifier(final String identifier, final ConceptLookupCallback callback, final Integer callId) {
+		lookupIdentifier(identifier, callback, callId, getViewCoordinate());
 	}
 	
 	/**
@@ -530,7 +557,11 @@ public class OTFUtility {
 	 * @param callback - who to inform when lookup completes
 	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
 	 */
-	public static void getConceptVersion(final int nid, final ConceptLookupCallback callback, final Integer callId)
+	public static void getConceptVersion(
+			final int nid,
+			final ConceptLookupCallback callback,
+			final Integer callId,
+			ViewCoordinate vc)
 	{
 		LOG.debug("Threaded Lookup: '{}'", nid);
 		final long submitTime = System.currentTimeMillis();
@@ -539,11 +570,14 @@ public class OTFUtility {
 			@Override
 			public void run()
 			{
-				ConceptVersionBI c = getConceptVersion(nid);
+				ConceptVersionBI c = getConceptVersion(nid, vc);
 				callback.lookupComplete(c, submitTime, callId);
 			}
 		};
 		Utility.execute(r);
+	}
+	public static void getConceptVersion(final int nid, final ConceptLookupCallback callback, final Integer callId) {
+		getConceptVersion(nid, callback, callId, getViewCoordinate());
 	}
 
 	/**
@@ -578,22 +612,18 @@ public class OTFUtility {
 		}
 		return null;
 	}
-	
-	/**
-	 * Get the ConceptVersion identified by UUID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
-	 * only if the concept exists at that point.  Returns null otherwise.
-	 */
 	public static ConceptVersionBI getConceptVersion(UUID uuid) {
 		return getConceptVersion(uuid, getViewCoordinate());
 	}
+
 	
 	/**
 	 * Get the ConceptVersion identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if the concept exists at that point.  Returns null otherwise.
 	 */
 	public static ConceptVersionBI getConceptVersion(int nid)
-	{
-		return OTFUtility.getConceptVersion(nid, getViewCoordinate());
+	{		
+		return getConceptVersion(nid, getViewCoordinate());
 	}
 	
 	/**
@@ -693,6 +723,7 @@ public class OTFUtility {
 	public static ComponentVersionBI getComponentVersion(UUID uuid) {
 		return getComponentVersion(uuid, getViewCoordinate());
 	}
+	
 	/**
 	 * Get the Component identified by NID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
 	 * only if it exists at that point.  Returns null otherwise.
@@ -796,38 +827,49 @@ public class OTFUtility {
 	 * Recursively find the leaf nodes of a concept hierarchy
 	 * @param nid - starting concept
 	 */
-	public static Set<ConceptVersionBI> getAllLeafChildrenOfConcept(int nid) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getAllLeafChildrenOfConcept(int nid, ViewCoordinate vc) throws IOException, ContradictionException
 	{
-		return getAllChildrenOfConcept(new HashSet<>(), getConceptVersion(nid), true, true);
+		return getAllChildrenOfConcept(new HashSet<>(), getConceptVersion(nid, vc), vc, true, true);
+	}
+	public static Set<ConceptVersionBI> getAllLeafChildrenOfConcept(int nid) throws IOException, ContradictionException {
+		return getAllLeafChildrenOfConcept(nid, getViewCoordinate());
 	}
 	
 	/**
 	 * Recursively get Is a children of a concept
 	 */
-	public static Set<ConceptVersionBI> getAllChildrenOfConcept(int nid, boolean recursive) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getAllChildrenOfConcept(int nid, ViewCoordinate vc, boolean recursive) throws IOException, ContradictionException
 	{
-		return getAllChildrenOfConcept(new HashSet<>(), getConceptVersion(nid), recursive, false);
+		return getAllChildrenOfConcept(new HashSet<>(), getConceptVersion(nid, vc), recursive, false);
 	}
+	public static Set<ConceptVersionBI> getAllChildrenOfConcept(int nid, boolean recursive) throws IOException, ContradictionException {
+		return getAllChildrenOfConcept(nid, getViewCoordinate(), recursive);
+	}
+
 	
 	/**
 	 * Recursively get Is a children of a concept
 	 */
-	public static Set<ConceptVersionBI> getAllChildrenOfConcept(ConceptVersionBI concept, boolean recursive) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getAllChildrenOfConcept(ConceptVersionBI concept, ViewCoordinate vc, boolean recursive) throws IOException, ContradictionException
 	{
-		return getAllChildrenOfConcept(new HashSet<>(), concept, recursive, false);
+		return getAllChildrenOfConcept(new HashSet<>(), concept, vc, recursive, false);
 	}
+	public static Set<ConceptVersionBI> getAllChildrenOfConcept(ConceptVersionBI concept, boolean recursive) throws IOException, ContradictionException {
+		return getAllChildrenOfConcept(concept, getViewCoordinate(), recursive);
+	}
+
 	
 	/**
 	 * Recursively get Is a children of a concept
 	 */
-	private static Set<ConceptVersionBI> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptVersionBI concept, boolean recursive, boolean leafOnly) 
+	private static Set<ConceptVersionBI> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptVersionBI concept, ViewCoordinate vc, boolean recursive, boolean leafOnly) 
 			throws IOException, ContradictionException
 	{
 		Set<ConceptVersionBI> results = new HashSet<>();
 		
 		// This both prevents infinite recursion and avoids processing or returning of duplicates
 		if (handledConceptNids.contains(concept.getNid())) {
-			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(concept.getNid()));
+			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(concept.getNid(), vc));
 			return results;
 		}
 
@@ -838,19 +880,19 @@ public class OTFUtility {
 			size++;
 			if (handledConceptNids.contains(r.getOriginNid())) {
 				// avoids processing or returning of duplicates
-				LOG.debug("Encountered already-handled ORIGIN child concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getOriginNid()));
+				LOG.debug("Encountered already-handled ORIGIN child concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getOriginNid(), vc));
 
 				continue;
 			}
 
-			ConceptVersionBI originConcept = getConceptVersion(r.getOriginNid());
+			ConceptVersionBI originConcept = getConceptVersion(r.getOriginNid(), vc);
 			if (!leafOnly)
 			{
 				results.add(originConcept);
 			}
 			if (recursive)
 			{
-				results.addAll(getAllChildrenOfConcept(handledConceptNids, originConcept, recursive, leafOnly));
+				results.addAll(getAllChildrenOfConcept(handledConceptNids, originConcept, vc, recursive, leafOnly));
 			}
 		}
 		
@@ -861,10 +903,13 @@ public class OTFUtility {
 		handledConceptNids.add(concept.getNid());
 		return results;
 	}
+	private static Set<ConceptVersionBI> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptVersionBI concept, boolean recursive, boolean leafOnly) throws IOException, ContradictionException {
+		return getAllChildrenOfConcept(handledConceptNids, concept, getViewCoordinate(), recursive, leafOnly);
+	}
 
-	public static Set<Integer> getAllChildrenOfConceptAsNids(Integer conceptNid, boolean recursive) throws IOException, ContradictionException
+	public static Set<Integer> getAllChildrenOfConceptAsNids(Integer conceptNid, ViewCoordinate vc, boolean recursive) throws IOException, ContradictionException
 	{
-		Set<ConceptVersionBI> resultsAsConceptVersions = getAllChildrenOfConcept(conceptNid, recursive);
+		Set<ConceptVersionBI> resultsAsConceptVersions = getAllChildrenOfConcept(conceptNid, vc, recursive);
 		Set<Integer> results = new HashSet<>();
 		
 		for (ConceptVersionBI conceptVersion : resultsAsConceptVersions) {
@@ -873,30 +918,39 @@ public class OTFUtility {
 
 		return results;
 	}
+	public static Set<Integer> getAllChildrenOfConceptAsNids(Integer conceptNid, boolean recursive) throws IOException, ContradictionException {
+		return getAllChildrenOfConceptAsNids(conceptNid, getViewCoordinate(), recursive);
+	}
 
 	/**
 	 * Recursively get Is a parents of a concept
 	 */
-	public static Set<ConceptVersionBI> getConceptAncestors(int nid) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getConceptAncestors(int nid, ViewCoordinate vc) throws IOException, ContradictionException
 	{
-		return getConceptAncestors(getConceptVersion(nid));
+		return getConceptAncestors(getConceptVersion(nid, vc), vc);
+	}
+	public static Set<ConceptVersionBI> getConceptAncestors(int nid) throws IOException, ContradictionException {
+		return getConceptAncestors(nid, getViewCoordinate());
 	}
 	/**
 	 * Recursively get Is a parents of a concept
 	 */
-	public static Set<ConceptVersionBI> getConceptAncestors(ConceptVersionBI concept) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getConceptAncestors(ConceptVersionBI concept, ViewCoordinate vc) throws IOException, ContradictionException
 	{
 		Set<Integer> handledNids = new HashSet<>();
 		
-		return getConceptAncestors(handledNids, concept);
+		return getConceptAncestors(handledNids, concept, vc);
 	}
-	private static Set<ConceptVersionBI> getConceptAncestors(Set<Integer> handledNids, ConceptVersionBI concept) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getConceptAncestors(ConceptVersionBI concept) throws IOException, ContradictionException {
+		return getConceptAncestors(concept, getViewCoordinate());
+	}
+	private static Set<ConceptVersionBI> getConceptAncestors(Set<Integer> handledNids, ConceptVersionBI concept, ViewCoordinate vc) throws IOException, ContradictionException
 	{
 		Set<ConceptVersionBI> results = new HashSet<>();
 		
 		// This both prevents infinite recursion and avoids processing or returning of duplicates
 		if (handledNids.contains(concept.getNid())) {
-			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(concept.getNid()));
+			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(concept.getNid(), vc));
 			return results;
 		}
 		
@@ -905,32 +959,37 @@ public class OTFUtility {
 		{
 			if (handledNids.contains(r.getDestinationNid())) {
 				// avoids processing or returning of duplicates
-				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid()));
+				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid(), vc));
 				continue;
 			}
 
-			ConceptVersionBI destConcept = getConceptVersion(r.getDestinationNid());
+			ConceptVersionBI destConcept = getConceptVersion(r.getDestinationNid(), vc);
 			results.add(destConcept);
-			results.addAll(getConceptAncestors(handledNids, destConcept));
+			results.addAll(getConceptAncestors(handledNids, destConcept, vc));
 		}
 
 		handledNids.add(concept.getNid());
 
 		return results;
 	}
-
+	private static Set<ConceptVersionBI> getConceptAncestors(Set<Integer> handledNids, ConceptVersionBI concept) throws IOException, ContradictionException {
+		return getConceptAncestors(handledNids, concept, getViewCoordinate());
+	}
 	/**
 	 * Finds just the concept's parents
 	 */
-	public static Set<ConceptVersionBI> getConceptParents(ConceptVersionBI concept) throws IOException, ContradictionException
+	public static Set<ConceptVersionBI> getConceptParents(ConceptVersionBI concept, ViewCoordinate vc) throws IOException, ContradictionException
 	{
 		Set<ConceptVersionBI> results = new HashSet<>();
 		
 		for (RelationshipVersionBI<?> r : concept.getRelationshipsOutgoingActiveIsa())
 		{
-			results.add(getConceptVersion(r.getDestinationNid()));
+			results.add(getConceptVersion(r.getDestinationNid(), vc));
 		}
 		return results;
+	}
+	public static Set<ConceptVersionBI> getConceptParents(ConceptVersionBI concept) throws IOException, ContradictionException {
+		return getConceptParents(concept, getViewCoordinate());
 	}
 
 	public static ConceptChronicleBI createNewConcept(ConceptChronicleBI parent, String fsn,
@@ -973,9 +1032,9 @@ public class OTFUtility {
 		dataStore.cancel();
 	}
 
-	public static String getConPrefTerm(int nid) {
+	public static String getConPrefTerm(int nid, ViewCoordinate vc) {
 		try {
-			ConceptVersionBI cv = OTFUtility.getConceptVersion(nid);
+			ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, vc);
 			if (cv == null)
 			{
 				return nid + " NOT ON PATH";
@@ -997,21 +1056,33 @@ public class OTFUtility {
 			return "ERROR";
 		}
 	}
+	public static String getConPrefTerm(int nid) {
+		return getConPrefTerm(nid, getViewCoordinate());
+	}
 
 	public static String getStatusString(ComponentVersionBI comp) {
 		return comp.getStatus() == Status.ACTIVE ? "Active" : "Inactive";
 	}
 
+	public static String getAuthorString(ComponentVersionBI comp, ViewCoordinate vc) {
+		return getConPrefTerm(comp.getAuthorNid(), vc);
+	}
 	public static String getAuthorString(ComponentVersionBI comp) {
-		return getConPrefTerm(comp.getAuthorNid());
+		return getAuthorString(comp, getViewCoordinate());
 	}
 
+	public static String getModuleString(ComponentVersionBI comp, ViewCoordinate vc) {
+		return getConPrefTerm(comp.getModuleNid(), vc);
+	}
 	public static String getModuleString(ComponentVersionBI comp) {
-		return getConPrefTerm(comp.getModuleNid());
+		return getModuleString(comp, getViewCoordinate());
 	}
 
+	public static String getPathString(ComponentVersionBI comp, ViewCoordinate vc) {
+		return getConPrefTerm(comp.getPathNid(), vc);
+	}
 	public static String getPathString(ComponentVersionBI comp) {
-		return getConPrefTerm(comp.getPathNid());
+		return getPathString(comp, getViewCoordinate());
 	}
 
 	public static String getTimeString(ComponentVersionBI comp) {

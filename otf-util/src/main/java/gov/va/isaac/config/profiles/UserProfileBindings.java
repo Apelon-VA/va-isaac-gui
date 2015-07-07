@@ -19,30 +19,31 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.util.ViewCoordinateComponents;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlySetWrapper;
-import javafx.beans.property.SimpleSetProperty;
-import javafx.beans.property.SetProperty;
 import javafx.beans.property.ReadOnlyProperty;
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import com.sun.javafx.collections.ObservableSetWrapper;
+import javafx.beans.property.SetProperty;
+import javafx.beans.property.SimpleSetProperty;
 
 import javax.inject.Singleton;
 
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.jvnet.hk2.annotations.Service;
+
+import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * {@link UserProfileBindings}
@@ -55,39 +56,41 @@ public class UserProfileBindings
 {
 	public enum RelationshipDirection {SOURCE, TARGET, SOURCE_AND_TARGET};
 	
-	ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
 	ReadOnlyBooleanWrapper displayFSN = new ReadOnlyBooleanWrapper();
 	ReadOnlyObjectWrapper<RelationshipDirection> displayRelDirection = new ReadOnlyObjectWrapper<>();
 	ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
-	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
-	
+
+	// View Coordinate Components
+	ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
+	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
+	ReadOnlyObjectWrapper<Long> viewCoordinateTime = new ReadOnlyObjectWrapper<>();
+
 	private final SetProperty<Status> viewCoordinateStatuses = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
 	ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
 
 	private final SetProperty<UUID> viewCoordinateModules = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>()));
 	ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
 
+	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
+
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
-				statedInferredPolicy,
 				displayFSN,
 				displayRelDirection,
 				workflowUsername,
-				viewCoordinatePath,
 				editCoordinatePath,
+				
+				statedInferredPolicy,
+				viewCoordinatePath,
+				viewCoordinateTime,
 				readOnlyViewCoordinateStatuses,
-				readOnlyViewCoordinateModules
+				readOnlyViewCoordinateModules,
+				
+				viewCoordinateComponents
 		};
 	}
 
-	/**
-	 * @return the statedInferredPolicy
-	 */
-	public ReadOnlyObjectProperty<StatedInferredOptions> getStatedInferredPolicy()
-	{
-		return statedInferredPolicy.getReadOnlyProperty();
-	}
 	/**
 	 * @return displayFSN when true, display the preferred term when false
 	 */
@@ -110,13 +113,7 @@ public class UserProfileBindings
 	{
 		return workflowUsername.getReadOnlyProperty();
 	}
-	/**
-	 * @return the viewCoordinatePath
-	 */
-	public ReadOnlyProperty<UUID> getViewCoordinatePath()
-	{
-		return viewCoordinatePath.getReadOnlyProperty();
-	}
+
 	/**
 	 * @return the editCoordinatePath
 	 */
@@ -125,6 +122,27 @@ public class UserProfileBindings
 		return editCoordinatePath.getReadOnlyProperty();
 	}
 
+	/**
+	 * @return the statedInferredPolicy
+	 */
+	public ReadOnlyObjectProperty<StatedInferredOptions> getStatedInferredPolicy()
+	{
+		return statedInferredPolicy.getReadOnlyProperty();
+	}
+	/**
+	 * @return the viewCoordinatePath
+	 */
+	public ReadOnlyProperty<UUID> getViewCoordinatePath()
+	{
+		return viewCoordinatePath.getReadOnlyProperty();
+	}
+	/**
+	 * @return the viewCoordinateTime
+	 */
+	public ReadOnlyProperty<Long> getViewCoordinateTime()
+	{
+		return viewCoordinateTime.getReadOnlyProperty();
+	}
 	/**
 	 * @return the viewCoordinateStatuses
 	 */
@@ -140,9 +158,19 @@ public class UserProfileBindings
 	{
 		return readOnlyViewCoordinateModules;
 	}
+
+	/**
+	 * @return the viewCoordinateModules
+	 */
+	public ReadOnlyObjectProperty<ViewCoordinateComponents> getViewCoordinateComponents()
+	{
+		return viewCoordinateComponents.getReadOnlyProperty();
+	}
 	
 	protected void update(UserProfile up)
 	{
+		boolean updateViewCoordinateComponents = false;
+		
 		if (displayFSN.get() != up.getDisplayFSN())
 		{
 			displayFSN.set(up.getDisplayFSN());
@@ -151,28 +179,36 @@ public class UserProfileBindings
 		{
 			displayRelDirection.set(up.getDisplayRelDirection());
 		}
-		if ((editCoordinatePath.get() == null && up.getEditCoordinatePath() != null) || !Objects.equals(editCoordinatePath.get(), up.getEditCoordinatePath()))
+		if (!Objects.equals(editCoordinatePath.get(), up.getEditCoordinatePath()))
 		{
 			editCoordinatePath.set(up.getEditCoordinatePath());
 		}
-		if (statedInferredPolicy.get() != up.getStatedInferredPolicy())
-		{
-			statedInferredPolicy.set(up.getStatedInferredPolicy());
-		}
-		if ((viewCoordinatePath.get() == null && up.getViewCoordinatePath() != null) || !Objects.equals(viewCoordinatePath.get(), up.getViewCoordinatePath()))
-		{
-			viewCoordinatePath.set(up.getViewCoordinatePath());
-		}
-		if ((workflowUsername.get() == null && up.getWorkflowUsername() != null) || !Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
+		if (!Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
 		{
 			workflowUsername.set(up.getWorkflowUsername());
 		}
-		
+
+		if (statedInferredPolicy.get() != up.getStatedInferredPolicy())
+		{
+			updateViewCoordinateComponents = true;
+			statedInferredPolicy.set(up.getStatedInferredPolicy());
+		}
+		if (!Objects.equals(viewCoordinatePath.get(), up.getViewCoordinatePath()))
+		{
+			updateViewCoordinateComponents = true;
+			viewCoordinatePath.set(up.getViewCoordinatePath());
+		}
+		if (!Objects.equals(viewCoordinateTime.get(), up.getViewCoordinateTime()))
+		{
+			updateViewCoordinateComponents = true;
+			viewCoordinateTime.set(up.getViewCoordinateTime());
+		}
 		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
 		// and that viewCoordinateStatuses is initialized with an empty SimpleSetProperty<Status>
 		if (readOnlyViewCoordinateStatuses.get().size() != up.getViewCoordinateStatuses().size()
 				|| ! readOnlyViewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
 				|| ! up.getViewCoordinateStatuses().containsAll(readOnlyViewCoordinateStatuses.get())) {
+			updateViewCoordinateComponents = true;
 			viewCoordinateStatuses.get().clear();
 			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
 		}
@@ -182,8 +218,19 @@ public class UserProfileBindings
 		if (readOnlyViewCoordinateModules.get().size() != up.getViewCoordinateModules().size()
 				|| ! readOnlyViewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
 				|| ! up.getViewCoordinateModules().containsAll(readOnlyViewCoordinateModules.get())) {
+			updateViewCoordinateComponents = true;
 			viewCoordinateModules.get().clear();
 			viewCoordinateModules.get().addAll(up.getViewCoordinateModules());
+		}
+		
+		if (updateViewCoordinateComponents) {
+			ViewCoordinateComponents vcc = new ViewCoordinateComponents(
+					statedInferredPolicy.get(),
+					viewCoordinatePath.get(),
+					readOnlyViewCoordinateStatuses,
+					viewCoordinateTime.get(),
+					readOnlyViewCoordinateModules);
+			viewCoordinateComponents.set(vcc);
 		}
 	}
 }

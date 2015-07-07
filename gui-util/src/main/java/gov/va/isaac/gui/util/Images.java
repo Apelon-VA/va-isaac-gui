@@ -88,6 +88,7 @@ public enum Images {
     SYNC_GREEN(setupImage("/icons/silk/16x16/arrow_refresh.png")),
     SYNC_BLUE(setupImage("/icons/silk/16x16/arrow_refresh_blue.png")),
     MAPPING(setupImage("/icons/fugue/16x16/icons-shadowless/arrow-join.png")),
+    CLASSIFIER(setupImage("/icons/fugue/16x16/icons-shadowless/reports_stack.png")),
     
     BALLOON			(setupImage("/icons/fugue/16x16/icons-shadowless/balloon.png")),
     BALLOON_PLUS	(setupImage("/icons/fugue/16x16/icons-shadowless/balloon-plus.png")),

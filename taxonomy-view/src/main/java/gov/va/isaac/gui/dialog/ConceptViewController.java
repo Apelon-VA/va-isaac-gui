@@ -409,9 +409,17 @@ public class ConceptViewController {
 	 */
 	public void viewDiscarded()
 	{
-		sctTree.viewDiscarded();
-		refexView.viewDiscarded();
-		dtv.viewDiscarded();
-		rtv.viewDiscarded();
+		if (sctTree != null) {
+			sctTree.viewDiscarded();
+		}
+		if (refexView != null) {
+			refexView.viewDiscarded();
+		}
+		if (dtv != null) {
+			dtv.viewDiscarded();
+		}
+		if (rtv != null) {
+			rtv.viewDiscarded();
+		}
 	}
 }

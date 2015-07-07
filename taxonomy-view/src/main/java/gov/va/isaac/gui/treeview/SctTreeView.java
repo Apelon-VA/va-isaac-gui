@@ -29,13 +29,17 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.va.isaac.util.ViewCoordinateFactory;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -57,6 +61,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
+
 import org.apache.mahout.math.Arrays;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -105,10 +110,20 @@ class SctTreeView {
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
     
     private UpdateableBooleanBinding refreshRequiredListenerHack;
+
     private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
+    
+    private ViewCoordinate vc_ = null;
+    private ViewCoordinate getViewCoordinate() {
+    	if (vc_ == null) {
+    		vc_ = OTFUtility.getViewCoordinate();
+    	}
+    	
+    	return vc_;
+    }
     
     SctTreeView() {
         long startTime = System.currentTimeMillis();
@@ -317,14 +332,14 @@ class SctTreeView {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
                 ConceptChronicleDdo rootConceptCC = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(
                         rootConcept,
-                        OTFUtility.getViewCoordinate(),
+                        ViewCoordinates.getDevelopmentStatedLatest(),
                         RefexPolicy.NONE,
                         RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
                 LOG.debug("Finished loading root concept");
                 
                 if (rootConceptCC.getDestinationRelationships().size() == 0) {
                     LOG.warn("ROOT CONCEPT {} HAS NO DESTINATION RELATIONSHIPS.  MAY BE A PROBLEM WITH VIEWCOORDINATE RELATIONSHIP ASSERTION TYPE ({})",
-                            OTFUtility.getDescription(rootConceptCC), OTFUtility.getViewCoordinate().getRelationshipAssertionType());
+                            OTFUtility.getDescription(rootConceptCC), getViewCoordinate().getRelationshipAssertionType());
                 }
                 return rootConceptCC;
             }
@@ -342,9 +357,9 @@ class SctTreeView {
                     private volatile boolean enabled = false;
                     {
                         setComputeOnInvalidate(true);
-                        addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(), 
-                                AppContext.getService(UserProfileBindings.class).getDisplayFSN(), 
-                                AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy());
+                        addBinding(
+                        		AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
+                        		AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents());
                         enabled = true;
                     }
 
@@ -356,7 +371,8 @@ class SctTreeView {
                             LOG.debug("Skip initial spurious refresh calls");
                             return false;
                         }
-                        LOG.debug("Kicking off tree refresh() due to change of an observed user property");
+                        LOG.debug("Kicking off tree refresh() due to change of user preference property");
+                        vc_ = ViewCoordinateFactory.getViewCoordinate(AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents().get());
                         SctTreeView.this.refresh();
                         return false;
                     }
@@ -401,7 +417,7 @@ class SctTreeView {
         TaxonomyReferenceWithConcept visibleRootConcept = new TaxonomyReferenceWithConcept();
         visibleRootConcept.setConcept(rootConcept);
 
-        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, Images.ROOT.createImageView());
+        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getViewCoordinate(), Images.ROOT.createImageView());
 
         treeView_.setRoot(rootTreeItem);
         Utility.execute(() -> rootTreeItem.addChildren());
@@ -598,13 +614,13 @@ class SctTreeView {
     private ConceptChronicleDdo buildFxConcept(UUID conceptUUID)
             throws IOException, ContradictionException {
 
-        ConceptVersionBI wbConcept = OTFUtility.getConceptVersion(conceptUUID);
+        ConceptVersionBI wbConcept = OTFUtility.getConceptVersion(conceptUUID, getViewCoordinate());
         if (wbConcept == null) {
             return null;
         }
 
         TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
-        ViewCoordinate viewCoordinate = OTFUtility.getViewCoordinate();
+        ViewCoordinate viewCoordinate = getViewCoordinate();
         TerminologySnapshotDI snapshot = dataStore.getSnapshot(viewCoordinate);
 
         return new ConceptChronicleDdo(
@@ -640,6 +656,7 @@ class SctTreeView {
             refreshInProgress_.set(true);
         }
         refreshRequiredListenerHack.clearBindings();
+
         if (rootTreeItem != null)
         {
             rootTreeItem.clearChildren();  //This recursively cancels any active lookups
