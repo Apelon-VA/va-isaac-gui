@@ -128,11 +128,11 @@ class SctTreeView {
     
     private ViewCoordinate vc_ = null;
     private ViewCoordinate getViewCoordinate() {
-    	if (vc_ == null) {
-    		vc_ = OTFUtility.getViewCoordinate();
-    	}
-    	
-    	return vc_;
+        if (vc_ == null) {
+            vc_ = OTFUtility.getViewCoordinate();
+        }
+        
+        return vc_;
     }
     
     SctTreeView() {
@@ -439,8 +439,8 @@ class SctTreeView {
                     {
                         setComputeOnInvalidate(true);
                         addBinding(
-                        		AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
-                        		AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents());
+                                AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
+                                AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents());
                         enabled = true;
                     }
 
