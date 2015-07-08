@@ -30,12 +30,17 @@ import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateFactory;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.TaxonomyService;
+import gov.vha.isaac.ochre.api.tree.Tree;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,15 +72,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedRelType;
-import org.ihtsdo.otf.tcc.api.store.TerminologySnapshotDI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
-import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +86,10 @@ import org.slf4j.LoggerFactory;
 class SctTreeView {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeView.class);
+
+    static interface TaxonomyTreeProvider {
+    	Tree getTaxonomyTree();
+    }
 
     private final static SctTreeItemDisplayPolicies defaultDisplayPolicies = new DefaultSctTreeItemDisplayPolicies();
 
@@ -106,10 +107,19 @@ class SctTreeView {
     private StackPane sp_;
     private ToolBar tb_ = new ToolBar();
     private SctTreeItem rootTreeItem;
-    private TreeView<TaxonomyReferenceWithConcept> treeView_;
+    private TreeView<ConceptVersionBI> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
-    
+        
     private UpdateableBooleanBinding refreshRequiredListenerHack;
+    
+    private Tree taxonomyTree = null;
+    private Tree getTaxonomyTree() {
+    	if (taxonomyTree == null) {
+    		taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(getViewCoordinate());
+    	}
+    	
+    	return taxonomyTree;
+    }
 
     private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
@@ -305,6 +315,85 @@ class SctTreeView {
         Utility.execute(task);
     }
     
+
+    public static Set<Integer> getChildrenAsConceptNids(ConceptVersionBI parent, Tree taxonomyTree) {
+
+    	Set<Integer> nidSet = new HashSet<>();
+    	
+    	for (int childSeq : taxonomyTree.getChildrenSequences(AppContext.getService(IdentifierService.class).getConceptSequence(parent.getNid()))) {
+    		Integer nid = AppContext.getService(IdentifierService.class).getConceptNid(childSeq);
+    		if (nid != null) {
+    			nidSet.add(nid);
+    		}
+    	}
+    	
+    	return nidSet;
+    }
+
+    public static Set<ConceptVersionBI> getChildrenAsConceptVersions(ConceptVersionBI parent, Tree taxonomyTree, ViewCoordinate vc) {
+    	Set<ConceptVersionBI> conceptVersions = new HashSet<>();
+    	
+    	for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
+    		conceptVersions.add(OTFUtility.getConceptVersion(nid, vc));
+    	}
+    	
+    	return conceptVersions;
+    }
+
+    // Tree taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(vc);
+    public static Set<Integer> getParentsAsConceptNids(ConceptVersionBI child, Tree taxonomyTree, ViewCoordinate vc) {
+    	 
+    	Set<Integer> nidSet = new HashSet<>();
+    	
+    	Collection<? extends RelationshipVersionBI<?>> rels = null;
+    	try {
+			rels = child.getRelationshipsOutgoingActiveIsa();
+		} catch (IOException | ContradictionException e) {
+			// TODO Auto-generated catch block
+			LOG.error("getRelationshipsOutgoingActiveIsa() to get parent relationships FAILED on " + OTFUtility.getDescription(child) + ". Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+			e.printStackTrace();
+			rels = new ArrayList<>();
+		}
+    	for (RelationshipVersionBI<?> r : rels)
+		{
+			if (nidSet.contains(r.getDestinationNid())) {
+				// avoids processing or returning of duplicates
+				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid(), vc));
+				continue;
+			} else {
+				//ConceptVersionBI destConcept = OTFUtility.getConceptVersion(r.getDestinationNid(), vc);
+				UUID isaRelTypeUUID = SnomedRelType.IS_A.getUuids()[0];
+				UUID relTypeUuid = AppContext.getService(IdentifierService.class).getUuidPrimordialForNid(r.getTypeNid()).get();
+				
+				if (relTypeUuid != null && relTypeUuid.equals(isaRelTypeUUID)) {
+					nidSet.add(r.getDestinationNid());
+				} else {
+//					LOG.debug("Not an IS_A rel: {} to {}", OTFUtility.getDescription(child), OTFUtility.getDescription(r.getDestinationNid(), vc));
+				}
+			}
+		}
+
+//    	for (int parentSeq : taxonomyTree.getParentSequences(AppContext.getService(IdentifierService.class).getConceptSequence(child.getNid()))) {
+//    		Integer parentNid = AppContext.getService(IdentifierService.class).getConceptNid(parentSeq);
+//    		
+//    		if (parentNid != null && AppContext.getService(TaxonomyService.class).isChildOf(child.getNid(), parentNid.intValue(), vc)) {
+//    			nidSet.add(parentNid);
+//    		}
+//    	}
+    	
+    	return nidSet;
+    }
+    
+    public static Set<ConceptVersionBI> getParentsAsConceptVersions(ConceptVersionBI child, Tree taxonomyTree, ViewCoordinate vc) {
+    	Set<ConceptVersionBI> conceptVersions = new HashSet<>();
+    	
+    	for (Integer nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
+    		conceptVersions.add(OTFUtility.getConceptVersion(nid, vc));
+    	}
+    	
+    	return conceptVersions;
+    }
+
     public void init() {
         init(IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getPrimodialUuid());
     }
@@ -325,31 +414,23 @@ class SctTreeView {
         }
 
         // Do work in background.
-        Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>() {
+        Task<ConceptVersionBI> task = new Task<ConceptVersionBI>() {
 
             @Override
-            protected ConceptChronicleDdo call() throws Exception {
+            protected ConceptVersionBI call() throws Exception {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
-                ConceptChronicleDdo rootConceptCC = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(
-                        rootConcept,
-                        ViewCoordinates.getDevelopmentStatedLatest(),
-                        RefexPolicy.NONE,
-                        RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
-                LOG.debug("Finished loading root concept");
-                
-                if (rootConceptCC.getDestinationRelationships().size() == 0) {
-                    LOG.warn("ROOT CONCEPT {} HAS NO DESTINATION RELATIONSHIPS.  MAY BE A PROBLEM WITH VIEWCOORDINATE RELATIONSHIP ASSERTION TYPE ({})",
-                            OTFUtility.getDescription(rootConceptCC), getViewCoordinate().getRelationshipAssertionType());
-                }
-                return rootConceptCC;
+
+                ConceptVersionBI rootConceptCV = OTFUtility.getConceptVersion(rootConcept, ViewCoordinateFactory.getSystemViewCoordinate());
+               
+                return rootConceptCV;
             }
 
             @Override
             protected void succeeded()
             {
-                LOG.debug("getFxConcept() (called by init()) succeeded");
+                LOG.debug("getConceptVersion() (called by init()) succeeded");
 
-                ConceptChronicleDdo result = this.getValue();
+                ConceptVersionBI result = this.getValue();
                 SctTreeView.this.finishTreeSetup(result);
 
                 refreshRequiredListenerHack = new UpdateableBooleanBinding()
@@ -373,6 +454,7 @@ class SctTreeView {
                         }
                         LOG.debug("Kicking off tree refresh() due to change of user preference property");
                         vc_ = ViewCoordinateFactory.getViewCoordinate(AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents().get());
+                        taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(vc_);
                         SctTreeView.this.refresh();
                         return false;
                     }
@@ -402,40 +484,41 @@ class SctTreeView {
      * The only reason this is its own method is to make the init() more readable.
      * 
      */
-    private void finishTreeSetup(ConceptChronicleDdo rootConcept) {
+    private void finishTreeSetup(ConceptVersionBI rootConcept) {
         LOG.debug("Running finishTreeSetup()...");
         
         treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
-        treeView_.setCellFactory(new Callback<TreeView<TaxonomyReferenceWithConcept>, TreeCell<TaxonomyReferenceWithConcept>>() {
+        treeView_.setCellFactory(new Callback<TreeView<ConceptVersionBI>, TreeCell<ConceptVersionBI>>() {
             @Override
-            public TreeCell<TaxonomyReferenceWithConcept> call(TreeView<TaxonomyReferenceWithConcept> p) {
+            public TreeCell<ConceptVersionBI> call(TreeView<ConceptVersionBI> p) {
                 return new SctTreeCell();
             }
         });
 
-        TaxonomyReferenceWithConcept visibleRootConcept = new TaxonomyReferenceWithConcept();
-        visibleRootConcept.setConcept(rootConcept);
-
-        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getViewCoordinate(), Images.ROOT.createImageView());
+        ConceptVersionBI visibleRootConcept = rootConcept;
+        
+        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getViewCoordinate(), () -> getTaxonomyTree(), Images.ROOT.createImageView());
 
         treeView_.setRoot(rootTreeItem);
+        
+        
         Utility.execute(() -> rootTreeItem.addChildren());
 
         // put this event handler on the root
-        rootTreeItem.addEventHandler(TreeItem.<TaxonomyReferenceWithConcept>branchCollapsedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<TaxonomyReferenceWithConcept>>() {
+        rootTreeItem.addEventHandler(TreeItem.<ConceptVersionBI>branchCollapsedEvent(),
+                new EventHandler<TreeItem.TreeModificationEvent<ConceptVersionBI>>() {
                     @Override
-                    public void handle(TreeItem.TreeModificationEvent<TaxonomyReferenceWithConcept> t) {
+                    public void handle(TreeItem.TreeModificationEvent<ConceptVersionBI> t) {
                         // remove grandchildren
                         ((SctTreeItem) t.getSource()).removeGrandchildren();
                     }
                 });
 
-        rootTreeItem.addEventHandler(TreeItem.<TaxonomyReferenceWithConcept>branchExpandedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<TaxonomyReferenceWithConcept>>() {
+        rootTreeItem.addEventHandler(TreeItem.<ConceptVersionBI>branchExpandedEvent(),
+                new EventHandler<TreeItem.TreeModificationEvent<ConceptVersionBI>>() {
                     @Override
-                    public void handle(TreeItem.TreeModificationEvent<TaxonomyReferenceWithConcept> t) {
+                    public void handle(TreeItem.TreeModificationEvent<ConceptVersionBI> t) {
                         // add grandchildren
                         SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
                         Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
@@ -474,7 +557,7 @@ class SctTreeView {
                 UUID current = conceptUUID;
                 while (true) {
 
-                    ConceptChronicleDdo concept = buildFxConcept(current);
+                    ConceptVersionBI concept = OTFUtility.getConceptVersion(current, getViewCoordinate());
                     if (concept == null) {
 
                         // Must be a "pending concept".
@@ -484,17 +567,22 @@ class SctTreeView {
 
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (RelationshipChronicleDdo chronicle : concept.getOriginRelationships()) {
-                        RelationshipVersionDdo relationship = chronicle.getVersions().get(chronicle.getVersions().size() - 1);
-                        UUID isaRelTypeUUID = SnomedRelType.IS_A.getUuids()[0];
-                        if (relationship.getTypeReference().getUuid().equals(isaRelTypeUUID)) {
-                            UUID parentUUID = relationship.getDestinationReference().getUuid();
-                            pathToRoot.add(parentUUID);
-                            current = parentUUID;
-                            found = true;
-                            break;
-                        }
+                    for (ConceptVersionBI parent : SctTreeView.getParentsAsConceptVersions(concept, getTaxonomyTree(), getViewCoordinate())) {
+                    	pathToRoot.add(parent.getPrimordialUuid());
+                    	found = true;
+                    	break;
                     }
+//                    for (RelationshipChronicleDdo chronicle : concept.getOriginRelationships()) {
+//                        RelationshipVersionDdo relationship = chronicle.getVersions().get(chronicle.getVersions().size() - 1);
+//                        UUID isaRelTypeUUID = SnomedRelType.IS_A.getUuids()[0];
+//                        if (relationship.getTypeReference().getUuid().equals(isaRelTypeUUID)) {
+//                            UUID parentUUID = relationship.getDestinationReference().getUuid();
+//                            pathToRoot.add(parentUUID);
+//                            current = parentUUID;
+//                            found = true;
+//                            break;
+//                        }
+//                    }
 
                     // No parent IS_A relationship found, stop looking.
                     if (! found) {
@@ -569,7 +657,7 @@ class SctTreeView {
         
         LOG.debug("Looking for {}", targetChildUUID);
         SimpleObjectProperty<SctTreeItem> found = new SimpleObjectProperty<SctTreeItem>(null);
-        if (item.getValue().getConcept().getPrimordialUuid().equals(targetChildUUID)) {
+        if (item.getValue().getPrimordialUuid().equals(targetChildUUID)) {
             // Found it.
             found.set(item);
         }
@@ -577,9 +665,9 @@ class SctTreeView {
         {
             item.blockUntilChildrenReady();
             // Iterate through children and look for child with target UUID.
-            for (TreeItem<TaxonomyReferenceWithConcept> child : item.getChildren()) {
-                if (child != null && child.getValue() != null && child.getValue().getConceptFromRelationshipOrConceptProperties() != null
-                        && child.getValue().getConceptFromRelationshipOrConceptProperties().getUuid().equals(targetChildUUID)) {
+            for (TreeItem<ConceptVersionBI> child : item.getChildren()) {
+                if (child != null && child.getValue() != null
+                        && child.getValue().getPrimordialUuid().equals(targetChildUUID)) {
 
                     // Found it.
                     found.set((SctTreeItem) child);
@@ -604,30 +692,6 @@ class SctTreeView {
             LOG.debug("Find child failed to find {}", targetChildUUID);
         }
         return found.get();
-    }
-
-    /**
-     * The various {@link TerminologyStoreDI#getFxConcept()} APIs break if
-     * you ask for a concept that doesn't exist.
-     * This method creates a {@link ConceptChronicleDdo} manually instead.
-     */
-    private ConceptChronicleDdo buildFxConcept(UUID conceptUUID)
-            throws IOException, ContradictionException {
-
-        ConceptVersionBI wbConcept = OTFUtility.getConceptVersion(conceptUUID, getViewCoordinate());
-        if (wbConcept == null) {
-            return null;
-        }
-
-        TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
-        ViewCoordinate viewCoordinate = getViewCoordinate();
-        TerminologySnapshotDI snapshot = dataStore.getSnapshot(viewCoordinate);
-
-        return new ConceptChronicleDdo(
-                snapshot.getViewCoordinate(),
-                wbConcept,
-                RefexPolicy.NONE,
-                RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
     }
 
     public void setDisplayPolicies(SctTreeItemDisplayPolicies policies) {
@@ -669,8 +733,8 @@ class SctTreeView {
     }
     
     private void saveExpanded() {
-        TreeItem<TaxonomyReferenceWithConcept> selected = treeView_.getSelectionModel().getSelectedItem();
-        selectedItem_ = Optional.ofNullable(selected == null ? null : selected.getValue().getConceptFromRelationshipOrConceptProperties().getUuid());
+        TreeItem<ConceptVersionBI> selected = treeView_.getSelectionModel().getSelectedItem();
+        selectedItem_ = Optional.ofNullable(selected == null ? null : selected.getValue().getPrimordialUuid());
         expandedUUIDs_.clear();
         saveExpanded(rootTreeItem);
         LOG.debug("Saved {} expanded nodes", expandedUUIDs_.size());
@@ -680,7 +744,7 @@ class SctTreeView {
         if (!item.isLeaf() && item.isExpanded()) {
             expandedUUIDs_.add(item.getConceptUuid());
             if (!item.isLeaf()) {
-                for (TreeItem<TaxonomyReferenceWithConcept> child : item.getChildren()) {
+                for (TreeItem<ConceptVersionBI> child : item.getChildren()) {
                     saveExpanded((SctTreeItem) child);
                 }
             }
@@ -720,7 +784,7 @@ class SctTreeView {
         if (expandedUUIDs_.contains(item.getConceptUuid())) {
             item.blockUntilChildrenReady();
             Platform.runLater(() -> item.setExpanded(true));
-            for (TreeItem<TaxonomyReferenceWithConcept> child : item.getChildren()) {
+            for (TreeItem<ConceptVersionBI> child : item.getChildren()) {
                 restoreExpanded((SctTreeItem) child, scrollTo);
             }
         }

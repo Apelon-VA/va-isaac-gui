@@ -18,22 +18,15 @@
  */
 package gov.va.isaac.gui.treeview;
 
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.api.LookupService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import org.ihtsdo.otf.tcc.ddo.ComponentReference;
-import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
-import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
+
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,27 +42,18 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
 
     private final SctTreeItem treeItem;
     private final boolean addChildren;
-    private final RefexPolicy refexPolicy;
-    private final RelationshipPolicy relationshipPolicy;
     private final ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
 
-    private ConceptChronicleDdo concept;
+    private ConceptVersionBI concept;
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem) {
         this(treeItem, true);
     }
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren) {
-        this(treeItem, addChildren, 
-                RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_AND_DESTINATION_TAXONOMY_RELATIONSHIPS);
-    }
-
-    public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren,
-            RefexPolicy refexPolicy, RelationshipPolicy relationshipPolicy) {
         this.treeItem = treeItem;
+        this.concept = treeItem != null ? treeItem.getValue() : null;
         this.addChildren = addChildren;
-        this.refexPolicy = refexPolicy;
-        this.relationshipPolicy = relationshipPolicy;
         if (addChildren) {
             treeItem.childLoadStarts();
         }
@@ -78,10 +62,9 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     @Override
     public Boolean call() throws Exception {
         try
-        {
-            ComponentReference reference;
-    
-            if (treeItem == null || treeItem.getValue() == null || treeItem.getValue().getRelationshipVersion() == null)
+        {    
+            // TODO is current value == old value.getRelationshipVersion()?
+            if (treeItem == null || treeItem.getValue() == null)
             {
                 return false;
             }
@@ -90,30 +73,32 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
             
-            if (addChildren) {
-                reference = treeItem.getValue().getRelationshipVersion().getOriginReference();
-            } else {
-                reference = treeItem.getValue().getRelationshipVersion().getDestinationReference();
-            }
+            // TODO is current value == old value.getRelationshipVersion()?
+//            if (addChildren) {
+//                reference = treeItem.getValue().getRelationshipVersion().getOriginReference();
+//            } else {
+//                reference = treeItem.getValue().getRelationshipVersion().getDestinationReference();
+//            }
     
-            if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()|| reference == null) {
+            if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                 return false;
             }
     
-            FxTerminologyStoreDI dataStore = LookupService.getService(FxTerminologyStoreDI.class);
-            concept = dataStore.getFxConcept(reference, treeItem.getViewCoordinateProvider().getViewCoordinate(), refexPolicy, relationshipPolicy);
-    
+            //FxTerminologyStoreDI dataStore = LookupService.getService(FxTerminologyStoreDI.class);
+            //concept = dataStore.getFxConcept(reference, treeItem.getViewCoordinateProvider().getViewCoordinate(), refexPolicy, relationshipPolicy);
+            concept = treeItem.getValue();
             if ((concept.getConceptAttributes() == null)
                     || concept.getConceptAttributes().getVersions().isEmpty()
                     || concept.getConceptAttributes().getVersions().get(0).isDefined()) {
+            	// TODO why is defined being set here?
                 treeItem.setDefined(true);
             }
             
             if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                 return false;
             }
-    
-            if (concept.getOriginRelationships().size() > 1) {
+
+            if (SctTreeView.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()).size() > 1) {
                 treeItem.setMultiParent(true);
             } 
     
@@ -122,20 +107,18 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-                for (RelationshipChronicleDdo destRel : concept.getDestinationRelationships()) {
+                for (ConceptVersionBI destRel : SctTreeView.getChildrenAsConceptVersions(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate())) {
                     if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                         return false;
                     }
-                    for (RelationshipVersionDdo rv : destRel.getVersions()) {
-                        TaxonomyReferenceWithConcept taxRef = new TaxonomyReferenceWithConcept(rv);
-                        SctTreeItem childItem = new SctTreeItem(taxRef, treeItem.getDisplayPolicies(), treeItem.getViewCoordinateProvider());
+                        SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getViewCoordinateProvider(), treeItem.getTaxonomyTreeProvider());
                         if (childItem.shouldDisplay()) {
                             childrenToAdd.add(childItem);
                         }
                         if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                             return false;
                         }
-                    }
+                    
                 }
                 Collections.sort(childrenToAdd);
             }
@@ -144,7 +127,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     
             Platform.runLater(() -> 
             {
-                TaxonomyReferenceWithConcept itemValue = treeItem.getValue();
+                ConceptVersionBI itemValue = treeItem.getValue();
 
                 treeItem.setValue(null);
                 if (addChildren)
@@ -153,7 +136,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                     treeItem.getChildren().addAll(childrenToAdd);
                 }
                 treeItem.setValue(itemValue);
-                treeItem.getValue().conceptProperty().set(concept);
+                treeItem.setValue(concept);
                 temp.countDown();
             });
             temp.await();
