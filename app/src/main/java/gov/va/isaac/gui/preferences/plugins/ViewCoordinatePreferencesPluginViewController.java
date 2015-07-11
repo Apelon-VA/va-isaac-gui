@@ -175,7 +175,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	protected static ViewCoordinatePreferencesPluginViewController construct() throws IOException {
 		// Load from FXML.
-		URL resource = ViewCoordinatePreferencesPluginViewController.class.getResource("ViewCoordinatePreferencesPluginView.fxml");
+		URL resource = ViewCoordinatePreferencesPluginViewController.class.getResource("ViewCoordinatePreferencesView.fxml");
 		log.debug("Loaded URL {}", resource);
 		FXMLLoader loader = new FXMLLoader(resource);
 		loader.load();
@@ -196,16 +196,16 @@ public class ViewCoordinatePreferencesPluginViewController {
 	
 	@FXML
 	void initialize() {
-		assert rootStackPaneInTab != null : "fx:id=\"rootStackPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert gridPaneInRootStackPane != null : "fx:id=\"gridPaneInRootStackPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert dateSelectionMethodComboBox != null : "fx:id=\"dateSelectionMethodComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert pathComboBox != null : "fx:id=\"pathComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert selectableModuleListView != null : "fx:id=\"selectableModuleListView\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert statusesToggleGroupVBox != null : "fx:id=\"statusesToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert statedInferredToggleGroupVBox != null : "fx:id=\"statedInferredToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert rootStackPaneInTab != null : "fx:id=\"rootStackPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert gridPaneInRootStackPane != null : "fx:id=\"gridPaneInRootStackPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert dateSelectionMethodComboBox != null : "fx:id=\"dateSelectionMethodComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert pathComboBox != null : "fx:id=\"pathComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert selectableModuleListView != null : "fx:id=\"selectableModuleListView\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert statusesToggleGroupVBox != null : "fx:id=\"statusesToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert statedInferredToggleGroupVBox != null : "fx:id=\"statedInferredToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
 
 		RowConstraints gridPaneRowConstraints = new RowConstraints();
 		gridPaneRowConstraints.setVgrow(Priority.NEVER);
