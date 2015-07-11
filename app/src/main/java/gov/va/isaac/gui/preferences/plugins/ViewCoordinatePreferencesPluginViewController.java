@@ -668,11 +668,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 					Long storedTime = getStoredTime();
 					if (storedTime.equals(Long.MAX_VALUE)) {
 						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST));
-						currentTimeProperty.set(Long.MAX_VALUE);
+						runLaterIfNotFXApplicationThread(() -> currentTimeProperty.set(Long.MAX_VALUE));
 						runLaterIfNotFXApplicationThread(() -> datePicker.setValue(LocalDate.now()));
 					} else {
 						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY));
-						currentTimeProperty.set(storedTime);
+						runLaterIfNotFXApplicationThread(() -> currentTimeProperty.set(storedTime));
 						setDatePickerFromCurrentTimeProperty();
 					}
 					

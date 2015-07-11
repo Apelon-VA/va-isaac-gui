@@ -109,7 +109,7 @@
                         </HBox>
                         <HBox alignment="TOP_CENTER">
                            <children>
-                              <Label alignment="TOP_RIGHT" text="Taxonomy Rel Type" wrapText="true">
+                              <Label alignment="TOP_RIGHT" maxWidth="-Infinity" prefWidth="110.0" text="Stated/Inferred View" wrapText="true">
                                  <HBox.margin>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
