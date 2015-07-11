@@ -27,8 +27,10 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.ConceptChronologyUtil;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,20 +55,19 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link TreeCell} for rendering {@link ConceptVersionBI} objects.
+ * A {@link TreeCell} for rendering {@link ConceptChronology<ConceptVersion>} objects.
  *
  * @author kec
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @SuppressWarnings("deprecation")
-final class SctTreeCell extends TreeCell<ConceptVersionBI> {
+final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVersion>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeCell.class);
 
@@ -87,7 +88,7 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
             @Override
             public String getConceptId()
             {
-                final ConceptVersionBI conceptChronicle = SctTreeCell.this.getItem();
+                final ConceptChronology<? extends ConceptVersion> conceptChronicle = SctTreeCell.this.getItem();
                 final UUID conceptUuid = conceptChronicle.getPrimordialUuid();
 
                 return conceptUuid.toString();
@@ -96,21 +97,21 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
     }
 
     private void openOrCloseParent(SctTreeItem treeItem) throws IOException, ContradictionException {
-        ConceptVersionBI value = treeItem.getValue();
+        ConceptChronology<? extends ConceptVersion> value = treeItem.getValue();
 
         if (value != null) {
             treeItem.setValue(null);
 
             SctTreeItem parentItem = (SctTreeItem) treeItem.getParent();
-            ObservableList<TreeItem<ConceptVersionBI>> siblings = parentItem.getChildren();
+            ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion>>> siblings = parentItem.getChildren();
 
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptVersionBI> allParents = new ArrayList<>(SctTreeView.getParentsAsConceptVersions(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(ConceptChronologyUtil.getParentsAsConceptVersions(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
 
-                List<ConceptVersionBI> secondaryParents = new ArrayList<>();
-                for (ConceptVersionBI parent : allParents) {
+                List<ConceptChronology<? extends ConceptVersion>> secondaryParents = new ArrayList<>();
+                for (ConceptChronology<? extends ConceptVersion> parent : allParents) {
                 	if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
                 		secondaryParents.add(parent);
                 	}
@@ -118,7 +119,7 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
 
                 ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>(secondaryParents.size());
 
-                for (ConceptVersionBI extraParent : secondaryParents) {
+                for (ConceptChronology<? extends ConceptVersion> extraParent : secondaryParents) {
                         SctTreeItem extraParentItem =
                                 new SctTreeItem(extraParent,
                                                 treeItem.getDisplayPolicies(),
@@ -147,7 +148,7 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
     }
 
     @Override
-    protected void updateItem(ConceptVersionBI taxRef, boolean empty) {
+    protected void updateItem(ConceptChronology<? extends ConceptVersion> taxRef, boolean empty) {
         super.updateItem(taxRef, empty);
         double opacity = 0.0;
         
@@ -157,7 +158,7 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
             setGraphic(null);
         }
         else if (!empty && taxRef == null) {
-            LOG.debug("ConceptVersionBI is null");
+            LOG.debug("ConceptChronology<? extends ConceptVersion> is null");
             setText("");
             setGraphic(null);
         }
@@ -189,7 +190,12 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
                     setGraphic(graphicBorderPane);
                 }
 
-                setText(OTFUtility.getDescription(taxRef));
+                String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate(), treeItem.getViewCoordinateProvider().getViewCoordinate());
+                if (desc != null) {
+                    setText(desc);
+                } else {
+                	LOG.debug("No description found for concept {}", taxRef.toUserString());
+                }
 
                 return;
             }
@@ -200,10 +206,11 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
 
             setDisclosureNode(iv);
 
-            if (taxRef == null) {
-                setText(taxRef.toString());
+            String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate(), treeItem.getViewCoordinateProvider().getViewCoordinate());
+            if (desc != null) {
+                setText(desc);
             } else {
-                setText(OTFUtility.getDescription(taxRef));
+            	LOG.debug("No description found for concept {}", taxRef.toUserString());
             }
 
             Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
@@ -229,7 +236,7 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
         }
     }
 
-    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<ConceptVersionBI>> siblings) {
+    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion>>> siblings) {
         for (SctTreeItem extraParent : treeItem.getExtraParents()) {
             removeExtraParents(extraParent, siblings);
             siblings.remove(extraParent);
@@ -250,7 +257,7 @@ final class SctTreeCell extends TreeCell<ConceptVersionBI> {
             @Override
             public Collection<Integer> getNIds()
             {
-                ConceptVersionBI item = SctTreeCell.this.getItem();
+                ConceptChronology<? extends ConceptVersion> item = SctTreeCell.this.getItem();
                 try
                 {
                     if (item != null ) {

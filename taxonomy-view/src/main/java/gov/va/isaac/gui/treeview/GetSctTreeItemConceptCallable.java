@@ -18,6 +18,10 @@
  */
 package gov.va.isaac.gui.treeview;
 
+import gov.va.isaac.util.ConceptChronologyUtil;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Callable;
@@ -26,7 +30,6 @@ import java.util.concurrent.CountDownLatch;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +47,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     private final boolean addChildren;
     private final ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
 
-    private ConceptVersionBI concept;
+    private ConceptChronology<? extends ConceptVersion> concept;
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem) {
         this(treeItem, true);
@@ -84,21 +87,21 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
     
-            //FxTerminologyStoreDI dataStore = LookupService.getService(FxTerminologyStoreDI.class);
-            //concept = dataStore.getFxConcept(reference, treeItem.getViewCoordinateProvider().getViewCoordinate(), refexPolicy, relationshipPolicy);
-            concept = treeItem.getValue();
-            if ((concept.getConceptAttributes() == null)
-                    || concept.getConceptAttributes().getVersions().isEmpty()
-                    || concept.getConceptAttributes().getVersions().get(0).isDefined()) {
-            	// TODO why is defined being set here?
-                treeItem.setDefined(true);
-            }
+           concept = treeItem.getValue();
+            
+            // TODO how do we determine defined status of ConceptChronology?
+//            if ((concept.getConceptAttributes() == null)
+//                    || concept.getConceptAttributes().getVersions().isEmpty()
+//                    || concept.getConceptAttributes().getVersions().get(0).isDefined()) {
+//            	// TODO why is defined being set here?
+//                treeItem.setDefined(true);
+//            }
             
             if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                 return false;
             }
 
-            if (SctTreeView.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()).size() > 1) {
+            if (ConceptChronologyUtil.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()).size() > 1) {
                 treeItem.setMultiParent(true);
             } 
     
@@ -107,7 +110,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-                for (ConceptVersionBI destRel : SctTreeView.getChildrenAsConceptVersions(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate())) {
+                for (ConceptChronology<? extends ConceptVersion> destRel : ConceptChronologyUtil.getChildrenAsConceptVersions(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate())) {
                     if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                         return false;
                     }
@@ -127,7 +130,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     
             Platform.runLater(() -> 
             {
-                ConceptVersionBI itemValue = treeItem.getValue();
+                ConceptChronology<? extends ConceptVersion> itemValue = treeItem.getValue();
 
                 treeItem.setValue(null);
                 if (addChildren)

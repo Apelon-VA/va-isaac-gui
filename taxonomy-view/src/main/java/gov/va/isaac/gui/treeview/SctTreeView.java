@@ -26,21 +26,20 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
+import gov.va.isaac.util.ConceptChronologyUtil;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateFactory;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.TaxonomyService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.tree.Tree;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,11 +67,7 @@ import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
 
 import org.apache.mahout.math.Arrays;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedRelType;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +102,7 @@ class SctTreeView {
     private StackPane sp_;
     private ToolBar tb_ = new ToolBar();
     private SctTreeItem rootTreeItem;
-    private TreeView<ConceptVersionBI> treeView_;
+    private TreeView<ConceptChronology<? extends ConceptVersion>> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
         
     private UpdateableBooleanBinding refreshRequiredListenerHack;
@@ -314,65 +309,40 @@ class SctTreeView {
 
         Utility.execute(task);
     }
-    
-
-    public static Set<Integer> getChildrenAsConceptNids(ConceptVersionBI parent, Tree taxonomyTree) {
-
-    	Set<Integer> nidSet = new HashSet<>();
-    	
-    	for (int childSeq : taxonomyTree.getChildrenSequences(AppContext.getService(IdentifierService.class).getConceptSequence(parent.getNid()))) {
-    		Integer nid = AppContext.getService(IdentifierService.class).getConceptNid(childSeq);
-    		if (nid != null) {
-    			nidSet.add(nid);
-    		}
-    	}
-    	
-    	return nidSet;
-    }
-
-    public static Set<ConceptVersionBI> getChildrenAsConceptVersions(ConceptVersionBI parent, Tree taxonomyTree, ViewCoordinate vc) {
-    	Set<ConceptVersionBI> conceptVersions = new HashSet<>();
-    	
-    	for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
-    		conceptVersions.add(OTFUtility.getConceptVersion(nid, vc));
-    	}
-    	
-    	return conceptVersions;
-    }
 
     // Tree taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(vc);
-    public static Set<Integer> getParentsAsConceptNids(ConceptVersionBI child, Tree taxonomyTree, ViewCoordinate vc) {
-    	 
-    	Set<Integer> nidSet = new HashSet<>();
-    	
-    	Collection<? extends RelationshipVersionBI<?>> rels = null;
-    	try {
-			rels = child.getRelationshipsOutgoingActiveIsa();
-		} catch (IOException | ContradictionException e) {
-			// TODO Auto-generated catch block
-			LOG.error("getRelationshipsOutgoingActiveIsa() to get parent relationships FAILED on " + OTFUtility.getDescription(child) + ". Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-			e.printStackTrace();
-			rels = new ArrayList<>();
-		}
-    	for (RelationshipVersionBI<?> r : rels)
-		{
-			if (nidSet.contains(r.getDestinationNid())) {
-				// avoids processing or returning of duplicates
-				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid(), vc));
-				continue;
-			} else {
-				//ConceptVersionBI destConcept = OTFUtility.getConceptVersion(r.getDestinationNid(), vc);
-				UUID isaRelTypeUUID = SnomedRelType.IS_A.getUuids()[0];
-				UUID relTypeUuid = AppContext.getService(IdentifierService.class).getUuidPrimordialForNid(r.getTypeNid()).get();
-				
-				if (relTypeUuid != null && relTypeUuid.equals(isaRelTypeUUID)) {
-					nidSet.add(r.getDestinationNid());
-				} else {
-//					LOG.debug("Not an IS_A rel: {} to {}", OTFUtility.getDescription(child), OTFUtility.getDescription(r.getDestinationNid(), vc));
-				}
-			}
-		}
-
+//    public static Set<Integer> getParentsAsConceptNids(ConceptChronology<ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
+//    	 
+//    	Set<Integer> nidSet = new HashSet<>();
+//    	
+//    	Collection<? extends RelationshipVersionBI<?>> rels = null;
+//    	try {
+//			rels = child.getRelationshipsOutgoingActiveIsa();
+//		} catch (IOException | ContradictionException e) {
+//			// TODO Auto-generated catch block
+//			LOG.error("getRelationshipsOutgoingActiveIsa() to get parent relationships FAILED on " + OTFUtility.getDescription(child) + ". Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+//			e.printStackTrace();
+//			rels = new ArrayList<>();
+//		}
+//    	for (RelationshipVersionBI<?> r : rels)
+//		{
+//			if (nidSet.contains(r.getDestinationNid())) {
+//				// avoids processing or returning of duplicates
+//				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid(), vc));
+//				continue;
+//			} else {
+//				//ConceptChronology<ConceptVersion> destConcept = OTFUtility.getConceptVersion(r.getDestinationNid(), vc);
+//				UUID isaRelTypeUUID = SnomedRelType.IS_A.getUuids()[0];
+//				UUID relTypeUuid = AppContext.getService(IdentifierService.class).getUuidPrimordialForNid(r.getTypeNid()).get();
+//				
+//				if (relTypeUuid != null && relTypeUuid.equals(isaRelTypeUUID)) {
+//					nidSet.add(r.getDestinationNid());
+//				} else {
+////					LOG.debug("Not an IS_A rel: {} to {}", OTFUtility.getDescription(child), OTFUtility.getDescription(r.getDestinationNid(), vc));
+//				}
+//			}
+//		}
+//
 //    	for (int parentSeq : taxonomyTree.getParentSequences(AppContext.getService(IdentifierService.class).getConceptSequence(child.getNid()))) {
 //    		Integer parentNid = AppContext.getService(IdentifierService.class).getConceptNid(parentSeq);
 //    		
@@ -380,19 +350,19 @@ class SctTreeView {
 //    			nidSet.add(parentNid);
 //    		}
 //    	}
-    	
-    	return nidSet;
-    }
+//    	
+//    	return nidSet;
+//    }
     
-    public static Set<ConceptVersionBI> getParentsAsConceptVersions(ConceptVersionBI child, Tree taxonomyTree, ViewCoordinate vc) {
-    	Set<ConceptVersionBI> conceptVersions = new HashSet<>();
-    	
-    	for (Integer nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
-    		conceptVersions.add(OTFUtility.getConceptVersion(nid, vc));
-    	}
-    	
-    	return conceptVersions;
-    }
+//    public static Set<ConceptChronology<ConceptVersion>> getParentsAsConceptVersions(ConceptChronology<ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
+//    	Set<ConceptChronology<ConceptVersion>> conceptVersions = new HashSet<>();
+//    	
+//    	for (Integer nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
+//    		conceptVersions.add(OTFUtility.getConceptVersion(nid, vc));
+//    	}
+//    	
+//    	return conceptVersions;
+//    }
 
     public void init() {
         init(IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getPrimodialUuid());
@@ -414,13 +384,13 @@ class SctTreeView {
         }
 
         // Do work in background.
-        Task<ConceptVersionBI> task = new Task<ConceptVersionBI>() {
+        Task<ConceptChronology<? extends ConceptVersion>> task = new Task<ConceptChronology<? extends ConceptVersion>>() {
 
             @Override
-            protected ConceptVersionBI call() throws Exception {
+            protected ConceptChronology<? extends ConceptVersion> call() throws Exception {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
 
-                ConceptVersionBI rootConceptCV = OTFUtility.getConceptVersion(rootConcept, ViewCoordinateFactory.getSystemViewCoordinate());
+                ConceptChronology<? extends ConceptVersion> rootConceptCV = Get.conceptService().getConcept(rootConcept);
                
                 return rootConceptCV;
             }
@@ -430,7 +400,7 @@ class SctTreeView {
             {
                 LOG.debug("getConceptVersion() (called by init()) succeeded");
 
-                ConceptVersionBI result = this.getValue();
+                ConceptChronology<? extends ConceptVersion> result = this.getValue();
                 SctTreeView.this.finishTreeSetup(result);
 
                 refreshRequiredListenerHack = new UpdateableBooleanBinding()
@@ -484,19 +454,19 @@ class SctTreeView {
      * The only reason this is its own method is to make the init() more readable.
      * 
      */
-    private void finishTreeSetup(ConceptVersionBI rootConcept) {
+    private void finishTreeSetup(ConceptChronology<? extends ConceptVersion> rootConcept) {
         LOG.debug("Running finishTreeSetup()...");
         
         treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
-        treeView_.setCellFactory(new Callback<TreeView<ConceptVersionBI>, TreeCell<ConceptVersionBI>>() {
+        treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion>>, TreeCell<ConceptChronology<? extends ConceptVersion>>>() {
             @Override
-            public TreeCell<ConceptVersionBI> call(TreeView<ConceptVersionBI> p) {
+            public TreeCell<ConceptChronology<? extends ConceptVersion>> call(TreeView<ConceptChronology<? extends ConceptVersion>> p) {
                 return new SctTreeCell();
             }
         });
 
-        ConceptVersionBI visibleRootConcept = rootConcept;
+        ConceptChronology<? extends ConceptVersion> visibleRootConcept = rootConcept;
         
         rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getViewCoordinate(), () -> getTaxonomyTree(), Images.ROOT.createImageView());
 
@@ -506,19 +476,19 @@ class SctTreeView {
         Utility.execute(() -> rootTreeItem.addChildren());
 
         // put this event handler on the root
-        rootTreeItem.addEventHandler(TreeItem.<ConceptVersionBI>branchCollapsedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptVersionBI>>() {
+        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion>>branchCollapsedEvent(),
+                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>>>() {
                     @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptVersionBI> t) {
+                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>> t) {
                         // remove grandchildren
                         ((SctTreeItem) t.getSource()).removeGrandchildren();
                     }
                 });
 
-        rootTreeItem.addEventHandler(TreeItem.<ConceptVersionBI>branchExpandedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptVersionBI>>() {
+        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion>>branchExpandedEvent(),
+                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>>>() {
                     @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptVersionBI> t) {
+                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>> t) {
                         // add grandchildren
                         SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
                         Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
@@ -557,7 +527,7 @@ class SctTreeView {
                 UUID current = conceptUUID;
                 while (true) {
 
-                    ConceptVersionBI concept = OTFUtility.getConceptVersion(current, getViewCoordinate());
+                    ConceptChronology<? extends ConceptVersion> concept = Get.conceptService().getConcept(current);
                     if (concept == null) {
 
                         // Must be a "pending concept".
@@ -567,7 +537,7 @@ class SctTreeView {
 
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptVersionBI parent : SctTreeView.getParentsAsConceptVersions(concept, getTaxonomyTree(), getViewCoordinate())) {
+                    for (ConceptChronology<? extends ConceptVersion> parent : ConceptChronologyUtil.getParentsAsConceptVersions(concept, getTaxonomyTree(), getViewCoordinate())) {
                     	pathToRoot.add(parent.getPrimordialUuid());
                     	found = true;
                     	break;
@@ -665,7 +635,7 @@ class SctTreeView {
         {
             item.blockUntilChildrenReady();
             // Iterate through children and look for child with target UUID.
-            for (TreeItem<ConceptVersionBI> child : item.getChildren()) {
+            for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : item.getChildren()) {
                 if (child != null && child.getValue() != null
                         && child.getValue().getPrimordialUuid().equals(targetChildUUID)) {
 
@@ -733,7 +703,7 @@ class SctTreeView {
     }
     
     private void saveExpanded() {
-        TreeItem<ConceptVersionBI> selected = treeView_.getSelectionModel().getSelectedItem();
+        TreeItem<ConceptChronology<? extends ConceptVersion>> selected = treeView_.getSelectionModel().getSelectedItem();
         selectedItem_ = Optional.ofNullable(selected == null ? null : selected.getValue().getPrimordialUuid());
         expandedUUIDs_.clear();
         saveExpanded(rootTreeItem);
@@ -744,7 +714,7 @@ class SctTreeView {
         if (!item.isLeaf() && item.isExpanded()) {
             expandedUUIDs_.add(item.getConceptUuid());
             if (!item.isLeaf()) {
-                for (TreeItem<ConceptVersionBI> child : item.getChildren()) {
+                for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : item.getChildren()) {
                     saveExpanded((SctTreeItem) child);
                 }
             }
@@ -784,7 +754,7 @@ class SctTreeView {
         if (expandedUUIDs_.contains(item.getConceptUuid())) {
             item.blockUntilChildrenReady();
             Platform.runLater(() -> item.setExpanded(true));
-            for (TreeItem<ConceptVersionBI> child : item.getChildren()) {
+            for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : item.getChildren()) {
                 restoreExpanded((SctTreeItem) child, scrollTo);
             }
         }
