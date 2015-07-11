@@ -19,16 +19,13 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.va.isaac.util.ViewCoordinateComponents;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
@@ -102,6 +99,16 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 public class ViewCoordinatePreferencesPluginViewController {
 	private final static Logger log = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginViewController.class);
 
+	public static interface PersistenceInterface {
+		public UUID getPath();
+		public StatedInferredOptions getStatedInferredOption();
+		public Long getTime();
+		public Set<Status> getStatuses();
+		public Set<UUID> getModules();
+		
+		public void save(ViewCoordinateComponents components) throws IOException;
+	}
+
 	/**
 	 * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
 	 *
@@ -134,6 +141,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 	@FXML VBox statedInferredToggleGroupVBox;
 
 	private boolean contentLoaded = false;
+	
+	private PersistenceInterface persistenceInterface = null;
 
 	final ViewCoordinate panelViewCoordinate;
 	
@@ -227,6 +236,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 		initializeValidBooleanBinding();
 	}
 
+	public void setPersistenceInterface(PersistenceInterface pi) {
+		persistenceInterface = pi;
+	}
+	
 	private void setCurrentTimePropertyFromDatePicker() {
 		Long dateSelected = null;
 		if (datePicker.getValue() != null) {
@@ -624,8 +637,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 					// Reload persisted values every time
 
-					UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath()));
+					//UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(persistenceInterface.getPath()));
 
 					// Reload storedStatedInferredOption
 					loadStoredStatedInferredOption();
@@ -672,7 +685,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 						runLaterIfNotFXApplicationThread(() -> datePicker.setValue(LocalDate.now()));
 					} else {
 						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY));
-						runLaterIfNotFXApplicationThread(() -> currentTimeProperty.set(storedTime));
+						currentTimeProperty.set(storedTime);
 						setDatePickerFromCurrentTimeProperty();
 					}
 					
@@ -730,12 +743,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 		} else if (storedStatuses.contains(Status.INACTIVE)) {
 			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(inactiveStatusButton));
 		} else if (storedStatuses.size() == 0) {
-			log.warn("UserProfile does not contain any view coordinate Status values");
+			log.warn("No view coordinate Status values");
 		} else {
-			log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
+			log.error("Unsupported view coordinate Status values: {}", storedStatuses.toArray());
 			AppContext.getCommonDialogs().showErrorDialog(
 					"Unsupported View Coordinate Status",
-					"UserProfile contains unsupported view coordinate Status values",
+					"Unsupported view coordinate Status values",
 					Arrays.toString(storedStatuses.toArray()));
 		}
 	}
@@ -755,37 +768,13 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	public void save() throws IOException {
-		log.debug("Saving ViewCoordinatePreferencesPluginView data");
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-
-		//Path Property
-		log.debug("Setting stored VC path (currently \"{}\") to {}", loggedIn.getViewCoordinatePath(), currentPathProperty().get()); 
-		loggedIn.setViewCoordinatePath(currentPathProperty().get());
-
-		//Stated/Inferred Policy
-		log.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", loggedIn.getStatedInferredPolicy(), currentStatedInferredOptionProperty().get()); 
-		loggedIn.setStatedInferredPolicy(currentStatedInferredOptionProperty().get());
-
-		//Time Property
-		log.debug("Setting stored VC time to :" + currentTimeProperty().get());
-		loggedIn.setViewCoordinateTime(currentTimeProperty().get());
-
-		//Statuses Property
-		log.debug("Setting stored VC statuses to :" + currentStatusesProperty().get());
-		loggedIn.setViewCoordinateStatuses(currentStatusesProperty().get());
-
-		//Modules Property
-		log.debug("Setting stored VC modules to :" + selectedModules);
-		loggedIn.setViewCoordinateModules(selectedModules);
-
-		try {
-			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);
-		} catch (InvalidUserException e) {
-			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to save UserProfile for " + getClass().getName();
-
-			log.error(msg, e);
-			throw new IOException(msg, e);
-		}
+		persistenceInterface.save(
+				new ViewCoordinateComponents(
+						currentStatedInferredOptionProperty.get(),
+						currentPathProperty.get(),
+						currentStatusesProperty.get(),
+						currentTimeProperty.get(),
+						selectedModules));
 	}
 
 	public static Date getEndOfDay(Date date) {
@@ -825,28 +814,25 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	protected Long getStoredTime() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinateTime();
+		return persistenceInterface.getTime();
 	}
 
 	protected UUID getStoredPath() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinatePath();
+		return persistenceInterface.getPath();
+
 	}
 
 	protected StatedInferredOptions getStoredStatedInferredOption() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getStatedInferredPolicy();
+		return persistenceInterface.getStatedInferredOption();
+
 	}
 
 	protected Set<Status> getStoredStatuses() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinateStatuses();
+		return persistenceInterface.getStatuses();
 	}
 
 	protected Set<UUID> getStoredModules() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinateModules();
+		return persistenceInterface.getModules();
 	}
 	protected Set<UUID> getDefaultModules() {
 		return UserProfileDefaults.getDefaultViewCoordinateModules();
@@ -918,9 +904,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 			uuid = aUuid;
 		}
 
-		public Integer getNid() {
-			return nid.get();
-		}
+//		public Integer getNid() {
+//			return nid.get();
+//		}
 		public BooleanProperty selectedProperty() {
 			return selected;
 		}
