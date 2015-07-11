@@ -2,6 +2,7 @@ package gov.va.isaac.gui.conceptViews.componentRows;
 
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,23 +30,20 @@ public class HistoricalTermRow extends TermRow {
 
 	private static final Logger LOG = LoggerFactory.getLogger(HistoricalTermRow.class);
 
-	private final static Comparator<DescriptionVersionBI<?>> DESCRIPTION_HISTORICAL_VERSION_COMPARATOR = new Comparator<DescriptionVersionBI<?>>() {
-		@Override
-		public int compare(DescriptionVersionBI<?> o1, DescriptionVersionBI<?> o2) {
-			long retVal = o2.getTime() - o1.getTime();
-			
-			if (retVal > 0) {
-				//LOG.debug(OTFUtility.getTimeString(o1) + " NEWER THAN " + OTFUtility.getTimeString(o2));
-				return 1;
-			} else if (retVal < 0) {
-				//LOG.debug(OTFUtility.getTimeString(o1) + " OLDER THAN " + OTFUtility.getTimeString(o2));
-				return -1;
-			} else {
-				//LOG.debug(OTFUtility.getTimeString(o1) + " SAME AGE AS " + OTFUtility.getTimeString(o2));
-				return 0;
-			}
-		}
-	};
+	private final static Comparator<StampedVersion> DESCRIPTION_HISTORICAL_VERSION_COMPARATOR = (StampedVersion o1, StampedVersion o2) -> {
+            int retVal = Long.compare(o2.getTime(), o1.getTime());
+            
+            if (retVal > 0) {
+                //LOG.debug(OTFUtility.getTimeString(o1) + " NEWER THAN " + OTFUtility.getTimeString(o2));
+                return 1;
+            } else if (retVal < 0) {
+                //LOG.debug(OTFUtility.getTimeString(o1) + " OLDER THAN " + OTFUtility.getTimeString(o2));
+                return -1;
+            } else {
+                //LOG.debug(OTFUtility.getTimeString(o1) + " SAME AGE AS " + OTFUtility.getTimeString(o2));
+                return 0;
+            }
+        };
 
 	public HistoricalTermRow(ConceptViewerLabelHelper labelHelper) {
 		super(labelHelper);
@@ -57,14 +55,14 @@ public class HistoricalTermRow extends TermRow {
 		termGP.setHgap(3);
 		
 		int termCounter = 0;
-		List<? extends DescriptionVersionBI> versions = desc.getVersions();
+		List<? extends DescriptionVersionBI> versions = desc.getVersionList();
 		Collections.sort(versions, DESCRIPTION_HISTORICAL_VERSION_COMPARATOR);
 		
 		for (DescriptionVersionBI<?> dv : versions) {
 			Rectangle rec = createAnnotRectangle(dv);
 			
 			Label descLabel = labelHelper.createLabel(dv, dv.getText(), ComponentType.DESCRIPTION, 0);
-			Label descTypeLabel = null;
+			Label descTypeLabel;
 
 			if (isPrefTerm) {
 				descTypeLabel = labelHelper.createLabel(dv, prefTermTypeStr, ComponentType.DESCRIPTION, prefTermTypeNid);
@@ -80,7 +78,7 @@ public class HistoricalTermRow extends TermRow {
 			Label descPathLabel = labelHelper.createLabel(dv, OTFUtility.getPathString(dv), ComponentType.DESCRIPTION, 0);
 			
 			if (desc.isUncommitted()) {
-				if (desc.getVersions().size() == 1) {
+				if (desc.getVersionList().size() == 1) {
 					Font f = descLabel.getFont();
 					descLabel.setFont(Font.font(f.getFamily(), FontPosture.ITALIC, f.getSize()));
 
