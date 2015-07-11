@@ -21,6 +21,8 @@ import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +78,13 @@ public class EnhancedConceptBuilder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(EnhancedConceptBuilder.class);
 
+	private final static Comparator<DescriptionVersionBI<?>> OTHER_DESC_TYPES_COMPARATOR = new Comparator<DescriptionVersionBI<?>>() {
+		@Override
+		public int compare(DescriptionVersionBI<?> o1, DescriptionVersionBI<?> o2) {
+				return o2.getText().compareTo(o1.getText());
+		}
+	};
+	
 	public EnhancedConceptBuilder (AnchorPane enhancedConceptPane, VBox termVBox, VBox relVBox, VBox destVBox, ScrollPane destScrollPane, VBox fsnAnnotVBox, VBox conAnnotVBox, Label fsnLabel, Label releaseIdLabel, Label isPrimLabel) {
 		this.enhancedConceptPane = enhancedConceptPane;
 		
@@ -194,12 +203,18 @@ public class EnhancedConceptBuilder {
 			}
 
 			// Add other terms to GridPane
+			List<DescriptionVersionBI<?>> otherDescTypes = new ArrayList<>();
 			for (Integer descType: sortedDescs.keySet()) {
 				for (DescriptionVersionBI<?> desc: sortedDescs.get(descType)) {
 					if (desc.getNid() != con.getPreferredDescription().getNid()) {
-						tr.addTermRow(desc, false);
+						otherDescTypes.add(desc);
 					}
 				}
+			}
+			
+			Collections.sort(otherDescTypes, OTHER_DESC_TYPES_COMPARATOR);
+			for (DescriptionVersionBI<?> desc : otherDescTypes) {
+				tr.addTermRow(desc, false);
 			}
 			
 			// Add GridPane to VBox
