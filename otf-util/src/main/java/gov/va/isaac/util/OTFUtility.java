@@ -29,6 +29,7 @@ import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.ConceptModel;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -259,7 +260,10 @@ public class OTFUtility {
 		}
 	}
 	public static String getDescription(int nid) {
+            if (Get.conceptModel() == ConceptModel.OTF_CONCEPT_MODEL) {
 		return getDescription(nid, getViewCoordinate());
+            }
+            return Get.conceptDescriptionText(nid);
 	}
 
 	/**
