@@ -13,6 +13,8 @@ import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
@@ -35,7 +37,29 @@ public final class ConceptChronologyUtil {
 	private static final Logger LOG = LoggerFactory.getLogger(ConceptChronologyUtil.class);
 
 	private ConceptChronologyUtil() {}
-	
+
+	public static ConceptSnapshotService conceptSnapshot(ViewCoordinate vc) {
+		return conceptSnapshot(vc, vc);
+	}
+	public static ConceptSnapshotService conceptSnapshot(StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
+		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
+	}
+
+	public static String conceptDescriptionText(int conceptId, ViewCoordinate vc) {
+		return conceptDescriptionText(conceptId, conceptSnapshot(vc));
+	}
+	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
+		Optional<LatestVersion<DescriptionSememe>> descriptionOptional = 
+				snapshot.getDescriptionOptional(conceptId);
+		if (descriptionOptional.isPresent()) {
+			return descriptionOptional.get().value().getText();
+		}
+		return "No desc for: " + conceptId;
+	}
+	public static String conceptDescriptionText(int conceptId) {
+		return Get.conceptDescriptionText(conceptId);
+	}
+
 	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
 		ViewCoordinate vc = OTFUtility.getViewCoordinate();
 		return getDescriptionOptional(conceptChronology, vc);
@@ -62,9 +86,11 @@ public final class ConceptChronologyUtil {
 
 			Optional<LatestVersion<DescriptionSememe>> optional = null;
 			if (userProfile.getDisplayFSN()) {
-				optional = conceptChronology.getFullySpecifiedDescription(languageCoordinate, stampCoordinate);
+				optional = ConceptChronologyUtil.conceptSnapshot(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
+				//optional = conceptChronology.getFullySpecifiedDescription(languageCoordinate, stampCoordinate);
 			} else {
-				optional = conceptChronology.getPreferredDescription(languageCoordinate, stampCoordinate);
+				optional = ConceptChronologyUtil.conceptSnapshot(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
+				//optional = conceptChronology.getPreferredDescription(languageCoordinate, stampCoordinate);
 			}
 
 			return optional;

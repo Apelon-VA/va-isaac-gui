@@ -310,60 +310,6 @@ class SctTreeView {
         Utility.execute(task);
     }
 
-    // Tree taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(vc);
-//    public static Set<Integer> getParentsAsConceptNids(ConceptChronology<ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
-//    	 
-//    	Set<Integer> nidSet = new HashSet<>();
-//    	
-//    	Collection<? extends RelationshipVersionBI<?>> rels = null;
-//    	try {
-//			rels = child.getRelationshipsOutgoingActiveIsa();
-//		} catch (IOException | ContradictionException e) {
-//			// TODO Auto-generated catch block
-//			LOG.error("getRelationshipsOutgoingActiveIsa() to get parent relationships FAILED on " + OTFUtility.getDescription(child) + ". Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-//			e.printStackTrace();
-//			rels = new ArrayList<>();
-//		}
-//    	for (RelationshipVersionBI<?> r : rels)
-//		{
-//			if (nidSet.contains(r.getDestinationNid())) {
-//				// avoids processing or returning of duplicates
-//				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid(), vc));
-//				continue;
-//			} else {
-//				//ConceptChronology<ConceptVersion> destConcept = OTFUtility.getConceptVersion(r.getDestinationNid(), vc);
-//				UUID isaRelTypeUUID = SnomedRelType.IS_A.getUuids()[0];
-//				UUID relTypeUuid = AppContext.getService(IdentifierService.class).getUuidPrimordialForNid(r.getTypeNid()).get();
-//				
-//				if (relTypeUuid != null && relTypeUuid.equals(isaRelTypeUUID)) {
-//					nidSet.add(r.getDestinationNid());
-//				} else {
-////					LOG.debug("Not an IS_A rel: {} to {}", OTFUtility.getDescription(child), OTFUtility.getDescription(r.getDestinationNid(), vc));
-//				}
-//			}
-//		}
-//
-//    	for (int parentSeq : taxonomyTree.getParentSequences(AppContext.getService(IdentifierService.class).getConceptSequence(child.getNid()))) {
-//    		Integer parentNid = AppContext.getService(IdentifierService.class).getConceptNid(parentSeq);
-//    		
-//    		if (parentNid != null && AppContext.getService(TaxonomyService.class).isChildOf(child.getNid(), parentNid.intValue(), vc)) {
-//    			nidSet.add(parentNid);
-//    		}
-//    	}
-//    	
-//    	return nidSet;
-//    }
-    
-//    public static Set<ConceptChronology<ConceptVersion>> getParentsAsConceptVersions(ConceptChronology<ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
-//    	Set<ConceptChronology<ConceptVersion>> conceptVersions = new HashSet<>();
-//    	
-//    	for (Integer nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
-//    		conceptVersions.add(OTFUtility.getConceptVersion(nid, vc));
-//    	}
-//    	
-//    	return conceptVersions;
-//    }
-
     public void init() {
         init(IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getPrimodialUuid());
     }

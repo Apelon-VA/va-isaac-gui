@@ -29,6 +29,7 @@ import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.ConceptChronologyUtil;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
@@ -190,7 +191,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     setGraphic(graphicBorderPane);
                 }
 
-                String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate(), treeItem.getViewCoordinateProvider().getViewCoordinate());
+                String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
                 if (desc != null) {
                     setText(desc);
                 } else {
@@ -206,7 +207,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
             setDisclosureNode(iv);
 
-            String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate(), treeItem.getViewCoordinateProvider().getViewCoordinate());
+            String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
             if (desc != null) {
                 setText(desc);
             } else {

@@ -24,6 +24,7 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
 import gov.va.isaac.util.ConceptChronologyUtil;
 import gov.va.isaac.util.ViewCoordinateFactory.ViewCoordinateProvider;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
@@ -302,28 +303,8 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
     
     public static String toString(SctTreeItem item) {
         try {
-//            if (item.getValue().getRelationshipVersion() != null) {
-//                if (item.getMultiParentDepth() > 0) {
-//                    ComponentReference destRef = item.getValue().getRelationshipVersion().getDestinationReference();
-//                    String temp = OTFUtility.getDescription(destRef.getUuid(), item.viewCoordinateProvider.getViewCoordinate());
-//                    if (temp == null) {
-//                        return destRef.getText();
-//                    } else {
-//                        return temp;
-//                    }
-//                } else {
-//                    ComponentReference originRef = item.getValue().getRelationshipVersion().getOriginReference();
-//                    String temp = OTFUtility.getDescription(originRef.getUuid(), item.viewCoordinateProvider.getViewCoordinate());
-//                    if (temp == null) {
-//                        return originRef.getText();
-//                    } else {
-//                        return temp;
-//                    }
-//                }
-//            }
-
-            if (item.getValue() != null) {        
-            	String desc = ConceptChronologyUtil.getDescription(item.getValue(), item.getViewCoordinateProvider().getViewCoordinate(), item.getViewCoordinateProvider().getViewCoordinate());
+            if (item.getValue() != null) {
+            	String desc = ConceptChronologyUtil.getDescription(item.getValue(), item.getViewCoordinateProvider().getViewCoordinate());
                 if (desc != null) {
                 	return desc;
                 } else {
