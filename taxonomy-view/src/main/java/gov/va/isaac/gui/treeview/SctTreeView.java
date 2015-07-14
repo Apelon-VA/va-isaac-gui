@@ -483,7 +483,7 @@ class SctTreeView {
 
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion> parent : ConceptChronologyUtil.getParentsAsConceptVersions(concept, getTaxonomyTree(), getViewCoordinate())) {
+                    for (ConceptChronology<? extends ConceptVersion> parent : ConceptChronologyUtil.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getViewCoordinate())) {
                     	pathToRoot.add(parent.getPrimordialUuid());
                     	found = true;
                     	break;

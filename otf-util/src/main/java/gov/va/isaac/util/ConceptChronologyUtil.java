@@ -38,23 +38,23 @@ public final class ConceptChronologyUtil {
 
 	private ConceptChronologyUtil() {}
 
-	public static ConceptSnapshotService conceptSnapshot(ViewCoordinate vc) {
-		return conceptSnapshot(vc, vc);
+	public static ConceptSnapshotService conceptSnapshotService(ViewCoordinate vc) {
+		return conceptSnapshotService(vc, vc);
 	}
-	public static ConceptSnapshotService conceptSnapshot(StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
+	public static ConceptSnapshotService conceptSnapshotService(StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
 	}
 
 	public static String conceptDescriptionText(int conceptId, ViewCoordinate vc) {
-		return conceptDescriptionText(conceptId, conceptSnapshot(vc));
+		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
 	}
 	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
-		Optional<LatestVersion<DescriptionSememe>> descriptionOptional = 
-				snapshot.getDescriptionOptional(conceptId);
+		Optional<LatestVersion<DescriptionSememe>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
 		if (descriptionOptional.isPresent()) {
 			return descriptionOptional.get().value().getText();
 		}
-		return "No desc for: " + conceptId;
+
+		return null;
 	}
 	public static String conceptDescriptionText(int conceptId) {
 		return Get.conceptDescriptionText(conceptId);
@@ -86,10 +86,10 @@ public final class ConceptChronologyUtil {
 
 			Optional<LatestVersion<DescriptionSememe>> optional = null;
 			if (userProfile.getDisplayFSN()) {
-				optional = ConceptChronologyUtil.conceptSnapshot(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
+				optional = ConceptChronologyUtil.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
 				//optional = conceptChronology.getFullySpecifiedDescription(languageCoordinate, stampCoordinate);
 			} else {
-				optional = ConceptChronologyUtil.conceptSnapshot(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
+				optional = ConceptChronologyUtil.conceptSnapshotService(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
 				//optional = conceptChronology.getPreferredDescription(languageCoordinate, stampCoordinate);
 			}
 
@@ -114,13 +114,22 @@ public final class ConceptChronologyUtil {
 		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
 			return optional.get().value().getText();
 		} else {
-			String otfDesc = OTFUtility.getDescription(conceptChronology.getNid());
-			
-			if (otfDesc != null) {
-				return otfDesc;
-			} else {
-				return null;
+			String desc = conceptDescriptionText(conceptChronology.getNid(), conceptSnapshotService(stampCoordinate, languageCoordinate));
+			if (desc != null) {
+				return desc;
 			}
+			
+			desc = conceptDescriptionText(conceptChronology.getNid());
+			if (desc != null) {
+				return desc;
+			}
+			
+			desc = OTFUtility.getDescription(conceptChronology.getNid());
+			if (desc != null) {
+				return desc;
+			}
+
+			return null;
 		}
 	}
 
@@ -138,7 +147,7 @@ public final class ConceptChronologyUtil {
 		return nidSet;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptVersions(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, ViewCoordinate vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, ViewCoordinate vc) {
 		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
 		
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
@@ -174,7 +183,7 @@ public final class ConceptChronologyUtil {
 		return parentNids;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion>> getParentsAsConceptVersions(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
 		Set<ConceptChronology<? extends ConceptVersion>> parentConcepts = new HashSet<>();
 		for (int nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
 			parentConcepts.add(Get.conceptService().getConcept(nid));

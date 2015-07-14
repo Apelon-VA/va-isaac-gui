@@ -127,7 +127,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                 ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
                 ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
     
-                for (ConceptChronology<? extends ConceptVersion> rv : ConceptChronologyUtil.getChildrenAsConceptVersions(taxRef, getTaxonomyTreeProvider().getTaxonomyTree(), this.getViewCoordinateProvider().getViewCoordinate())) {
+                for (ConceptChronology<? extends ConceptVersion> rv : ConceptChronologyUtil.getChildrenAsConceptChronologies(taxRef, getTaxonomyTreeProvider().getTaxonomyTree(), this.getViewCoordinateProvider().getViewCoordinate())) {
                     SctTreeItem childItem = new SctTreeItem(rv, displayPolicies, viewCoordinateProvider, taxonomyTreeProvider);
                     if (childItem.shouldDisplay()) {
                         childrenToAdd.add(childItem);
@@ -188,7 +188,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                                 ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
                                 ((SctTreeItem)child).childLoadStarts();
     
-                                for (ConceptChronology<? extends ConceptVersion> r : ConceptChronologyUtil.getChildrenAsConceptVersions(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree(), getViewCoordinateProvider().getViewCoordinate())) {
+                                for (ConceptChronology<? extends ConceptVersion> r : ConceptChronologyUtil.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree(), getViewCoordinateProvider().getViewCoordinate())) {
                                     if (cancelLookup) {
                                         return;
                                     }

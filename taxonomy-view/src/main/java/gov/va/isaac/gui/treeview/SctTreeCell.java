@@ -109,7 +109,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(ConceptChronologyUtil.getParentsAsConceptVersions(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(ConceptChronologyUtil.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
 
                 List<ConceptChronology<? extends ConceptVersion>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion> parent : allParents) {
