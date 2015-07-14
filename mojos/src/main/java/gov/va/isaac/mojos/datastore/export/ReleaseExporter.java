@@ -226,7 +226,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 							getLog().error("No Concepts exported");
 						}
 					} 
-					else if(!exportFormat.equalsIgnoreCase(ExportMojoFormat.Uscrs.name()) && !exportFormat.equalsIgnoreCase("all") && !isToday(uscrsDateFilter)) {
+					else if(!exportFormat.equalsIgnoreCase(ExportMojoFormat.Uscrs.name()) && !exportFormat.equalsIgnoreCase("all") && uscrsDateFilter != null) {
 						//If USCRS Date Filter Flag set (not equal to todays timestamp) but Output Format not equal to all or USCRS, we throw an error.
 						getLog().error("You set the -DuscrsDateFilter (to export USCRS Content Request by date) but did not set the Export Format (-DexportFormat) to 'USCRS' or 'all'... Ignoring USCRS Date Filter");
 					}
