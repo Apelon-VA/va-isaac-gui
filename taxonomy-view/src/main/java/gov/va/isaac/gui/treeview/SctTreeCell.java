@@ -27,14 +27,20 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.ConceptChronologyUtil;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -49,24 +55,20 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
+
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.ddo.ComponentReference;
-import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link TreeCell} for rendering {@link TaxonomyReferenceWithConcept} objects.
+ * A {@link TreeCell} for rendering {@link ConceptChronology<ConceptVersion>} objects.
  *
  * @author kec
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @SuppressWarnings("deprecation")
-final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
+final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVersion>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeCell.class);
 
@@ -87,7 +89,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
             @Override
             public String getConceptId()
             {
-                final ConceptChronicleDdo conceptChronicle = SctTreeCell.this.getItem().getConcept();
+                final ConceptChronology<? extends ConceptVersion> conceptChronicle = SctTreeCell.this.getItem();
                 final UUID conceptUuid = conceptChronicle.getPrimordialUuid();
 
                 return conceptUuid.toString();
@@ -96,47 +98,47 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
     }
 
     private void openOrCloseParent(SctTreeItem treeItem) throws IOException, ContradictionException {
-        TaxonomyReferenceWithConcept value = treeItem.getValue();
-        ConceptChronicleDdo c = value.getConcept();
+        ConceptChronology<? extends ConceptVersion> value = treeItem.getValue();
 
-        if (c != null) {
+        if (value != null) {
             treeItem.setValue(null);
 
             SctTreeItem parentItem = (SctTreeItem) treeItem.getParent();
-            ObservableList<TreeItem<TaxonomyReferenceWithConcept>> siblings = parentItem.getChildren();
+            ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion>>> siblings = parentItem.getChildren();
 
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<RelationshipChronicleDdo> extraParents = new ArrayList<>(c.getOriginRelationships());
+                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(ConceptChronologyUtil.getParentsAsConceptVersions(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
 
-                extraParents.remove(value.getRelationshipVersion().getChronicle());
-
-                ArrayList<SctTreeItem> extraParentItems = new ArrayList<>(extraParents.size());
-
-                for (RelationshipChronicleDdo extraParent : extraParents) {
-                    for (RelationshipVersionDdo extraParentVersion : extraParent.getVersions()) {
-                        SctTreeItem extraParentItem =
-                                new SctTreeItem(
-                                        new TaxonomyReferenceWithConcept(
-                                                extraParentVersion,
-                                                TaxonomyReferenceWithConcept.WhichConcept.DESTINATION),
-                                                treeItem.getDisplayPolicies(),
-                                                treeItem.getViewCoordinateProvider());
-                        extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
-                        extraParentItems.add(extraParentItem);
-                    }
+                List<ConceptChronology<? extends ConceptVersion>> secondaryParents = new ArrayList<>();
+                for (ConceptChronology<? extends ConceptVersion> parent : allParents) {
+                	if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
+                		secondaryParents.add(parent);
+                	}
                 }
 
-                Collections.sort(extraParentItems);
-                Collections.reverse(extraParentItems);
+                ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>(secondaryParents.size());
+
+                for (ConceptChronology<? extends ConceptVersion> extraParent : secondaryParents) {
+                        SctTreeItem extraParentItem =
+                                new SctTreeItem(extraParent,
+                                                treeItem.getDisplayPolicies(),
+                                                treeItem.getViewCoordinateProvider(),
+                                                treeItem.getTaxonomyTreeProvider());
+                        extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
+                        secondaryParentItems.add(extraParentItem);
+                }
+
+                Collections.sort(secondaryParentItems);
+                Collections.reverse(secondaryParentItems);
 
                 int startIndex = siblings.indexOf(treeItem);
 
-                for (SctTreeItem extraParent : extraParentItems) {
-                    parentItem.getChildren().add(startIndex++, extraParent);
-                    treeItem.getExtraParents().add(extraParent);
-                    Utility.execute(new GetSctTreeItemConceptCallable(extraParent, false));
+                for (SctTreeItem extraParentItem : secondaryParentItems) {
+                    parentItem.getChildren().add(startIndex++, extraParentItem);
+                    treeItem.getExtraParents().add(extraParentItem);
+                    Utility.execute(new GetSctTreeItemConceptCallable(extraParentItem, false));
                 }
             }
 
@@ -147,7 +149,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
     }
 
     @Override
-    protected void updateItem(TaxonomyReferenceWithConcept taxRef, boolean empty) {
+    protected void updateItem(ConceptChronology<? extends ConceptVersion> taxRef, boolean empty) {
         super.updateItem(taxRef, empty);
         double opacity = 0.0;
         
@@ -157,7 +159,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
             setGraphic(null);
         }
         else if (!empty && taxRef == null) {
-            LOG.debug("TaxonomyReferenceWithConcept is null");
+            LOG.debug("ConceptChronology<? extends ConceptVersion> is null");
             setText("");
             setGraphic(null);
         }
@@ -189,7 +191,12 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
                     setGraphic(graphicBorderPane);
                 }
 
-                setText(OTFUtility.getDescription(taxRef.getConcept()));
+                String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
+                if (desc != null) {
+                    setText(desc);
+                } else {
+                	LOG.debug("No description found for concept {}", taxRef.toUserString());
+                }
 
                 return;
             }
@@ -200,10 +207,11 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
 
             setDisclosureNode(iv);
 
-            if (taxRef.getConcept() == null) {
-                setText(taxRef.toString());
+            String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
+            if (desc != null) {
+                setText(desc);
             } else {
-                setText(OTFUtility.getDescription(taxRef.getConcept()));
+            	LOG.debug("No description found for concept {}", taxRef.toUserString());
             }
 
             Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
@@ -229,7 +237,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
         }
     }
 
-    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<TaxonomyReferenceWithConcept>> siblings) {
+    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion>>> siblings) {
         for (SctTreeItem extraParent : treeItem.getExtraParents()) {
             removeExtraParents(extraParent, siblings);
             siblings.remove(extraParent);
@@ -250,13 +258,14 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
             @Override
             public Collection<Integer> getNIds()
             {
-                ComponentReference item = SctTreeCell.this.getItem().getConceptFromRelationshipOrConceptProperties();
+                ConceptChronology<? extends ConceptVersion> item = SctTreeCell.this.getItem();
                 try
                 {
                     if (item != null ) {
-                        return Arrays.asList(new Integer[] {ExtendedAppContext.getDataStore().getNidForUuids(item.getUuid())});
+                        return Arrays.asList(new Integer[] {ExtendedAppContext.getDataStore().getNidForUuids(item.getPrimordialUuid())});
                     } else {
-                        LOG.warn("Couldn't locate an identifer for the node {}", SctTreeCell.this);
+                    	String text = SctTreeCell.this.getText();
+                        LOG.warn("Couldn't locate an identifer for the node (with null item) {}", text);
                         return Arrays.asList(new Integer[] {});
                     }
                 }

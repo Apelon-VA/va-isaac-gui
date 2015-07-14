@@ -19,12 +19,18 @@
 package gov.va.isaac.init;
 
 import gov.va.isaac.util.DBLocator;
+import static gov.vha.isaac.cradle.concept.ConceptProviderOchreModel.CRADLE_CONCEPT_MODEL_PROPERTY;
+import static gov.vha.isaac.cradle.concept.ConceptProviderOchreModel.CRADLE_PROPERTIES_FILE_NAME;
 import gov.vha.isaac.ochre.api.ConceptModel;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Properties;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -81,6 +87,18 @@ public class SystemInit
 		}
 		LoggerFactory.getLogger(SystemInit.class).info("Configuring cradle to use the data store " + dataStoreLocation.getAbsolutePath());
 		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(dataStoreLocation.toPath());
-		LookupService.getService(ConfigurationService.class).setConceptModel(ConceptModel.OTF_CONCEPT_MODEL);
+                Path propertiesPath = Paths.get(dataStoreLocation.getAbsolutePath(), "object-chronicles", CRADLE_PROPERTIES_FILE_NAME);
+                if (propertiesPath.toFile().exists()) {
+                    
+                    Properties dataStoreProperties = new Properties();
+                    try (FileInputStream in = new FileInputStream(propertiesPath.toFile())) {
+                        dataStoreProperties.load(in);
+                    }
+                    ConceptModel model = ConceptModel.valueOf(dataStoreProperties.getProperty(CRADLE_CONCEPT_MODEL_PROPERTY));
+                    LookupService.getService(ConfigurationService.class).setConceptModel(model);
+                } else {
+                    LookupService.getService(ConfigurationService.class).setConceptModel(ConceptModel.OTF_CONCEPT_MODEL);
+                }
+		
 	}
 }
