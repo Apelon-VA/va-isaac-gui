@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.gui.treeview;
 
-import gov.va.isaac.util.ConceptChronologyUtil;
+import gov.va.isaac.util.OCHREUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
@@ -101,7 +101,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
 
-            if (ConceptChronologyUtil.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()).size() > 1) {
+            if (OCHREUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()).size() > 1) {
                 treeItem.setMultiParent(true);
             } 
     
@@ -110,7 +110,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-                for (ConceptChronology<? extends ConceptVersion> destRel : ConceptChronologyUtil.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate())) {
+                for (ConceptChronology<? extends ConceptVersion> destRel : OCHREUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate())) {
                     if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                         return false;
                     }

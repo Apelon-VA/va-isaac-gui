@@ -26,7 +26,7 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
-import gov.va.isaac.util.ConceptChronologyUtil;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
@@ -483,7 +483,7 @@ class SctTreeView {
 
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion> parent : ConceptChronologyUtil.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getViewCoordinate())) {
+                    for (ConceptChronology<? extends ConceptVersion> parent : OCHREUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getViewCoordinate())) {
                     	pathToRoot.add(parent.getPrimordialUuid());
                     	found = true;
                     	break;

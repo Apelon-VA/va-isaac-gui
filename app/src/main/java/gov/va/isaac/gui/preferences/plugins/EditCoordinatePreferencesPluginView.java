@@ -32,13 +32,15 @@ import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import javafx.beans.property.ObjectProperty;
@@ -124,7 +126,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 							if(c == null) {
 								setText(null);
 							}else {
-								String desc = OTFUtility.getDescription(c);
+								String desc = OCHREUtility.getDescription(c);
 								setText(desc);
 							}
 						}
@@ -140,7 +142,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 					if (emptyRow) {
 						setText("");
 					} else {
-						String desc = OTFUtility.getDescription(c);
+						String desc = OCHREUtility.getDescription(c);
 						setText(desc);
 					}
 				}
@@ -191,9 +193,9 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			List<ConceptChronicleBI> pathConcepts = OTFUtility.getPathConcepts();
-			for (ConceptChronicleBI cc : pathConcepts) {
-				list.add(cc.getPrimordialUuid());
+			Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
+			for (ConceptVersion<?> cv : pathConcepts) {
+				list.add(cv.getChronology().getPrimordialUuid());
 			}
 		} catch (IOException | ContradictionException e) {
 			logger.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());

@@ -29,12 +29,14 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
 import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateFactory;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -42,17 +44,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -110,7 +108,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	private EConceptExporter eConExporter;
 	private DataOutputStream ecDos_;
 	private DataOutputStream uscrsDos_;
-	private List<ConceptChronicleBI> allPaths = null;
+	private Set<ConceptVersion<?>> allPaths = null;
 	private String econceptFileName = "";
 	private String uscrsFileName = "";
 	private ViewCoordinate vc;
@@ -367,14 +365,15 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	
 	public boolean validPath(MojoConceptSpec pathSpec) {
 		try {
-			allPaths = OTFUtility.getPathConcepts();
+			allPaths = OCHREUtility.getPathConcepts();
+			//Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
 		} catch (Exception e) {
 			getLog().error("Error getting all PATHS for path validation - OTFUtility.getPathConcepts()", e);
 		} 
 		if(allPaths != null) {
-			for(ConceptChronicleBI thisPath : allPaths) {
+			for(ConceptVersion<?> thisPath : allPaths) {
 				try {
-					if(thisPath.getPrimordialUuid().equals(pathSpec.getConceptSpec().getPrimodialUuid())) {
+					if(thisPath.getChronology().getPrimordialUuid().equals(pathSpec.getConceptSpec().getPrimodialUuid())) {
 						selectedPath = pathSpec.getConceptSpec().getPrimodialUuid();
 						//selectedPathNid = pathSpec.getConceptSpec().getNid();
 						return true;

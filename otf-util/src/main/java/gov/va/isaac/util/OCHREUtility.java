@@ -8,24 +8,44 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
+import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
+import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
+import org.ihtsdo.otf.tcc.api.spec.ValidationException;
+import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +53,43 @@ import org.slf4j.LoggerFactory;
  * @author joel
  *
  */
-public final class ConceptChronologyUtil {
-	private static final Logger LOG = LoggerFactory.getLogger(ConceptChronologyUtil.class);
+public final class OCHREUtility {
+	private static final Logger LOG = LoggerFactory.getLogger(OCHREUtility.class);
 
-	private ConceptChronologyUtil() {}
+	private OCHREUtility() {}
+
+	public static Set<ConceptVersion<?>> getPathConcepts() throws ValidationException, IOException, ContradictionException {
+		Stream<SememeChronology<? extends SememeVersion>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getSequence());
+		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
+
+		final Set<ConceptVersion> pathConcepts = new HashSet<>();
+		Consumer<? super SememeChronology<? extends SememeVersion>> action = new Consumer<SememeChronology<? extends SememeVersion>>() {
+			@Override
+			public void accept(SememeChronology<? extends SememeVersion> t) {
+				ConceptChronology<? extends ConceptVersion> pathCC = Get.conceptService().getConcept(t.getReferencedComponentNid());
+				
+				ConceptChronology<ConceptVersion> pathCCTemp = (ConceptChronology<ConceptVersion>)pathCC;
+				Optional<LatestVersion<ConceptVersion>> latestPathConceptVersion = pathCCTemp.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+				if (latestPathConceptVersion.isPresent()) {
+					pathConcepts.add(latestPathConceptVersion.get().value());
+				}
+			}
+		};
+		sememes.distinct().forEach(action);
+
+//		Iterator<SememeChronology<? extends SememeVersion>> it = sememes.iterator();
+//		for (SememeChronology<? extends SememeVersion> current = it.next(); it.hasNext(); current = it.next()) {
+//			action.accept(current);
+//		}
+
+		if (pathConcepts.size() == 0) {
+			LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE);
+		} else {
+			LOG.debug("Loaded {} paths: {}", pathConcepts.size(), pathConcepts);
+		}
+			
+		return Collections.unmodifiableSet(pathConcepts);
+	}
 
 	public static ConceptSnapshotService conceptSnapshotService(ViewCoordinate vc) {
 		return conceptSnapshotService(vc, vc);
@@ -60,10 +113,6 @@ public final class ConceptChronologyUtil {
 		return Get.conceptDescriptionText(conceptId);
 	}
 
-	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
-		ViewCoordinate vc = OTFUtility.getViewCoordinate();
-		return getDescriptionOptional(conceptChronology, vc);
-	}
 	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology, ViewCoordinate vc) {
 		return getDescriptionOptional(conceptChronology, vc, vc);
 	}
@@ -86,11 +135,43 @@ public final class ConceptChronologyUtil {
 
 			Optional<LatestVersion<DescriptionSememe>> optional = null;
 			if (userProfile.getDisplayFSN()) {
-				optional = ConceptChronologyUtil.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
-				//optional = conceptChronology.getFullySpecifiedDescription(languageCoordinate, stampCoordinate);
+				optional = OCHREUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
 			} else {
-				optional = ConceptChronologyUtil.conceptSnapshotService(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
-				//optional = conceptChronology.getPreferredDescription(languageCoordinate, stampCoordinate);
+				optional = OCHREUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
+			}
+
+			return optional;
+		} catch (RuntimeException e) {
+			LOG.error("Failed determining correct description type. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+			
+			throw e;
+		}
+	}
+	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(int conceptId) {
+		return getDescriptionOptional(Get.conceptSnapshot().getConceptSnapshot(conceptId).getChronology());
+	}
+	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
+		try {
+			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+			if (userProfile == null)
+			{
+				LOG.warn("User profile not available yet during call to getDescription() - configuring automation mode!");
+				try
+				{
+					LookupService.getService(UserProfileManager.class).configureAutomationMode(null);
+					userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+				}
+				catch (InvalidUserException e)
+				{
+					throw new RuntimeException("Problem configuring automation mode!");
+				}
+			}
+
+			Optional<LatestVersion<DescriptionSememe>> optional = null;
+			if (userProfile.getDisplayFSN()) {
+				optional = Get.conceptSnapshot().getFullySpecifiedDescription(conceptChronology.getNid());
+			} else {
+				optional = Get.conceptSnapshot().getPreferredDescription(conceptChronology.getNid());
 			}
 
 			return optional;
@@ -101,12 +182,14 @@ public final class ConceptChronologyUtil {
 		}
 	}
 
-	public static String getDescription(ConceptChronology<?> conceptChronology) {
-		ViewCoordinate vc = OTFUtility.getViewCoordinate();
-		return getDescription(conceptChronology, vc);
+	public static String getDescription(UUID conceptUuid, ViewCoordinate vc) {
+		return getDescription(conceptSnapshotService(vc).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), vc);
 	}
 	public static String getDescription(ConceptChronology<?> conceptChronology, ViewCoordinate vc) {
 		return getDescription(conceptChronology, vc, vc);
+	}
+	public static String getDescription(UUID conceptUuid, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
+		return getDescription(conceptSnapshotService(stampCoordinate, languageCoordinate).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), languageCoordinate, stampCoordinate);
 	}
 	public static String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
 		Optional<LatestVersion<DescriptionSememe>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
@@ -132,7 +215,32 @@ public final class ConceptChronologyUtil {
 			return null;
 		}
 	}
+	public static String getDescription(int conceptId) {
+		return getDescription(Get.conceptService().getConcept(conceptId));
+	}
+	public static String getDescription(ConceptChronology<?> conceptChronology) {
+		Optional<LatestVersion<DescriptionSememe>> optional = getDescriptionOptional(conceptChronology);
 
+		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
+			return optional.get().value().getText();
+		} else {
+			String desc = conceptDescriptionText(conceptChronology.getNid());
+			if (desc != null) {
+				return desc;
+			}
+
+			desc = OTFUtility.getDescription(conceptChronology.getNid());
+			if (desc != null) {
+				return desc;
+			}
+
+			return null;
+		}
+	}
+	public static String getDescription(UUID uuid) {
+		return getDescription(Get.conceptService().getConcept(uuid));
+	}
+	
 	public static Set<Integer> getChildrenAsConceptNids(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree) {
 	
 		Set<Integer> nidSet = new HashSet<>();
@@ -146,7 +254,25 @@ public final class ConceptChronologyUtil {
 		
 		return nidSet;
 	}
-
+	
+	public static Set<ConceptSnapshot> getChildrenAsConceptSnapshots(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate sc, LanguageCoordinate lc) {
+		Set<ConceptSnapshot> conceptVersions = new HashSet<>();
+	
+		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
+			conceptVersions.add(conceptSnapshotService(sc, lc).getConceptSnapshot(nid));
+		}
+		
+		return conceptVersions;
+	}
+	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate sc, LanguageCoordinate lc) {
+		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
+	
+		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
+			conceptVersions.add(conceptSnapshotService(sc, lc).getConceptSnapshot(nid).getChronology());
+		}
+		
+		return conceptVersions;
+	}
 	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, ViewCoordinate vc) {
 		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
 		
