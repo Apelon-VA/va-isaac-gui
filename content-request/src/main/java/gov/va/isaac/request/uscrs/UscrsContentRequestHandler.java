@@ -76,8 +76,7 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  * @author <a href="mailto:vkaloidis@apelon.com">Vas Kaloidis</a>
  */
-@Service
-@Named(value = SharedServiceNames.USCRS)
+@Service @Named(value=SharedServiceNames.USCRS)
 @PerLookup
 public class UscrsContentRequestHandler implements ExportTaskHandlerI
 {
@@ -178,6 +177,8 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				viewCoordinate.getViewPosition().setTime(System.currentTimeMillis());
 				viewCoordinate.setAllowedStatus(EnumSet.of(Status.ACTIVE));
 				viewCoordinate.setRelationshipAssertionType(RelAssertionType.STATED);
+				
+				logger.info("USCRS Content Request Handler - Starting Concept Stream Iterator");
 				
 				conceptStream
 					.forEach( nid -> {				
@@ -441,23 +442,23 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 							} 
 							
 						}
-						examinedConCount++;
+						logger.info("USCRS Content Request Handler - ITERATED CONCEPT " + examinedConCount++);
 				});
+				
+				logger.info("USCRS Content Request Handler - FINISHED Concept Stream Iterator: " + examinedConCount + " concepts iterated");
 				
 				//TODO: Enable this to check the ID's generated
 				for (int genId : currentRequestMap.values())
 				{
 					if (!newConceptRequestIds.contains(genId))
 					{
-						throw new Exception("We wrote out the generated ID: " + genId + " but failed to create a new concept for that ID.  Logic failure!");
+						//throw new Exception("We wrote out the generated ID: " + genId + " but failed to create a new concept for that ID.  Logic failure!");
 					}
 				}
 				
 				if(isCancelled()) {
 					return examinedConCount;
 				}
-				
-				//TODO: Update the return messages and the progress. Do it update every ~20 concepts
 				
 				logger.info("  file = " + file);
 				if (file != null)
@@ -481,6 +482,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		if (fsn.indexOf('(') != -1)
 		{
 			String st = fsn.substring(fsn.lastIndexOf('(') + 1, fsn.lastIndexOf(')'));
+			//todo: Fix this for semantic tag: "ISAAC"
 			return PICKLIST_Semantic_Tag.find(st).toString();
 		} else {
 			return null;
@@ -583,7 +585,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			throw new Exception("Cannot export RxNorm Terminology");
 		}
 		else if (!isChildOfSCT(cv.getAssociatedConceptNid())) {
-			throw new Exception("Cannot something that isn't part of the SCT hierarchy");
+			logger.error("Cannot export concepts or components that are not in SCT");
+			return "NOT in SCT";
+			//TODO: Fix this throw new Exception("Cannot something that isn't part of the SCT hierarchy");
 		}
 		else
 		{
@@ -650,7 +654,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			if(relVersion != null) {
 				if(relVersion.isActive()) 
 				{
-					if ((relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid()))
+					if ((relVersion.getTypeNid() == Snomed.IS_A.getLenient().getNid())) //TODO: Update new SNOMED Module
 					{
 						int relDestNid = relVersion.getDestinationNid();
 						parentNids.add(count, relDestNid);

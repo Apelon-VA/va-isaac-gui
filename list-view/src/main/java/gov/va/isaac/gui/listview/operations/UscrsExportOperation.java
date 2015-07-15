@@ -203,7 +203,7 @@ public class UscrsExportOperation extends Operation
 						logger_.debug("Output Directory: " + path);
 						File f = new File(path);
 						if(file.isFile()) { //If we want to prevent file overwrite
-							this.setInvalidReason("The file " + filePath + " already exists");
+							this.setInvalidReason("The file (" + filePath + ") already exists");
 							return false;
 						} else if(f.isDirectory()) {
 							return true;
@@ -336,8 +336,8 @@ public class UscrsExportOperation extends Operation
 						throw new RuntimeException(errorMsg);
 					}
 					
-					
-					return new OperationResult("The USCRS Content request was succesfully generated in: " + file.getPath(), new HashSet<SimpleDisplayConcept>(), "The concepts were succesfully exported");
+					String successMsg = "The USCRS Content request was succesfully generated in: " + file.getPath();
+					return new OperationResult(successMsg, new HashSet<SimpleDisplayConcept>(), successMsg);
 				} else {
 					throw new RuntimeException("The USCRS Content Request Handler is not available on the class path");
 				}

@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -36,6 +37,7 @@ import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link USCRSBatchTemplate}
@@ -47,6 +49,8 @@ import org.apache.poi.ss.usermodel.Workbook;
  */
 public class USCRSBatchTemplate
 {
+	
+	private org.slf4j.Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	/**
 	 * All of the following code, down through the end comment - is generated automatically by executing the main(String[] args) method
 	 * which is part of this class. That method reads the excel template, and creates this set of enums.
@@ -375,10 +379,15 @@ public class USCRSBatchTemplate
 
 	public void saveFile(File writeTo) throws IOException
 	{
-		FileOutputStream out = new FileOutputStream(writeTo);
-		wb.write(out);
-		out.flush();
-		out.close();
+		try {
+			FileOutputStream out = new FileOutputStream(writeTo);
+			wb.write(out);
+			out.flush();
+			out.close();
+			logger_.info("succesfully wrote Workbook to Excel file (" + writeTo.getAbsolutePath() + ") and closed DOS");
+		} catch(Exception e) {
+			logger_.error("Error closing DOS or writing to file", e);
+		}
 
 	}
 	
