@@ -24,6 +24,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
 
 import java.io.IOException;
@@ -41,9 +42,10 @@ import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
 import org.slf4j.Logger;
@@ -91,14 +93,14 @@ public final class OCHREUtility {
 		return Collections.unmodifiableSet(pathConcepts);
 	}
 
-	public static ConceptSnapshotService conceptSnapshotService(ViewCoordinate vc) {
-		return conceptSnapshotService(vc, vc);
+	public static ConceptSnapshotService conceptSnapshotService(TaxonomyCoordinate vc) {
+		return conceptSnapshotService(vc.getStampCoordinate(), vc.getLanguageCoordinate());
 	}
 	public static ConceptSnapshotService conceptSnapshotService(StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
 	}
 
-	public static String conceptDescriptionText(int conceptId, ViewCoordinate vc) {
+	public static String conceptDescriptionText(int conceptId, TaxonomyCoordinate vc) {
 		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
 	}
 	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
@@ -113,8 +115,8 @@ public final class OCHREUtility {
 		return Get.conceptDescriptionText(conceptId);
 	}
 
-	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology, ViewCoordinate vc) {
-		return getDescriptionOptional(conceptChronology, vc, vc);
+	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate vc) {
+		return getDescriptionOptional(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
 	}
 	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
 		try {
@@ -182,11 +184,11 @@ public final class OCHREUtility {
 		}
 	}
 
-	public static String getDescription(UUID conceptUuid, ViewCoordinate vc) {
+	public static String getDescription(UUID conceptUuid, TaxonomyCoordinate vc) {
 		return getDescription(conceptSnapshotService(vc).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), vc);
 	}
-	public static String getDescription(ConceptChronology<?> conceptChronology, ViewCoordinate vc) {
-		return getDescription(conceptChronology, vc, vc);
+	public static String getDescription(ConceptChronology<?> conceptChronology, TaxonomyCoordinate vc) {
+		return getDescription(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
 	}
 	public static String getDescription(UUID conceptUuid, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
 		return getDescription(conceptSnapshotService(stampCoordinate, languageCoordinate).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), languageCoordinate, stampCoordinate);
@@ -273,7 +275,7 @@ public final class OCHREUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, ViewCoordinate vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, TaxonomyCoordinate vc) {
 		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
 		
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
@@ -288,7 +290,7 @@ public final class OCHREUtility {
 	//		Tree ancestorTree = taxonomyTree.createAncestorTree(child.getConceptSequence());
 //	
 //	return getChildrenAsConceptNids(child, ancestorTree);
-	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
+	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
 		int[] parentSequences = taxonomyTree.getParentSequences(child.getConceptSequence());
 		
 		Set<Integer> parentNids = new HashSet<>();
@@ -309,7 +311,7 @@ public final class OCHREUtility {
 		return parentNids;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, ViewCoordinate vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
 		Set<ConceptChronology<? extends ConceptVersion>> parentConcepts = new HashSet<>();
 		for (int nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
 			parentConcepts.add(Get.conceptService().getConcept(nid));
@@ -322,4 +324,49 @@ public final class OCHREUtility {
 //	
 //		return getChildrenAsConceptVersions(child, ancestorTree, vc);
 	}
+	
+	/**
+	 * Recursively get Is a children of a concept
+	 */
+//	private static Set<ConceptSnapshot> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptSnapshot concept, StampCoordinate sc, LanguageCoordinate lc, boolean recursive, boolean leafOnly) 
+//	{
+//		Set<ConceptSnapshot> results = new HashSet<>();
+//		
+//		// This both prevents infinite recursion and avoids processing or returning of duplicates
+//		if (handledConceptNids.contains(concept.getNid())) {
+//			LOG.debug("Encountered already-handled concept \"{}\".  May be result of duplicate or source of potential infinite loop", OCHREUtility.getDescription(concept.getNid()));
+//			return results;
+//		}
+//
+//		Taxonomy taxonomy = Get.taxonomyService().getChildOfSequenceSet(concept.getConceptSequence(), TaxonomyCoordinates.)
+//		concept.
+//		int size = 0;
+//		for (RelationshipVersionBI<?> r : concept.getRelationshipsIncomingActiveIsa())
+//		{
+//			size++;
+//			if (handledConceptNids.contains(r.getOriginNid())) {
+//				// avoids processing or returning of duplicates
+//				LOG.debug("Encountered already-handled ORIGIN child concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getOriginNid(), vc));
+//
+//				continue;
+//			}
+//
+//			ConceptVersionBI originConcept = getConceptVersion(r.getOriginNid(), vc);
+//			if (!leafOnly)
+//			{
+//				results.add(originConcept);
+//			}
+//			if (recursive)
+//			{
+//				results.addAll(getAllChildrenOfConcept(handledConceptNids, originConcept, vc, recursive, leafOnly));
+//			}
+//		}
+//		
+//		if (leafOnly && size == 0 && !handledConceptNids.contains(concept.getNid()))
+//		{
+//			results.add(concept);
+//		}
+//		handledConceptNids.add(concept.getNid());
+//		return results;
+//	}
 }

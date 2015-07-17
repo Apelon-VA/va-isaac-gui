@@ -18,13 +18,12 @@
  */
 package gov.va.isaac.gui.treeview;
 
+import gov.va.isaac.gui.treeview.SctTreeView.TaxonomyCoordinateProvider;
 import gov.va.isaac.gui.treeview.SctTreeView.TaxonomyTreeProvider;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemI;
 import gov.va.isaac.util.OCHREUtility;
-import gov.va.isaac.util.ViewCoordinateFactory.ViewCoordinateProvider;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
@@ -66,12 +65,12 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
     private int multiParentDepth = 0;
     private boolean secondaryParentOpened = false;
     private SctTreeItemDisplayPolicies displayPolicies;
-    private final ViewCoordinateProvider viewCoordinateProvider;
+    private final TaxonomyCoordinateProvider viewCoordinateProvider;
     private final TaxonomyTreeProvider taxonomyTreeProvider;
     
     private static WorkExecutors workExecutors_ = null;
     
-    public ViewCoordinateProvider getViewCoordinateProvider() {
+    public TaxonomyCoordinateProvider getTaxonomyCoordinateProvider() {
     	return viewCoordinateProvider;
     }
     public TaxonomyTreeProvider getTaxonomyTreeProvider() {
@@ -97,11 +96,11 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
         }
     }
     
-    SctTreeItem(ConceptChronology<? extends ConceptVersion> taxRef, SctTreeItemDisplayPolicies displayPolicies, ViewCoordinateProvider vcp, TaxonomyTreeProvider ttp) {
+    SctTreeItem(ConceptChronology<? extends ConceptVersion> taxRef, SctTreeItemDisplayPolicies displayPolicies, TaxonomyCoordinateProvider vcp, TaxonomyTreeProvider ttp) {
         this(taxRef, displayPolicies, vcp, ttp, (Node) null);
     }
 
-    SctTreeItem(ConceptChronology<? extends ConceptVersion> t, SctTreeItemDisplayPolicies displayPolicies, ViewCoordinateProvider vcp, TaxonomyTreeProvider ttp, Node node) {
+    SctTreeItem(ConceptChronology<? extends ConceptVersion> t, SctTreeItemDisplayPolicies displayPolicies, TaxonomyCoordinateProvider vcp, TaxonomyTreeProvider ttp, Node node) {
         super(t, node);
         this.viewCoordinateProvider = vcp;
         this.taxonomyTreeProvider = ttp;
@@ -127,7 +126,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                 ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
                 ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
     
-                for (ConceptChronology<? extends ConceptVersion> rv : OCHREUtility.getChildrenAsConceptChronologies(taxRef, getTaxonomyTreeProvider().getTaxonomyTree(), this.getViewCoordinateProvider().getViewCoordinate())) {
+                for (ConceptChronology<? extends ConceptVersion> rv : OCHREUtility.getChildrenAsConceptChronologies(taxRef, getTaxonomyTreeProvider().getTaxonomyTree(), this.getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
                     SctTreeItem childItem = new SctTreeItem(rv, displayPolicies, viewCoordinateProvider, taxonomyTreeProvider);
                     if (childItem.shouldDisplay()) {
                         childrenToAdd.add(childItem);
@@ -188,7 +187,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                                 ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
                                 ((SctTreeItem)child).childLoadStarts();
     
-                                for (ConceptChronology<? extends ConceptVersion> r : OCHREUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree(), getViewCoordinateProvider().getViewCoordinate())) {
+                                for (ConceptChronology<? extends ConceptVersion> r : OCHREUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree(), getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
                                     if (cancelLookup) {
                                         return;
                                     }
@@ -304,7 +303,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
     public static String toString(SctTreeItem item) {
         try {
             if (item.getValue() != null) {
-            	String desc = OCHREUtility.getDescription(item.getValue(), item.getViewCoordinateProvider().getViewCoordinate());
+            	String desc = OCHREUtility.getDescription(item.getValue(), item.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
                 if (desc != null) {
                 	return desc;
                 } else {

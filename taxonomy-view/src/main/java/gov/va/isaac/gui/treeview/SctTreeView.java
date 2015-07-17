@@ -27,15 +27,14 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.util.OCHREUtility;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.ViewCoordinateFactory;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.TaxonomyService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
 
 import java.util.ArrayList;
@@ -67,7 +66,6 @@ import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
 
 import org.apache.mahout.math.Arrays;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +82,9 @@ class SctTreeView {
 
     static interface TaxonomyTreeProvider {
     	Tree getTaxonomyTree();
+    }
+    static interface TaxonomyCoordinateProvider {
+    	TaxonomyCoordinate getTaxonomyCoordinate();
     }
 
     private final static SctTreeItemDisplayPolicies defaultDisplayPolicies = new DefaultSctTreeItemDisplayPolicies();
@@ -110,7 +111,7 @@ class SctTreeView {
     private Tree taxonomyTree = null;
     private Tree getTaxonomyTree() {
     	if (taxonomyTree == null) {
-    		taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(getViewCoordinate());
+    		taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(getTaxonomyCoordinate());
     	}
     	
     	return taxonomyTree;
@@ -121,13 +122,13 @@ class SctTreeView {
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
     
-    private ViewCoordinate vc_ = null;
-    private ViewCoordinate getViewCoordinate() {
-        if (vc_ == null) {
-            vc_ = OTFUtility.getViewCoordinate();
+    private TaxonomyCoordinate tc_ = null;
+    private TaxonomyCoordinate getTaxonomyCoordinate() {
+        if (tc_ == null) {
+            tc_ = AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get();
         }
         
-        return vc_;
+        return tc_;
     }
     
     SctTreeView() {
@@ -355,8 +356,7 @@ class SctTreeView {
                     {
                         setComputeOnInvalidate(true);
                         addBinding(
-                                AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
-                                AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents());
+                                AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
                         enabled = true;
                     }
 
@@ -369,8 +369,7 @@ class SctTreeView {
                             return false;
                         }
                         LOG.debug("Kicking off tree refresh() due to change of user preference property");
-                        vc_ = ViewCoordinateFactory.getViewCoordinate(AppContext.getService(UserProfileBindings.class).getViewCoordinateComponents().get());
-                        taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(vc_);
+                        taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(getTaxonomyCoordinate());
                         SctTreeView.this.refresh();
                         return false;
                     }
@@ -414,7 +413,7 @@ class SctTreeView {
 
         ConceptChronology<? extends ConceptVersion> visibleRootConcept = rootConcept;
         
-        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getViewCoordinate(), () -> getTaxonomyTree(), Images.ROOT.createImageView());
+        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getTaxonomyCoordinate(), () -> getTaxonomyTree(), Images.ROOT.createImageView());
 
         treeView_.setRoot(rootTreeItem);
         
@@ -483,7 +482,7 @@ class SctTreeView {
 
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion> parent : OCHREUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getViewCoordinate())) {
+                    for (ConceptChronology<? extends ConceptVersion> parent : OCHREUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getTaxonomyCoordinate())) {
                     	pathToRoot.add(parent.getPrimordialUuid());
                     	found = true;
                     	break;

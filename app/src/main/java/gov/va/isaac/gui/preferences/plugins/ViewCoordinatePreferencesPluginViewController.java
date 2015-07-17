@@ -648,13 +648,17 @@ public class ViewCoordinatePreferencesPluginViewController {
 						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OCHREUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
 						
 						pathComboBox.getItems().clear();
-						pathComboBox.getItems().addAll(getPathOptions());
+						runLaterIfNotFXApplicationThread(() -> {
+							pathComboBox.getItems().addAll(getPathOptions());
+							pathComboBox.getSelectionModel().select(persistenceInterface.getPath());
+						} );
+					} else {
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(persistenceInterface.getPath()));
 					}
 
 					// Reload persisted values every time
 
 					//UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(persistenceInterface.getPath()));
 
 					// Reload storedStatedInferredOption
 					loadStoredStatedInferredOption();

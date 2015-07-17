@@ -101,7 +101,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
 
-            if (OCHREUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()).size() > 1) {
+            if (OCHREUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()).size() > 1) {
                 treeItem.setMultiParent(true);
             } 
     
@@ -110,11 +110,11 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-                for (ConceptChronology<? extends ConceptVersion> destRel : OCHREUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate())) {
+                for (ConceptChronology<? extends ConceptVersion> destRel : OCHREUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
                     if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                         return false;
                     }
-                        SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getViewCoordinateProvider(), treeItem.getTaxonomyTreeProvider());
+                        SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getTaxonomyCoordinateProvider(), treeItem.getTaxonomyTreeProvider());
                         if (childItem.shouldDisplay()) {
                             childrenToAdd.add(childItem);
                         }

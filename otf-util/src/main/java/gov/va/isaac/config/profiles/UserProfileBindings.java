@@ -20,7 +20,19 @@ package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
@@ -74,6 +86,10 @@ public class UserProfileBindings
 
 	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
 
+	private final ReadOnlyObjectWrapper<StampCoordinate> stampCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
 				displayFSN,
@@ -87,7 +103,11 @@ public class UserProfileBindings
 				readOnlyViewCoordinateStatuses,
 				readOnlyViewCoordinateModules,
 				
-				viewCoordinateComponents
+				viewCoordinateComponents,
+				
+				stampCoordinate,
+				languageCoordinate,
+				taxonomyCoordinate
 		};
 	}
 
@@ -166,13 +186,41 @@ public class UserProfileBindings
 	{
 		return viewCoordinateComponents.getReadOnlyProperty();
 	}
+
+	/**
+	 * @return the stampCoordinate
+	 */
+	public ReadOnlyObjectProperty<StampCoordinate> getStampCoordinate()
+	{
+		return stampCoordinate.getReadOnlyProperty();
+	}
+
+	/**
+	 * @return the languageCoordinate
+	 */
+	public ReadOnlyObjectProperty<LanguageCoordinate> getLanguageCoordinate()
+	{
+		return languageCoordinate.getReadOnlyProperty();
+	}
+
+	/**
+	 * @return the taxonomyCoordinate
+	 */
+	public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate()
+	{
+		return taxonomyCoordinate.getReadOnlyProperty();
+	}
 	
 	protected void update(UserProfile up)
 	{
 		boolean updateViewCoordinateComponents = false;
+		boolean updateStampCoordinate = false;
+		boolean updateLanguageCoordinate = false;
+		boolean updateTaxonomyCoordinate = false;
 		
 		if (displayFSN.get() != up.getDisplayFSN())
 		{
+			updateLanguageCoordinate = true;
 			displayFSN.set(up.getDisplayFSN());
 		}
 		if (displayRelDirection.get() != up.getDisplayRelDirection())
@@ -191,16 +239,19 @@ public class UserProfileBindings
 		if (statedInferredPolicy.get() != up.getStatedInferredPolicy())
 		{
 			updateViewCoordinateComponents = true;
+			updateTaxonomyCoordinate = true;
 			statedInferredPolicy.set(up.getStatedInferredPolicy());
 		}
 		if (!Objects.equals(viewCoordinatePath.get(), up.getViewCoordinatePath()))
 		{
 			updateViewCoordinateComponents = true;
+			updateStampCoordinate = true;
 			viewCoordinatePath.set(up.getViewCoordinatePath());
 		}
 		if (!Objects.equals(viewCoordinateTime.get(), up.getViewCoordinateTime()))
 		{
 			updateViewCoordinateComponents = true;
+			updateStampCoordinate = true;
 			viewCoordinateTime.set(up.getViewCoordinateTime());
 		}
 		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
@@ -209,6 +260,7 @@ public class UserProfileBindings
 				|| ! readOnlyViewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
 				|| ! up.getViewCoordinateStatuses().containsAll(readOnlyViewCoordinateStatuses.get())) {
 			updateViewCoordinateComponents = true;
+			updateStampCoordinate = true;
 			viewCoordinateStatuses.get().clear();
 			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
 		}
@@ -219,6 +271,7 @@ public class UserProfileBindings
 				|| ! readOnlyViewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
 				|| ! up.getViewCoordinateModules().containsAll(readOnlyViewCoordinateModules.get())) {
 			updateViewCoordinateComponents = true;
+			updateStampCoordinate = true;
 			viewCoordinateModules.get().clear();
 			viewCoordinateModules.get().addAll(up.getViewCoordinateModules());
 		}
@@ -231,6 +284,55 @@ public class UserProfileBindings
 					viewCoordinateTime.get(),
 					readOnlyViewCoordinateModules);
 			viewCoordinateComponents.set(vcc);
+		}
+		
+		if (updateStampCoordinate) {
+			updateTaxonomyCoordinate = true;
+			
+			StampPosition stampPosition = new StampPositionImpl(
+					viewCoordinateTime.get(),
+					Get.identifierService().getConceptSequenceForUuids(viewCoordinatePath.get()));
+			int[] moduleSequences = new int[viewCoordinateModules.get().size()];
+			int index = 0;
+			for (UUID moduleUuid : viewCoordinateModules.get()) {
+				if (moduleUuid != null) {
+					moduleSequences[index++] = Get.identifierService().getConceptSequenceForUuids(moduleUuid);
+				}
+			}
+
+			EnumSet<State> allowedStates = EnumSet.allOf(State.class);
+			allowedStates.clear();
+			for (Status status : viewCoordinateStatuses.get()) {
+				allowedStates.add(status.getState());
+			}
+			stampCoordinate.set(
+					new StampCoordinateImpl(
+							StampPrecedence.PATH,
+							stampPosition, 
+							moduleSequences, allowedStates));
+		}
+		
+		if (updateLanguageCoordinate) {
+			updateTaxonomyCoordinate = true;
+	
+			languageCoordinate.set(
+					displayFSN.get() ? LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate() : LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
+		}
+		
+		if (updateTaxonomyCoordinate) {
+			TaxonomyCoordinate newCoordinate = null;
+			switch (statedInferredPolicy.get()) {
+			case STATED:
+				newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
+				break;
+			case INFERRED:
+				newCoordinate = TaxonomyCoordinates.getInferredTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
+				break;
+				default:
+					throw new RuntimeException("Unsupported StatedInferredOptions value " + statedInferredPolicy.get() + ".  Expected STATED or INFERRED.");
+			}
+			
+			taxonomyCoordinate.set(newCoordinate);
 		}
 	}
 }

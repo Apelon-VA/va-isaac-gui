@@ -111,7 +111,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(OCHREUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(OCHREUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
 
                 List<ConceptChronology<? extends ConceptVersion>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion> parent : allParents) {
@@ -126,7 +126,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                         SctTreeItem extraParentItem =
                                 new SctTreeItem(extraParent,
                                                 treeItem.getDisplayPolicies(),
-                                                treeItem.getViewCoordinateProvider(),
+                                                treeItem.getTaxonomyCoordinateProvider(),
                                                 treeItem.getTaxonomyTreeProvider());
                         extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
                         secondaryParentItems.add(extraParentItem);
@@ -193,14 +193,14 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     setGraphic(graphicBorderPane);
                 }
 
-                String desc = OCHREUtility.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
+                String desc = OCHREUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
                 if (desc != null) {
                     setText(desc);
                 } else {
                 	LOG.debug("No description found for concept {}", taxRef.toUserString());
                 }
 
-                if (! taxRef.isLatestVersionActive(treeItem.getViewCoordinateProvider().getViewCoordinate())) {
+                if (! taxRef.isLatestVersionActive(treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate())) {
                 	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                 } else {
                 	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
@@ -215,14 +215,14 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
             setDisclosureNode(iv);
 
-            String desc = OCHREUtility.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
+            String desc = OCHREUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
             if (desc != null) {
                 setText(desc);
             } else {
             	LOG.debug("No description found for concept {}", taxRef.toUserString());
             }
 
-            if (! taxRef.isLatestVersionActive(treeItem.getViewCoordinateProvider().getViewCoordinate())) {
+            if (! taxRef.isLatestVersionActive(treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate())) {
             	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
             } else {
             	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
