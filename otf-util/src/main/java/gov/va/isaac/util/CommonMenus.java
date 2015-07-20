@@ -32,6 +32,12 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationV
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -942,6 +948,56 @@ public class CommonMenus
 		//TODO Dan doesn't like this, because it is being done at menu execution time, in the FX Thread, rather
 		//that in the background... but not sure how to restructure this class just now to properly handle other 
 		//types of nids...
+		
+		// TODO Complete this
+		ObjectChronologyType nidType = Get.identifierService().getChronologyTypeForNid(nid);
+		switch (nidType) {
+		case CONCEPT:
+			LOG.debug("NID {} passed is for CONCEPT {}", nid, Get.conceptDescriptionText(nid));
+			ConceptChronology<? extends ConceptVersion> conceptC = Get.conceptService().getConcept(nid);
+			return conceptC.getNid();
+		case SEMEME:
+			SememeChronology<? extends SememeVersion> sememeC = Get.sememeService().getSememe(Get.identifierService().getSememeSequence(nid));
+			LOG.debug("NID {} passed is for {} SEMEME {}", nid, sememeC.getSememeType(), Get.conceptDescriptionText(nid));
+
+			switch(sememeC.getSememeType()) {
+			case MEMBER:
+				break;
+			case COMPONENT_NID:
+				return sememeC.getReferencedComponentNid();
+			case LONG:
+				break;
+			case LOGIC_GRAPH:
+				break;
+			case STRING:
+				break;
+			case DYNAMIC:
+				break;
+			case DESCRIPTION:
+				break;
+			case RELATIONSHIP_ADAPTOR:
+				break;
+			default:
+				throw new RuntimeException("Unsupported SememeType " + sememeC.getSememeType().name());
+			}
+			
+			return sememeC.getNid();
+		case REFEX:
+			LOG.debug("NID {} passed is for REFEX {}", nid, Get.conceptDescriptionText(nid));
+
+			break;
+		case OTHER:
+			LOG.debug("NID {} passed is for OTHER {}", nid, Get.conceptDescriptionText(nid));
+
+			break;
+		case UNKNOWN_NID:
+			LOG.debug("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
+
+			break;
+			default:
+				throw new RuntimeException("Unsupported ObjectChronologyType " + nidType.name());
+		}
+		
 		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
 		
 		if (cc != null) {

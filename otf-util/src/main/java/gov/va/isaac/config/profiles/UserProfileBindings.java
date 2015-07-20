@@ -29,6 +29,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 
@@ -90,6 +91,8 @@ public class UserProfileBindings
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
+	private final ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
+
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
 				displayFSN,
@@ -107,7 +110,8 @@ public class UserProfileBindings
 				
 				stampCoordinate,
 				languageCoordinate,
-				taxonomyCoordinate
+				taxonomyCoordinate,
+				taxonomyTree
 		};
 	}
 
@@ -211,12 +215,21 @@ public class UserProfileBindings
 		return taxonomyCoordinate.getReadOnlyProperty();
 	}
 	
+	/**
+	 * @return the taxonomyTree
+	 */
+	public ReadOnlyObjectProperty<Tree> getTaxonomyTree()
+	{
+		return taxonomyTree.getReadOnlyProperty();
+	}
+	
 	protected void update(UserProfile up)
 	{
 		boolean updateViewCoordinateComponents = false;
 		boolean updateStampCoordinate = false;
 		boolean updateLanguageCoordinate = false;
 		boolean updateTaxonomyCoordinate = false;
+		boolean updateTaxonomyTree = false;
 		
 		if (displayFSN.get() != up.getDisplayFSN())
 		{
@@ -320,6 +333,8 @@ public class UserProfileBindings
 		}
 		
 		if (updateTaxonomyCoordinate) {
+			updateTaxonomyTree = true;
+			
 			TaxonomyCoordinate newCoordinate = null;
 			switch (statedInferredPolicy.get()) {
 			case STATED:
@@ -333,6 +348,10 @@ public class UserProfileBindings
 			}
 			
 			taxonomyCoordinate.set(newCoordinate);
+		}
+		
+		if (updateTaxonomyTree) {
+			taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
 		}
 	}
 }
