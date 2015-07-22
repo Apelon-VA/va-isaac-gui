@@ -54,7 +54,7 @@ public final class OCHREUtility {
 		Stream<SememeChronology<? extends SememeVersion>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getSequence());
 		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
 
-		final Set<ConceptVersion> pathConcepts = new HashSet<>();
+		final Set<ConceptVersion<?>> pathConcepts = new HashSet<>();
 		Consumer<? super SememeChronology<? extends SememeVersion>> action = new Consumer<SememeChronology<? extends SememeVersion>>() {
 			@Override
 			public void accept(SememeChronology<? extends SememeVersion> t) {
