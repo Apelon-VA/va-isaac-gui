@@ -518,7 +518,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					TextErrorColorHelper.clearTextErrorColor(pathComboBox);
 				}
 				ConceptChronology<? extends ConceptVersion> pathCC = Get.conceptService().getConcept(currentPathProperty.get());
-				Optional<LatestVersion<ConceptVersion>> optionalLatestVersion = ((ConceptChronology<ConceptVersion>)pathCC).getLatestVersion(ConceptVersion.class, ViewCoordinateFactory.getSystemViewCoordinate());
+				Optional<LatestVersion<ConceptVersion>> optionalLatestVersion = ((ConceptChronology)pathCC).getLatestVersion(ConceptVersion.class, ViewCoordinateFactory.getSystemViewCoordinate());
 				if (! optionalLatestVersion.isPresent()) {
 					this.setInvalidReason("Invalid path");
 					TextErrorColorHelper.setTextErrorColor(pathComboBox);

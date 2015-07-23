@@ -58,10 +58,10 @@ public final class OCHREUtility {
 		Consumer<? super SememeChronology<? extends SememeVersion>> action = new Consumer<SememeChronology<? extends SememeVersion>>() {
 			@Override
 			public void accept(SememeChronology<? extends SememeVersion> t) {
-				ConceptChronology<? extends ConceptVersion> pathCC = Get.conceptService().getConcept(t.getReferencedComponentNid());
+				ConceptChronology<? extends ConceptVersion<?>> pathCC = Get.conceptService().getConcept(t.getReferencedComponentNid());
 				
-				ConceptChronology<ConceptVersion> pathCCTemp = (ConceptChronology<ConceptVersion>)pathCC;
-				Optional<LatestVersion<ConceptVersion>> latestPathConceptVersion = pathCCTemp.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+				ConceptChronology pathCCTemp = (ConceptChronology)pathCC;
+				Optional<LatestVersion<ConceptVersion<?>>> latestPathConceptVersion = pathCCTemp.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
 				if (latestPathConceptVersion.isPresent()) {
 					pathConcepts.add(latestPathConceptVersion.get().value());
 				}
