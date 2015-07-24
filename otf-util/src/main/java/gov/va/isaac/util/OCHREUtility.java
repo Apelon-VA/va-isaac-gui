@@ -94,7 +94,7 @@ public final class OCHREUtility {
 		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
 	}
 	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
-		Optional<LatestVersion<DescriptionSememe>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
+		Optional<LatestVersion<DescriptionSememe<?>>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
 		if (descriptionOptional.isPresent()) {
 			return descriptionOptional.get().value().getText();
 		}
@@ -105,10 +105,10 @@ public final class OCHREUtility {
 		return Get.conceptDescriptionText(conceptId);
 	}
 
-	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate vc) {
+	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate vc) {
 		return getDescriptionOptional(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
 	}
-	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
+	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
 		try {
 			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			if (userProfile == null)
@@ -125,7 +125,7 @@ public final class OCHREUtility {
 				}
 			}
 
-			Optional<LatestVersion<DescriptionSememe>> optional = null;
+			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
 			if (userProfile.getDisplayFSN()) {
 				optional = OCHREUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
 			} else {
@@ -139,10 +139,10 @@ public final class OCHREUtility {
 			throw e;
 		}
 	}
-	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(int conceptId) {
+	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(int conceptId) {
 		return getDescriptionOptional(Get.conceptSnapshot().getConceptSnapshot(conceptId).getChronology());
 	}
-	public static Optional<LatestVersion<DescriptionSememe>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
+	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
 		try {
 			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			if (userProfile == null)
@@ -159,7 +159,7 @@ public final class OCHREUtility {
 				}
 			}
 
-			Optional<LatestVersion<DescriptionSememe>> optional = null;
+			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
 			if (userProfile.getDisplayFSN()) {
 				optional = Get.conceptSnapshot().getFullySpecifiedDescription(conceptChronology.getNid());
 			} else {
@@ -184,7 +184,7 @@ public final class OCHREUtility {
 		return getDescription(conceptSnapshotService(stampCoordinate, languageCoordinate).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), languageCoordinate, stampCoordinate);
 	}
 	public static String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
-		Optional<LatestVersion<DescriptionSememe>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
+		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
 
 		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
 			return optional.get().value().getText();
@@ -211,7 +211,7 @@ public final class OCHREUtility {
 		return getDescription(Get.conceptService().getConcept(conceptId));
 	}
 	public static String getDescription(ConceptChronology<?> conceptChronology) {
-		Optional<LatestVersion<DescriptionSememe>> optional = getDescriptionOptional(conceptChronology);
+		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology);
 
 		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
 			return optional.get().value().getText();
