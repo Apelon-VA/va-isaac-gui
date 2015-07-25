@@ -51,7 +51,7 @@ public final class OCHREUtility {
 	private OCHREUtility() {}
 
 	public static Set<ConceptVersion<?>> getPathConcepts() throws ValidationException, IOException, ContradictionException {
-		Stream<SememeChronology<? extends SememeVersion>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getSequence());
+		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getSequence());
 		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
 
 		final Set<ConceptVersion<?>> pathConcepts = new HashSet<>();
