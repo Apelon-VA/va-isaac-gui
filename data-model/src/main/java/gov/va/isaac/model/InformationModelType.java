@@ -64,7 +64,7 @@ public enum InformationModelType {
    * @param fileExtension the file extension
    */
   private InformationModelType(ConceptSpec spec, String fileExtension) {
-    this.displayName = spec.getDescription();
+    this.displayName = spec.getConceptDescriptionText();
     this.fileExtension = fileExtension;
     this.uuid = spec.getUuids()[0];
   }

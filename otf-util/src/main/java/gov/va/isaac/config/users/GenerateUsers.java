@@ -30,17 +30,12 @@ import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.ConceptModel;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.classifier.ClassifierResults;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilderService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
@@ -52,8 +47,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.UUID;
 import javax.xml.XMLConstants;
@@ -79,7 +72,6 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import gov.vha.isaac.ochre.util.UuidT5Generator;
 import java.util.ArrayList;
 import java.util.List;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -211,7 +203,7 @@ public class GenerateUsers {
                 = LookupService.getService(LogicalExpressionBuilderService.class);
         LogicalExpressionBuilder defBuilder = expressionBuilderService.getLogicalExpressionBuilder();
 
-        NecessarySet(And(ConceptAssertion(Get.conceptService().getConcept(IsaacMetadataAuxiliaryBinding.USER.getSequence()), defBuilder)));
+        NecessarySet(And(ConceptAssertion(Get.conceptService().getConcept(IsaacMetadataAuxiliaryBinding.USER.getConceptSequence()), defBuilder)));
 
         LogicalExpression userDef = defBuilder.build();
 
