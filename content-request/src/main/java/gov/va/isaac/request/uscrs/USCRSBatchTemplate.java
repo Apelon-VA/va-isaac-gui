@@ -33,10 +33,13 @@ import java.util.logging.Logger;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFDataFormat;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -266,16 +269,22 @@ public class USCRSBatchTemplate
 	private SHEET editSheetEnum = null;
 	private int editSheetRowNum = Integer.MIN_VALUE;
 	private Row currentEditRow = null;
+	private CellStyle style;
+	private DataFormat format;
 
 	public USCRSBatchTemplate(InputStream spreadsheetTemplate) throws IOException
 	{
 		wb = new HSSFWorkbook(spreadsheetTemplate);
 		ch = wb.getCreationHelper();
+		style = wb.createCellStyle();
+		format = wb.createDataFormat();
+		style.setDataFormat(format.getFormat("0"));
 
 		for (int i = 0; i < wb.getNumberOfSheets(); i++)
 		{
 			Sheet s = wb.getSheetAt(i);
 			SHEET sheetEnum = SHEET.valueOf(enumSafeCharExchange(s.getSheetName()));
+			s.autoSizeColumn(i);
 			if (sheetEnum == null)
 			{
 				throw new RuntimeException("No enum type found for sheet " + s.getSheetName() + " - code out of sync with template");
@@ -375,6 +384,7 @@ public class USCRSBatchTemplate
 		}
 		Cell cell = currentEditRow.createCell(cellPos, Cell.CELL_TYPE_NUMERIC);
 		cell.setCellValue(value);
+		cell.setCellStyle(style);
 	}
 
 	public void saveFile(File writeTo) throws IOException
@@ -438,7 +448,8 @@ public class USCRSBatchTemplate
 	{
 		//USCRSBatchTemplate b = new USCRSBatchTemplate(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
 
-		Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
+		//Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
+		Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27-Id-Cell-Formatted.xls"));
 
 		ArrayList<String> sheets = new ArrayList<>();
 		HashSet<String> columns = new HashSet<>();

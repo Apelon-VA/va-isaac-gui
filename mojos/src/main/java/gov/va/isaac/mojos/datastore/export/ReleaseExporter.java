@@ -52,6 +52,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -66,11 +67,13 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
+import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.relationship.RelAssertionType;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
@@ -91,7 +94,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	public enum ExportMojoFormat
 	{
 		Econcept ("EConcept", "EConcept Files .jbin", ".jbin"),
-		Uscrs ("Uscrs", "Excel Files .xlsl", ".xlsx");
+		Uscrs ("Uscrs", "Excel Files .xls", ".xls");
 		
 		private final String name;
 		private final String extensionDesc;
@@ -116,6 +119,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	private ViewCoordinate vc;
 	private int pathNid;
 	private UUID selectedPath;
+	private int selectedPathNid;
 	private static UserProfile userProfileMain = null;
 	private int streamCount = 0;
 	
@@ -139,6 +143,9 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	@Parameter (name="namespace")
 	public String namespace;
 	
+	@Parameter (name = "modules")
+	public HashSet<String> modules;
+	
 	static DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 	static Date date = new Date();
 	public static final String today = dateFormat.format(date);
@@ -157,7 +164,6 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	
 	@Parameter (name = "uscrsDateFilter")
 	public Date uscrsDateFilter;
-	//TODO: Change default to null on uscrsDateFilter
 	//TODO: Document Mojo Params
 	
 	@Override
@@ -169,6 +175,15 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		}
 		else
 		{ 
+			if(uscrsDateFilter != null) {
+				getLog().info("Date Filter Mojo Param Set: " + uscrsDateFilter.toString());
+			}
+			try {
+				Thread.sleep(4000);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			
 			vc = OTFUtility.getViewCoordinate();
 			vc.getViewPosition().setTime(System.currentTimeMillis());
 			vc.setAllowedStatus(EnumSet.of(Status.ACTIVE));
@@ -177,6 +192,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			getLog().info("Executing Content Export" );
 			econceptFileName = "SOLOR_Snapshot_" + path.getFsn() + "";
 					
+			getLog().debug("Export Mojo Started with PATH: " + path);
+			
 			//Check if requireed Parameters are Empty
 			if(outputFolder != null) {
 				if(outputFolder.exists()) {
@@ -236,8 +253,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 						exportEconcept();
 					} 
 				} else {
-					getLog().error("PATH " + path.getConceptSpec().getPrimodialUuid() + " is NOT valid, cannot export");
-					//throw new MojoExecutionException("We could not find a matching path");
+					//getLog().error("PATH " + path.getConceptSpec().getPrimodialUuid() + " is NOT valid, cannot export");
+					throw new MojoExecutionException("PATH ERROR - Path is invalid: " + path); 
 				}
 			}
 			catch (Exception e) {
@@ -269,7 +286,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	public boolean exportEconcept() {
 		getLog().info("Executing an EConcept Export");
 		try {
-			ecDos_ = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(outputFolder.toString() + econceptFileName + ExportMojoFormat.Econcept.extensionFormat))));
+			//TODO: Replace seperator with default FS Seperator
+			ecDos_ = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(outputFolder.toString() + "\\" + econceptFileName + ExportMojoFormat.Econcept.extensionFormat))));
 		} catch (FileNotFoundException e) {
 			getLog().error("Error generating EConcept DOS", e);
 		}
@@ -289,9 +307,9 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		eConExporter.addProgressListener(pListener);
 
 		try {
-			eConExporter.export(pathNid);
+			eConExporter.export(selectedPathNid);
 		} catch (Exception e) {
-			getLog().error("Erroe exporting EConcepts", e);
+			getLog().error("Error exporting EConcepts", e);
 			return false;
 		}
 		return true;
@@ -311,18 +329,51 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		StatedInferredOptions relAssertionType = userProfileMain.getStatedInferredPolicy();
 		Set<Status> statuses = userProfileMain.getViewCoordinateStatuses();
 		long time = userProfileMain.getViewCoordinateTime();
-		Set<UUID> modules = userProfileMain.getViewCoordinateModules();
+		Set<UUID> vcModules = userProfileMain.getViewCoordinateModules();
 		
-		ViewCoordinate pathVc = ViewCoordinateFactory.getViewCoordinate(path, relAssertionType, statuses, time, modules);
-		TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
-		Stream<? extends ConceptChronicleBI> conceptStream = dataStore.getConceptStream();
+		ViewCoordinate pathVc = ViewCoordinateFactory.getViewCoordinate(path, relAssertionType, statuses, time, vcModules);
+		TerminologyStoreDI dataStore;
+		Stream<? extends ConceptChronicleBI> conceptStream = null;
+		try {
+			dataStore = ExtendedAppContext.getDataStore();
+			conceptStream = dataStore.getConceptStream();
+		} catch(Exception e) {
+			getLog().error("USCRS Export Mojo Error - problem loading datastore and Concept-Stream", e);
+		} finally {
+			//TODO: Shutdown Issue: it hangs, need a shutdown script, but this one does NOT work -> dataStore.shutdown();
+		}
+		if(modules != null) {
+			for(String thisModule :  modules) {
+				getLog().info("Module Filter Loaded: " + thisModule);
+			}
+		} else {
+			getLog().info("No Module Filter Set");
+		}
+		
 		IntStream nidStream =  conceptStream.filter( 
 													(ConceptChronicleBI concept) ->{ 
 														try { 
 															Optional<? extends ConceptVersionBI> cv = concept.getVersion(pathVc);
-															if(cv.isPresent() && streamCount <= 20) {
-																streamCount++;
-																return true;
+															if(cv.isPresent()) { //Testing:  add this clause (&& streamCount <= 20)
+																ConceptVersionBI cvg = cv.get();
+																if(modules != null) {
+																	ConceptVersionBI cvmv = OTFUtility.getConceptVersion(cvg.getModuleNid());
+																	if(cvmv != null){
+																		//String thisModDesc = OTFUtility.getDescription(cvmv.getNid());
+																		String cvmvUuid = cvmv.getPrimordialUuid().toString();
+																		if(modules.contains(cvmvUuid)) {
+																			streamCount++;
+																			return true;
+																		} else {
+																			return false;
+																		}
+																	} else{
+																		return false;
+																	}
+																} else {
+																	streamCount++;
+																	return true;
+																}
 															} else {
 																return false;
 															}
@@ -330,33 +381,34 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 															return false;
 														} })
 											  .mapToInt(c -> c.getNid());
-		getLog().info("Concepts prepared for Export: " + streamCount + " concepts");
 		
 		String date = new SimpleDateFormat("MM-dd-yyyy HH-mm-ss").format(new Date());
 		uscrsFileName = "VA_USCRS_Submission_File_" + date;
-		Path uscrsFileNamePath = Paths.get(outputFolder.getAbsolutePath() + "\\" + uscrsFileName  + ExportMojoFormat.Uscrs.extensionFormat);
+		Path uscrsFileNamePath = Paths.get(outputFolder.getAbsolutePath() + "\\" + uscrsFileName  + ExportMojoFormat.Uscrs.extensionFormat);//TODO: Replace seperator with default FS Seperator
 		
 		ExportTaskHandlerI uscrsExporter = LookupService.getService(ExportTaskHandlerI.class, SharedServiceNames.USCRS);
-		Task<Integer> task = null;
-		try {
-			getLog().info("Preparing to write USCRS Content Request to: " + uscrsFileNamePath.toString());
-			task = uscrsExporter.createTask(nidStream, uscrsFileNamePath);
-		} catch (FileNotFoundException e) {
-			getLog().error("Error generating USCRS Export Task", e);
-		}
-		
 		if(uscrsDateFilter != null) { //Filter USCRS by date if we have one
 			Properties uscrsProps = new Properties();
 			uscrsProps.setProperty("date", String.valueOf(uscrsDateFilter.getTime()));
+			getLog().debug("Date Param: " + String.valueOf(uscrsDateFilter.getTime()));
 			try {
 				uscrsExporter.setOptions(uscrsProps);
 			} catch (Exception e) {
 				getLog().error("Error generating Settting Date Option filter for USCRS Export", e);
 			}
 		}
-		Utility.execute(task);
+		Task<Integer> task = null;
+		try {
+			getLog().info("USCRS Concepts prepared for Export: " + streamCount + " concepts");
+			getLog().info("Preparing to write USCRS Content Request to: " + uscrsFileNamePath.toString());
+			task = uscrsExporter.createTask(nidStream, uscrsFileNamePath);
+		} catch (FileNotFoundException e) {
+			getLog().error("Error generating USCRS Export Task", e);
+		}
+		
 		int count = 0;
 		try {
+			Utility.execute(task);
 			count = task.get();
 			getLog().info("Succesfully exported " + count + " concepts into " + uscrsFileNamePath.toString());
 		} catch (Exception e) {
@@ -376,7 +428,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 				try {
 					if(thisPath.getPrimordialUuid().equals(pathSpec.getConceptSpec().getPrimodialUuid())) {
 						selectedPath = pathSpec.getConceptSpec().getPrimodialUuid();
-						//selectedPathNid = pathSpec.getConceptSpec().getNid();
+						selectedPathNid = pathSpec.getConceptSpec().getNid();
+						getLog().info("Path is valid: " + OTFUtility.getDescription(selectedPathNid));
 						return true;
 					}
 				} catch (Exception e) {
@@ -423,28 +476,30 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		Class<UserProfileManager> userProfileManagerClass = UserProfileManager.class;
 		userProfile = ExtendedAppContext.getService(userProfileManagerClass).getCurrentlyLoggedInUserProfile();
 		
-		UUID userPath = userProfile.getViewCoordinatePath();
+		UUID userPath = userProfile.getViewCoordinatePath(); 
 		String pathFsn = "";
 		try {
 			pathFsn = OTFUtility.getDescription(userPath, OTFUtility.getViewCoordinate()); //development (ISAAC)
-			logger_.info("Path FSN: " + pathFsn);
 			mojoConceptSpec.setFsn(pathFsn);
 		} catch (Exception e) {
 			logger_.error("Error setting PATHS FSN", e);
 		}
 		String userPathUuid = userPath.toString();
 		mojoConceptSpec.setUuid(userPathUuid); //32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7
-		logger_.info("Export Path UUID: " + userPathUuid);
 		
+		HashSet<String> modules = new HashSet<String>();
+		modules.add(Snomed.US_EXTENSION_MODULE.getPrimodialUuid().toString());
+		modules.add(Snomed.CORE_MODULE.getPrimodialUuid().toString());
+		export.modules = modules;
 		
 		export.path = mojoConceptSpec;
 		
 		//export.exportFormat = ExportMojoFormat.Econcept.name.toString();
 		export.exportFormat = ExportMojoFormat.Uscrs.name.toString();
-		logger_.info("Export Format: " + export.exportFormat);
+		
 		//export.uscrsDateFilter = new Date(668822400000L); // 3/13/1991
-		export.uscrsDateFilter = new Date(1331596800000L); //3/13/2012
-		logger_.info("USCRS Date Filter: " + export.uscrsDateFilter);
+		//export.uscrsDateFilter = new Date(1331596800000L); //3/13/2012
+		export.uscrsDateFilter = new Date(1296432000000L); // 1/31/2011
 		try {
 			export.execute();
 		} catch (MojoExecutionException e) {
@@ -453,5 +508,6 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		
 		//SHUTDOWN
 		LookupService.shutdownIsaac();
+		
 	}
 }
