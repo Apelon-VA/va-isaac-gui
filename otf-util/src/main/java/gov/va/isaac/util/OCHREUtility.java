@@ -265,8 +265,8 @@ public final class OCHREUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, TaxonomyCoordinate vc) {
-		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, TaxonomyCoordinate vc) {
+		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
 		
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
 			conceptVersions.add(Get.conceptService().getConcept(nid));
@@ -301,8 +301,8 @@ public final class OCHREUtility {
 		return parentNids;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
-		Set<ConceptChronology<? extends ConceptVersion>> parentConcepts = new HashSet<>();
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
+		Set<ConceptChronology<? extends ConceptVersion<?>>> parentConcepts = new HashSet<>();
 		for (int nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
 			parentConcepts.add(Get.conceptService().getConcept(nid));
 		}

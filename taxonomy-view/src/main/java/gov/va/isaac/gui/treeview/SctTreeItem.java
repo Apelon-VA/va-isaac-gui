@@ -30,6 +30,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.util.WorkExecutors;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -51,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> implements SctTreeItemI, Comparable<SctTreeItem> {
+class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>>> implements SctTreeItemI, Comparable<SctTreeItem> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeItem.class);
 
@@ -86,8 +87,8 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
         return workExecutors_;
     }
 
-    private static TreeItem<ConceptChronology<? extends ConceptVersion>> getTreeRoot(TreeItem<ConceptChronology<? extends ConceptVersion>> item) {
-        TreeItem<ConceptChronology<? extends ConceptVersion>> parent = item.getParent();
+    private static TreeItem<ConceptChronology<? extends ConceptVersion<?>>> getTreeRoot(TreeItem<ConceptChronology<? extends ConceptVersion<?>>> item) {
+        TreeItem<ConceptChronology<? extends ConceptVersion<?>>> parent = item.getParent();
         
         if (parent == null) {
             return item;
@@ -96,11 +97,11 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
         }
     }
     
-    SctTreeItem(ConceptChronology<? extends ConceptVersion> taxRef, SctTreeItemDisplayPolicies displayPolicies, TaxonomyCoordinateProvider vcp, TaxonomyTreeProvider ttp) {
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, SctTreeItemDisplayPolicies displayPolicies, TaxonomyCoordinateProvider vcp, TaxonomyTreeProvider ttp) {
         this(taxRef, displayPolicies, vcp, ttp, (Node) null);
     }
 
-    SctTreeItem(ConceptChronology<? extends ConceptVersion> t, SctTreeItemDisplayPolicies displayPolicies, TaxonomyCoordinateProvider vcp, TaxonomyTreeProvider ttp, Node node) {
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> t, SctTreeItemDisplayPolicies displayPolicies, TaxonomyCoordinateProvider vcp, TaxonomyTreeProvider ttp, Node node) {
         super(t, node);
         this.viewCoordinateProvider = vcp;
         this.taxonomyTreeProvider = ttp;
@@ -115,7 +116,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
         childLoadStarts();
         try
         {
-            final ConceptChronology<? extends ConceptVersion> taxRef = getValue();
+            final ConceptChronology<? extends ConceptVersion<?>> taxRef = getValue();
             if (! shouldDisplay()) {
                 // Don't add children to something that shouldn't be displayed
                 LOG.debug("this.shouldDisplay() == false: not adding children to " + this.getConceptUuid());
@@ -126,7 +127,8 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                 ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
                 ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
     
-                for (ConceptChronology<? extends ConceptVersion> rv : OCHREUtility.getChildrenAsConceptChronologies(taxRef, getTaxonomyTreeProvider().getTaxonomyTree(), this.getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
+                Collection<ConceptChronology<? extends ConceptVersion<?>>> revisions = OCHREUtility.getChildrenAsConceptChronologies(taxRef, getTaxonomyTreeProvider().getTaxonomyTree(), this.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
+                for (ConceptChronology<? extends ConceptVersion<?>> rv : revisions) {
                     SctTreeItem childItem = new SctTreeItem(rv, displayPolicies, viewCoordinateProvider, taxonomyTreeProvider);
                     if (childItem.shouldDisplay()) {
                         childrenToAdd.add(childItem);
@@ -171,14 +173,14 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                 // Don't add children to something that shouldn't be displayed
                 LOG.debug("this.shouldDisplay() == false: not adding children concepts and grandchildren items to " + this.getConceptUuid());
             } else {
-                for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : getChildren()) {
+                for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : getChildren()) {
                     if (cancelLookup) {
                         return;
                     }
                     if (((SctTreeItem)child).shouldDisplay()) {
                         if (child.getChildren().isEmpty() && (child.getValue() != null)) {
                             if (OCHREUtility.getChildrenAsConceptNids(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree()).size() == 0) {
-                                ConceptChronology<? extends ConceptVersion> value = child.getValue();
+                                ConceptChronology<? extends ConceptVersion<?>> value = child.getValue();
                                 child.setValue(null);
                                 SctTreeItem noChildItem = (SctTreeItem) child;
                                 noChildItem.computeGraphic();
@@ -187,7 +189,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
                                 ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
                                 ((SctTreeItem)child).childLoadStarts();
     
-                                for (ConceptChronology<? extends ConceptVersion> r : OCHREUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree(), getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
+                                for (ConceptChronology<? extends ConceptVersion<?>> r : OCHREUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTreeProvider().getTaxonomyTree(), getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
                                     if (cancelLookup) {
                                         return;
                                     }
@@ -255,22 +257,18 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
     public Integer getConceptNid() {
         return getValue() != null ? getValue().getNid() : null;
     }
-    private static Integer getConceptNid(TreeItem<ConceptChronology<? extends ConceptVersion>> item) {
+    private static Integer getConceptNid(TreeItem<ConceptChronology<? extends ConceptVersion<?>>> item) {
         return item != null && item.getValue() != null ? item.getValue().getNid() : null;
     }
     
     @Override
     public boolean isRoot() {
-        ConceptChronology<? extends ConceptVersion> ref = getValue();
-
         if (IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getPrimodialUuid().equals(this.getConceptUuid())) {
             return true;
-        //} else if (ref != null && ref.getRelationshipVersion() == null) {
-        //    return true;
         } else if (this.getParent() == null) {
             return true;
         } else {
-            TreeItem<ConceptChronology<? extends ConceptVersion>> root = getTreeRoot(this);
+            TreeItem<ConceptChronology<? extends ConceptVersion<?>>> root = getTreeRoot(this);
 
             if (this == root) {
                 return true;
@@ -393,7 +391,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
     {
         cancelLookup = true;
         childrenLoadedLatch.countDown();
-        for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : getChildren())
+        for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : getChildren())
         {
             ((SctTreeItem)child).clearChildren();
         }
@@ -434,7 +432,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion>> 
     }
     
     public void removeGrandchildren() {
-        for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : getChildren()) {
+        for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : getChildren()) {
            ((SctTreeItem)child).clearChildren();
            ((SctTreeItem)child).resetChildrenCalculators();
         }

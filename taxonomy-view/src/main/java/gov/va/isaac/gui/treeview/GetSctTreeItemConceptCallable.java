@@ -47,7 +47,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     private final boolean addChildren;
     private final ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
 
-    private ConceptChronology<? extends ConceptVersion> concept;
+    private ConceptChronology<? extends ConceptVersion<?>> concept;
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem) {
         this(treeItem, true);
@@ -110,7 +110,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-                for (ConceptChronology<? extends ConceptVersion> destRel : OCHREUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
+                for (ConceptChronology<? extends ConceptVersion<?>> destRel : OCHREUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate())) {
                     if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                         return false;
                     }
@@ -130,7 +130,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     
             Platform.runLater(() -> 
             {
-                ConceptChronology<? extends ConceptVersion> itemValue = treeItem.getValue();
+                ConceptChronology<? extends ConceptVersion<?>> itemValue = treeItem.getValue();
 
                 treeItem.setValue(null);
                 if (addChildren)

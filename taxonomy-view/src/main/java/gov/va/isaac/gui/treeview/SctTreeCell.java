@@ -69,7 +69,7 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @SuppressWarnings("deprecation")
-final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVersion>> {
+final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVersion<?>>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeCell.class);
 
@@ -90,7 +90,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             @Override
             public String getConceptId()
             {
-                final ConceptChronology<? extends ConceptVersion> conceptChronicle = SctTreeCell.this.getItem();
+                final ConceptChronology<? extends ConceptVersion<?>> conceptChronicle = SctTreeCell.this.getItem();
                 final UUID conceptUuid = conceptChronicle.getPrimordialUuid();
 
                 return conceptUuid.toString();
@@ -99,21 +99,21 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
     }
 
     private void openOrCloseParent(SctTreeItem treeItem) throws IOException, ContradictionException {
-        ConceptChronology<? extends ConceptVersion> value = treeItem.getValue();
+        ConceptChronology<? extends ConceptVersion<?>> value = treeItem.getValue();
 
         if (value != null) {
             treeItem.setValue(null);
 
             SctTreeItem parentItem = (SctTreeItem) treeItem.getParent();
-            ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion>>> siblings = parentItem.getChildren();
+            ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion<?>>>> siblings = parentItem.getChildren();
 
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(OCHREUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OCHREUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
 
-                List<ConceptChronology<? extends ConceptVersion>> secondaryParents = new ArrayList<>();
-                for (ConceptChronology<? extends ConceptVersion> parent : allParents) {
+                List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
+                for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
                 	if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
                 		secondaryParents.add(parent);
                 	}
@@ -121,7 +121,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
                 ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>(secondaryParents.size());
 
-                for (ConceptChronology<? extends ConceptVersion> extraParent : secondaryParents) {
+                for (ConceptChronology<? extends ConceptVersion<?>> extraParent : secondaryParents) {
                         SctTreeItem extraParentItem =
                                 new SctTreeItem(extraParent,
                                                 treeItem.getDisplayPolicies(),
@@ -150,7 +150,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
     }
 
     @Override
-    protected void updateItem(ConceptChronology<? extends ConceptVersion> taxRef, boolean empty) {
+    protected void updateItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, boolean empty) {
         super.updateItem(taxRef, empty);
         double opacity = 0.0;
         
@@ -250,7 +250,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
         }
     }
 
-    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion>>> siblings) {
+    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion<?>>>> siblings) {
         for (SctTreeItem extraParent : treeItem.getExtraParents()) {
             removeExtraParents(extraParent, siblings);
             siblings.remove(extraParent);
@@ -273,7 +273,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             @Override
             public Collection<Integer> getNIds()
             {
-                ConceptChronology<? extends ConceptVersion> item = SctTreeCell.this.getItem();
+                ConceptChronology<? extends ConceptVersion<?>> item = SctTreeCell.this.getItem();
                 try
                 {
                     if (item != null ) {
