@@ -22,12 +22,22 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OCHREUtility;
+//import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.va.isaac.util.ViewCoordinateFactory;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
 import java.net.URL;
@@ -42,6 +52,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -351,7 +362,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					if(c == null) {
 						setText(null);
 					} else {
-						String desc = OTFUtility.getDescription(c, panelViewCoordinate);
+						String desc = OCHREUtility.getDescription(c, panelViewCoordinate);
 						setText(desc);
 					}
 				}
@@ -365,7 +376,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (emptyRow) {
 					setText("");
 				} else {
-					String desc = OTFUtility.getDescription(c, panelViewCoordinate);
+					String desc = OCHREUtility.getDescription(c, panelViewCoordinate);
 					//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
@@ -377,7 +388,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (uuid == null){
 					return null;
 				} else {
-					return OTFUtility.getDescription(uuid, panelViewCoordinate);
+					return OCHREUtility.getDescription(uuid, panelViewCoordinate);
 				}
 			}
 
@@ -506,7 +517,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 				} else {
 					TextErrorColorHelper.clearTextErrorColor(pathComboBox);
 				}
-				if (OTFUtility.getConceptVersion(currentPathProperty.get()) == null) {
+				ConceptChronology<? extends ConceptVersion> pathCC = Get.conceptService().getConcept(currentPathProperty.get());
+				Optional<LatestVersion<ConceptVersion>> optionalLatestVersion = ((ConceptChronology)pathCC).getLatestVersion(ConceptVersion.class, ViewCoordinateFactory.getSystemViewCoordinate());
+				if (! optionalLatestVersion.isPresent()) {
 					this.setInvalidReason("Invalid path");
 					TextErrorColorHelper.setTextErrorColor(pathComboBox);
 
@@ -583,17 +596,20 @@ public class ViewCoordinatePreferencesPluginViewController {
 						contentLoaded = true;
 
 						// Populate selectableModules
-						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
-						final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
+						//final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
+						ConceptChronology<? extends ConceptVersion> moduleRootConcept = Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid())).getChronology();
+						
+						Set<ConceptSnapshot> children = OCHREUtility.getChildrenAsConceptSnapshots(moduleRootConcept, Get.taxonomyService().getTaxonomyTree(TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate())), StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+						final Set<ConceptSnapshot> moduleConcepts = new HashSet<>();
 						try {
-							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), panelViewCoordinate, false));
+							moduleConcepts.addAll(children);
 						} catch (Exception e) {
 							log.error("Failed loading module concepts as children of " + moduleRootConcept, e);
 							e.printStackTrace();
 							AppContext.getCommonDialogs().showErrorDialog("Failed loading module concepts as children of " + moduleRootConcept + ". See logs.", e);
 						}
 						List<SelectableModule> modules = new ArrayList<>();
-						for (ConceptVersionBI cv : moduleConcepts) {
+						for (ConceptSnapshot cv : moduleConcepts) {
 							modules.add(new SelectableModule(cv.getNid()));
 						}
 						selectableModules.clear();
@@ -629,16 +645,20 @@ public class ViewCoordinatePreferencesPluginViewController {
 						Collections.sort(selectableModules);
 						selectableModuleListView.getItems().addAll(selectableModules);
 
-						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OCHREUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
 						
 						pathComboBox.getItems().clear();
-						pathComboBox.getItems().addAll(getPathOptions());
+						runLaterIfNotFXApplicationThread(() -> {
+							pathComboBox.getItems().addAll(getPathOptions());
+							pathComboBox.getSelectionModel().select(persistenceInterface.getPath());
+						} );
+					} else {
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(persistenceInterface.getPath()));
 					}
 
 					// Reload persisted values every time
 
 					//UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(persistenceInterface.getPath()));
 
 					// Reload storedStatedInferredOption
 					loadStoredStatedInferredOption();
@@ -795,9 +815,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			List<ConceptChronicleBI> pathConcepts = OTFUtility.getPathConcepts();
-			for (ConceptChronicleBI cc : pathConcepts) {
-				list.add(cc.getPrimordialUuid());
+			Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
+			for (ConceptVersion<?> cv : pathConcepts) {
+				list.add(cv.getChronology().getPrimordialUuid());
 			}
 		} catch (Exception e) {
 			log.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -888,7 +908,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			String desc = null;
 			try {
-				desc = OTFUtility.getDescription(nid, panelViewCoordinate);
+				desc = OCHREUtility.getDescription(nid);
 			} catch (Exception e) {
 				log.error("Failed to set description for concept with nid={}", nid);
 			}
@@ -896,7 +916,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			UUID aUuid = null;
 			try {
-				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, panelViewCoordinate);
+				ConceptSnapshot cv = Get.conceptSnapshot().getConceptSnapshot(nid);
 				aUuid = cv.getPrimordialUuid();
 			} catch (Exception e) {
 				log.error("Failed to set uuid for concept with nid={} and desc={}", nid, description);

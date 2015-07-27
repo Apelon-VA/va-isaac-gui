@@ -27,9 +27,8 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.ConceptChronologyUtil;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
@@ -55,6 +54,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.slf4j.Logger;
@@ -109,7 +110,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(ConceptChronologyUtil.getParentsAsConceptVersions(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getViewCoordinateProvider().getViewCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion>> allParents = new ArrayList<>(OCHREUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
 
                 List<ConceptChronology<? extends ConceptVersion>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion> parent : allParents) {
@@ -124,7 +125,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                         SctTreeItem extraParentItem =
                                 new SctTreeItem(extraParent,
                                                 treeItem.getDisplayPolicies(),
-                                                treeItem.getViewCoordinateProvider(),
+                                                treeItem.getTaxonomyCoordinateProvider(),
                                                 treeItem.getTaxonomyTreeProvider());
                         extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
                         secondaryParentItems.add(extraParentItem);
@@ -191,11 +192,17 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     setGraphic(graphicBorderPane);
                 }
 
-                String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
+                String desc = OCHREUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
                 if (desc != null) {
                     setText(desc);
                 } else {
                 	LOG.debug("No description found for concept {}", taxRef.toUserString());
+                }
+
+                if (! taxRef.isLatestVersionActive(treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate())) {
+                	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
+                } else {
+                	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
                 }
 
                 return;
@@ -207,13 +214,19 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
             setDisclosureNode(iv);
 
-            String desc = ConceptChronologyUtil.getDescription(taxRef, treeItem.getViewCoordinateProvider().getViewCoordinate());
+            String desc = OCHREUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
             if (desc != null) {
                 setText(desc);
             } else {
             	LOG.debug("No description found for concept {}", taxRef.toUserString());
             }
 
+            if (! taxRef.isLatestVersionActive(treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate())) {
+            	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
+            } else {
+            	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
+            }
+            
             Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
             leftRect.setOpacity(opacity);
 
