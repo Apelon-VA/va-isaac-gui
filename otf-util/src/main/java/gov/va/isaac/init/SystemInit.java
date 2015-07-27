@@ -87,23 +87,23 @@ public class SystemInit
 		}
 		LoggerFactory.getLogger(SystemInit.class).info("Configuring cradle to use the data store " + dataStoreLocation.getAbsolutePath());
 		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(dataStoreLocation.toPath());
-                Path propertiesPath = Paths.get(dataStoreLocation.getAbsolutePath(), "object-chronicles", CRADLE_PROPERTIES_FILE_NAME);
-                LoggerFactory.getLogger(SystemInit.class).debug("Looking for Cradle properties file \"{}\"...", propertiesPath.toAbsolutePath());
-                ConceptModel model = null;
-                if (propertiesPath.toFile().exists()) {
-                    LoggerFactory.getLogger(SystemInit.class).debug("Found Cradle properties file \"{}\".", propertiesPath.toAbsolutePath());
-                    Properties dataStoreProperties = new Properties();
-                    try (FileInputStream in = new FileInputStream(propertiesPath.toFile())) {
-                        dataStoreProperties.load(in);
-                    }
-                    final String cradleConceptModelPropertyValue = dataStoreProperties.getProperty(CRADLE_CONCEPT_MODEL_PROPERTY);
-                    LoggerFactory.getLogger(SystemInit.class).debug("Loaded CRADLE_CONCEPT_MODEL_PROPERTY value \"{}\".", cradleConceptModelPropertyValue);
-                    model = ConceptModel.valueOf(cradleConceptModelPropertyValue);
-                } else {
-                	model = ConceptModel.OTF_CONCEPT_MODEL;
-                }
-                LoggerFactory.getLogger(SystemInit.class).debug("Setting ConceptModel to \"{}\".", model.name());
+		Path propertiesPath = Paths.get(dataStoreLocation.getAbsolutePath(), "object-chronicles", CRADLE_PROPERTIES_FILE_NAME);
+		LoggerFactory.getLogger(SystemInit.class).debug("Looking for Cradle properties file \"{}\"...", propertiesPath.toAbsolutePath());
+		ConceptModel model = null;
+		if (propertiesPath.toFile().exists()) {
+			LoggerFactory.getLogger(SystemInit.class).debug("Found Cradle properties file \"{}\".", propertiesPath.toAbsolutePath());
+			Properties dataStoreProperties = new Properties();
+			try (FileInputStream in = new FileInputStream(propertiesPath.toFile())) {
+				dataStoreProperties.load(in);
+			}
+			final String cradleConceptModelPropertyValue = dataStoreProperties.getProperty(CRADLE_CONCEPT_MODEL_PROPERTY);
+			LoggerFactory.getLogger(SystemInit.class).debug("Loaded CRADLE_CONCEPT_MODEL_PROPERTY value \"{}\".", cradleConceptModelPropertyValue);
+			model = ConceptModel.valueOf(cradleConceptModelPropertyValue);
+		} else {
+			model = ConceptModel.OTF_CONCEPT_MODEL;
+		}
+		LoggerFactory.getLogger(SystemInit.class).debug("Setting ConceptModel to \"{}\".", model.name());
 
-                LookupService.getService(ConfigurationService.class).setConceptModel(model);
+		LookupService.getService(ConfigurationService.class).setConceptModel(model);
 	}
 }
