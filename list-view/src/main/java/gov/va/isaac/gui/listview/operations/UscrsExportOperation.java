@@ -150,6 +150,7 @@ public class UscrsExportOperation extends Operation
 		fileChooser.getExtensionFilters().addAll(new ExtensionFilter("Excel Files .xls .xlsx", "*.xls", "*.xlsx"));
 		fileChooser.setInitialFileName(fileName);
 //		outputProperty.set(outputField.textProperty());
+		outputField.setDisable(true);
 		
 		openFileChooser.setOnAction(
 			new EventHandler<ActionEvent>() {
@@ -165,14 +166,6 @@ public class UscrsExportOperation extends Operation
 							logger_.info("File Path Changed: " + filePath);
 						} 
 					}
-				}
-			});
-		outputField.setOnAction( //TODO: So you can manually type in a file path and it validates (break this out)
-			new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(final ActionEvent e) {
-					filePath = outputField.getText();
-					file = new File(filePath);
 				}
 			});
 		
