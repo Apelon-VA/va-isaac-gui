@@ -277,7 +277,7 @@ public class InfoModelView implements PopupViewI, InfoModelViewI
 	
 	protected void add(ConceptSpec refset)
 	{
-		if (refsetsOnDisplay.keySet().contains(refset.getDescription()))
+		if (refsetsOnDisplay.keySet().contains(refset.getConceptDescriptionText()))
 		{
 			logger.error("Who called add?");
 			return;
@@ -285,7 +285,7 @@ public class InfoModelView implements PopupViewI, InfoModelViewI
 		
 		Region r = getRefsetView(refset);
 		DragResizer.makeResizable(r);
-		refsetsOnDisplay.put(refset.getDescription(), r);
+		refsetsOnDisplay.put(refset.getConceptDescriptionText(), r);
 		refsetArea.getChildren().add(r);
 	}
 

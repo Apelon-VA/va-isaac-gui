@@ -396,11 +396,11 @@ public class EnhancedSavedSearch {
 				return null;
 			}
 
-			if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getDescription())) {
+			if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getConceptDescriptionText())) {
 				return SearchType.TEXT;
-			} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getDescription())) {
+			} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getConceptDescriptionText())) {
 				return SearchType.TEXT;
-			} else if (dud.getRefexName().equals(Search.SEARCH_SEMEME_CONTENT_FILTER.getDescription())) {
+			} else if (dud.getRefexName().equals(Search.SEARCH_SEMEME_CONTENT_FILTER.getConceptDescriptionText())) {
 				return SearchType.SEMEME;
 			} else {
 				LOG.debug("getSearchTypeFromSearchConcept() ignoring refex \"" + dud.getRefexName() + "\" on search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\""); 
@@ -467,9 +467,9 @@ public class EnhancedSavedSearch {
 				return null;
 			}
 
-			if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getDescription())) {
+			if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getConceptDescriptionText())) {
 				return ComponentSearchType.LUCENE;
-			} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getDescription())) {
+			} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getConceptDescriptionText())) {
 				return ComponentSearchType.REGEXP;
 			}
 		}

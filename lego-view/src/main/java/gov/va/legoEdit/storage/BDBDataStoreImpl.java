@@ -983,12 +983,12 @@ public class BDBDataStoreImpl implements DataStoreInterface, ShutdownBroadcastLi
 			{
 				if (s.getModule() == null || s.getModule().length() == 0)
 				{
-					s.setModule(OTFUtility.getEditCoordinate().getModuleSpec().getDescription());
+					s.setModule(OTFUtility.getEditCoordinate().getModuleSpec().getConceptDescriptionText());
 				}
 				if (s.getPath() == null || s.getPath().length() == 0)
 				{
 					//TODO (artf231852) [Lego edit] this isn't quite right...
-					s.setPath(OTFUtility.getEditCoordinate().getEditPathListSpecs().get(0).getDescription());
+					s.setPath(OTFUtility.getEditCoordinate().getEditPathListSpecs().get(0).getConceptDescriptionText());
 				}
 			}
 			catch (IOException e)

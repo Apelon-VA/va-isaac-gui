@@ -432,8 +432,8 @@ public class SearchConceptHelper {
 				return;
 			}
 
-			if (embeddedRefexDUD.getRefexName().equals(Search.SEARCH_FILTER_ATTRIBUTES.getDescription() /*"Search Filter Attributes"*/)) {
-				RefexDynamicIntegerBI filterOrderCol = (RefexDynamicIntegerBI)embeddedRefex.getData(Search.ORDER_COLUMN.getDescription());
+			if (embeddedRefexDUD.getRefexName().equals(Search.SEARCH_FILTER_ATTRIBUTES.getConceptDescriptionText() /*"Search Filter Attributes"*/)) {
+				RefexDynamicIntegerBI filterOrderCol = (RefexDynamicIntegerBI)embeddedRefex.getData(Search.ORDER_COLUMN.getConceptDescriptionText());
 
 				if (newFilter instanceof SearchTypeFilter) {
 					if (filterOrderCol != null && filterOrderCol.getDataInteger() > 0) {
@@ -452,7 +452,7 @@ public class SearchConceptHelper {
 
 				LOG.debug("Read Integer filter order from " + embeddedRefexDUD.getRefexName() + " sememe: \"" + (filterOrderCol != null ? filterOrderCol.getDataInteger() : filterOrderCol) + "\"");
 
-				RefexDynamicBooleanBI filterInvertCol = (RefexDynamicBooleanBI)embeddedRefex.getData(Search.FILTER_INVERT_COLUMN.getDescription());
+				RefexDynamicBooleanBI filterInvertCol = (RefexDynamicBooleanBI)embeddedRefex.getData(Search.FILTER_INVERT_COLUMN.getConceptDescriptionText());
 				if (filterInvertCol != null) {
 					if (newFilter instanceof Invertable) {
 						((Invertable) newFilter).setInvert(filterInvertCol.getDataBoolean());
@@ -539,13 +539,13 @@ public class SearchConceptHelper {
 					if (SearchModel.getSearchTypeSelector().getCurrentType() == SearchType.TEXT) {
 						TextSearchTypeModel compModel = (TextSearchTypeModel)SearchModel.getSearchTypeSelector().getTypeSpecificModel();
 						
-						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
+						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getConceptDescriptionText() /*"Search Global Attributes"*/)) {
 							// handle "Search Global Attributes"
 	
 							LOG.debug("Loading data into model from Search Global Attributes sememe");
 	
 							// Loading view coordinate
-							RefexDynamicByteArrayBI serializedViewCoordinate = (RefexDynamicByteArrayBI)refex.getData(Search.VIEW_COORDINATE_COLUMN.getDescription());
+							RefexDynamicByteArrayBI serializedViewCoordinate = (RefexDynamicByteArrayBI)refex.getData(Search.VIEW_COORDINATE_COLUMN.getConceptDescriptionText());
 	
 							// Serialize passed View Coordinate into byte[]serializedViewCoordinate.getData()
 							ByteArrayInputStream input = new ByteArrayInputStream(serializedViewCoordinate.getDataByteArray());
@@ -557,23 +557,23 @@ public class SearchConceptHelper {
 							LOG.debug("Read View Coordinate from " + dud.getRefexName() + " sememe: " + SearchModel.getSearchTypeSelector().getTypeSpecificModel().getViewCoordinate());
 	
 							// Loading maxResults
-							RefexDynamicIntegerBI maxResults = (RefexDynamicIntegerBI)refex.getData(Search.MAX_RESULTS_COLUMN.getDescription());
+							RefexDynamicIntegerBI maxResults = (RefexDynamicIntegerBI)refex.getData(Search.MAX_RESULTS_COLUMN.getConceptDescriptionText());
 							SearchModel.getSearchTypeSelector().getTypeSpecificModel().setMaxResults(maxResults.getDataInteger());
 							LOG.debug("Read max results from " + dud.getRefexName() + " sememe: " + SearchModel.getSearchTypeSelector().getTypeSpecificModel().getMaxResults());
 	
 							// Loading drools expression
-							RefexDynamicStringBI droolsExpr = (RefexDynamicStringBI)refex.getData(Search.DROOLS_EXPR_COLUMN.getDescription());
+							RefexDynamicStringBI droolsExpr = (RefexDynamicStringBI)refex.getData(Search.DROOLS_EXPR_COLUMN.getConceptDescriptionText());
 							SearchModel.getSearchTypeSelector().getTypeSpecificModel().setDroolsExpr(droolsExpr != null ? droolsExpr.getDataString() : null);
 							LOG.debug("Read drools expression from " + dud.getRefexName() + " sememe: " + SearchModel.getSearchTypeSelector().getTypeSpecificModel().getDroolsExpr());
 	
-						} else if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getDescription() /*"Search Lucene Filter"*/)) {
+						} else if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getConceptDescriptionText() /*"Search Lucene Filter"*/)) {
 							// handle "Search Lucene Filter"
 	
 							LOG.debug("Loading data into model from Search Lucene Filter sememe");
 	
 							LuceneSearchTypeFilter newFilter = new LuceneSearchTypeFilter();
 	
-							RefexDynamicStringBI searchParamCol = (RefexDynamicStringBI)refex.getData(Search.PARAMETER_COLUMN.getDescription());
+							RefexDynamicStringBI searchParamCol = (RefexDynamicStringBI)refex.getData(Search.PARAMETER_COLUMN.getConceptDescriptionText());
 							newFilter.setSearchParameter(searchParamCol != null ? searchParamCol.getDataString() : null);
 							LOG.debug("Read String search parameter from " + dud.getRefexName() + " sememe: \"" + newFilter.getSearchParameter() + "\"");
 	
@@ -584,28 +584,28 @@ public class SearchConceptHelper {
 //							} else {
 								compModel.setSearchType(newFilter);
 //							}
-						} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getDescription() /*"Search RegExp Filter"*/)) {
+						} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getConceptDescriptionText() /*"Search RegExp Filter"*/)) {
 							// handle "Search RegExp Filter"
 	
 							LOG.debug("Loading data into model from Search RegExp Filter sememe");
 	
 							RegExpSearchTypeFilter newFilter = new RegExpSearchTypeFilter();
 	
-							RefexDynamicStringBI searchParamCol = (RefexDynamicStringBI)refex.getData(Search.PARAMETER_COLUMN.getDescription());
+							RefexDynamicStringBI searchParamCol = (RefexDynamicStringBI)refex.getData(Search.PARAMETER_COLUMN.getConceptDescriptionText());
 							newFilter.setSearchParameter(searchParamCol != null ? searchParamCol.getDataString() : null);
 							LOG.debug("Read String search parameter from " + dud.getRefexName() + " sememe: \"" + newFilter.getSearchParameter() + "\"");
 	
 							loadEmbeddedSearchTypeFilterAttributes(refex, newFilter);
 	
 							compModel.setSearchType(newFilter);
-						} else if (dud.getRefexName().equals(Search.SEARCH_ISDESCENDANTOF_FILTER.getDescription() /*"Search IsKindOf Filter"*/)) {
+						} else if (dud.getRefexName().equals(Search.SEARCH_ISDESCENDANTOF_FILTER.getConceptDescriptionText() /*"Search IsKindOf Filter"*/)) {
 							// handle "Search RegExp Filter"
 	
 							LOG.debug("Loading data into model from Search IsKindOf Filter sememe");
 	
 							IsDescendantOfFilter newFilter = new IsDescendantOfFilter();
 	
-							RefexDynamicUUIDBI ascendantUuidCol = (RefexDynamicUUIDBI)refex.getData(Search.ANCESTOR_COLUMN.getDescription());
+							RefexDynamicUUIDBI ascendantUuidCol = (RefexDynamicUUIDBI)refex.getData(Search.ANCESTOR_COLUMN.getConceptDescriptionText());
 							if (ascendantUuidCol != null) {
 								UUID uuid = ascendantUuidCol.getDataUUID();
 								int nid = OTFUtility.getConceptVersion(uuid).getNid();
@@ -614,14 +614,14 @@ public class SearchConceptHelper {
 							}
 	
 							loadEmbeddedSearchFilterAttributes(refex, newFilter, filterOrderMap);
-						} else if (dud.getRefexName().equals(Search.SEARCH_ISA_FILTER.getDescription() /*"Search IsA Filter"*/)) {
+						} else if (dud.getRefexName().equals(Search.SEARCH_ISA_FILTER.getConceptDescriptionText() /*"Search IsA Filter"*/)) {
 							// handle "Search IsA Filter"
 	
 							LOG.debug("Loading data into model from Search IsA Filter sememe");
 	
 							IsAFilter newFilter = new IsAFilter();
 	
-							RefexDynamicUUIDBI matchUuidCol = (RefexDynamicUUIDBI)refex.getData(Search.MATCH_COLUMN.getDescription());
+							RefexDynamicUUIDBI matchUuidCol = (RefexDynamicUUIDBI)refex.getData(Search.MATCH_COLUMN.getConceptDescriptionText());
 							if (matchUuidCol != null) {
 								UUID uuid = matchUuidCol.getDataUUID();
 								int nid = OTFUtility.getConceptVersion(uuid).getNid();
@@ -649,13 +649,13 @@ public class SearchConceptHelper {
 					} else if (SearchModel.getSearchTypeSelector().getCurrentType() == SearchType.SEMEME) {
 						SememeSearchTypeModel compModel = (SememeSearchTypeModel)SearchModel.getSearchTypeSelector().getTypeSpecificModel();
 						
-						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getDescription() /*"Search Global Attributes"*/)) {
+						if (dud.getRefexName().equals(Search.STORED_QUERY_GLOBAL_ATTRIBUTES.getConceptDescriptionText() /*"Search Global Attributes"*/)) {
 							// handle "Search Global Attributes"
 	
 							LOG.debug("Loading data into model from Search Global Attributes sememe");
 	
 							// Loading view coordinate
-							RefexDynamicByteArrayBI serializedViewCoordinate = (RefexDynamicByteArrayBI)refex.getData(Search.VIEW_COORDINATE_COLUMN.getDescription());
+							RefexDynamicByteArrayBI serializedViewCoordinate = (RefexDynamicByteArrayBI)refex.getData(Search.VIEW_COORDINATE_COLUMN.getConceptDescriptionText());
 	
 							// Serialize passed View Coordinate into byte[]serializedViewCoordinate.getData()
 							ByteArrayInputStream input = new ByteArrayInputStream(serializedViewCoordinate.getDataByteArray());
@@ -667,25 +667,25 @@ public class SearchConceptHelper {
 							LOG.debug("Read View Coordinate from " + dud.getRefexName() + " sememe: " + SearchModel.getSearchTypeSelector().getTypeSpecificModel().getViewCoordinate());
 	
 							// Loading maxResults
-							RefexDynamicIntegerBI maxResults = (RefexDynamicIntegerBI)refex.getData(Search.MAX_RESULTS_COLUMN.getDescription());
+							RefexDynamicIntegerBI maxResults = (RefexDynamicIntegerBI)refex.getData(Search.MAX_RESULTS_COLUMN.getConceptDescriptionText());
 							SearchModel.getSearchTypeSelector().getTypeSpecificModel().setMaxResults(maxResults.getDataInteger());
 							LOG.debug("Read max results from " + dud.getRefexName() + " sememe: " + SearchModel.getSearchTypeSelector().getTypeSpecificModel().getMaxResults());
 	
 							// Loading drools expression
-							RefexDynamicStringBI droolsExpr = (RefexDynamicStringBI)refex.getData(Search.DROOLS_EXPR_COLUMN.getDescription());
+							RefexDynamicStringBI droolsExpr = (RefexDynamicStringBI)refex.getData(Search.DROOLS_EXPR_COLUMN.getConceptDescriptionText());
 							SearchModel.getSearchTypeSelector().getTypeSpecificModel().setDroolsExpr(droolsExpr != null ? droolsExpr.getDataString() : null);
 							LOG.debug("Read drools expression from " + dud.getRefexName() + " sememe: " + SearchModel.getSearchTypeSelector().getTypeSpecificModel().getDroolsExpr());
 	
-						} else if (dud.getRefexName().equals(Search.SEARCH_SEMEME_CONTENT_FILTER.getDescription() /*"Search Sememe Filter"*/)) {	
+						} else if (dud.getRefexName().equals(Search.SEARCH_SEMEME_CONTENT_FILTER.getConceptDescriptionText() /*"Search Sememe Filter"*/)) {	
 							LOG.debug("Loading data into model from Search Sememe Filter sememe");
 	
 							SememeContentSearchTypeFilter newFilter = new SememeContentSearchTypeFilter();
 	
-							RefexDynamicStringBI searchParamCol = (RefexDynamicStringBI)refex.getData(Search.PARAMETER_COLUMN.getDescription());
+							RefexDynamicStringBI searchParamCol = (RefexDynamicStringBI)refex.getData(Search.PARAMETER_COLUMN.getConceptDescriptionText());
 							newFilter.setSearchParameter(searchParamCol != null ? searchParamCol.getDataString() : null);
 							LOG.debug("Read String search parameter from " + dud.getRefexName() + " sememe: \"" + newFilter.getSearchParameter() + "\"");
 
-							RefexDynamicUUID uuidCol = (RefexDynamicUUID)refex.getData(Search.UUID_COLUMN.getDescription());
+							RefexDynamicUUID uuidCol = (RefexDynamicUUID)refex.getData(Search.UUID_COLUMN.getConceptDescriptionText());
 							if (uuidCol != null) {
 								ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(uuidCol.getDataUUID());
 								newFilter.setAssemblageConcept(conceptVersion);
