@@ -16,39 +16,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.gui.dialog;
+package gov.va.isaac.gui;
+
+import gov.va.isaac.util.AlphanumComparator;
+import java.util.Comparator;
 
 /**
- * {@link RelationshipColumnType}
+ * {@link OCHRESimpleDisplayConceptComparator}
  *
- * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
+ * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a> 
  */
-public enum RelationshipColumnType
+public class OCHRESimpleDisplayConceptComparator implements Comparator<OCHRESimpleDisplayConcept>
 {
-	STATUS_CONDENSED("s"),
-	SOURCE("Source"),
-	TYPE("Type"),
-	DESTINATION("Destination"),
-	UUID("UUID"),
-	GROUP("Group"),
-	//REFINEABILITY("Refineability"),
-	CHARACTERISTIC("Characteristic"),
-	STATUS_STRING("Status"),
-	TIME("Time"),
-	AUTHOR("Author"),
-	MODULE("Module"),
-	PATH("Path");
-	
-	private String niceName_;
-	
-	private RelationshipColumnType(String name)
-	{
-		niceName_ = name;
-	}
-
+	private static AlphanumComparator ac = new AlphanumComparator(true);
+	/**
+	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+	 */
 	@Override
-	public String toString()
+	public int compare(OCHRESimpleDisplayConcept o1, OCHRESimpleDisplayConcept o2)
 	{
-		return niceName_;
+		if (o1 == null)
+		{
+			return 1;
+		}
+		else if (o2 ==  null)
+		{
+			return -1;
+		}
+		else
+		{
+			return ac.compare(o1.getDescription(), o2.getDescription());
+		}
 	}
 }
