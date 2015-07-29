@@ -51,7 +51,7 @@ public final class OCHREUtility {
 	private OCHREUtility() {}
 
 	public static Set<ConceptVersion<?>> getPathConcepts() throws ValidationException, IOException, ContradictionException {
-		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getSequence());
+		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getConceptSequence());
 		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
 
 		final Set<ConceptVersion<?>> pathConcepts = new HashSet<>();
@@ -74,7 +74,7 @@ public final class OCHREUtility {
 //			action.accept(current);
 //		}
 
-		if (pathConcepts.size() == 0) {
+		if (pathConcepts.isEmpty()) {
 			LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE);
 		} else {
 			LOG.debug("Loaded {} paths: {}", pathConcepts.size(), pathConcepts);
@@ -265,8 +265,8 @@ public final class OCHREUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, TaxonomyCoordinate vc) {
-		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, TaxonomyCoordinate vc) {
+		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
 		
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
 			conceptVersions.add(Get.conceptService().getConcept(nid));
@@ -301,8 +301,8 @@ public final class OCHREUtility {
 		return parentNids;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
-		Set<ConceptChronology<? extends ConceptVersion>> parentConcepts = new HashSet<>();
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
+		Set<ConceptChronology<? extends ConceptVersion<?>>> parentConcepts = new HashSet<>();
 		for (int nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
 			parentConcepts.add(Get.conceptService().getConcept(nid));
 		}

@@ -103,7 +103,7 @@ class SctTreeView {
     private StackPane sp_;
     private ToolBar tb_ = new ToolBar();
     private SctTreeItem rootTreeItem;
-    private TreeView<ConceptChronology<? extends ConceptVersion>> treeView_;
+    private TreeView<ConceptChronology<? extends ConceptVersion<?>>> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
         
     private UpdateableBooleanBinding refreshRequiredListenerHack;
@@ -331,13 +331,13 @@ class SctTreeView {
         }
 
         // Do work in background.
-        Task<ConceptChronology<? extends ConceptVersion>> task = new Task<ConceptChronology<? extends ConceptVersion>>() {
+        Task<ConceptChronology<? extends ConceptVersion<?>>> task = new Task<ConceptChronology<? extends ConceptVersion<?>>>() {
 
             @Override
-            protected ConceptChronology<? extends ConceptVersion> call() throws Exception {
+            protected ConceptChronology<? extends ConceptVersion<?>> call() throws Exception {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
 
-                ConceptChronology<? extends ConceptVersion> rootConceptCV = Get.conceptService().getConcept(rootConcept);
+                ConceptChronology<? extends ConceptVersion<?>> rootConceptCV = Get.conceptService().getConcept(rootConcept);
                
                 return rootConceptCV;
             }
@@ -347,7 +347,7 @@ class SctTreeView {
             {
                 LOG.debug("getConceptVersion() (called by init()) succeeded");
 
-                ConceptChronology<? extends ConceptVersion> result = this.getValue();
+                ConceptChronology<? extends ConceptVersion<?>> result = this.getValue();
                 SctTreeView.this.finishTreeSetup(result);
 
                 refreshRequiredListenerHack = new UpdateableBooleanBinding()
@@ -399,19 +399,19 @@ class SctTreeView {
      * The only reason this is its own method is to make the init() more readable.
      * 
      */
-    private void finishTreeSetup(ConceptChronology<? extends ConceptVersion> rootConcept) {
+    private void finishTreeSetup(ConceptChronology<? extends ConceptVersion<?>> rootConcept) {
         LOG.debug("Running finishTreeSetup()...");
         
         treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
-        treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion>>, TreeCell<ConceptChronology<? extends ConceptVersion>>>() {
+        treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion<?>>>, TreeCell<ConceptChronology<? extends ConceptVersion<?>>>>() {
             @Override
-            public TreeCell<ConceptChronology<? extends ConceptVersion>> call(TreeView<ConceptChronology<? extends ConceptVersion>> p) {
+            public TreeCell<ConceptChronology<? extends ConceptVersion<?>>> call(TreeView<ConceptChronology<? extends ConceptVersion<?>>> p) {
                 return new SctTreeCell();
             }
         });
 
-        ConceptChronology<? extends ConceptVersion> visibleRootConcept = rootConcept;
+        ConceptChronology<? extends ConceptVersion<?>> visibleRootConcept = rootConcept;
         
         rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, () -> getTaxonomyCoordinate(), () -> getTaxonomyTree(), Images.ROOT.createImageView());
 
@@ -421,19 +421,19 @@ class SctTreeView {
         Utility.execute(() -> rootTreeItem.addChildren());
 
         // put this event handler on the root
-        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion>>branchCollapsedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>>>() {
+        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>>branchCollapsedEvent(),
+                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
                     @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>> t) {
+                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
                         // remove grandchildren
                         ((SctTreeItem) t.getSource()).removeGrandchildren();
                     }
                 });
 
-        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion>>branchExpandedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>>>() {
+        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>> branchExpandedEvent(),
+                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
                     @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion>> t) {
+                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
                         // add grandchildren
                         SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
                         Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
@@ -472,7 +472,7 @@ class SctTreeView {
                 UUID current = conceptUUID;
                 while (true) {
 
-                    ConceptChronology<? extends ConceptVersion> concept = Get.conceptService().getConcept(current);
+                    ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(current);
                     if (concept == null) {
 
                         // Must be a "pending concept".
@@ -482,7 +482,7 @@ class SctTreeView {
 
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion> parent : OCHREUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getTaxonomyCoordinate())) {
+                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OCHREUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getTaxonomyCoordinate())) {
                     	pathToRoot.add(parent.getPrimordialUuid());
                     	found = true;
                     	break;
@@ -580,7 +580,7 @@ class SctTreeView {
         {
             item.blockUntilChildrenReady();
             // Iterate through children and look for child with target UUID.
-            for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : item.getChildren()) {
+            for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : item.getChildren()) {
                 if (child != null && child.getValue() != null
                         && child.getValue().getPrimordialUuid().equals(targetChildUUID)) {
 
@@ -648,7 +648,7 @@ class SctTreeView {
     }
     
     private void saveExpanded() {
-        TreeItem<ConceptChronology<? extends ConceptVersion>> selected = treeView_.getSelectionModel().getSelectedItem();
+        TreeItem<ConceptChronology<? extends ConceptVersion<?>>> selected = treeView_.getSelectionModel().getSelectedItem();
         selectedItem_ = Optional.ofNullable(selected == null ? null : selected.getValue().getPrimordialUuid());
         expandedUUIDs_.clear();
         saveExpanded(rootTreeItem);
@@ -659,7 +659,7 @@ class SctTreeView {
         if (!item.isLeaf() && item.isExpanded()) {
             expandedUUIDs_.add(item.getConceptUuid());
             if (!item.isLeaf()) {
-                for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : item.getChildren()) {
+                for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : item.getChildren()) {
                     saveExpanded((SctTreeItem) child);
                 }
             }
@@ -699,7 +699,7 @@ class SctTreeView {
         if (expandedUUIDs_.contains(item.getConceptUuid())) {
             item.blockUntilChildrenReady();
             Platform.runLater(() -> item.setExpanded(true));
-            for (TreeItem<ConceptChronology<? extends ConceptVersion>> child : item.getChildren()) {
+            for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : item.getChildren()) {
                 restoreExpanded((SctTreeItem) child, scrollTo);
             }
         }

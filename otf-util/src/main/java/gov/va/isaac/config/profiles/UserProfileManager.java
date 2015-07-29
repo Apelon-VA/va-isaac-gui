@@ -494,7 +494,7 @@ public class UserProfileManager implements ServicesToPreloadI
 			cdl.countDown();
 			cdl.countDown();
 		}
-		UserProfile up = new UserProfile(TermAux.USER.getDescription(), TermAux.USER.getDescription(), TermAux.USER.getUuids()[0]);
+		UserProfile up = new UserProfile(TermAux.USER.getConceptDescriptionText(), TermAux.USER.getConceptDescriptionText(), TermAux.USER.getUuids()[0]);
 		up.setLaunchWorkflowForEachCommit(false);
 		up.setEditCoordinatePath(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid());
 		up.setViewCoordinatePath(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid());

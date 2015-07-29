@@ -196,7 +196,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		try {
 			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + forSetCustomCollection.size() + " uuids");
 
-			q.setStampCoordinate(OTFUtility.getViewCoordinate());
+			q.setTaxonomyCoordinate(OTFUtility.getViewCoordinate());
 			outputNids = q.compute();
 			
 			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection.size() + " uuids");
