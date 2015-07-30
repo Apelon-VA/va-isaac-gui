@@ -18,24 +18,19 @@
  */
 package gov.va.isaac.gui.dialog;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
-import java.io.IOException;
+import gov.va.isaac.util.OCHREUtility;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+
 import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.ToIntFunction;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
-import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refex.type_nid.RefexNidAnalogBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link DescriptionVersion}
+ * {@link OCHREDescriptionVersion}
  *
  * A wrapper for DescriptionVersionBI to add in attributes like "isLatest" and a place to implement other useful methods that 
  * you would want to ask of a Description.
@@ -46,11 +41,11 @@ public class DescriptionVersion
 {
 	private static final Logger LOG = LoggerFactory.getLogger(DescriptionVersion.class);
 	private boolean isLatest_;
-	private DescriptionVersionBI<?> dv_;
+	private DescriptionSememe<?> dv_;
 	
 	private HashMap<String, AbstractMap.SimpleImmutableEntry<String, String>> stringCache_ = new HashMap<>();
 	
-	public DescriptionVersion(DescriptionVersionBI<?> dv, boolean isLatest)
+	public DescriptionVersion(DescriptionSememe<?> dv, boolean isLatest)
 	{
 		isLatest_ = isLatest;
 		dv_ = dv;
@@ -61,27 +56,27 @@ public class DescriptionVersion
 		return isLatest_;
 	}
 	
-	public DescriptionVersionBI<?> getDescriptionVersion()
+	public DescriptionSememe<?> getDescriptionVersion()
 	{
 		return dv_;
 	}
 	
-	public boolean hasDynamicRefex()
-	{
-		try
-		{
-			Collection<? extends RefexDynamicChronicleBI<?>> foo = dv_.getRefexDynamicAnnotations();
-			if (foo != null && foo.size() > 0)
-			{
-				return true;
-			}
-		}
-		catch (IOException e)
-		{
-			LOG.error("Unexpeted", e);
-		}
-		return false;
-	}
+//	public boolean hasDynamicRefex()
+//	{
+//		try
+//		{
+//			Collection<? extends RefexDynamicChronicleBI<?>> foo = dv_.getRefexDynamicAnnotations();
+//			if (foo != null && foo.size() > 0)
+//			{
+//				return true;
+//			}
+//		}
+//		catch (IOException e)
+//		{
+//			LOG.error("Unexpeted", e);
+//		}
+//		return false;
+//	}
 	
 	/**
 	 * Returns the string for display, and the tooltip, if applicable.  Either / or may be null.
@@ -113,7 +108,7 @@ public class DescriptionVersion
 			}
 			case STATUS_STRING:
 			{
-				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(dv_.getStatus().toString(), null);
+				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(dv_.getState().toString(), null);
 				break;
 			}
 			case UUID:
@@ -134,24 +129,26 @@ public class DescriptionVersion
 				String text = "";
 				try
 				{
+					// TODO implement handling of LANGUAGE column
 					//Not bothering with historical here - doesn't really fit the display paradigm.
-					for (RefexChronicleBI<?> rc :  dv_.getAnnotationsActive(OTFUtility.getViewCoordinate()))
-					{
-						for (RefexVersionBI<?> rv : rc.getVersions())
-						{
-							if (rv instanceof RefexNidAnalogBI<?> && 
-									ExtendedAppContext.getDataStore().isKindOf(rv.getAssemblageNid(), OTFUtility.getLangTypeNid(), 
-											OTFUtility.getViewCoordinate()))
-							{
-								if (text.length() > 0)
-								{
-									text += ", ";
-								}
-								text += OTFUtility.getDescription(((RefexNidAnalogBI<?>)rv).getNid1()) + " - " + 
-										OTFUtility.getDescription(rv.getAssemblageNid());
-							}
-						}
-					}
+					text = OCHREUtility.conceptDescriptionText(dv_.getLanguageConceptSequence());
+//					for (RefexChronicleBI<?> rc :  dv_.getAnnotationsActive(OTFUtility.getViewCoordinate()))
+//					{
+//						for (RefexVersionBI<?> rv : rc.getVersions())
+//						{
+//							if (rv instanceof RefexNidAnalogBI<?> && 
+//									ExtendedAppContext.getDataStore().isKindOf(rv.getAssemblageNid(), OTFUtility.getLangTypeNid(), 
+//											OTFUtility.getViewCoordinate()))
+//							{
+//								if (text.length() > 0)
+//								{
+//									text += ", ";
+//								}
+//								text += OTFUtility.getDescription(((RefexNidAnalogBI<?>)rv).getNid1()) + " - " + 
+//										OTFUtility.getDescription(rv.getAssemblageNid());
+//							}
+//						}
+//					}
 					
 					
 				}
@@ -170,7 +167,7 @@ public class DescriptionVersion
 		return returnValue;
 	}
 	
-	public ToIntFunction<DescriptionVersionBI<?>> getNidFetcher(DescriptionColumnType desiredColumn)
+	public ToIntFunction<DescriptionSememe<?>> getNidFetcher(DescriptionColumnType desiredColumn)
 	{
 		switch (desiredColumn)
 		{
@@ -180,44 +177,44 @@ public class DescriptionVersion
 			}
 			case AUTHOR:
 			{
-				return new ToIntFunction<DescriptionVersionBI<?>>()
+				return new ToIntFunction<DescriptionSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DescriptionVersionBI<?> value)
+					public int applyAsInt(DescriptionSememe<?> value)
 					{
-						return value.getAuthorNid();
+						return value.getAuthorSequence();
 					}
 				};
 			}
 			case MODULE:
 			{
-				return new ToIntFunction<DescriptionVersionBI<?>>()
+				return new ToIntFunction<DescriptionSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DescriptionVersionBI<?> value)
+					public int applyAsInt(DescriptionSememe<?> value)
 					{
-						return value.getModuleNid();
+						return value.getModuleSequence();
 					}
 				};
 			}
 			case PATH:
 			{
-				return new ToIntFunction<DescriptionVersionBI<?>>()
+				return new ToIntFunction<DescriptionSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DescriptionVersionBI<?> value)
+					public int applyAsInt(DescriptionSememe<?> value)
 					{
-						return value.getPathNid();
+						return value.getPathSequence();
 					}
 				};
 			}
 			case TYPE:
-				return new ToIntFunction<DescriptionVersionBI<?>>()
+				return new ToIntFunction<DescriptionSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DescriptionVersionBI<?> value)
+					public int applyAsInt(DescriptionSememe<?> value)
 					{
-						return value.getTypeNid();
+						return value.getDescriptionTypeConceptSequence();
 					}
 				};
 
@@ -226,11 +223,11 @@ public class DescriptionVersion
 		}
 	}
 	
-	private String getConceptComponentText(ToIntFunction<DescriptionVersionBI<?>> nidFetcher)
+	private String getConceptComponentText(ToIntFunction<DescriptionSememe<?>> nidFetcher)
 	{
 		try
 		{
-			return OTFUtility.getDescription(OTFUtility.getConceptVersion(nidFetcher.applyAsInt(dv_)));
+			return OCHREUtility.conceptDescriptionText(nidFetcher.applyAsInt(dv_));
 		}
 		catch (Exception e)
 		{

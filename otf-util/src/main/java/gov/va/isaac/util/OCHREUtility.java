@@ -198,7 +198,8 @@ public final class OCHREUtility {
 			if (desc != null) {
 				return desc;
 			}
-			
+
+			LOG.warn("Trying OTFUtility.getDescription({})", conceptChronology.getNid());
 			desc = OTFUtility.getDescription(conceptChronology.getNid());
 			if (desc != null) {
 				return desc;
