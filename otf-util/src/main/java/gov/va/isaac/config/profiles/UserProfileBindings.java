@@ -36,12 +36,10 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
-
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -54,12 +52,11 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
-
 import javax.inject.Singleton;
-
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.jvnet.hk2.annotations.Service;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
@@ -71,6 +68,7 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 @Singleton
 public class UserProfileBindings
 {
+	private static Logger logger = LoggerFactory.getLogger(UserProfileBindings.class);
 	public enum RelationshipDirection {SOURCE, TARGET, SOURCE_AND_TARGET};
 	
 	ReadOnlyBooleanWrapper displayFSN = new ReadOnlyBooleanWrapper();
@@ -368,7 +366,7 @@ public class UserProfileBindings
 
 				taxonomyCoordinate.set(newCoordinate);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("Unexpected", e);
 			}
 		}
 		
@@ -376,7 +374,7 @@ public class UserProfileBindings
 			try {
 				taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("Unexpected", e);
 			}
 		}
 
@@ -387,7 +385,7 @@ public class UserProfileBindings
 								getStampCoordinate().get(),
 								getLanguageCoordinate().get()));
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("Unexpected", e);
 			}
 		}
 	}
