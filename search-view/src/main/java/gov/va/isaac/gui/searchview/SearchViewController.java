@@ -38,6 +38,7 @@ import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.Interval;
 import gov.va.isaac.util.NumberUtilities;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
@@ -105,7 +106,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
-import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -885,9 +885,10 @@ public class SearchViewController implements TaskCompleteCallback
 		{
 			try
 			{
-				Set<ConceptVersionBI> extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
+				Set<Integer> extendedDescriptionTypes = OCHREUtility.getAllChildrenOfConcept(
+						IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(), true, true);
 				ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
-				for (ConceptVersionBI c : extendedDescriptionTypes)
+				for (Integer c : extendedDescriptionTypes)
 				{
 					temp.add(new SimpleDisplayConcept(c));
 				}

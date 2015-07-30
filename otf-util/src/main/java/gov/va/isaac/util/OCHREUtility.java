@@ -26,18 +26,15 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
-
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +47,7 @@ public final class OCHREUtility {
 
 	private OCHREUtility() {}
 
-	public static Set<ConceptVersion<?>> getPathConcepts() throws ValidationException, IOException, ContradictionException {
+	public static Set<ConceptVersion<?>> getPathConcepts() {
 		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getConceptSequence());
 		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
 
@@ -316,48 +313,51 @@ public final class OCHREUtility {
 //		return getChildrenAsConceptVersions(child, ancestorTree, vc);
 	}
 	
+	
+	/**
+	 * Get isA children of a concept.
+	 * @param conceptSequence The concept to look at
+	 * @param recursive recurse down from the concept
+	 * @param leafOnly only return leaf nodes
+	 */
+	public static Set<Integer> getAllChildrenOfConcept(int conceptSequence, boolean recursive, boolean leafOnly)
+	{
+		return getAllChildrenOfConcept(new HashSet<Integer>(), conceptSequence, recursive, leafOnly);
+	}
+	
 	/**
 	 * Recursively get Is a children of a concept
 	 */
-//	private static Set<ConceptSnapshot> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptSnapshot concept, StampCoordinate sc, LanguageCoordinate lc, boolean recursive, boolean leafOnly) 
-//	{
-//		Set<ConceptSnapshot> results = new HashSet<>();
-//		
-//		// This both prevents infinite recursion and avoids processing or returning of duplicates
-//		if (handledConceptNids.contains(concept.getNid())) {
-//			LOG.debug("Encountered already-handled concept \"{}\".  May be result of duplicate or source of potential infinite loop", OCHREUtility.getDescription(concept.getNid()));
-//			return results;
-//		}
-//
-//		Taxonomy taxonomy = Get.taxonomyService().getChildOfSequenceSet(concept.getConceptSequence(), TaxonomyCoordinates.)
-//		concept.
-//		int size = 0;
-//		for (RelationshipVersionBI<?> r : concept.getRelationshipsIncomingActiveIsa())
-//		{
-//			size++;
-//			if (handledConceptNids.contains(r.getOriginNid())) {
-//				// avoids processing or returning of duplicates
-//				LOG.debug("Encountered already-handled ORIGIN child concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getOriginNid(), vc));
-//
-//				continue;
-//			}
-//
-//			ConceptVersionBI originConcept = getConceptVersion(r.getOriginNid(), vc);
-//			if (!leafOnly)
-//			{
-//				results.add(originConcept);
-//			}
-//			if (recursive)
-//			{
-//				results.addAll(getAllChildrenOfConcept(handledConceptNids, originConcept, vc, recursive, leafOnly));
-//			}
-//		}
-//		
-//		if (leafOnly && size == 0 && !handledConceptNids.contains(concept.getNid()))
-//		{
-//			results.add(concept);
-//		}
-//		handledConceptNids.add(concept.getNid());
-//		return results;
-//	}
+	private static Set<Integer> getAllChildrenOfConcept(Set<Integer> handledConceptSequenceIds, int conceptSequence, boolean recursive, boolean leafOnly)
+	{
+		Set<Integer> results = new HashSet<>();
+		
+		// This both prevents infinite recursion and avoids processing or returning of duplicates
+		if (handledConceptSequenceIds.contains(conceptSequence)) {
+			return results;
+		}
+
+		AtomicInteger count = new AtomicInteger();
+		IntStream children = Get.taxonomyService().getTaxonomyChildSequences(conceptSequence);
+		children.forEach((conSequence) ->
+		{
+			count.getAndIncrement();
+			if (!leafOnly)
+			{
+				results.add(conSequence);
+			}
+			if (recursive)
+			{
+				results.addAll(getAllChildrenOfConcept(handledConceptSequenceIds, conSequence, recursive, leafOnly));
+			}
+		});
+		
+		
+		if (leafOnly && count.get() == 0)
+		{
+			results.add(conceptSequence);
+		}
+		handledConceptSequenceIds.add(conceptSequence);
+		return results;
+	}
 }

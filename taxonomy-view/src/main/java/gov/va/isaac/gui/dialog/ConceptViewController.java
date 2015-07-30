@@ -25,16 +25,15 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.gui.OCHRESimpleDisplayConcept;
+import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.treeview.SctTreeViewIsaacView;
 import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.util.OCHRECommonlyUsedConcepts;
+import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OCHREUtility;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
@@ -46,10 +45,8 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-
 import java.util.Optional;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -76,7 +73,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -413,7 +409,7 @@ public class ConceptViewController {
 			ConceptVersion conceptVersion = latestConceptVersionOptional.get().value();
 			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().getConceptSnapshot(concept.getNid());
 			conceptNid = localRawCC.getNid();
-			AppContext.getService(OCHRECommonlyUsedConcepts.class).addConcept(new OCHRESimpleDisplayConcept(localRawCC));
+			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(localRawCC.getConceptSequence()));
 
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);

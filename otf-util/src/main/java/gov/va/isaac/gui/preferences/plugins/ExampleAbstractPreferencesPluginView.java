@@ -152,9 +152,8 @@ public class ExampleAbstractPreferencesPluginView extends AbstractPreferencesPlu
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}
-		} catch (IOException | ContradictionException e) {
-			logger.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-			e.printStackTrace();
+		} catch (RuntimeException e) {
+			logger.error("Failed loading path concepts", e);
 		}
 		UUID current = viewCoordinatePathProperty.readFromPersistedPreferences();
 		if (current != null && ! list.contains(current)) {

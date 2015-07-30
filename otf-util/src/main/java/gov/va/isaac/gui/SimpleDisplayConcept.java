@@ -18,13 +18,13 @@
  */
 package gov.va.isaac.gui;
 
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
+import gov.va.isaac.util.OCHREUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 
 /**
  * 
@@ -57,38 +57,33 @@ public class SimpleDisplayConcept implements Comparable<SimpleDisplayConcept>
 		ignoreChange_ = ignoreChange;
 	}
 	
-	public SimpleDisplayConcept(ConceptVersionBI c)
+	public SimpleDisplayConcept(ConceptSnapshot c)
 	{
 		this(c, null);
 	}
 	
-	public SimpleDisplayConcept(ConceptVersionBI c, Function<ConceptVersionBI, String> descriptionReader)
+	public SimpleDisplayConcept(ConceptSnapshot c, Function<ConceptSnapshot, String> descriptionReader)
 	{
-		Function<ConceptVersionBI, String> dr = (descriptionReader == null ? (conceptVersion) -> 
-			{return (conceptVersion == null ? "" : OTFUtility.getDescription(conceptVersion));} : descriptionReader);
+		Function<ConceptSnapshot, String> dr = (descriptionReader == null ? (conceptVersion) -> 
+			{return (conceptVersion == null ? "" : OCHREUtility.getDescription(conceptVersion.getChronology(), conceptVersion.getLanguageCoordinate(), conceptVersion.getStampCoordinate()));} : descriptionReader);
 		description_ = dr.apply(c);
 		nid_ = c == null ? 0 : c.getNid();
 		ignoreChange_ = false;
 	}
 	
-	public SimpleDisplayConcept(ConceptChronicleDdo c, Function<ConceptVersionBI, String> descriptionReader)
+	/**
+	 * @param conceptSeq nid or sequence
+	 * @param descriptionReader - optional
+	 */
+	public SimpleDisplayConcept(Integer conceptSeq, Function<ConceptSnapshot, String> descriptionReader)
 	{
-		this((c == null ? null : OTFUtility.getConceptVersion(c.getPrimordialUuid())), descriptionReader);
+		this((conceptSeq == null ? null : Get.conceptService().getSnapshot(AppContext.getService(UserProfileBindings.class).getStampCoordinate().get(),
+				AppContext.getService(UserProfileBindings.class).getLanguageCoordinate().get()).getConceptSnapshot(conceptSeq)), descriptionReader);
 	}
 	
-	public SimpleDisplayConcept(ConceptChronicleDdo c)
+	public SimpleDisplayConcept(Integer conceptSeq)
 	{
-		this((c == null ? null : OTFUtility.getConceptVersion(c.getPrimordialUuid())), null);
-	}
-	
-	public SimpleDisplayConcept(ConceptChronicleBI c, Function<ConceptVersionBI, String> descriptionReader)
-	{
-		this((c == null ? null : OTFUtility.getConceptVersion(c.getPrimordialUuid())), descriptionReader);
-	}
-	
-	public SimpleDisplayConcept(ConceptSpec c)
-	{
-		this((c == null ? null : OTFUtility.getConceptVersion(c.getUuids()[0])), null);
+		this(conceptSeq, null);
 	}
 	
 	public SimpleDisplayConcept(String description)

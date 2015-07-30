@@ -197,9 +197,8 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}
-		} catch (IOException | ContradictionException e) {
-			logger.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-			e.printStackTrace();
+		} catch (RuntimeException e) {
+			logger.error("Failed loading path concepts.", e);
 		}
 		// Add currently-stored value to list of options, if not already there
 		UUID storedPath = getStoredPath();

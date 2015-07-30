@@ -182,9 +182,8 @@ public class WorkflowPreferencesPluginView extends AbstractPreferencesPluginView
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}
-		} catch (IOException | ContradictionException e) {
-			logger.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-			e.printStackTrace();
+		} catch (RuntimeException e) {
+			logger.error("Failed loading path concepts", e);
 		}
 		UUID current = workflowPromotionPathProperty.readFromPersistedPreferences();
 		if (current != null && ! list.contains(current)) {

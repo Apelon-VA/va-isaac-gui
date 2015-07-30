@@ -121,8 +121,7 @@ public class RefexDynamicUtil
 					continue;
 				}
 				//These are nested refex references - it returns a description component - concept we want is the parent of that.
-				allRefexDefinitions.add(new SimpleDisplayConcept(
-						ExtendedAppContext.getDataStore().getConceptForNid(rc.getReferencedComponentNid()), null));
+				allRefexDefinitions.add(new SimpleDisplayConcept(rc.getReferencedComponentNid(), null));
 			}
 		} catch (Exception e) {
 			throw new IOException(e);
