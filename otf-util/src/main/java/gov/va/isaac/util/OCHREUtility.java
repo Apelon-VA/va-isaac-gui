@@ -8,6 +8,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
+import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
@@ -26,6 +27,7 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
+import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -226,6 +228,7 @@ public final class OCHREUtility {
 			if (desc != null) {
 				return desc;
 			}
+			LOG.warn("In OCHREUtility.getDescription() OTFUtility.getDescription({}) returned {}", conceptChronology.getNid(), desc);
 
 			return null;
 		}
@@ -282,21 +285,23 @@ public final class OCHREUtility {
 //	
 //	return getChildrenAsConceptNids(child, ancestorTree);
 	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
+		LOG.debug("Getting parents of concept {}...", Get.conceptDescriptionText(child.getNid()));
 		int[] parentSequences = taxonomyTree.getParentSequences(child.getConceptSequence());
 		
 		Set<Integer> parentNids = new HashSet<>();
 		
 		for (int parentSequence : parentSequences) {
 			int parentNid = Get.identifierService().getConceptNid(parentSequence);
-			if (Get.taxonomyService().isChildOf(child.getNid(), parentNid, vc)) {
-				if (! Get.taxonomyService().isChildOf(parentNid, child.getNid(), vc)) {
+//			if (Get.taxonomyService().isChildOf(child.getNid(), parentNid, vc)) {
+				//if (! Get.taxonomyService().isChildOf(parentNid, child.getNid(), vc)) {
 					parentNids.add(parentNid);
-				} else {
-					LOG.debug("{} is both child and parent of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
-				}
-			} else {
-				LOG.debug("{} is not a child of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
-			}
+				//} else {
+				//	LOG.debug("{} is both child and parent of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
+				//}
+//			}
+//			else {
+//				LOG.debug("{} is not a child of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
+//			}
 		}
 		
 		return parentNids;
@@ -314,6 +319,33 @@ public final class OCHREUtility {
 		//		Tree ancestorTree = taxonomyTree.createAncestorTree(child.getConceptSequence());
 //	
 //		return getChildrenAsConceptVersions(child, ancestorTree, vc);
+	}
+
+	public static Optional<Long> getSctId(int componentNid)
+	{
+		try
+		{
+			Optional<LatestVersion<StringSememeImpl>> sememe = AppContext.getService(SememeProvider.class)
+					.getSnapshot(StringSememeImpl.class, StampCoordinates.getDevelopmentLatest())
+					.getLatestSememeVersionsForComponentFromAssemblage(componentNid, OTFUtility.getSnomedAssemblageNid()).findFirst();
+			if (sememe.isPresent())
+			{
+				String temp = sememe.get().value().getString();
+				try
+				{
+					return Optional.of(Long.parseLong(temp));
+				}
+				catch (NumberFormatException e)
+				{
+					OTFUtility.LOG.error("The found string '" + temp + "' isn't parseable as a long - as an SCTID should be - in nid " + componentNid);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			OTFUtility.LOG.warn("Unexpected error trying to find SCTID for nid " + componentNid, e);
+		}
+		return Optional.empty();
 	}
 	
 	/**
