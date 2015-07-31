@@ -65,7 +65,7 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
 import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
@@ -415,7 +415,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	
 	public boolean validPath(MojoConceptSpec pathSpec) {
 		try {
-			allPaths = OCHREUtility.getPathConcepts();
+			allPaths = OchreUtility.getPathConcepts();
 			//Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
 		} catch (Exception e) {
 			getLog().error("Error getting all PATHS for path validation - OTFUtility.getPathConcepts()", e);

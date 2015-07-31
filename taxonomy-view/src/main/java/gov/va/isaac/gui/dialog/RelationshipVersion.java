@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.gui.dialog;
 
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
@@ -222,7 +222,7 @@ public class RelationshipVersion
 	{
 		try
 		{
-			return OCHREUtility.getDescription(css.getConceptSnapshot(nidFetcher.applyAsInt(rv_)).getChronology(), css.getLanguageCoordinate(), css.getStampCoordinate());
+			return OchreUtility.getDescription(css.getConceptSnapshot(nidFetcher.applyAsInt(rv_)).getChronology(), css.getLanguageCoordinate(), css.getStampCoordinate());
 		}
 		catch (Exception e)
 		{

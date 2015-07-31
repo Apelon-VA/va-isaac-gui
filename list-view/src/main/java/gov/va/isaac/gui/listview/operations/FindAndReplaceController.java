@@ -23,7 +23,7 @@ import gov.va.isaac.gui.ComboBoxSetupTool;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.gui.util.FxUtils;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import java.util.HashSet;
 import java.util.Set;
@@ -243,7 +243,7 @@ public class FindAndReplaceController
 		
 		try
 		{
-			for (Integer seqs : OCHREUtility.getAllChildrenOfConcept(Snomed.LANGUAGE_REFEX.getConceptSequence(), true, false))
+			for (Integer seqs : OchreUtility.getAllChildrenOfConcept(Snomed.LANGUAGE_REFEX.getConceptSequence(), true, false))
 			{
 				searchInLanguage.getItems().add(new SimpleDisplayConcept(seqs));
 			}

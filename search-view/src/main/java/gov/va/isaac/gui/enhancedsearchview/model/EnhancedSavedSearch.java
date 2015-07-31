@@ -12,7 +12,7 @@ import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.SearchType;
 import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
 import gov.va.isaac.gui.enhancedsearchview.resulthandler.SaveSearchPrompt;
 import gov.va.isaac.util.ComponentDescriptionHelper;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.Get;
@@ -250,7 +250,7 @@ public class EnhancedSavedSearch {
 		ObservableList<SearchDisplayConcept> searches = FXCollections.observableList(new ArrayList<>());
 		
 		try {
-			Set<Integer> savedSearches = OCHREUtility.getAllChildrenOfConcept(Search.STORED_QUERIES.getConceptSequence(), true, false);
+			Set<Integer> savedSearches = OchreUtility.getAllChildrenOfConcept(Search.STORED_QUERIES.getConceptSequence(), true, false);
 
 			SearchType currentSearchType = SearchModel.getSearchTypeSelector().getSearchTypeComboBox().getSelectionModel().getSelectedItem();
 			for (Integer conceptSeq : savedSearches) {
@@ -269,8 +269,8 @@ public class EnhancedSavedSearch {
 					}
 					
 					if (addSearchToList) {
-						String fsn = OCHREUtility.getFSNForConceptNid(nid, null).get();
-						String preferredTerm = OCHREUtility.getPreferredTermForConceptNid(nid, null).get();
+						String fsn = OchreUtility.getFSNForConceptNid(nid, null).get();
+						String preferredTerm = OchreUtility.getPreferredTermForConceptNid(nid, null).get();
 						searches.add(new SearchDisplayConcept(fsn, preferredTerm, nid));
 					}
 				}

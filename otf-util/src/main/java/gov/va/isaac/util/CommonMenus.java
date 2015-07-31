@@ -873,7 +873,7 @@ public class CommonMenus
 				{
 					ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
 					if (conceptSnapshot != null) {
-						Optional<Long> conceptSct = OCHREUtility.getSctId(conceptSnapshot.getNid());
+						Optional<Long> conceptSct = OchreUtility.getSctId(conceptSnapshot.getNid());
 						if(conceptSct.isPresent()) {
 							sctIds.add(conceptSct.get());
 						}

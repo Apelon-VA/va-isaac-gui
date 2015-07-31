@@ -33,7 +33,7 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.UpdateableDoubleBinding;
@@ -662,7 +662,7 @@ public class ListBatchViewController
 												try 
 												{
 													UUID uuid = UUID.fromString(line[0]);
-													Optional<ConceptSnapshot> c = OCHREUtility.getConceptSnapshot(Get.identifierService().getNidForUuids(uuid), null, null);
+													Optional<ConceptSnapshot> c = OchreUtility.getConceptSnapshot(Get.identifierService().getNidForUuids(uuid), null, null);
 													if (c.isPresent())
 													{
 														newConcepts.add(new SimpleDisplayConcept(c.get()));
@@ -753,7 +753,7 @@ public class ListBatchViewController
 						{
 							try
 							{
-								SimpleDisplayConcept newCon = new SimpleDisplayConcept(OCHREUtility.getConceptSnapshot(nid, null, null).get());
+								SimpleDisplayConcept newCon = new SimpleDisplayConcept(OchreUtility.getConceptSnapshot(nid, null, null).get());
 								newCon.setUncommitted(true);
 								concepts.add(newCon);
 							}
@@ -1010,7 +1010,7 @@ public class ListBatchViewController
 	}
 
 	private void updateTableItem(SimpleDisplayConcept oldCon, boolean isUncommitted) {
-		ConceptSnapshot con = OCHREUtility.getConceptSnapshot(oldCon.getNid(), null, null).get();
+		ConceptSnapshot con = OchreUtility.getConceptSnapshot(oldCon.getNid(), null, null).get();
 		SimpleDisplayConcept newCon = new SimpleDisplayConcept(con);
 
 		int idx = conceptTable.getItems().indexOf(oldCon);
@@ -1096,7 +1096,7 @@ public class ListBatchViewController
 		List<SimpleDisplayConcept> displayConcepts = new ArrayList<>();
 		
 		for (int nid : nids) {
-			ConceptSnapshot concept = OCHREUtility.getConceptSnapshot(nid, null, null).get();
+			ConceptSnapshot concept = OchreUtility.getConceptSnapshot(nid, null, null).get();
 			displayConcepts.add(new SimpleDisplayConcept(concept));
 		}
 		

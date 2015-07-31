@@ -38,7 +38,7 @@ import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.Interval;
 import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
@@ -888,7 +888,7 @@ public class SearchViewController implements TaskCompleteCallback
 		{
 			try
 			{
-				Set<Integer> extendedDescriptionTypes = OCHREUtility.getAllChildrenOfConcept(
+				Set<Integer> extendedDescriptionTypes = OchreUtility.getAllChildrenOfConcept(
 						IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(), true, true);
 				ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
 				for (Integer c : extendedDescriptionTypes)

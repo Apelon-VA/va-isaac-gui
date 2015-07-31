@@ -33,7 +33,7 @@ import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonlyUsedConcepts;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
@@ -402,7 +402,7 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OCHREUtility.getDescription(concept, getConceptSnapshotService().getLanguageCoordinate(), getConceptSnapshotService().getStampCoordinate());
+			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().getLanguageCoordinate(), getConceptSnapshotService().getStampCoordinate());
 			ConceptChronology localRawCC = Get.conceptService().getConcept(concept.getPrimordialUuid());
 			
 			Optional<LatestVersion<ConceptVersion>> latestConceptVersionOptional = localRawCC.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());

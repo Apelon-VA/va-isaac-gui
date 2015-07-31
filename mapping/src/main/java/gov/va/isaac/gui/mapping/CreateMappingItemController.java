@@ -18,7 +18,7 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
@@ -90,7 +90,7 @@ public class CreateMappingItemController {
 			Utility.execute(() ->
 			{
 				String conceptName 	= concept.getConceptDescriptionText();
-				String pathName 	= OCHREUtility.getConceptSnapshot(concept.getPathSequence(), null, null).get().getConceptDescriptionText();
+				String pathName 	= OchreUtility.getConceptSnapshot(concept.getPathSequence(), null, null).get().getConceptDescriptionText();
 				Platform.runLater(() -> {
 					conceptNameProperty.set(conceptName);
 					codeSystemNameProperty.set(pathName);

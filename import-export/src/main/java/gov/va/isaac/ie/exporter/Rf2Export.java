@@ -20,7 +20,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.ie.exporter.Rf2File.ReleaseType;
 import gov.va.isaac.util.AbstractProgressReporter;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressListener;
 import gov.vha.isaac.ochre.api.Get;
@@ -455,7 +455,7 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
     // Collect children and grandchildren of the ancestor metadata concept for
     // language refsets
     ConceptSpec langRefexParent = Snomed.LANGUAGE_REFEX;
-    Set<Integer> descs =  OCHREUtility.getAllChildrenOfConcept(langRefexParent.getLenient().getConceptSequence(), true, false);
+    Set<Integer> descs =  OchreUtility.getAllChildrenOfConcept(langRefexParent.getLenient().getConceptSequence(), true, false);
     for (Integer desc : descs) {
       possibleLangRefexNids.add(Get.identifierService().getConceptNid(desc));
     }

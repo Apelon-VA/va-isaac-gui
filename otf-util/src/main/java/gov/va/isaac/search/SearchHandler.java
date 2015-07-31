@@ -19,7 +19,7 @@
 package gov.va.isaac.search;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
@@ -305,7 +305,7 @@ public class SearchHandler
 						// If search query is an ID, look up concept and add the result.
 						if (Utility.isUUID(localQuery) || Utility.isLong(localQuery))
 						{
-							Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> temp = OCHREUtility.getConceptForUnknownIdentifier(localQuery);
+							Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> temp = OchreUtility.getConceptForUnknownIdentifier(localQuery);
 							if (temp.isPresent())
 							{
 								CompositeSearchResult gsr = new CompositeSearchResult(temp.get(), 2.0f);

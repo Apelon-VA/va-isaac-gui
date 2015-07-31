@@ -19,7 +19,7 @@
 package gov.va.legoEdit.storage.wb;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.legoEdit.model.schemaModel.Assertion;
@@ -65,7 +65,7 @@ public class LegoWBUtility
 			c.setUuid(concept.getPrimordialUuid().toString());
 			try
 			{
-				Optional<Long> sctId = OCHREUtility.getSctId(concept.getNid());
+				Optional<Long> sctId = OchreUtility.getSctId(concept.getNid());
 				if (sctId.isPresent())
 				{
 					c.setSctid(sctId.get());

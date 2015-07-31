@@ -28,7 +28,7 @@ import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginComboBox
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginLabelProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
@@ -145,7 +145,7 @@ public class WorkflowPreferencesPluginView extends AbstractPreferencesPluginView
 					public String convertToString(UUID value) {
 						if (value != null) {
 							try {
-								return OCHREUtility.getDescription(value);
+								return OchreUtility.getDescription(value);
 							} catch (Exception e) {
 								String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " getting description for workflow promotion path uuid " + value;
 								logger.error(msg, e);
@@ -178,7 +178,7 @@ public class WorkflowPreferencesPluginView extends AbstractPreferencesPluginView
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
+			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}

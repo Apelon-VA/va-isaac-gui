@@ -15,7 +15,7 @@ import gov.va.isaac.search.DescriptionSememeTypeComparator;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
@@ -220,7 +220,7 @@ public class SearchResultsTable  {
 		
 		matchingDescTypeCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OCHREUtility.getConceptChronology(param.getValue().getMatchingDescriptionComponents().iterator().next()
+				return new SimpleStringProperty(OchreUtility.getConceptChronology(param.getValue().getMatchingDescriptionComponents().iterator().next()
 						.getLatestVersion(DescriptionSememe.class, AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get()
 						.value().getDescriptionTypeConceptSequence()).get().getConceptDescriptionText());
 			} catch (Exception e) {
@@ -256,7 +256,7 @@ public class SearchResultsTable  {
 		fsnCol.setCellFactory(new MyTableCellCallback<String>());
 		fsnCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OCHREUtility.getFSNForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
+				return new SimpleStringProperty(OchreUtility.getFSNForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
 			} catch (RuntimeException e) {
 				LOG.error("initializeFsnColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 
@@ -278,7 +278,7 @@ public class SearchResultsTable  {
 		preferredTermCol.setCellFactory(new MyTableCellCallback<String>());
 		preferredTermCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OCHREUtility.getPreferredTermForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
+				return new SimpleStringProperty(OchreUtility.getPreferredTermForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
 			} catch (RuntimeException e) {
 				LOG.error("initializePrefTermColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 
@@ -342,7 +342,7 @@ public class SearchResultsTable  {
 							
 							Collections.sort(matchingDescComponents, new DescriptionSememeTypeComparator());
 							for (DescriptionSememe<?> descComp : matchingDescComponents) {
-								String type = OCHREUtility.getConceptChronology(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+								String type = OchreUtility.getConceptChronology(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
 								buffer.append(type + ": " + descComp.getText() + "\n");
 							}
 							Tooltip tooltip = new Tooltip("Matching descriptions for \"" + fsn + "\":\n" + buffer.toString());

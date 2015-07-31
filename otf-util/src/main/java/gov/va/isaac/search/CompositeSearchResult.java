@@ -20,7 +20,7 @@ package gov.va.isaac.search;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -68,11 +68,11 @@ public class CompositeSearchResult {
 		
 		if (matchingComponent instanceof SememeChronology<?>)
 		{
-			this.containingConcept = OCHREUtility.getConceptSnapshot(((SememeChronology<?>)matchingComponent).getReferencedComponentNid(), null, null);
+			this.containingConcept = OchreUtility.getConceptSnapshot(((SememeChronology<?>)matchingComponent).getReferencedComponentNid(), null, null);
 		}
 		else if (matchingComponent instanceof ConceptChronology<?>)
 		{
-			this.containingConcept = OCHREUtility.getConceptSnapshot(matchingComponent.getNid(), null, null);
+			this.containingConcept = OchreUtility.getConceptSnapshot(matchingComponent.getNid(), null, null);
 		}
 		else
 		{

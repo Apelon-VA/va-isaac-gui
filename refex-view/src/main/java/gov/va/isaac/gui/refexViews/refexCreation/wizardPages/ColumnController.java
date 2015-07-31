@@ -29,7 +29,7 @@ import gov.va.isaac.gui.refexViews.util.RefexDataTypeNodeDetails;
 import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeFXNodeBuilder;
 import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeNodeDetails;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.beans.PropertyVetoException;
@@ -453,7 +453,7 @@ public class ColumnController implements PanelControllersI {
 
 	private void initializeColumnConcepts() {
 		try {
-			Set<Integer> colCons = OCHREUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getConceptSequence(), false, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getConceptSequence(), false, false);
 
 			for (Integer col : colCons) {
 				columnNameChoices.add(new SimpleDisplayConcept(col, colNameReader_));

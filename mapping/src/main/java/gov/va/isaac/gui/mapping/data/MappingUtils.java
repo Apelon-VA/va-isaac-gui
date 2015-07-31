@@ -27,7 +27,7 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.SearchStringProcessor;
 import gov.va.isaac.util.TaskCompleteCallback;
@@ -75,7 +75,7 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getStatusConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		for (Integer conSequence : OCHREUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_STATUS.getConceptSequence(), true, false))
+		for (Integer conSequence : OchreUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_STATUS.getConceptSequence(), true, false))
 		{
 			result.add(new SimpleDisplayConcept(conSequence));
 		}
@@ -87,7 +87,7 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getQualifierConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		for (Integer conSequence : OCHREUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getConceptSequence(), true, false))
+		for (Integer conSequence : OchreUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getConceptSequence(), true, false))
 		{
 			result.add(new SimpleDisplayConcept(conSequence));
 		}
@@ -277,7 +277,7 @@ public class MappingUtils
 	{
 		Set<Integer> extendedDescriptionTypes;
 		ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
-		extendedDescriptionTypes = OCHREUtility.getAllChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(),
+		extendedDescriptionTypes = OchreUtility.getAllChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(),
 				true, true);
 		for (Integer seq : extendedDescriptionTypes)
 		{

@@ -1,6 +1,6 @@
 package gov.va.isaac.gui.conceptViews.helpers;
 
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
@@ -36,7 +36,7 @@ public class ConceptViewerHelper {
 	}
 	
 	public static Optional<Long> getSctId(int componentNid)  {
-		return OCHREUtility.getSctId(componentNid);
+		return OchreUtility.getSctId(componentNid);
 	}
 
 	public static String getPrimDef(ConceptAttributeVersionBI<?> attr) {

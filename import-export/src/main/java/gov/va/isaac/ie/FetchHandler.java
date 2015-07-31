@@ -26,7 +26,7 @@ import gov.va.isaac.models.cem.CEMInformationModel;
 import gov.va.isaac.models.fhim.FHIMInformationModel;
 import gov.va.isaac.models.hed.HeDInformationModel;
 import gov.va.isaac.models.util.ExporterBase;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
@@ -122,8 +122,8 @@ public class FetchHandler extends ExporterBase {
     List<InformationModel> models = Lists.newArrayList();
     InformationModelService service = getInformationModelService();
     ConceptSnapshot hedConcept =
-        OCHREUtility.getConceptSnapshot(InformationModelType.HeD.getUuid(), null, null).get();
-    for (Integer hedModelSeq : OCHREUtility.getAllChildrenOfConcept(hedConcept.getConceptSequence(), true, false)) {
+        OchreUtility.getConceptSnapshot(InformationModelType.HeD.getUuid(), null, null).get();
+    for (Integer hedModelSeq : OchreUtility.getAllChildrenOfConcept(hedConcept.getConceptSequence(), true, false)) {
       models.add(new HeDInformationModel(service.getInformationModel(Get.identifierService().getUuidPrimordialFromConceptSequence(hedModelSeq).get())));
     }
     return models;
@@ -141,8 +141,8 @@ public class FetchHandler extends ExporterBase {
     List<InformationModel> models = Lists.newArrayList();
     InformationModelService service = getInformationModelService();
     ConceptSnapshot fhimConcept =
-        OCHREUtility.getConceptSnapshot(InformationModelType.FHIM.getUuid(), null, null).get();
-    for (Integer fhimModelSeq : OCHREUtility.getAllChildrenOfConcept(fhimConcept.getConceptSequence(), true, false)) {
+        OchreUtility.getConceptSnapshot(InformationModelType.FHIM.getUuid(), null, null).get();
+    for (Integer fhimModelSeq : OchreUtility.getAllChildrenOfConcept(fhimConcept.getConceptSequence(), true, false)) {
       models.add(new FHIMInformationModel(service.getInformationModel(Get.identifierService().getUuidPrimordialFromConceptSequence(fhimModelSeq).get())));
     }
     return models;
@@ -159,8 +159,8 @@ public class FetchHandler extends ExporterBase {
     List<InformationModel> models = Lists.newArrayList();
     InformationModelService service = getInformationModelService();
     ConceptSnapshot cemConcept =
-        OCHREUtility.getConceptSnapshot(InformationModelType.CEM.getUuid(), null, null).get();
-    for (Integer cemModelSeq : OCHREUtility.getAllChildrenOfConcept(cemConcept.getConceptSequence(), true, false)) {
+        OchreUtility.getConceptSnapshot(InformationModelType.CEM.getUuid(), null, null).get();
+    for (Integer cemModelSeq : OchreUtility.getAllChildrenOfConcept(cemConcept.getConceptSequence(), true, false)) {
       models.add(new CEMInformationModel(service.getInformationModel(Get.identifierService().getUuidPrimordialFromConceptSequence(cemModelSeq).get())));
     }
     return models;

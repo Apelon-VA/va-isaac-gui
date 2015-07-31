@@ -22,7 +22,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 //import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
@@ -362,7 +362,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					if(c == null) {
 						setText(null);
 					} else {
-						String desc = OCHREUtility.getDescription(c, panelViewCoordinate);
+						String desc = OchreUtility.getDescription(c, panelViewCoordinate);
 						setText(desc);
 					}
 				}
@@ -376,7 +376,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (emptyRow) {
 					setText("");
 				} else {
-					String desc = OCHREUtility.getDescription(c, panelViewCoordinate);
+					String desc = OchreUtility.getDescription(c, panelViewCoordinate);
 					//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
@@ -388,7 +388,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (uuid == null){
 					return null;
 				} else {
-					return OCHREUtility.getDescription(uuid, panelViewCoordinate);
+					return OchreUtility.getDescription(uuid, panelViewCoordinate);
 				}
 			}
 
@@ -599,7 +599,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 						//final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
 						ConceptChronology<? extends ConceptVersion> moduleRootConcept = Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid())).getChronology();
 						
-						Set<ConceptSnapshot> children = OCHREUtility.getChildrenAsConceptSnapshots(moduleRootConcept, Get.taxonomyService().getTaxonomyTree(TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate())), StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+						Set<ConceptSnapshot> children = OchreUtility.getChildrenAsConceptSnapshots(moduleRootConcept, Get.taxonomyService().getTaxonomyTree(TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate())), StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 						final Set<ConceptSnapshot> moduleConcepts = new HashSet<>();
 						try {
 							moduleConcepts.addAll(children);
@@ -645,7 +645,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 						Collections.sort(selectableModules);
 						selectableModuleListView.getItems().addAll(selectableModules);
 
-						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OCHREUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OchreUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
 						
 						pathComboBox.getItems().clear();
 						runLaterIfNotFXApplicationThread(() -> {
@@ -815,7 +815,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
+			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}
@@ -908,7 +908,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			String desc = null;
 			try {
-				desc = OCHREUtility.getDescription(nid);
+				desc = OchreUtility.getDescription(nid);
 			} catch (Exception e) {
 				log.error("Failed to set description for concept with nid={}", nid);
 			}

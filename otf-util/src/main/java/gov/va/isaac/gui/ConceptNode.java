@@ -28,7 +28,7 @@ import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.ConceptLookupCallback;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.SimpleValidBooleanProperty;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.HashSet;
@@ -336,11 +336,11 @@ public class ConceptNode implements ConceptLookupCallback
 		isLookupInProgress_.invalidate();
 		if (cb_.getValue().getNid() != 0)
 		{
-			OCHREUtility.lookupConceptSnapshot(cb_.getValue().getNid(), this, null, null, null);
+			OchreUtility.lookupConceptSnapshot(cb_.getValue().getNid(), this, null, null, null);
 		}
 		else
 		{
-			OCHREUtility.lookupConceptForUnknownIdentifier(cb_.getValue().getDescription(), this, null, null, null);
+			OchreUtility.lookupConceptForUnknownIdentifier(cb_.getValue().getDescription(), this, null, null, null);
 		}
 	}
 

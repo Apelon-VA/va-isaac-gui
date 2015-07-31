@@ -32,7 +32,7 @@ import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
@@ -367,7 +367,7 @@ public class ConceptViewerLabelHelper {
 					if (type == ComponentType.CONCEPT) {
 						ConceptVersionBI con = OTFUtility.getConceptVersion(comp.getAssociatedConceptNid());
 
-						if (!OCHREUtility.getAllChildrenOfConcept(con.getConceptSequence(), false, false).isEmpty()) {
+						if (!OchreUtility.getAllChildrenOfConcept(con.getConceptSequence(), false, false).isEmpty()) {
 							AppContext.getCommonDialogs().showInformationDialog("Retire Concept Failure", "Cannot retire concept until it has no children");
 						} else {
 							RetireConceptPrompt prompt = new RetireConceptPrompt();

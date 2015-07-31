@@ -32,7 +32,7 @@ import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
@@ -126,7 +126,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 							if(c == null) {
 								setText(null);
 							}else {
-								String desc = OCHREUtility.getDescription(c);
+								String desc = OchreUtility.getDescription(c);
 								setText(desc);
 							}
 						}
@@ -142,7 +142,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 					if (emptyRow) {
 						setText("");
 					} else {
-						String desc = OCHREUtility.getDescription(c);
+						String desc = OchreUtility.getDescription(c);
 						setText(desc);
 					}
 				}
@@ -193,7 +193,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
+			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}

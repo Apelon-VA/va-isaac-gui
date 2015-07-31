@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.gui.dialog;
 
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 
 import java.util.AbstractMap;
@@ -131,7 +131,7 @@ public class DescriptionVersion
 				{
 					// TODO implement handling of LANGUAGE column
 					//Not bothering with historical here - doesn't really fit the display paradigm.
-					text = OCHREUtility.conceptDescriptionText(dv_.getLanguageConceptSequence());
+					text = OchreUtility.conceptDescriptionText(dv_.getLanguageConceptSequence());
 //					for (RefexChronicleBI<?> rc :  dv_.getAnnotationsActive(OTFUtility.getViewCoordinate()))
 //					{
 //						for (RefexVersionBI<?> rv : rc.getVersions())
@@ -227,7 +227,7 @@ public class DescriptionVersion
 	{
 		try
 		{
-			return OCHREUtility.conceptDescriptionText(nidFetcher.applyAsInt(dv_));
+			return OchreUtility.conceptDescriptionText(nidFetcher.applyAsInt(dv_));
 		}
 		catch (Exception e)
 		{

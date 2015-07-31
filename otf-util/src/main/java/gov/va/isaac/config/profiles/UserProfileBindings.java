@@ -20,7 +20,7 @@ package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ViewCoordinateComponents;
 import gov.vha.isaac.cradle.DefaultConfigurationService;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;

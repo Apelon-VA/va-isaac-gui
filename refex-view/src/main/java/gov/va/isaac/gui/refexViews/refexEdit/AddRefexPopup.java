@@ -31,7 +31,7 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
@@ -762,7 +762,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		ObservableList<SimpleDisplayConcept> assemblageConcepts = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 		try
 		{
-			Set<Integer> colCons = OCHREUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), false, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), false, false);
 
 			for (Integer col : colCons) {
 				assemblageConcepts.add(new SimpleDisplayConcept(col));

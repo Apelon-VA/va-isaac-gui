@@ -20,7 +20,7 @@ package gov.va.isaac.gui;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.function.Function;
@@ -65,7 +65,7 @@ public class SimpleDisplayConcept implements Comparable<SimpleDisplayConcept>
 	public SimpleDisplayConcept(ConceptSnapshot c, Function<ConceptSnapshot, String> descriptionReader)
 	{
 		Function<ConceptSnapshot, String> dr = (descriptionReader == null ? (conceptVersion) -> 
-			{return (conceptVersion == null ? "" : OCHREUtility.getDescription(conceptVersion.getChronology(), conceptVersion.getLanguageCoordinate(), conceptVersion.getStampCoordinate()));} : descriptionReader);
+			{return (conceptVersion == null ? "" : OchreUtility.getDescription(conceptVersion.getChronology(), conceptVersion.getLanguageCoordinate(), conceptVersion.getStampCoordinate()));} : descriptionReader);
 		description_ = dr.apply(c);
 		nid_ = c == null ? 0 : c.getNid();
 		ignoreChange_ = false;

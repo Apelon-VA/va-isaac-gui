@@ -49,10 +49,10 @@ import org.slf4j.LoggerFactory;
  * @author joel
  *
  */
-public final class OCHREUtility {
-	private static final Logger LOG = LoggerFactory.getLogger(OCHREUtility.class);
+public final class OchreUtility {
+	private static final Logger LOG = LoggerFactory.getLogger(OchreUtility.class);
 
-	private OCHREUtility() {}
+	private OchreUtility() {}
 
 	public static Set<ConceptVersion<?>> getPathConcepts() {
 		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getConceptSequence());
@@ -126,9 +126,9 @@ public final class OCHREUtility {
 
 			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
 			if (userProfile.getDisplayFSN()) {
-				optional = OCHREUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
+				optional = OchreUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
 			} else {
-				optional = OCHREUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
+				optional = OchreUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
 			}
 
 			return optional;
