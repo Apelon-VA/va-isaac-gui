@@ -620,15 +620,25 @@ public class RelationshipTableView implements EmbeddableViewI
 
 				// Get latest LogicGraph for this concept
 				Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = null;
-				if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == PremiseType.STATED) {
-					defChronologyOptional = Get.statedDefinitionChronology(localConcept.getChronology().getNid());
-				} else {
-					defChronologyOptional = Get.inferredDefinitionChronology(localConcept.getChronology().getNid());
-				}
-				SememeChronology rawStatedDefChronology = defChronologyOptional.get();
-				Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawStatedDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
-				LogicGraphSememeImpl latestGraph = latestGraphLatestVersionOptional.get().value();
+				LogicGraphSememeImpl latestStatedGraph = null;
+				LogicGraphSememeImpl latestInferredGraph = null;
 				
+				//if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == PremiseType.STATED)
+				{
+					defChronologyOptional = Get.statedDefinitionChronology(localConcept.getChronology().getNid());
+
+					SememeChronology rawDefChronology = defChronologyOptional.get();
+					Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+					latestStatedGraph = latestGraphLatestVersionOptional.get().value();
+				}
+				//else
+				{
+					defChronologyOptional = Get.inferredDefinitionChronology(localConcept.getChronology().getNid());
+
+					SememeChronology rawDefChronology = defChronologyOptional.get();
+					Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+					latestInferredGraph = latestGraphLatestVersionOptional.get().value();
+				}				
 				//target is the only option where we would exclude source
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
@@ -638,7 +648,8 @@ public class RelationshipTableView implements EmbeddableViewI
 						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 						{
 							// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
-							if (rv.getReferencedComponentNid() == latestGraph.getNid() && rv.getStampSequence() == latestGraph.getStampSequence()) {
+							if ((rv.getReferencedComponentNid() == latestStatedGraph.getNid() && rv.getStampSequence() == latestStatedGraph.getStampSequence())
+									|| (rv.getReferencedComponentNid() == latestInferredGraph.getNid() && rv.getStampSequence() == latestInferredGraph.getStampSequence())) {
 								allRelationships.add(rv);
 							}
 						}
