@@ -8,13 +8,11 @@ import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
 import gov.va.isaac.interfaces.workflow.ProcessInstanceCreationRequestI;
 import gov.va.isaac.interfaces.workflow.WorkflowProcess;
 import gov.va.isaac.search.CompositeSearchResult;
-
+import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,19 +26,19 @@ public class ResultsToWorkflow {
 		initializeWorkflowServices();
 
 		// Use HashSet to ensure that only one workflow is created for each concept
-		Map<Integer, ComponentVersionBI> conceptsOrComponents = new HashMap<>();
+		Map<Integer, IdentifiedObjectLocal> conceptsOrComponents = new HashMap<>();
 		if (searchModel.getResultsTypeComboBox().getSelectionModel().getSelectedItem() == ResultsType.CONCEPT) {
 			for (CompositeSearchResult result : searchModel.getSearchResultsTable().getResults().getItems()) {
-				ConceptVersionBI conceptVersion = result.getContainingConcept();
-				int nid = conceptVersion.getNid();
+				Optional<ConceptSnapshot> conceptVersion = result.getContainingConcept();
+				int nid = conceptVersion.get().getNid();
 				
 				if (! conceptsOrComponents.containsKey(nid)) {
-					conceptsOrComponents.put(nid, conceptVersion);
+					conceptsOrComponents.put(nid, conceptVersion.get());
 				}
 			}
 		} else if (searchModel.getResultsTypeComboBox().getSelectionModel().getSelectedItem() == ResultsType.DESCRIPTION) {
 			for (CompositeSearchResult result : searchModel.getSearchResultsTable().getResults().getItems()) {
-				ComponentVersionBI componentVersion = result.getMatchingComponents().iterator().next();
+				IdentifiedObjectLocal componentVersion = result.getMatchingComponents().iterator().next();
 				int nid = componentVersion.getNid();
 				
 				if (! conceptsOrComponents.containsKey(nid)) {
@@ -58,7 +56,7 @@ public class ResultsToWorkflow {
 			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Bulk Workflow Export Confirmation", "Are you sure that you want to generate " + conceptsOrComponents.size() + " new Workflow instance(s)?");
 
 			if (response == DialogResponse.YES) {
-				for (ComponentVersionBI conceptOrComponent : conceptsOrComponents.values()) {
+				for (IdentifiedObjectLocal conceptOrComponent : conceptsOrComponents.values()) {
 					singleResultToWorkflow(conceptOrComponent);
 				}
 
@@ -68,15 +66,14 @@ public class ResultsToWorkflow {
 	}
 
 
-	private static void singleResultToWorkflow(ComponentVersionBI componentOrConceptVersion) {
+	private static void singleResultToWorkflow(IdentifiedObjectLocal componentOrConceptVersion) {
 		initializeWorkflowServices();
 
 		final WorkflowProcess process = WorkflowProcess.REVIEW3;
 		String preferredDescription = null;
 		try {
-			if (componentOrConceptVersion instanceof ConceptVersionBI) {
-				DescriptionVersionBI<?> desc = ((ConceptVersionBI)componentOrConceptVersion).getPreferredDescription();
-				preferredDescription = desc.getText();
+			if (componentOrConceptVersion instanceof ConceptSnapshot) {
+				preferredDescription = ((ConceptSnapshot)componentOrConceptVersion).getConceptDescriptionText();
 			} else {
 				preferredDescription = componentOrConceptVersion.toUserString();
 			}

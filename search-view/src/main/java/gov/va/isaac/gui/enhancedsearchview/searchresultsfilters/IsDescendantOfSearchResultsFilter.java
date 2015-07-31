@@ -24,10 +24,13 @@
  */
 package gov.va.isaac.gui.enhancedsearchview.searchresultsfilters;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.enhancedsearchview.filters.IsDescendantOfFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -59,9 +62,14 @@ class IsDescendantOfSearchResultsFilter implements Function<List<CompositeSearch
 			
 			for (CompositeSearchResult result : results) {
 				currentResult = result;
-				if (result.getContainingConcept().isKindOf(possibleAscendantConcept) && ! filter.getInvert()) {
+				
+				if (Get.taxonomyService().isKindOf(result.getContainingConcept().get().getNid(), possibleAscendantConcept.getNid(), 
+						AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get()) 
+						&& ! filter.getInvert()) {
 					filteredResults.add(result);
-				} else if (! result.getContainingConcept().isKindOf(possibleAscendantConcept) && filter.getInvert()) {
+				} else if (! Get.taxonomyService().isKindOf(result.getContainingConcept().get().getNid(), possibleAscendantConcept.getNid(), 
+						AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get())
+						&& filter.getInvert()) {
 					filteredResults.add(result);
 				}
 			}
@@ -70,7 +78,9 @@ class IsDescendantOfSearchResultsFilter implements Function<List<CompositeSearch
 			
 			return filteredResults;
 		} catch (Exception e) {
-			throw new SearchResultsFilterException(this, "Failed calling (" + OTFUtility.getDescription(currentResult.getContainingConcept()) + " (nid=" + currentResult.getContainingConcept().getNid() + ")).isKindOf(" + OTFUtility.getDescription(possibleAscendantConcept) + " (nid=" + possibleAscendantConcept.getConceptNid() + "))", e);
+			throw new SearchResultsFilterException(this, "Failed calling (" + currentResult.getContainingConcept().get().getConceptDescriptionText() 
+			+ " (nid=" + currentResult.getContainingConcept().get().getNid() + ")).isKindOf(" + OTFUtility.getDescription(possibleAscendantConcept) 
+			+ " (nid=" + possibleAscendantConcept.getConceptNid() + "))", e);
 		}
 	}
 

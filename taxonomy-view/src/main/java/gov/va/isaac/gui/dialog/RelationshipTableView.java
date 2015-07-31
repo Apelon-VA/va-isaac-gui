@@ -21,6 +21,8 @@ package gov.va.isaac.gui.dialog;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
+import gov.va.isaac.gui.dialog.ConceptViewController.ConceptSnapshotServiceProvider;
+import gov.va.isaac.gui.dialog.ConceptViewController.TaxonomyCoordinateProvider;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
@@ -32,13 +34,29 @@ import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.LogicCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -69,6 +87,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -76,6 +95,7 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sun.javafx.tk.Toolkit;
 
 /**
@@ -91,6 +111,8 @@ public class RelationshipTableView implements EmbeddableViewI
 	private TableView<RelationshipVersion> relationshipsTable = new TableView<>();
 	private UUID conceptUUID_;
 	private BooleanProperty showActiveOnly_, showHistory_, showStampColumns_;
+	private final TaxonomyCoordinateProvider taxonomyCoordinateProvider;
+	private final ConceptSnapshotServiceProvider conceptSnapshotServiceProvider;
 	
 	private ReadOnlyStringWrapper summaryText = new ReadOnlyStringWrapper("0 relationships");
 	
@@ -100,8 +122,11 @@ public class RelationshipTableView implements EmbeddableViewI
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 	private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
-	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly)
+	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, TaxonomyCoordinateProvider tcProvider, ConceptSnapshotServiceProvider cssProvider)
 	{
+		taxonomyCoordinateProvider = tcProvider;
+		conceptSnapshotServiceProvider = cssProvider;
+		
 		relationshipsTable.setTableMenuButtonVisible(true);
 		relationshipsTable.setMaxHeight(Double.MAX_VALUE);
 		showActiveOnly_ = showActiveOnly;
@@ -171,7 +196,7 @@ public class RelationshipTableView implements EmbeddableViewI
 
 									try
 									{
-										if (ref.getRelationshipVersion().isActive())
+										if (ref.getRelationshipVersion().getState() == State.ACTIVE)
 										{
 											sizeAndPosition(Images.BLACK_DOT.createImageView(), sp, Pos.TOP_LEFT);
 											tooltipText += "Active";
@@ -197,50 +222,50 @@ public class RelationshipTableView implements EmbeddableViewI
 											sizeAndPosition(Images.YELLOW_DOT.createImageView(), sp, Pos.TOP_RIGHT);
 											tooltipText += " - Uncommitted";
 										}
-										if (ref.hasDynamicRefex())
-										{
-											//I can't seem to get just and image view to pick up mouse clicks
-											//but it works in a button... sigh.
-											Button b = new Button();
-											b.setPadding(new Insets(0));
-											b.setPrefHeight(12.0);
-											b.setPrefWidth(12.0);
-											ImageView iv = Images.ATTACH.createImageView();
-											iv.setFitHeight(12.0);
-											iv.setFitWidth(12.0);
-											b.setGraphic(iv);
-											b.setOnAction((event) ->
-											{
-												DynamicRefexView drv = AppContext.getService(DynamicRefexView.class);
-												drv.setComponent(ref.getRelationshipVersion().getNid(), null, null, null, true);
-												
-												BorderPane bp = new BorderPane();
-												
-												Label title = new Label("Sememes attached to Description ");
-												title.setMaxWidth(Double.MAX_VALUE);
-												title.setAlignment(Pos.CENTER);
-												title.setPadding(new Insets(10));
-												title.getStyleClass().add("boldLabel");
-												title.getStyleClass().add("headerBackground");
-												
-												bp.setTop(title);
-												bp.setCenter(drv.getView());
-												
-												
-												PopOver po = new PopOver();
-												po.setContentNode(bp);
-												po.setAutoHide(true);
-												po.detachedTitleProperty().set("Sememes attached to Description");
-												po.detachedProperty().addListener((change) ->
-												{
-													po.setAutoHide(false);
-												});
-												
-												Point2D point = b.localToScreen(b.getWidth(), -32);
-												po.show(b.getScene().getWindow(), point.getX(), point.getY());
-											});
-											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
-										}
+//										if (ref.hasDynamicRefex())
+//										{
+//											//I can't seem to get just and image view to pick up mouse clicks
+//											//but it works in a button... sigh.
+//											Button b = new Button();
+//											b.setPadding(new Insets(0));
+//											b.setPrefHeight(12.0);
+//											b.setPrefWidth(12.0);
+//											ImageView iv = Images.ATTACH.createImageView();
+//											iv.setFitHeight(12.0);
+//											iv.setFitWidth(12.0);
+//											b.setGraphic(iv);
+//											b.setOnAction((event) ->
+//											{
+//												DynamicRefexView drv = AppContext.getService(DynamicRefexView.class);
+//												drv.setComponent(ref.getRelationshipVersion().getNid(), null, null, null, true);
+//												
+//												BorderPane bp = new BorderPane();
+//												
+//												Label title = new Label("Sememes attached to Description ");
+//												title.setMaxWidth(Double.MAX_VALUE);
+//												title.setAlignment(Pos.CENTER);
+//												title.setPadding(new Insets(10));
+//												title.getStyleClass().add("boldLabel");
+//												title.getStyleClass().add("headerBackground");
+//												
+//												bp.setTop(title);
+//												bp.setCenter(drv.getView());
+//												
+//												
+//												PopOver po = new PopOver();
+//												po.setContentNode(bp);
+//												po.setAutoHide(true);
+//												po.detachedTitleProperty().set("Sememes attached to Description");
+//												po.detachedProperty().addListener((change) ->
+//												{
+//													po.setAutoHide(false);
+//												});
+//												
+//												Point2D point = b.localToScreen(b.getWidth(), -32);
+//												po.show(b.getScene().getWindow(), point.getX(), point.getY());
+//											});
+//											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
+//										}
 									}
 									catch (Exception e)
 									{
@@ -264,11 +289,11 @@ public class RelationshipTableView implements EmbeddableViewI
 									}
 									
 									break;
-								case TYPE: case AUTHOR: case MODULE: case PATH: case CHARACTERISTIC: case DESTINATION: case REFINEABILITY: case SOURCE:
+								case TYPE: case AUTHOR: case MODULE: case PATH: case CHARACTERISTIC: case DESTINATION: case SOURCE:
 									graphic = backgroundLookup(this, (RelationshipColumnType)getTableColumn().getUserData(), ref);
 									break;
 								case TIME: case STATUS_STRING: case UUID: case GROUP:
-									graphic = new Text(ref.getDisplayStrings((RelationshipColumnType)getTableColumn().getUserData()).getKey());
+									graphic = new Text(ref.getDisplayStrings((RelationshipColumnType)getTableColumn().getUserData(), conceptSnapshotServiceProvider.getConceptSnapshotService()).getKey());
 									break;
 								default :
 									throw new RuntimeException("Unhandeled column");
@@ -306,8 +331,7 @@ public class RelationshipTableView implements EmbeddableViewI
 		// Configure table columns.
 		stampColumns.clear();
 		addTableColumns(new RelationshipColumnType[] {RelationshipColumnType.STATUS_CONDENSED, RelationshipColumnType.UUID, RelationshipColumnType.SOURCE, 
-				RelationshipColumnType.TYPE, RelationshipColumnType.DESTINATION, RelationshipColumnType.CHARACTERISTIC, RelationshipColumnType.GROUP, 
-				RelationshipColumnType.REFINEABILITY}, 
+				RelationshipColumnType.TYPE, RelationshipColumnType.DESTINATION, RelationshipColumnType.CHARACTERISTIC, RelationshipColumnType.GROUP}, 
 				false, cellFactory);
 		
 		addTableColumns(new RelationshipColumnType[] {RelationshipColumnType.STATUS_STRING,  RelationshipColumnType.TIME, RelationshipColumnType.AUTHOR, 
@@ -425,7 +449,7 @@ public class RelationshipTableView implements EmbeddableViewI
 	{
 		Utility.execute(() ->
 		{
-			String value = ref.getDisplayStrings(type).getKey();
+			String value = ref.getDisplayStrings(type, conceptSnapshotServiceProvider.getConceptSnapshotService()).getKey();
 			Platform.runLater(() ->
 			{
 				if (cell.isEmpty() || cell.getItem() == null)
@@ -449,7 +473,7 @@ public class RelationshipTableView implements EmbeddableViewI
 					@Override
 					public Collection<Integer> getNIds()
 					{
-						int nid = ref.getNidFetcher(type).applyAsInt(ref.getRelationshipVersion());
+						int nid = ref.getIdFetcher(type).applyAsInt(ref.getRelationshipVersion());
 
 						ArrayList<Integer> nids = new ArrayList<>();
 						if (nid != 0)
@@ -494,7 +518,7 @@ public class RelationshipTableView implements EmbeddableViewI
 					@Override
 					public String getConceptId()
 					{
-						return ref.getNidFetcher(type).applyAsInt(ref.getRelationshipVersion()) +"";
+						return ref.getIdFetcher(type).applyAsInt(ref.getRelationshipVersion()) +"";
 					}
 				});
 			});
@@ -553,14 +577,14 @@ public class RelationshipTableView implements EmbeddableViewI
 		}
 	}
 
-	public void setConcept(ConceptVersionBI concept) throws IOException, ContradictionException
+	public void setConcept(ConceptSnapshot concept) throws IOException, ContradictionException
 	{
 		// Populate description table data model.
 		conceptUUID_ = concept.getPrimordialUuid();
 		refresh(concept);
 	}
 	
-	private void refresh(ConceptVersionBI concept)
+	private void refresh(ConceptSnapshot concept)
 	{
 		if (concept == null && conceptUUID_ == null)
 		{
@@ -589,44 +613,77 @@ public class RelationshipTableView implements EmbeddableViewI
 		
 		Utility.execute(() ->
 		{
-			ArrayList<RelationshipVersionBI<?>> allRelationships = new ArrayList<>();
+			ArrayList<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 			try
 			{
-				ConceptVersionBI localConcept = (concept == null ? OTFUtility.getConceptVersion(conceptUUID_) : concept);
+				ConceptSnapshot localConcept = (concept == null ? conceptSnapshotServiceProvider.getConceptSnapshotService().getConceptSnapshot(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept);
+
+				// Get latest LogicGraph for this concept
+				Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = null;
+				LogicGraphSememeImpl latestStatedGraph = null;
+				LogicGraphSememeImpl latestInferredGraph = null;
 				
+				//if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == PremiseType.STATED)
+				{
+					defChronologyOptional = Get.statedDefinitionChronology(localConcept.getChronology().getNid());
+
+					SememeChronology rawDefChronology = defChronologyOptional.get();
+					Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+					latestStatedGraph = latestGraphLatestVersionOptional.get().value();
+				}
+				//else
+				{
+					defChronologyOptional = Get.inferredDefinitionChronology(localConcept.getChronology().getNid());
+
+					SememeChronology rawDefChronology = defChronologyOptional.get();
+					Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+					latestInferredGraph = latestGraphLatestVersionOptional.get().value();
+				}				
 				//target is the only option where we would exclude source
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
-					for (RelationshipChronicleBI chronicle : localConcept.getRelationshipsOutgoing())
+					List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> outgoingRelChronicles = localConcept.getChronology().getRelationshipListOriginatingFromConcept();
+					for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : outgoingRelChronicles)
 					{
-						for (RelationshipVersionBI<?> rv : chronicle.getVersions())
+						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 						{
-							allRelationships.add(rv);
+							// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
+							if ((rv.getReferencedComponentNid() == latestStatedGraph.getNid() && rv.getStampSequence() == latestStatedGraph.getStampSequence())
+									|| (rv.getReferencedComponentNid() == latestInferredGraph.getNid() && rv.getStampSequence() == latestInferredGraph.getStampSequence())) {
+								allRelationships.add(rv);
+							}
 						}
 					}
 				}
-				
+
 				//source is the only option where we would exclude target
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
 				{
-					for (RelationshipChronicleBI chronicle : localConcept.getRelationshipsIncoming())
+					List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> incomingRelChronicles = localConcept.getChronology().getRelationshipListWithConceptAsDestination();
+					for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : incomingRelChronicles)
 					{
-						for (RelationshipVersionBI<?> rv : chronicle.getVersions())
+						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 						{
 							allRelationships.add(rv);
 						}
 					}
 				}
-				
 				//Sort the newest to the top per UUID
-				Collections.sort(allRelationships, new Comparator<RelationshipVersionBI<?>>()
+				Collections.sort(allRelationships, new Comparator<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int compare(RelationshipVersionBI<?> o1, RelationshipVersionBI<?> o2)
+					public int compare(RelationshipVersionAdaptor<?> o1, RelationshipVersionAdaptor<?> o2)
 					{
 						if (o1.getPrimordialUuid().equals(o2.getPrimordialUuid()))
 						{
-							return o2.getStamp() - o1.getStamp();
+							long diff = o2.getTime() - o1.getTime();
+							if (diff > 0) {
+								return 1;
+							} else if (diff < 0) {
+								return -1;
+							} else {
+								return 0;
+							}
 						}
 						else
 						{
@@ -656,19 +713,22 @@ public class RelationshipTableView implements EmbeddableViewI
 					UUID lastSeenRefex = null;
 					
 					relationshipsTable.getItems().clear();
-					for (RelationshipVersionBI<?> r : allRelationships)
+					for (RelationshipVersionAdaptor<?> r : allRelationships)
 					{
 						if (!showHistory_.get() && r.getPrimordialUuid().equals(lastSeenRefex))
 						{
 							//Only want the newest one per UUID if history isn't requested
 							continue;
 						}
-						if (showActiveOnly_.get() == false || r.isActive())
+						if (showActiveOnly_.get() == false || r.getState() == State.ACTIVE)
 						{
-							//first one we see with a new UUID is current, others are historical
-							RelationshipVersion newRelationshipVersion = new RelationshipVersion(r, !r.getPrimordialUuid().equals(lastSeenRefex));
-							count++;
-							relationshipsTable.getItems().add(newRelationshipVersion);
+							if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == r.getPremiseType()) {
+
+								//first one we see with a new UUID is current, others are historical
+								RelationshipVersion newRelationshipVersion = new RelationshipVersion(r, !r.getPrimordialUuid().equals(lastSeenRefex));
+								count++;
+								relationshipsTable.getItems().add(newRelationshipVersion);
+							}
 						}
 						lastSeenRefex = r.getPrimordialUuid();
 					}

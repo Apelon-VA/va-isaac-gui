@@ -27,7 +27,7 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
@@ -110,7 +110,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OCHREUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
 
                 List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
@@ -192,7 +192,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     setGraphic(graphicBorderPane);
                 }
 
-                String desc = OCHREUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
+                String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
                 if (desc != null) {
                     setText(desc);
                 } else {
@@ -214,7 +214,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
             setDisclosureNode(iv);
 
-            String desc = OCHREUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
+            String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
             if (desc != null) {
                 setText(desc);
             } else {

@@ -31,15 +31,16 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
-import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -73,7 +74,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.StringConverter;
-
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.hk2.api.PerLookup;
 import org.glassfish.hk2.runlevel.RunLevelException;
@@ -97,11 +97,9 @@ import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptio
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
-import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
@@ -192,10 +190,10 @@ public class AddRefexPopup extends Stage implements PopupViewI
 
 		selectableConcept_ = new ConceptNode(null, true, refexDropDownOptions, null);
 
-		selectableConcept_.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>()
+		selectableConcept_.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue)
+			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 			{
 				if (createRefexFocus_ != null && createRefexFocus_.getComponentNid() != null)
 				{
@@ -764,10 +762,9 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		ObservableList<SimpleDisplayConcept> assemblageConcepts = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 		try
 		{
-			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getNid());
-			Set<ConceptVersionBI> colCons = OTFUtility.getAllChildrenOfConcept(colCon, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), false, false);
 
-			for (ConceptVersionBI col : colCons) {
+			for (Integer col : colCons) {
 				assemblageConcepts.add(new SimpleDisplayConcept(col));
 			}
 		}

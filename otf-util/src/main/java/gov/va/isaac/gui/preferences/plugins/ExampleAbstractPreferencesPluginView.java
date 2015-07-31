@@ -28,7 +28,7 @@ import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginComboBox
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginLabelProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
@@ -148,13 +148,12 @@ public class ExampleAbstractPreferencesPluginView extends AbstractPreferencesPlu
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
+			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
 			for (ConceptVersion<?> cv : pathConcepts) {
 				list.add(cv.getChronology().getPrimordialUuid());
 			}
-		} catch (IOException | ContradictionException e) {
-			logger.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-			e.printStackTrace();
+		} catch (RuntimeException e) {
+			logger.error("Failed loading path concepts", e);
 		}
 		UUID current = viewCoordinatePathProperty.readFromPersistedPreferences();
 		if (current != null && ! list.contains(current)) {

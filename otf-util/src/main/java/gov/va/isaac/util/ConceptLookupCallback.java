@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.util;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 
 /**
  * {@link ConceptLookupCallback}
@@ -29,9 +29,9 @@ public interface ConceptLookupCallback
 {
 	/**
 	 * Called when the lookup completes, and the concept object is ready.
-	 * @param concept - the found concept
+	 * @param concept - the found concept (or NULL if the concept couldn't be found)
 	 * @param submitTime - the time that this request was submitted
 	 * @param callId - the optional arbitrary identifier passed in by the caller when the lookup began.
 	 */
-	public void lookupComplete(ConceptVersionBI concept, long submitTime, Integer callId);
+	public void lookupComplete(ConceptSnapshot concept, long submitTime, Integer callId);
 }

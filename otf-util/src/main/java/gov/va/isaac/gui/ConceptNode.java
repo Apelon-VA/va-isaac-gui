@@ -28,8 +28,9 @@ import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.ConceptLookupCallback;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.SimpleValidBooleanProperty;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,7 +63,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,8 +84,8 @@ public class ConceptNode implements ConceptLookupCallback
 	private ComboBox<SimpleDisplayConcept> cb_;
 	private ProgressIndicator pi_;
 	private ImageView lookupFailImage_;
-	private ConceptVersionBI c_;
-	private ObjectBinding<ConceptVersionBI> conceptBinding_;
+	private ConceptSnapshot c_;
+	private ObjectBinding<ConceptSnapshot> conceptBinding_;
 	private SimpleDisplayConcept codeSetComboBoxConcept_ = null;
 	private SimpleValidBooleanProperty isValid = new SimpleValidBooleanProperty(true, null);
 	private boolean flagAsInvalidWhenBlank_ = true;
@@ -102,11 +102,11 @@ public class ConceptNode implements ConceptLookupCallback
 	
 	private ListChangeListener<SimpleDisplayConcept> listChangeListener_;
 	private volatile boolean disableChangeListener_ = false;
-	private Function<ConceptVersionBI, String> descriptionReader_;
+	private  Function<ConceptSnapshot, String> descriptionReader_;
 	private ObservableList<SimpleDisplayConcept> dropDownOptions_;
 	private ContextMenu cm_;
 	
-	public ConceptNode(ConceptVersionBI initialConcept, boolean flagAsInvalidWhenBlank)
+	public ConceptNode(ConceptSnapshot initialConcept, boolean flagAsInvalidWhenBlank)
 	{
 		this(initialConcept, flagAsInvalidWhenBlank, null, null);
 	}
@@ -114,8 +114,8 @@ public class ConceptNode implements ConceptLookupCallback
 	/**
 	 * descriptionReader is optional
 	 */
-	public ConceptNode(ConceptVersionBI initialConcept, boolean flagAsInvalidWhenBlank, ObservableList<SimpleDisplayConcept> dropDownOptions, 
-			Function<ConceptVersionBI, String> descriptionReader)
+	public ConceptNode(ConceptSnapshot initialConcept, boolean flagAsInvalidWhenBlank, ObservableList<SimpleDisplayConcept> dropDownOptions, 
+			Function<ConceptSnapshot, String> descriptionReader)
 	{
 		c_ = initialConcept;
 		//We can't simply use the ObservableList from the CommonlyUsedConcepts, because it infinite loops - there doesn't seem to be a way 
@@ -135,13 +135,13 @@ public class ConceptNode implements ConceptLookupCallback
 				disableChangeListener_ = false;
 			}
 		};
-		descriptionReader_ = (descriptionReader == null ? (conceptVersion) -> {return conceptVersion == null ? "" : OTFUtility.getDescription(conceptVersion);} : descriptionReader);
+		descriptionReader_ = (descriptionReader == null ? (conceptVersion) -> {return conceptVersion == null ? "" : conceptVersion.getConceptDescriptionText();} : descriptionReader);
 		dropDownOptions_ = dropDownOptions == null ? AppContext.getService(CommonlyUsedConcepts.class).getObservableConcepts() : dropDownOptions;
 		dropDownOptions_.addListener(new WeakListChangeListener<SimpleDisplayConcept>(listChangeListener_));
-		conceptBinding_ = new ObjectBinding<ConceptVersionBI>()
+		conceptBinding_ = new ObjectBinding<ConceptSnapshot>()
 		{
 			@Override
-			protected ConceptVersionBI computeValue()
+			protected ConceptSnapshot computeValue()
 			{
 				return c_;
 			}
@@ -336,11 +336,11 @@ public class ConceptNode implements ConceptLookupCallback
 		isLookupInProgress_.invalidate();
 		if (cb_.getValue().getNid() != 0)
 		{
-			OTFUtility.getConceptVersion(cb_.getValue().getNid(), this, null);
+			OchreUtility.lookupConceptSnapshot(cb_.getValue().getNid(), this, null, null, null);
 		}
 		else
 		{
-			OTFUtility.lookupIdentifier(cb_.getValue().getDescription(), this, null);
+			OchreUtility.lookupConceptForUnknownIdentifier(cb_.getValue().getDescription(), this, null, null, null);
 		}
 	}
 
@@ -349,7 +349,7 @@ public class ConceptNode implements ConceptLookupCallback
 		return hbox_;
 	}
 
-	public ConceptVersionBI getConcept()
+	public ConceptSnapshot getConcept()
 	{
 		if (isLookupInProgress_.get())
 		{
@@ -371,7 +371,7 @@ public class ConceptNode implements ConceptLookupCallback
 		return c_;
 	}
 	
-	public ConceptVersionBI getConceptNoWait()
+	public ConceptSnapshot getConceptNoWait()
 	{
 		return c_;
 	}
@@ -386,7 +386,7 @@ public class ConceptNode implements ConceptLookupCallback
 		cb_.setValue(new SimpleDisplayConcept(newValue, 0));
 	}
 	
-	public void set(ConceptVersionBI newValue)
+	public void set(ConceptSnapshot newValue)
 	{
 		cb_.setValue(new SimpleDisplayConcept(newValue, descriptionReader_));
 	}
@@ -414,7 +414,7 @@ public class ConceptNode implements ConceptLookupCallback
 	}
 	
 	@Override
-	public void lookupComplete(final ConceptVersionBI concept, final long submitTime, Integer callId)
+	public void lookupComplete(final ConceptSnapshot concept, final long submitTime, Integer callId)
 	{
 		Platform.runLater(new Runnable()
 		{
@@ -474,7 +474,7 @@ public class ConceptNode implements ConceptLookupCallback
 		cb_.setPromptText(promptText);
 	}
 	
-	public ObjectBinding<ConceptVersionBI> getConceptProperty()
+	public ObjectBinding<ConceptSnapshot> getConceptProperty()
 	{
 		return conceptBinding_;
 	}

@@ -243,8 +243,8 @@ public class EnhancedSearchViewController {
 
 		List<Integer> nids = new ArrayList<>();
 		for (CompositeSearchResult result : SearchModel.getSearchResultsTable().getResults().getItems()) {
-			if (! nids.contains(result.getContainingConcept().getNid())) {
-				nids.add(result.getContainingConcept().getNid());
+			if (! nids.contains(result.getContainingConcept().get().getNid())) {
+				nids.add(result.getContainingConcept().get().getNid());
 			}
 		}
 

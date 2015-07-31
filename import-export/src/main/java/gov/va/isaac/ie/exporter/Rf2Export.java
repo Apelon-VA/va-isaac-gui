@@ -20,9 +20,12 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.ie.exporter.Rf2File.ReleaseType;
 import gov.va.isaac.util.AbstractProgressReporter;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.ProgressListener;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.collections.NidSet;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -62,7 +65,6 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.time.TimeHelper;
-import gov.vha.isaac.ochre.util.UuidT5Generator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -453,11 +455,9 @@ public class Rf2Export extends AbstractProgressReporter implements Exporter,
     // Collect children and grandchildren of the ancestor metadata concept for
     // language refsets
     ConceptSpec langRefexParent = Snomed.LANGUAGE_REFEX;
-    Set<ConceptVersionBI> descs =
-        OTFUtility.getAllChildrenOfConcept(
-            langRefexParent.getLenient().getNid(), true);
-    for (ConceptVersionBI desc : descs) {
-      possibleLangRefexNids.add(desc.getNid());
+    Set<Integer> descs =  OchreUtility.getAllChildrenOfConcept(langRefexParent.getLenient().getConceptSequence(), true, false);
+    for (Integer desc : descs) {
+      possibleLangRefexNids.add(Get.identifierService().getConceptNid(desc));
     }
     conceptsToProcess = dataStore.getAllConceptNids();
   }

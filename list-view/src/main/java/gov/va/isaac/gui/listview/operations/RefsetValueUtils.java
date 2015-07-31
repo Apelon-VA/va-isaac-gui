@@ -21,6 +21,7 @@ package gov.va.isaac.gui.listview.operations;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -35,7 +36,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -241,7 +241,7 @@ public class RefsetValueUtils
 		return booleanValue_.getValue().equals("True");
 	}
 	
-	protected ConceptVersionBI getConceptValue()
+	protected ConceptSnapshot getConceptValue()
 	{
 		return conceptValue_.getConcept();
 	}

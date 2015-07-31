@@ -23,8 +23,8 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
-import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
+import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
@@ -32,17 +32,28 @@ import gov.va.isaac.gui.treeview.SctTreeViewIsaacView;
 import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.RefexViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import java.util.Optional;
 import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -62,10 +73,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.attribute.ConceptAttributesVersionDdo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,13 +108,41 @@ public class ConceptViewController {
 	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
 
 	private SctTreeViewIsaacView sctTree;
-	private RefexViewI refexView;
+//	private RefexViewI refexView;
 	private DescriptionTableView dtv;
 	private RelationshipTableView rtv;
 	
 	private UUID conceptUuid;
 	private int conceptNid = 0;
-	
+
+	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
+    private TaxonomyCoordinate taxonomyCoordinate = null;
+    public TaxonomyCoordinate getTaxonomyCoordinate() {
+    	if (taxonomyCoordinate == null) {
+    		taxonomyCoordinate = AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get();
+    	}
+    	
+    	return taxonomyCoordinate;
+    }
+    
+    private ConceptSnapshotService conceptSnapshotService = null;
+    public ConceptSnapshotService getConceptSnapshotService() {
+    	if (conceptSnapshotService == null) {
+    		conceptSnapshotService = LookupService.getService(ConceptService.class).getSnapshot(
+    				getTaxonomyCoordinate().getStampCoordinate(),
+    				getTaxonomyCoordinate().getLanguageCoordinate());
+    	}
+    	
+    	return conceptSnapshotService;
+    }
+    
+    public static interface TaxonomyCoordinateProvider {
+    	TaxonomyCoordinate getTaxonomyCoordinate();
+    }
+    public static interface ConceptSnapshotServiceProvider {
+    	ConceptSnapshotService getConceptSnapshotService();
+    }
+
 	@FXML
 	void initialize()
 	{
@@ -165,14 +200,27 @@ public class ConceptViewController {
 		return anchorPane;
 	}
 
-	public void setConcept(ConceptChronicleDdo concept) {
+	public <T extends ConceptVersion<T>> void setConcept(ConceptChronology<T> concept) {
+		if (taxonomyCoordinate == null) {
+			AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().addListener(new ChangeListener<TaxonomyCoordinate>() {
+				@Override
+				public void changed(
+						ObservableValue<? extends TaxonomyCoordinate> observable,
+						TaxonomyCoordinate oldValue, TaxonomyCoordinate newValue) {
+
+					taxonomyCoordinate = newValue;
+					//setConcept(concept);
+				}
+			});
+		}
+
 		conceptUuid = concept.getPrimordialUuid();
 
 		// Update text of labels.
-		ConceptAttributesChronicleDdo attributeChronicle = concept.getConceptAttributes();
-		final ConceptAttributesVersionDdo conceptAttributes = attributeChronicle.getVersions().get(attributeChronicle.getVersions().size() - 1);
-		conceptDefinedLabel.setText(conceptAttributes.isDefined() + "");
-		conceptStatusLabel.setText(conceptAttributes.getStatus().name());
+		ConceptChronology rawCC = (ConceptChronology)concept;
+		Optional<LatestVersion<ConceptVersion>> latestVersionOptional =
+				rawCC.getLatestVersion(ConceptVersion.class, getConceptSnapshotService().getStampCoordinate());
+		conceptStatusLabel.setText(latestVersionOptional.get().value().getState().name());
 		
 		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty("Loading...");
 		fsnLabel.textProperty().bind(conceptDescriptionSSP);
@@ -207,7 +255,7 @@ public class ConceptViewController {
 		VBox.setVgrow(dtv.getView(), Priority.ALWAYS);
 		
 		//rel table section
-		rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
+		rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), () -> getTaxonomyCoordinate(), ()->getConceptSnapshotService());
 		relationshipsTableHolder.getChildren().add(rtv.getView());
 		VBox.setVgrow(rtv.getView(), Priority.ALWAYS);
 
@@ -306,7 +354,7 @@ public class ConceptViewController {
 			Label summary = new Label();
 			HBox.setMargin(summary, new Insets(0, 0, 0, 5.0));
 			sourceRelTitleHBox.getChildren().add(summary);
-			summary.textProperty().bind(rtv.getSummaryText());
+//			summary.textProperty().bind(rtv.getSummaryText());
 			
 		}
 		catch (Exception e)
@@ -329,7 +377,7 @@ public class ConceptViewController {
 				@Override
 				public void handle(ActionEvent event) {
 					treeViewSearchRunning.set(true);
-					sctTree.locateConcept(conceptAttributes.getConcept().getPrimordialUuid(), treeViewSearchRunning);
+					sctTree.locateConcept(concept.getPrimordialUuid(), treeViewSearchRunning);
 				}
 			});
 			
@@ -351,36 +399,40 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OTFUtility.getDescription(concept);
-			ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(concept.getPrimordialUuid());
-			conceptNid = conceptVersion.getNid();
-			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(conceptVersion));
+			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().getLanguageCoordinate(), getConceptSnapshotService().getStampCoordinate());
+			ConceptChronology localRawCC = Get.conceptService().getConcept(concept.getPrimordialUuid());
+			
+			Optional<LatestVersion<ConceptVersion>> latestConceptVersionOptional = localRawCC.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+			ConceptVersion conceptVersion = latestConceptVersionOptional.get().value();
+			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().getConceptSnapshot(concept.getNid());
+			conceptNid = localRawCC.getNid();
+			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(localRawCC.getConceptSequence()));
 
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);
 				fsnLabel.setGraphic(null);
 
-				copyFull.setOnAction(e -> CustomClipboard.set(conceptVersion.toLongString()));
+				copyFull.setOnAction(e -> CustomClipboard.set(conceptSnapshot.toUserString()));
 				
 				try {
-					dtv.setConcept(conceptVersion);
+					dtv.setConcept(conceptSnapshot);
 				} catch (Exception e) {
 					LOG.error("Error configuring description view", e);
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring descriptions view"));
 				}
 				
 				try {
-					rtv.setConcept(conceptVersion);
+					rtv.setConcept(conceptSnapshot);
 				} catch (Exception e) {
 					LOG.error("Error configuring relationship view", e);
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring relationships view"));
 				}
 
-				refexView = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
-				refexView.setComponent(conceptVersion.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
-				refexView.getView().setMinHeight(100.0);
-				VBox.setVgrow(refexView.getView(), Priority.ALWAYS);
-				annotationsRegion.getChildren().add(refexView.getView());
+//				refexView = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
+//				refexView.setComponent(conceptVersion.getChronology().getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
+//				refexView.getView().setMinHeight(100.0);
+//				VBox.setVgrow(refexView.getView(), Priority.ALWAYS);
+//				annotationsRegion.getChildren().add(refexView.getView());
 
 				stampToggle.setSelected(false);
 			});
@@ -397,8 +449,8 @@ public class ConceptViewController {
 
 	public int getConceptNid() {
 		if (conceptNid == 0) {
-			// TODO OTF background
-			conceptNid = OTFUtility.getConceptVersion(conceptUuid).getNid();
+			// TODO background
+			conceptNid = Get.identifierService().getNidForUuids(conceptUuid);
 		}
 		
 		return conceptNid;
@@ -412,9 +464,9 @@ public class ConceptViewController {
 		if (sctTree != null) {
 			sctTree.viewDiscarded();
 		}
-		if (refexView != null) {
-			refexView.viewDiscarded();
-		}
+//		if (refexView != null) {
+//			refexView.viewDiscarded();
+//		}
 		if (dtv != null) {
 			dtv.viewDiscarded();
 		}

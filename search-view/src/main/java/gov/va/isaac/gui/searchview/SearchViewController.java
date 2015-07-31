@@ -38,11 +38,14 @@ import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.Interval;
 import gov.va.isaac.util.NumberUtilities;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -52,6 +55,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -105,7 +109,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
-import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -220,7 +223,7 @@ public class SearchViewController implements TaskCompleteCallback
 			@Override
 			public void invalidated(Observable observable)
 			{
-				ConceptVersionBI newValue = searchInRefex.getConceptProperty().get();
+				ConceptSnapshot newValue = searchInRefex.getConceptProperty().get();
 				if (newValue != null)
 				{
 					searchInColumnsHolder.getChildren().clear();
@@ -302,7 +305,7 @@ public class SearchViewController implements TaskCompleteCallback
 		MenuItem configureIndex =  new MenuItem("Configure Sememe Indexing");
 		configureIndex.setOnAction((action) ->
 		{
-			ConceptVersionBI c = searchInRefex.getConceptProperty().get();
+			ConceptSnapshot c = searchInRefex.getConceptProperty().get();
 			if (c != null)
 			{
 				new ConfigureDynamicRefexIndexingView(c).showView(null);
@@ -375,8 +378,9 @@ public class SearchViewController implements TaskCompleteCallback
 							VBox box = new VBox();
 							box.setFillWidth(true);
 							
-							final ConceptVersionBI wbConcept = item.getContainingConcept();
-							String preferredText = (wbConcept != null ? OTFUtility.getDescription(wbConcept) : "Not on path!");
+							final Optional<ConceptSnapshot> wbConcept = item.getContainingConcept();
+							String preferredText = (wbConcept.isPresent() ? wbConcept.get().getConceptDescriptionText() : 
+								"Containing Concept for nid " + item.getMatchingDescriptionComponents().iterator().next().getNid() + " not on path!");
 						
 							if (item.getMatchingComponents().size() > 0 && item.getMatchingComponents().iterator().next() instanceof RefexDynamicVersionBI<?>)
 							{
@@ -388,7 +392,7 @@ public class SearchViewController implements TaskCompleteCallback
 								
 								box.getChildren().add(hb);
 							
-								for (ComponentVersionBI c : item.getMatchingComponents())
+								for (IdentifiedObjectLocal c : item.getMatchingComponents())
 								{
 									if (c instanceof RefexDynamicVersionBI<?>)
 									{
@@ -468,9 +472,9 @@ public class SearchViewController implements TaskCompleteCallback
 								{
 									if (mouseEvent.getButton().equals(MouseButton.PRIMARY))
 									{
-										if (mouseEvent.getClickCount() == 2)
+										if (mouseEvent.getClickCount() == 2 && wbConcept.isPresent())
 										{
-											AppContext.getCommonDialogs().showConceptDialog(wbConcept.getUUIDs().get(0));
+											AppContext.getCommonDialogs().showConceptDialog(wbConcept.get().getPrimordialUuid());
 										}
 									}
 								}
@@ -485,13 +489,13 @@ public class SearchViewController implements TaskCompleteCallback
 									List<String> items = new ArrayList<>();
 									for (CompositeSearchResult currentItem : searchResults.getSelectionModel().getSelectedItems())
 									{
-										ConceptVersionBI currentWbConcept = currentItem.getContainingConcept();
-										if (currentWbConcept == null)
+										Optional<ConceptSnapshot> currentWbConcept = currentItem.getContainingConcept();
+										if (!currentWbConcept.isPresent())
 										{
 											//not on path, most likely
 											continue;
 										}
-										items.add(OTFUtility.getDescription(currentWbConcept));
+										items.add(currentWbConcept.get().getConceptDescriptionText());
 									}
 
 									String[] itemArray = items.toArray(new String[items.size()]);
@@ -508,12 +512,11 @@ public class SearchViewController implements TaskCompleteCallback
 
 									for (CompositeSearchResult r : searchResults.getSelectionModel().getSelectedItems())
 									{
-										if (r.getContainingConcept() == null)
+										if (r.getContainingConcept().isPresent())
 										{
-											//not on path
-											continue;
+											nids.add(r.getContainingConcept().get().getNid());
 										}
-										nids.add(r.getContainingConcept().getNid());
+										
 									}
 									return nids;
 								}
@@ -542,9 +545,9 @@ public class SearchViewController implements TaskCompleteCallback
 				CompositeSearchResult dragItem = searchResults.getSelectionModel().getSelectedItem();
 				if (dragItem != null)
 				{
-					if (dragItem.getContainingConcept() != null)
+					if (dragItem.getContainingConcept().isPresent())
 					{
-						return dragItem.getContainingConcept().getNid() + "";
+						return dragItem.getContainingConcept().get().getNid() + "";
 					}
 				}
 				return null;
@@ -746,32 +749,32 @@ public class SearchViewController implements TaskCompleteCallback
 				if (descriptionTypeSelection.getValue().getNid() == Integer.MIN_VALUE)
 				{
 					LOG.debug("Doing a description search across all description types");
-					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), this, true);
+					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), this, true, false);
 				}
 				else if (descriptionTypeSelection.getValue().getNid() == LuceneDescriptionType.FSN.ordinal())
 				{
 					LOG.debug("Doing a description search on FSN");
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, LuceneDescriptionType.FSN, 
-							this, null, null, null, true);
+							this, null, null, null, true, false);
 				}
 				else if (descriptionTypeSelection.getValue().getNid() == LuceneDescriptionType.DEFINITION.ordinal())
 				{
 					LOG.debug("Doing a description search on Definition");
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, LuceneDescriptionType.DEFINITION, 
-							this, null, null, null, true);
+							this, null, null, null, true, false);
 				}
 				else if (descriptionTypeSelection.getValue().getNid() == LuceneDescriptionType.SYNONYM.ordinal())
 				{
 					LOG.debug("Doing a description search on Synonym");
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, LuceneDescriptionType.SYNONYM, 
-							this, null, null, null, true);
+							this, null, null, null, true, false);
 				}
 				else
 				{
 					LOG.debug("Doing a description search on the extended type {}", descriptionTypeSelection.getValue().getDescription());
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
 							ExtendedAppContext.getDataStore().getUuidPrimordialForNid(descriptionTypeSelection.getValue().getNid()), 
-							this, null, null, null, true);
+							this, null, null, null, true, false);
 				}
 			}
 			else
@@ -791,7 +794,7 @@ public class SearchViewController implements TaskCompleteCallback
 						{
 							throw new RuntimeException(e);
 						}
-					}, this, null, null, null, true);
+					}, this, null, null, null, true, false);
 				}
 				catch (NumberFormatException e)
 				{
@@ -812,7 +815,7 @@ public class SearchViewController implements TaskCompleteCallback
 							{
 								throw new RuntimeException(e1);
 							}
-						}, this, null, null, null, true);
+						}, this, null, null, null, true, false);
 					}
 					catch (NumberFormatException e1) 
 					{
@@ -829,7 +832,7 @@ public class SearchViewController implements TaskCompleteCallback
 							{
 								throw new RuntimeException(e2);
 							}
-						}, this, null, null, null, true);
+						}, this, null, null, null, true, false);
 					}
 				}
 			}
@@ -885,9 +888,10 @@ public class SearchViewController implements TaskCompleteCallback
 		{
 			try
 			{
-				Set<ConceptVersionBI> extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
+				Set<Integer> extendedDescriptionTypes = OchreUtility.getAllChildrenOfConcept(
+						IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(), true, true);
 				ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
-				for (ConceptVersionBI c : extendedDescriptionTypes)
+				for (Integer c : extendedDescriptionTypes)
 				{
 					temp.add(new SimpleDisplayConcept(c));
 				}

@@ -25,16 +25,12 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.Builder;
-import gov.vha.isaac.cradle.sememe.SememeProvider;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.ConceptModel;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.util.UuidFactory;
 
 import java.io.IOException;
@@ -106,7 +102,7 @@ import org.slf4j.LoggerFactory;
  * @author jefron
  */
 public class OTFUtility {
-	private static final Logger LOG = LoggerFactory.getLogger(OTFUtility.class);
+	static final Logger LOG = LoggerFactory.getLogger(OTFUtility.class);
 
 	private static final UUID FSN_UUID = IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getPrimodialUuid();
 	private static final UUID PREFERRED_UUID = IsaacMetadataAuxiliaryBinding.PREFERRED.getPrimodialUuid();
@@ -552,37 +548,6 @@ public class OTFUtility {
 	public static void lookupIdentifier(final String identifier, final ConceptLookupCallback callback, final Integer callId) {
 		lookupIdentifier(identifier, callback, callId, getViewCoordinate());
 	}
-	
-	/**
-	 * 
-	 * All done in a background thread, method returns immediately
-	 * 
-	 * @param identifier - The NID to search for
-	 * @param callback - who to inform when lookup completes
-	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
-	 */
-	public static void getConceptVersion(
-			final int nid,
-			final ConceptLookupCallback callback,
-			final Integer callId,
-			ViewCoordinate vc)
-	{
-		LOG.debug("Threaded Lookup: '{}'", nid);
-		final long submitTime = System.currentTimeMillis();
-		Runnable r = new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				ConceptVersionBI c = getConceptVersion(nid, vc);
-				callback.lookupComplete(c, submitTime, callId);
-			}
-		};
-		Utility.execute(r);
-	}
-	public static void getConceptVersion(final int nid, final ConceptLookupCallback callback, final Integer callId) {
-		getConceptVersion(nid, callback, callId, getViewCoordinate());
-	}
 
 	/**
 	 * Get the ConceptVersion identified by UUID on the ViewCoordinate configured by {@link #getViewCoordinate()} but 
@@ -827,105 +792,6 @@ public class OTFUtility {
 		return dataStore.getUncommittedConcepts().contains(con.getChronicle());
 	}
 	
-	/**
-	 * Recursively find the leaf nodes of a concept hierarchy
-	 * @param nid - starting concept
-	 */
-	public static Set<ConceptVersionBI> getAllLeafChildrenOfConcept(int nid, ViewCoordinate vc) throws IOException, ContradictionException
-	{
-		return getAllChildrenOfConcept(new HashSet<>(), getConceptVersion(nid, vc), vc, true, true);
-	}
-	public static Set<ConceptVersionBI> getAllLeafChildrenOfConcept(int nid) throws IOException, ContradictionException {
-		return getAllLeafChildrenOfConcept(nid, getViewCoordinate());
-	}
-	
-	/**
-	 * Recursively get Is a children of a concept
-	 */
-	public static Set<ConceptVersionBI> getAllChildrenOfConcept(int nid, ViewCoordinate vc, boolean recursive) throws IOException, ContradictionException
-	{
-		return getAllChildrenOfConcept(new HashSet<>(), getConceptVersion(nid, vc), recursive, false);
-	}
-	public static Set<ConceptVersionBI> getAllChildrenOfConcept(int nid, boolean recursive) throws IOException, ContradictionException {
-		return getAllChildrenOfConcept(nid, getViewCoordinate(), recursive);
-	}
-
-	
-	/**
-	 * Recursively get Is a children of a concept
-	 */
-	public static Set<ConceptVersionBI> getAllChildrenOfConcept(ConceptVersionBI concept, ViewCoordinate vc, boolean recursive) throws IOException, ContradictionException
-	{
-		return getAllChildrenOfConcept(new HashSet<>(), concept, vc, recursive, false);
-	}
-	public static Set<ConceptVersionBI> getAllChildrenOfConcept(ConceptVersionBI concept, boolean recursive) throws IOException, ContradictionException {
-		return getAllChildrenOfConcept(concept, getViewCoordinate(), recursive);
-	}
-
-	
-	/**
-	 * Recursively get Is a children of a concept
-	 */
-	private static Set<ConceptVersionBI> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptVersionBI concept, ViewCoordinate vc, boolean recursive, boolean leafOnly) 
-			throws IOException, ContradictionException
-	{
-		Set<ConceptVersionBI> results = new HashSet<>();
-		
-		// This both prevents infinite recursion and avoids processing or returning of duplicates
-		if (handledConceptNids.contains(concept.getNid())) {
-			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(concept.getNid(), vc));
-			return results;
-		}
-
-		//TODO OTF Bug - OTF is broken, this returns all kinds of duplicates  https://jira.ihtsdotools.org/browse/OTFISSUE-21
-		int size = 0;
-		for (RelationshipVersionBI<?> r : concept.getRelationshipsIncomingActiveIsa())
-		{
-			size++;
-			if (handledConceptNids.contains(r.getOriginNid())) {
-				// avoids processing or returning of duplicates
-				LOG.debug("Encountered already-handled ORIGIN child concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getOriginNid(), vc));
-
-				continue;
-			}
-
-			ConceptVersionBI originConcept = getConceptVersion(r.getOriginNid(), vc);
-			if (!leafOnly)
-			{
-				results.add(originConcept);
-			}
-			if (recursive)
-			{
-				results.addAll(getAllChildrenOfConcept(handledConceptNids, originConcept, vc, recursive, leafOnly));
-			}
-		}
-		
-		if (leafOnly && size == 0 && !handledConceptNids.contains(concept.getNid()))
-		{
-			results.add(concept);
-		}
-		handledConceptNids.add(concept.getNid());
-		return results;
-	}
-	private static Set<ConceptVersionBI> getAllChildrenOfConcept(Set<Integer> handledConceptNids, ConceptVersionBI concept, boolean recursive, boolean leafOnly) throws IOException, ContradictionException {
-		return getAllChildrenOfConcept(handledConceptNids, concept, getViewCoordinate(), recursive, leafOnly);
-	}
-
-	public static Set<Integer> getAllChildrenOfConceptAsNids(Integer conceptNid, ViewCoordinate vc, boolean recursive) throws IOException, ContradictionException
-	{
-		Set<ConceptVersionBI> resultsAsConceptVersions = getAllChildrenOfConcept(conceptNid, vc, recursive);
-		Set<Integer> results = new HashSet<>();
-		
-		for (ConceptVersionBI conceptVersion : resultsAsConceptVersions) {
-			results.add(conceptVersion.getNid());
-		}
-
-		return results;
-	}
-	public static Set<Integer> getAllChildrenOfConceptAsNids(Integer conceptNid, boolean recursive) throws IOException, ContradictionException {
-		return getAllChildrenOfConceptAsNids(conceptNid, getViewCoordinate(), recursive);
-	}
-
 	/**
 	 * Recursively get Is a parents of a concept
 	 */
@@ -1319,32 +1185,5 @@ public class OTFUtility {
 		List<String> pts = new ArrayList<>();
 		pts.add(pt);
 		return ConceptCB.computeComponentUuid(IdDirective.GENERATE_REFEX_CONTENT_HASH, fsns, pts, null);
-	}
-	
-	public static Optional<Long> getSctId(int componentNid)
-	{
-		try
-		{
-			Optional<LatestVersion<StringSememeImpl>> sememe = AppContext.getService(SememeProvider.class)
-					.getSnapshot(StringSememeImpl.class, StampCoordinates.getDevelopmentLatest())
-					.getLatestSememeVersionsForComponentFromAssemblage(componentNid, getSnomedAssemblageNid()).findFirst();
-			if (sememe.isPresent())
-			{
-				String temp = sememe.get().value().getString();
-				try
-				{
-					return Optional.of(Long.parseLong(temp));
-				}
-				catch (NumberFormatException e)
-				{
-					LOG.error("The found string '" + temp + "' isn't parseable as a long - as an SCTID should be - in nid " + componentNid);
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			LOG.warn("Unexpected error trying to find SCTID for nid " + componentNid, e);
-		}
-		return Optional.empty();
 	}
 }

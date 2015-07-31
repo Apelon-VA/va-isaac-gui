@@ -31,7 +31,7 @@ public enum RelationshipColumnType
 	DESTINATION("Destination"),
 	UUID("UUID"),
 	GROUP("Group"),
-	REFINEABILITY("Refineability"),
+	//REFINEABILITY("Refineability"),
 	CHARACTERISTIC("Characteristic"),
 	STATUS_STRING("Status"),
 	TIME("Time"),

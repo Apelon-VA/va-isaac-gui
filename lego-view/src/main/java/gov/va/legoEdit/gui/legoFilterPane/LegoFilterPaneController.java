@@ -25,9 +25,9 @@ import gov.va.isaac.gui.util.ExpandedNode;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.AlphanumComparator;
 import gov.va.isaac.util.ConceptLookupCallback;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.legoEdit.gui.legoListTreeView.LegoListTreeItem;
 import gov.va.legoEdit.gui.legoListTreeView.LegoListTreeView;
 import gov.va.legoEdit.gui.legoListView.LegoListView;
@@ -46,6 +46,7 @@ import gov.va.legoEdit.storage.AdvancedLegoFilter;
 import gov.va.legoEdit.storage.BDBDataStoreImpl;
 import gov.va.legoEdit.storage.CloseableIterator;
 import gov.va.legoEdit.storage.wb.LegoWBUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -86,7 +87,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.scene.control.skin.VirtualFlow;
@@ -474,11 +474,11 @@ public class LegoFilterPaneController implements Initializable, ConceptLookupCal
 					info.tf.setUserData(null);  //Clear it back out.
 					if (o != null && o instanceof Integer)
 					{
-						OTFUtility.getConceptVersion((Integer)o, LegoFilterPaneController.this, conceptId);
+						OchreUtility.lookupConceptSnapshot((Integer)o, LegoFilterPaneController.this, conceptId, null, null);
 					}
 					else
 					{
-						OTFUtility.lookupIdentifier(newValue, LegoFilterPaneController.this, conceptId);
+						OchreUtility.lookupConceptForUnknownIdentifier(newValue, LegoFilterPaneController.this, conceptId, null, null);
 					}
 				}
 			}
@@ -633,7 +633,7 @@ public class LegoFilterPaneController implements Initializable, ConceptLookupCal
 	}
 
 	@Override
-	public void lookupComplete(final ConceptVersionBI concept, final long submitTime, final Integer callId)
+	public void lookupComplete(final ConceptSnapshot concept, final long submitTime, final Integer callId)
 	{
 		Platform.runLater(new Runnable()
 		{

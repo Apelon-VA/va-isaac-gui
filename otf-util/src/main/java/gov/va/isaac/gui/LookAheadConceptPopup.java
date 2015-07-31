@@ -23,11 +23,12 @@ import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
@@ -49,7 +50,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -306,7 +306,7 @@ public class LookAheadConceptPopup extends Popup implements TaskCompleteCallback
 				synchronized (runningSearches)
 				{
 					int id = searchCounter++;
-					SearchHandle ssh = SearchHandler.descriptionSearch(text, 5, true, this, id, null, null, true);
+					SearchHandle ssh = SearchHandler.descriptionSearch(text, 5, true, this, id, null, null, true, false);
 					runningSearches.put(id, ssh);
 				}
 			}
@@ -361,15 +361,15 @@ public class LookAheadConceptPopup extends Popup implements TaskCompleteCallback
 		VBox box = new VBox();
 		box.setPadding(new Insets(3, 3, 3, 3));
 
-		ConceptVersionBI c = result.getContainingConcept();
+		Optional<ConceptSnapshot> c = result.getContainingConcept();
 
-		Label concept = new Label(OTFUtility.getDescription(c));
+		Label concept = new Label(c.isPresent() ? c.get().getConceptDescriptionText() : result.getMatchingComponents().iterator().next().getNid() + "");
 		concept.getStyleClass().add("lookAheadBoldLabel");
 		box.getChildren().add(concept);
 
 		for (String s : result.getMatchingStrings())
 		{
-			if (s.equals(OTFUtility.getDescription(c)))
+			if (s.equals(concept.getText()))
 			{
 				continue;
 			}
@@ -378,7 +378,7 @@ public class LookAheadConceptPopup extends Popup implements TaskCompleteCallback
 			box.getChildren().add(matchString);
 		}
 
-		popUpResults.add(idx, new PopUpResult(c.getNid(), concept.getText()));
+		popUpResults.add(idx, new PopUpResult(c.isPresent() ? c.get().getNid() : result.getMatchingComponents().iterator().next().getNid(), concept.getText()));
 		box.setOnMouseClicked(new EventHandler<MouseEvent>()
 		{
 			@Override

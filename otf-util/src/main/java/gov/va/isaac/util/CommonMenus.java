@@ -19,7 +19,6 @@
 package gov.va.isaac.util;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
@@ -35,6 +34,7 @@ import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -60,8 +60,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -865,15 +863,17 @@ public class CommonMenus
 		ArrayList<Long> sctIds = new ArrayList<>();
 
 		for (Integer i : nids.getNIds()) {
-			ComponentChronicleBI<?> component = OTFUtility.getComponentChronicle(i);
-			
-			if (component != null && component.getPrimordialUuid() != null) {
-				uuids.add(component.getPrimordialUuid());
-				if (component instanceof ConceptChronicleBI)
+			ConceptChronology<?> ochreConceptChronology = Get.conceptService().getConcept(i);
+
+			//LOG.debug("Get.conceptService().getConcept({}) returned component {}", i, ochreConceptChronology.getPrimordialUuid());
+
+			if (ochreConceptChronology != null && ochreConceptChronology.getPrimordialUuid() != null) {
+				uuids.add(ochreConceptChronology.getPrimordialUuid());
+				if (Get.identifierService().getChronologyTypeForNid(i) == ObjectChronologyType.CONCEPT)
 				{
-					ConceptVersionBI concept = OTFUtility.getConceptVersion(i);
-					if (concept != null) {
-						Optional<Long> conceptSct = ConceptViewerHelper.getSctId(concept.getNid());
+					ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
+					if (conceptSnapshot != null) {
+						Optional<Long> conceptSct = OchreUtility.getSctId(conceptSnapshot.getNid());
 						if(conceptSct.isPresent()) {
 							sctIds.add(conceptSct.get());
 						}
@@ -998,8 +998,8 @@ public class CommonMenus
 				throw new RuntimeException("Unsupported ObjectChronologyType " + nidType.name());
 		}
 		
+		LOG.debug("Using OTF API to get parent concept nid for component {} (nid={})", Get.conceptDescriptionText(nid), nid);
 		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
-		
 		if (cc != null) {
 			if (cc instanceof RefexDynamicChronicleBI) {
 				RefexDynamicChronicleBI<?> refexChron = (RefexDynamicChronicleBI<?>)cc;

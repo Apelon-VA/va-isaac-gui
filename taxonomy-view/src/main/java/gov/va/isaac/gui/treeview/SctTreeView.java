@@ -26,13 +26,16 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
-import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.TaxonomyService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
@@ -86,6 +89,9 @@ class SctTreeView {
     static interface TaxonomyCoordinateProvider {
     	TaxonomyCoordinate getTaxonomyCoordinate();
     }
+    static interface ConceptSnapshotServiceProvider {
+    	ConceptSnapshotService getConceptSnapshotService();
+    }
 
     private final static SctTreeItemDisplayPolicies defaultDisplayPolicies = new DefaultSctTreeItemDisplayPolicies();
 
@@ -107,6 +113,12 @@ class SctTreeView {
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
         
     private UpdateableBooleanBinding refreshRequiredListenerHack;
+
+
+    private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
+
+    private Optional<UUID> selectedItem_ = Optional.empty();
+    private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
     
     private Tree taxonomyTree = null;
     private Tree getTaxonomyTree() {
@@ -116,12 +128,16 @@ class SctTreeView {
     	
     	return taxonomyTree;
     }
-
-    private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
-
-    private Optional<UUID> selectedItem_ = Optional.empty();
-    private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
-    
+    private ConceptSnapshotService conceptSnapshotService = null;
+    public ConceptSnapshotService getConceptSnapshotService() {
+    	if (conceptSnapshotService == null) {
+    		conceptSnapshotService = LookupService.getService(ConceptService.class).getSnapshot(
+    				getTaxonomyCoordinate().getStampCoordinate(),
+    				getTaxonomyCoordinate().getLanguageCoordinate());
+    	}
+    	
+    	return conceptSnapshotService;
+    }
     private TaxonomyCoordinate tc_ = null;
     private TaxonomyCoordinate getTaxonomyCoordinate() {
         if (tc_ == null) {
@@ -370,6 +386,9 @@ class SctTreeView {
                         }
                         LOG.debug("Kicking off tree refresh() due to change of user preference property");
                         taxonomyTree = AppContext.getService(TaxonomyService.class).getTaxonomyTree(getTaxonomyCoordinate());
+                        conceptSnapshotService = LookupService.getService(ConceptService.class).getSnapshot(
+                				getTaxonomyCoordinate().getStampCoordinate(),
+                				getTaxonomyCoordinate().getLanguageCoordinate());
                         SctTreeView.this.refresh();
                         return false;
                     }
@@ -472,18 +491,21 @@ class SctTreeView {
                 UUID current = conceptUUID;
                 while (true) {
 
-                    ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(current);
-                    if (concept == null) {
+                    Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> conceptOptional = Get.conceptService().getOptionalConcept(current);
+                    if (! conceptOptional.isPresent()) {
 
                         // Must be a "pending concept".
                         // Not handled yet.
                         return null;
                     }
 
+                    ConceptChronology<? extends ConceptVersion<?>> concept = conceptOptional.get();
+                    
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OCHREUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getTaxonomyCoordinate())) {
+                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OchreUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree(), getTaxonomyCoordinate())) {
                     	pathToRoot.add(parent.getPrimordialUuid());
+                    	current = parent.getPrimordialUuid();
                     	found = true;
                     	break;
                     }
