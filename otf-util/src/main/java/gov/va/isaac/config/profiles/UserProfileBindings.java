@@ -18,8 +18,11 @@
  */
 package gov.va.isaac.config.profiles;
 
+import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.vha.isaac.cradle.DefaultConfigurationService;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
@@ -34,6 +37,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import java.util.EnumSet;
@@ -68,7 +72,7 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 @Singleton
 public class UserProfileBindings
 {
-	private static Logger logger = LoggerFactory.getLogger(UserProfileBindings.class);
+	private static final Logger LOG = LoggerFactory.getLogger(UserProfileBindings.class);
 	public enum RelationshipDirection {SOURCE, TARGET, SOURCE_AND_TARGET};
 	
 	ReadOnlyBooleanWrapper displayFSN = new ReadOnlyBooleanWrapper();
@@ -313,7 +317,7 @@ public class UserProfileBindings
 			viewCoordinateComponents.set(vcc);
 		}
 		
-		if (updateStampCoordinate) {
+		if (updateStampCoordinate || stampCoordinate.get() == null) {
 			updateTaxonomyCoordinate = true;
 			updateConceptSnapshotService = true;
 			
@@ -337,10 +341,10 @@ public class UserProfileBindings
 					new StampCoordinateImpl(
 							StampPrecedence.PATH,
 							stampPosition, 
-							moduleSequences, allowedStates));
+							ConceptSequenceSet.of(moduleSequences), allowedStates));
 		}
 		
-		if (updateLanguageCoordinate) {
+		if (updateLanguageCoordinate || languageCoordinate.get() == null) {
 			updateTaxonomyCoordinate = true;
 			updateConceptSnapshotService = true;
 	
@@ -366,7 +370,8 @@ public class UserProfileBindings
 
 				taxonomyCoordinate.set(newCoordinate);
 			} catch (Exception e) {
-				logger.error("Unexpected", e);
+				LOG.error("Failed updating taxonomyCoordinate in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+				throw e;
 			}
 		}
 		
@@ -374,7 +379,8 @@ public class UserProfileBindings
 			try {
 				taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
 			} catch (Exception e) {
-				logger.error("Unexpected", e);
+				LOG.error("Failed updating taxonomyTree in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+				throw e;
 			}
 		}
 
@@ -385,7 +391,8 @@ public class UserProfileBindings
 								getStampCoordinate().get(),
 								getLanguageCoordinate().get()));
 			} catch (Exception e) {
-				logger.error("Unexpected", e);
+				LOG.error("Failed updating conceptSnapshotService in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+				throw e;
 			}
 		}
 	}
