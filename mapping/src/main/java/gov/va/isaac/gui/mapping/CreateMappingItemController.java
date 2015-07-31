@@ -18,16 +18,19 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
-
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -61,7 +64,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
@@ -76,49 +78,44 @@ import org.slf4j.LoggerFactory;
 
 public class CreateMappingItemController {
 	private static final Logger LOG = LoggerFactory.getLogger(CreateMappingItemController.class);
-    
+	
 	private class SearchResultConcept {
-		private ConceptVersionBI concept;
+		private ConceptSnapshot concept;
 		private final SimpleStringProperty conceptNameProperty		= new SimpleStringProperty("-");
 		private final SimpleStringProperty codeSystemNameProperty	= new SimpleStringProperty("-");
 		private final SimpleStringProperty statusNameProperty		= new SimpleStringProperty("-");
-		public SearchResultConcept(ConceptVersionBI concept) {
+		public SearchResultConcept(ConceptSnapshot concept) {
 			this.concept = concept;
-			try {
-				statusNameProperty.set(concept.isActive()? "Active":"Inactive");	
-			} catch (IOException e) {
-				statusNameProperty.set("-error-");
-				LOG.error("Error fetching isActive", e);
-			}
+			statusNameProperty.set(concept.getState() == State.ACTIVE ? "Active":"Inactive");	
 			Utility.execute(() ->
 			{
-				String conceptName 	= OTFUtility.getDescription(concept);
-				String pathName 	= OTFUtility.getDescription(concept.getPathNid());
+				String conceptName 	= concept.getConceptDescriptionText();
+				String pathName 	= OCHREUtility.getConceptSnapshot(concept.getPathSequence()).get().getConceptDescriptionText();
 				Platform.runLater(() -> {
 					conceptNameProperty.set(conceptName);
 					codeSystemNameProperty.set(pathName);
 				});
 			});
 		}
-		public ConceptVersionBI		getConcept()					{ return concept; }
+		public ConceptSnapshot		getConcept()					{ return concept; }
 		public SimpleStringProperty getConceptNameProperty() 		{ return conceptNameProperty; }
 		public SimpleStringProperty getCodeSystemNameProperty() 	{ return codeSystemNameProperty; }
 		public SimpleStringProperty getStatusNameProperty() 		{ return statusNameProperty; }
 		
 	}
 	
-    private static class SearchRestriction {
-    	private LuceneDescriptionType descriptionType = null;
+	private static class SearchRestriction {
+		private LuceneDescriptionType descriptionType = null;
 		private SimpleDisplayConcept advancedDescriptionType = null; 
 		private SimpleDisplayConcept targetCodeSystemPath = null;
 		private SimpleDisplayConcept memberOfRefset = null;
-		private ConceptVersionBI     kindOf  = null;
+		private ConceptVersionBI	 kindOf  = null;
 		
-		public LuceneDescriptionType getDescriptionType()         { return descriptionType;	        }
+		public LuceneDescriptionType getDescriptionType()		 { return descriptionType;			}
 		public SimpleDisplayConcept  getAdvancedDescriptionType() { return advancedDescriptionType; }
-		public SimpleDisplayConcept  getTargetCodeSystemPath()	  { return targetCodeSystemPath;    }
-		public SimpleDisplayConcept  getMemberOfRefset()          { return memberOfRefset;          }
-		public ConceptVersionBI      getKindOf()                  { return kindOf;                 }
+		public SimpleDisplayConcept  getTargetCodeSystemPath()	  { return targetCodeSystemPath;	}
+		public SimpleDisplayConcept  getMemberOfRefset()		  { return memberOfRefset;		  }
+		public ConceptVersionBI	  getKindOf()				  { return kindOf;				 }
 		
 		public UUID getAdvancedDescriptionTypeUUID() throws IOException { 
 			UUID uuid = null;
@@ -152,24 +149,24 @@ public class CreateMappingItemController {
 			return nid;
 		}
 		
-		public void setDescriptionType(LuceneDescriptionType descriptionType)                { this.descriptionType = descriptionType; }
+		public void setDescriptionType(LuceneDescriptionType descriptionType)				{ this.descriptionType = descriptionType; }
 		public void setAdvancedDescriptionType(SimpleDisplayConcept advancedDescriptionType) { this.advancedDescriptionType = advancedDescriptionType; }
-		public void setTargetCodeSystemPath(SimpleDisplayConcept targetCodeSystemPath)       { this.targetCodeSystemPath = targetCodeSystemPath; }
-		public void setMemberOfRefset(SimpleDisplayConcept memberOfRefset)                   { this.memberOfRefset = memberOfRefset; }
-		public void setKindOf(ConceptVersionBI kindOf)                                       { this.kindOf = kindOf; }
+		public void setTargetCodeSystemPath(SimpleDisplayConcept targetCodeSystemPath)	   { this.targetCodeSystemPath = targetCodeSystemPath; }
+		public void setMemberOfRefset(SimpleDisplayConcept memberOfRefset)				   { this.memberOfRefset = memberOfRefset; }
+		public void setKindOf(ConceptVersionBI kindOf)									   { this.kindOf = kindOf; }
 		
 		public void clear() {
-	    	descriptionType         = null;
+			descriptionType		 = null;
 			advancedDescriptionType = null; 
-			targetCodeSystemPath    = null;
-			memberOfRefset          = null;
-			kindOf                  = null;
+			targetCodeSystemPath	= null;
+			memberOfRefset		  = null;
+			kindOf				  = null;
 		}
-    }
+	}
 
-    private static final SearchRestriction searchRestriction = new SearchRestriction();
-    
-    private final Label LABEL_NO_RESULTS = new Label("Search returned no results");
+	private static final SearchRestriction searchRestriction = new SearchRestriction();
+	
+	private final Label LABEL_NO_RESULTS = new Label("Search returned no results");
 	private final Label LABEL_SEARCHING  = new Label("Searching...");
 
 	@FXML private BorderPane 		mainPane;
@@ -185,10 +182,10 @@ public class CreateMappingItemController {
 	@FXML private TableColumn<SearchResultConcept, SearchResultConcept> candidatesStatusColumn;
 
 	@FXML private VBox				filterVBox;
-    @FXML private ToggleGroup 		showFilterToggleGroup;
-    @FXML private ToggleButton 		showFilterToggle;
+	@FXML private ToggleGroup 		showFilterToggleGroup;
+	@FXML private ToggleButton 		showFilterToggle;
 	
-	@FXML private VBox              kindOfRestrictionVBox;
+	@FXML private VBox			  kindOfRestrictionVBox;
 	@FXML private RadioButton 		noRestrictionRadio;
 	@FXML private RadioButton 		descriptionRestrictionRadio;
 	@FXML private RadioButton 		synonymRestrictionRadio;
@@ -201,7 +198,7 @@ public class CreateMappingItemController {
 	@FXML private ComboBox<SimpleDisplayConcept>	statusCombo;
 	@FXML private ComboBox<SimpleDisplayConcept>	qualifierCombo;
 
-    @FXML private Button 			applyRestrictionButton;
+	@FXML private Button 			applyRestrictionButton;
 	@FXML private Button 			clearRestrictionButton;
 	@FXML private Button 			saveButton;
 	@FXML private Button 			cancelButton;
@@ -245,10 +242,10 @@ public class CreateMappingItemController {
 		assert clearRestrictionButton		!= null: "fx:id=\"clearRestrictionButton\" was not injected. Check 'CreateMapping.fxml' file.";
 		assert saveButton					!= null: "fx:id=\"saveButton\" was not injected. Check 'CreateMapping.fxml' file.";
 		assert cancelButton					!= null: "fx:id=\"cancelButton\" was not injected. Check 'CreateMapping.fxml' file.";
-        assert applyRestrictionButton 		!= null : "fx:id=\"applyRestrictionButton\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
-        assert showFilterToggle 			!= null : "fx:id=\"showFilterToggle\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
-        assert showFilterToggleGroup 		!= null : "fx:id=\"showFilterToggleGroup\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
-        assert filterVBox 					!= null : "fx:id=\"filterVBox\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
+		assert applyRestrictionButton 		!= null : "fx:id=\"applyRestrictionButton\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
+		assert showFilterToggle 			!= null : "fx:id=\"showFilterToggle\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
+		assert showFilterToggleGroup 		!= null : "fx:id=\"showFilterToggleGroup\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
+		assert filterVBox 					!= null : "fx:id=\"filterVBox\" was not injected: check your FXML file 'CreateMappingItem.fxml'.";
 
 		FxUtils.assignImageToButton(showFilterToggle, Images.FILTER_16.createImageView(), "Show/Hide Candidate Restrictions");
 
@@ -486,9 +483,9 @@ public class CreateMappingItemController {
 			try {
 				Collection<CompositeSearchResult> results = searchHandle.getResults();	
 				for (CompositeSearchResult result : results) {
-					ConceptVersionBI concept = result.getContainingConcept();
-					if (concept != null) {
-						SearchResultConcept src = new SearchResultConcept(concept);
+					Optional<ConceptSnapshot> concept = result.getContainingConcept();
+					if (concept.isPresent()) {
+						SearchResultConcept src = new SearchResultConcept(concept.get());
 						resultList.add(src);
 					}
 				}
@@ -588,7 +585,7 @@ public class CreateMappingItemController {
 				
 			case CODE_SYSTEM:
 				property = srConcept.getCodeSystemNameProperty();
-				conceptNid = srConcept.getConcept().getPathNid();
+				conceptNid = Get.identifierService().getConceptNid(srConcept.getConcept().getPathSequence());
 				break;
 				
 			case STATUS_STRING:

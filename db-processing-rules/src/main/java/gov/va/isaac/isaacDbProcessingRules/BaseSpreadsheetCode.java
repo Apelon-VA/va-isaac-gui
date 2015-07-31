@@ -345,7 +345,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 		{
 			//try to find by FSN
 			sctTargetConcept = null;
-			SearchHandle sh = SearchHandler.descriptionSearch("\"" + rd.getSctFSN() + "\"", 5, null, true);
+			SearchHandle sh = SearchHandler.descriptionSearch("\"" + rd.getSctFSN() + "\"", 5, null, true, false);
 			for (CompositeSearchResult csr : sh.getResults())
 			{
 				for (String s : csr.getMatchingStrings())
@@ -353,7 +353,7 @@ public abstract class BaseSpreadsheetCode implements TransformConceptIterateI
 					if (rd.getSctFSN().equals(s))
 					{
 						//this is the concept we wanted.
-						sctTargetConcept = csr.getContainingConcept().getPrimordialUuid();
+						sctTargetConcept = csr.getContainingConcept().get().getPrimordialUuid();
 						break;
 					}
 				}

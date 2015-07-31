@@ -18,21 +18,26 @@
  */
 package gov.va.isaac.search;
 
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-
-import java.io.IOException;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
+import gov.va.isaac.util.OCHREUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates a data store search result.
@@ -44,24 +49,14 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
  */
 public class CompositeSearchResult {
 
-	private ConceptVersionBI containingConcept = null;
-	private final Set<ComponentVersionBI> matchingComponents = new HashSet<>();
+	private Optional<ConceptSnapshot> containingConcept = null;
+	private final Set<IdentifiedObjectLocal> matchingComponents = new HashSet<>();
 	private int matchingComponentNid_;
 	private float bestScore; // best score, rather than score, as multiple matches may go into a SearchResult
 	
-	private static ViewCoordinate vc;
-	{
-		try
-		{
-			vc = ViewCoordinates.getDevelopmentStatedLatest();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
-	}
+	private static final Logger LOG = LoggerFactory.getLogger(CompositeSearchResult.class);
 
-	public CompositeSearchResult(ComponentVersionBI matchingComponent, float score) {
+	public CompositeSearchResult(IdentifiedObjectLocal matchingComponent, float score) {
 		this.matchingComponents.add(matchingComponent);
 		this.bestScore = score;
 		//matchingComponent may be null, if the match is not on our view path...
@@ -70,16 +65,24 @@ public class CompositeSearchResult {
 		} else {
 			this.matchingComponentNid_ = matchingComponent.getNid();
 		}
-		this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getAssociatedConceptNid());
-
-		//TODO - we need to evaluate / design proper behavior for how view coordinate should work with search
-		//default back to just using this for the moment, rather than what OTFUtility says.
-		//this.containingConcept = OTFUtility.getConceptVersion(matchingComponent.getConceptNid(), vc);
+		
+		if (matchingComponent instanceof SememeChronology<?>)
+		{
+			this.containingConcept = OCHREUtility.getConceptSnapshot(((SememeChronology<?>)matchingComponent).getReferencedComponentNid());
+		}
+		else if (matchingComponent instanceof ConceptChronology<?>)
+		{
+			this.containingConcept = OCHREUtility.getConceptSnapshot(matchingComponent.getNid());
+		}
+		else
+		{
+			LOG.warn("Unexpected!");
+		}
 	}
 	public CompositeSearchResult(int matchingComponentNid, float score) {
 		this.bestScore = score;
 		//matchingComponent may be null, if the match is not on our view path...
-		this.containingConcept = null;
+		this.containingConcept = Optional.empty();
 		this.matchingComponentNid_ = matchingComponentNid;
 		
 	}
@@ -95,7 +98,7 @@ public class CompositeSearchResult {
 	/**
 	 * This may return null, if the concept and/or matching component was not on the path
 	 */
-	public ConceptVersionBI getContainingConcept() {
+	public Optional<ConceptSnapshot> getContainingConcept() {
 		return containingConcept;
 	}
 
@@ -106,7 +109,7 @@ public class CompositeSearchResult {
 		ArrayList<String> strings = new ArrayList<>();
 		if (matchingComponents.size() == 0)
 		{
-			if (containingConcept == null)
+			if (!containingConcept.isPresent())
 			{
 				strings.add("Match to NID (not on path):" + matchingComponentNid_);
 			}
@@ -115,28 +118,37 @@ public class CompositeSearchResult {
 				throw new RuntimeException("Unexpected");
 			}
 		}
-		for (ComponentVersionBI cc : matchingComponents)
+		for (IdentifiedObjectLocal iol : matchingComponents)
 		{
-			if (cc instanceof DescriptionAnalogBI)
-			{
-				strings.add(((DescriptionAnalogBI<?>) cc).getText());
-			}
-			else if (cc instanceof ConceptVersionBI)
+			if (iol instanceof ConceptChronology<?>)
 			{
 				//This means they matched on a UUID or other ID lookup.
 				//Return UUID for now - matches on other ID types will be handled differently 
 				//in the near future - so ignore the SCTID case for now.
-				strings.add(cc.getPrimordialUuid().toString());
+				strings.add(iol.getPrimordialUuid().toString());
+			}
+			else if (iol instanceof SememeChronology<?> && ((SememeChronology<?>)iol).getSememeType() == SememeType.DESCRIPTION)
+			{
+				Optional<LatestVersion<DescriptionSememe>> ds = ((SememeChronology<DescriptionSememe>)iol).getLatestVersion(DescriptionSememe.class, 
+						AppContext.getService(UserProfileBindings.class).getStampCoordinate().get());
+				if (ds.isPresent())
+				{
+					strings.add(ds.get().value().getText());
+				}
+				else
+				{
+					strings.add("No description available on stamp coordinate!");
+				}
 			}
 			else
 			{
-				strings.add("ERROR: No string extractor available for " + cc.getClass().getName());
+				strings.add("ERROR: No string extractor available for " + iol.getClass().getName());
 			}
 		}
 		return strings;
 	}
 
-	public Set<ComponentVersionBI> getMatchingComponents() {
+	public Set<IdentifiedObjectLocal> getMatchingComponents() {
 		return matchingComponents;
 	}
 	
@@ -144,11 +156,11 @@ public class CompositeSearchResult {
 	 * Convenience method to return a filtered list of matchingComponents such that it only returns
 	 * Description type components
 	 */
-	public Set<DescriptionAnalogBI<?>> getMatchingDescriptionComponents() {
-		Set<DescriptionAnalogBI<?>> setToReturn = new HashSet<>();
-		for (ComponentVersionBI comp : matchingComponents) {
-			if (comp instanceof DescriptionAnalogBI) {
-				setToReturn.add((DescriptionAnalogBI<?>)comp);
+	public Set<DescriptionSememe<?>> getMatchingDescriptionComponents() {
+		Set<DescriptionSememe<?>> setToReturn = new HashSet<>();
+		for (IdentifiedObjectLocal comp : matchingComponents) {
+			if (comp instanceof DescriptionSememe<?>) {
+				setToReturn.add((DescriptionSememe<?>)comp);
 			}
 		}
 		
@@ -157,7 +169,7 @@ public class CompositeSearchResult {
 	
 	protected void merge(CompositeSearchResult other)
 	{
-		if (containingConcept.getNid() !=  other.containingConcept.getNid())
+		if (containingConcept.get().getNid() !=  other.containingConcept.get().getNid())
 		{
 			throw new RuntimeException("Unmergeable!");
 		}
@@ -171,7 +183,7 @@ public class CompositeSearchResult {
 	public String toShortString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("CompositeSearchResult [containingConcept=");
-		builder.append(containingConcept != null ? containingConcept.getNid() : null);
+		builder.append(containingConcept.isPresent() ? containingConcept.get().getNid() : null);
 		
 		if (matchingComponentNid_ != 0) {
 			builder.append(", matchingComponentNid_=");
@@ -184,7 +196,7 @@ public class CompositeSearchResult {
 		if (matchingComponents != null && matchingComponents.size() > 0) {
 			builder.append(", matchingComponents=");
 			List<Integer> matchingComponentNids = new ArrayList<>();
-			for (ComponentVersionBI matchingComponent : matchingComponents) {
+			for (IdentifiedObjectLocal matchingComponent : matchingComponents) {
 				matchingComponentNids.add(matchingComponent != null ? matchingComponent.getNid() : null);
 			}
 			builder.append(matchingComponentNids);
@@ -198,11 +210,11 @@ public class CompositeSearchResult {
 		StringBuilder builder = new StringBuilder();
 		builder.append("CompositeSearchResult [containingConcept=");
 		String containingConceptDesc = null;
-		if (containingConcept != null) {
+		if (containingConcept.isPresent()) {
 			try {
-				containingConceptDesc = OTFUtility.getDescriptionIfConceptExists(containingConcept.getConceptNid());
+				containingConceptDesc = containingConcept.get().getConceptDescriptionText();
 			} catch (Exception e) {
-				containingConceptDesc = "{nid=" + containingConcept.getConceptNid() + "}";
+				containingConceptDesc = "{nid=" + containingConcept.get().getNid() + "}";
 			}
 		}
 		builder.append(containingConceptDesc);
@@ -213,10 +225,12 @@ public class CompositeSearchResult {
 		String matchingComponentDesc = null;
 		if (matchingComponentNid_ != 0) {
 			try {
-				ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(matchingComponentNid_);
-				matchingComponentDesc = cc.toUserString();
+				Optional<? extends ObjectChronology<?>> cc =  Get.identifiedObjectService().getIdentifiedObjectChronology(matchingComponentNid_);
+				if (cc.isPresent()) {
+					matchingComponentDesc = cc.get().toUserString();
+				}
 			} catch (Exception e) {
-				// NOOP
+				LOG.warn("Unexpected:", e);
 			}
 		}
 		if (matchingComponentDesc != null) {
@@ -229,7 +243,7 @@ public class CompositeSearchResult {
 
 		builder.append(", numMatchingComponents=");
 		List<Integer> matchingComponentNids = new ArrayList<>();
-		for (ComponentVersionBI matchingComponent : getMatchingComponents()) {
+		for (IdentifiedObjectLocal matchingComponent : getMatchingComponents()) {
 			matchingComponentNids.add(matchingComponent != null ? matchingComponent.getNid() : null);
 		}
 		builder.append(matchingComponentNids);
@@ -240,14 +254,14 @@ public class CompositeSearchResult {
 	public String toLongString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("CompositeSearchResult [containingConcept=");
-		builder.append(containingConcept);
+		builder.append(containingConcept.isPresent() ? containingConcept.get() : "null");
 		builder.append(", matchingComponentNid_=");
 		builder.append(matchingComponentNid_);
 		builder.append(", bestScore=");
 		builder.append(bestScore);
 		builder.append(", getMatchingComponents()=");
 		List<String> matchingComponentDescs = new ArrayList<>();
-		for (ComponentVersionBI matchingComponent : getMatchingComponents()) {
+		for (IdentifiedObjectLocal matchingComponent : getMatchingComponents()) {
 			matchingComponentDescs.add(matchingComponent != null ? matchingComponent.toUserString() : null);
 		}
 		builder.append(matchingComponentDescs);

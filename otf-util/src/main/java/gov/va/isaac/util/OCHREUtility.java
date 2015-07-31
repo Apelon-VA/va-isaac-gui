@@ -6,6 +6,7 @@ package gov.va.isaac.util;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
+import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -20,12 +21,14 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
+import gov.vha.isaac.ochre.util.UuidFactory;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -35,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -359,5 +363,144 @@ public final class OCHREUtility {
 		}
 		handledConceptSequenceIds.add(conceptSequence);
 		return results;
+	}
+	
+	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConcept(int conceptNidOrSequence)
+	{
+		return Get.conceptService().getOptionalConcept(conceptNidOrSequence);
+	}
+	
+	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence)
+	{
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = getConcept(conceptNidOrSequence);
+		if (c.isPresent())
+		{
+			if (c.get().isLatestVersionActive(AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()))
+			{
+				return Optional.of(Get.conceptService().getSnapshot(AppContext.getService(UserProfileBindings.class).getStampCoordinate().get(),
+						AppContext.getService(UserProfileBindings.class).getLanguageCoordinate().get()).getConceptSnapshot(c.get().getConceptSequence()));
+			}
+		}
+		return Optional.empty();
+	}
+	
+	/**
+	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
+	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
+	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
+	 * a SCTID and converts that to UUID and then calls {@link #getConceptVersion(UUID)}.  Note that is is possible for some 
+	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - then a 
+	 * runtime exception is thrown.
+	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
+	 */
+	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> lookupIdentifier(String identifier)
+	{
+		LOG.debug("WB DB String Lookup '{}'", identifier);
+
+		if (StringUtils.isBlank(identifier))
+		{
+			return Optional.empty();
+		}
+		String localIdentifier = identifier.trim();
+
+		UUID uuid = Utility.getUUID(localIdentifier);
+		if (uuid != null)
+		{
+			return Get.conceptService().getOptionalConcept(uuid);
+		}
+		
+		//if it is a negative integer, assume nid
+		Optional<Integer> nid = Utility.getNID(localIdentifier);
+		if (nid.isPresent()) {
+			return Get.conceptService().getOptionalConcept(nid.get());
+		}
+		
+		if (SctId.isValidSctId(localIdentifier))
+		{
+			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
+			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
+			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
+			Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cv = Get.conceptService().getOptionalConcept(alternateUUID);
+			if (cv.isPresent())
+			{
+				//sanity check:
+				if (Utility.isInt(localIdentifier))
+				{
+					int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
+					if (nidFromSequence != 0)
+					{
+						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
+					}
+				}
+				return cv;
+			}
+		}
+		else if (Utility.isInt(localIdentifier))
+		{
+			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
+			int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
+			if (nidFromSequence != 0)
+			{
+				return Get.conceptService().getOptionalConcept(nidFromSequence);
+			}
+		}
+		return Optional.empty();
+	}
+	
+	/**
+	 * @param nid concept nid (must be a nid)
+	 * @param stamp - optional
+	 * @return the text of the description, if found
+	 */
+	@SuppressWarnings("rawtypes")
+	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate stamp)
+	{
+		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
+				stamp == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stamp); 
+		
+		Stream<LatestVersion<DescriptionSememe>> descriptions = ss.getLatestDescriptionVersionsForComponent(nid);
+		Optional<LatestVersion<DescriptionSememe>> desc = descriptions.filter((LatestVersion<DescriptionSememe> d) -> 
+		{
+			if (d.value().getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())
+			{
+				return true;
+			}
+			return false;
+		}).findFirst();
+		
+		if (desc.isPresent())
+		{
+			return Optional.of(desc.get().value().getText());
+		}
+		else return Optional.empty();
+	}
+	
+	/**
+	 * @param nid concept nid (must be a nid)
+	 * @param stamp - optional
+	 * @return the text of the description, if found
+	 */
+	@SuppressWarnings("rawtypes")
+	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate stamp)
+	{
+		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
+				stamp == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stamp); 
+		
+		Stream<LatestVersion<DescriptionSememe>> descriptions = ss.getLatestDescriptionVersionsForComponent(nid);
+		Optional<LatestVersion<DescriptionSememe>> desc = descriptions.filter((LatestVersion<DescriptionSememe> d) -> 
+		{
+			if (d.value().getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()) 
+			{
+				//TODO this isn't finished - need to also read the preferred / acceptable nested sememe, and include that in the filter logic.
+				return true;
+			}
+			return false;
+		}).findFirst();
+		
+		if (desc.isPresent())
+		{
+			return Optional.of(desc.get().value().getText());
+		}
+		else return Optional.empty();
 	}
 }

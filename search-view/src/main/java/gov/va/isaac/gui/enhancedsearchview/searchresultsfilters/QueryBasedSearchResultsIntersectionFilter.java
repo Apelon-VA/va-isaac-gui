@@ -97,7 +97,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		for (CompositeSearchResult result : results) {
 			if (result.getContainingConcept() != null)
 			{
-				forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+				forSetCustomCollection.add(result.getContainingConcept().get().getPrimordialUuid());
 			}
 		}
 
@@ -209,7 +209,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		for (CompositeSearchResult result : results) {
 			if (result.getContainingConcept() != null)
 			{
-				if (outputNids.contains(result.getContainingConcept().getNid())) {
+				if (outputNids.contains(result.getContainingConcept().get().getNid())) {
 					filteredResults.add(result);
 				}
 			}

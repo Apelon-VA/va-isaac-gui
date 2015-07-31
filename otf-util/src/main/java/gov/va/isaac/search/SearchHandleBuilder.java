@@ -41,6 +41,7 @@ public class SearchHandleBuilder
 				builder.getTaskId(), 
 				builder.getFilter(),
 				builder.getComparator(),
-				builder.getMergeResultsOnConcept());
+				builder.getMergeResultsOnConcept(),
+				true);  //TODO fix this... though this class might go away
 	}
 }

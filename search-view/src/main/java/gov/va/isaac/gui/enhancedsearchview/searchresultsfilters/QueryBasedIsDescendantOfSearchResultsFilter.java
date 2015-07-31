@@ -30,7 +30,6 @@ import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.collections.NidSet;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +41,6 @@ import org.ihtsdo.otf.query.implementation.Clause;
 import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 
@@ -63,7 +61,7 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 		final Set<UUID> forSetCustomCollection = new HashSet<>();
 		
 		for (CompositeSearchResult result : results) {
-			forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+			forSetCustomCollection.add(result.getContainingConcept().get().getPrimordialUuid());
 		}
 		
 		SearchResultsFilterHelper.LOG.debug("Building Query to filter " + forSetCustomCollection.size() + " search results");
@@ -109,7 +107,7 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 
 		List<CompositeSearchResult> filteredResults = new ArrayList<>(results.size());
 		for (CompositeSearchResult result : results) {
-			if (outputNids.contains(result.getContainingConcept().getNid())) {
+			if (outputNids.contains(result.getContainingConcept().get().getNid())) {
 				filteredResults.add(result);
 			}
 		}
