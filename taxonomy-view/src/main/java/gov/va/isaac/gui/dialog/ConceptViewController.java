@@ -220,9 +220,6 @@ public class ConceptViewController {
 		ConceptChronology rawCC = (ConceptChronology)concept;
 		Optional<LatestVersion<ConceptVersion>> latestVersionOptional =
 				rawCC.getLatestVersion(ConceptVersion.class, getConceptSnapshotService().getStampCoordinate());
-		latestVersionOptional.get().value().getState();
-		// TODO eliminate conceptDefinedLabel?
-		//conceptDefinedLabel.setText(conceptAttributes.isDefined() + "");
 		conceptStatusLabel.setText(latestVersionOptional.get().value().getState().name());
 		
 		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty("Loading...");
@@ -473,8 +470,8 @@ public class ConceptViewController {
 		if (dtv != null) {
 			dtv.viewDiscarded();
 		}
-//		if (rtv != null) {
-//			rtv.viewDiscarded();
-//		}
+		if (rtv != null) {
+			rtv.viewDiscarded();
+		}
 	}
 }

@@ -37,10 +37,15 @@ import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.LogicCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +53,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -611,6 +617,17 @@ public class RelationshipTableView implements EmbeddableViewI
 			try
 			{
 				ConceptSnapshot localConcept = (concept == null ? conceptSnapshotServiceProvider.getConceptSnapshotService().getConceptSnapshot(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept);
+
+				// Get latest LogicGraph for this concept
+				Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = null;
+				if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == PremiseType.STATED) {
+					defChronologyOptional = Get.statedDefinitionChronology(localConcept.getChronology().getNid());
+				} else {
+					defChronologyOptional = Get.inferredDefinitionChronology(localConcept.getChronology().getNid());
+				}
+				SememeChronology rawStatedDefChronology = defChronologyOptional.get();
+				Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawStatedDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+				LogicGraphSememeImpl latestGraph = latestGraphLatestVersionOptional.get().value();
 				
 				//target is the only option where we would exclude source
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
@@ -620,11 +637,14 @@ public class RelationshipTableView implements EmbeddableViewI
 					{
 						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 						{
-							allRelationships.add(rv);
+							// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
+							if (rv.getReferencedComponentNid() == latestGraph.getNid() && rv.getStampSequence() == latestGraph.getStampSequence()) {
+								allRelationships.add(rv);
+							}
 						}
 					}
 				}
-				
+
 				//source is the only option where we would exclude target
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
 				{
@@ -637,7 +657,6 @@ public class RelationshipTableView implements EmbeddableViewI
 						}
 					}
 				}
-				
 				//Sort the newest to the top per UUID
 				Collections.sort(allRelationships, new Comparator<RelationshipVersionAdaptor<?>>()
 				{
