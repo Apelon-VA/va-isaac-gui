@@ -88,6 +88,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	boolean filter = false;
 	String invalidPropFound = "none";
 	Long previousReleaseTime;
+	int namespace = 0;
 	ArrayList<String> propKeys = new ArrayList<String>();
 	
 	int changeDescCount = 0;
@@ -125,16 +126,28 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		//Propkey holds all VALID Property Keys (filters etc..). 
 		// Place accepted KEYS HERE and add logic below
 		propKeys.add("date");
+		propKeys.add("namespace");
 		
-		//Logic for Property Keys
-		if(prop.containsKey("date")) { 
-			logger.info("USCRS Handler - properties contains date key");
-			filter = true; 
+		//Logic for Property Keys, Set filters here
+		if(prop.containsKey("date")) {
 			previousReleaseTime = Long.parseLong(prop.getProperty("date")); 
 			logger.info("USCRS Handler - previous release time is " + previousReleaseTime);
 		} else {
-			filter = false;
 			previousReleaseTime = Long.MIN_VALUE;
+		}
+		
+		if(prop.containsKey("namespace")) {
+			namespace = Integer.valueOf(prop.getProperty("namespace"));
+			logger.info("USCRS Handler - namespace is " + namespace);
+		} else {
+			namespace = 0;
+		}
+		//Add any filters (that change the export logic) here. IE: Author, Date or any other modifications to export, set filter to true
+		if(previousReleaseTime != Long.MIN_VALUE) {
+			filter = true;
+			logger.info("USCRS Handler - properties contains date key");
+		} else {
+			filter = false;
 		}
 		
 		prop.keySet().stream().forEach(p -> { 
@@ -168,7 +181,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	private LinkedHashMap<Integer, Integer> currentRequestMap = new LinkedHashMap<Integer, Integer>();
 	
 	// The list of (generated) ids that are in use on the new concept tab.
-	private HashSet<Integer> newConceptRequestIds = new HashSet<>();;
+	private HashSet<Integer> newConceptRequestIds = new HashSet<>();
 	private USCRSBatchTemplate bt = null;
 	private int examinedConCount = 0;
 	private ViewCoordinate vcPreviousRelease;
@@ -211,9 +224,8 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				vcAllStatus = OTFUtility.getViewCoordinateAllowInactive();
 				
 				logger.info("USCRS Content Request Handler - Starting Concept Stream Iterator");
-				
-				intStream
-					.forEach( nid -> {				
+				logger.debug("USCRS Date Filter " + previousReleaseTime);
+				intStream.forEach( nid -> {	
 						
 						if(examinedConCount % 100 == 0) {
 							updateTitle("Uscrs Content Request Exporter Progress - We have exported " + examinedConCount + " components / concepts");
@@ -224,14 +236,11 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 						}
 						
 						ConceptVersionBI concept = OTFUtility.getConceptVersion(nid); 
-						
 						ArrayList<RelationshipVersionBI<?>> exportRelsUnFiltered = new ArrayList<RelationshipVersionBI<?>>();
 						
 						//TODO: Start breaking this code up into sub-methods. Because we will be adding more filters
 						if(filter) {
-							logger.info("USCRS Handler - We are using a filter");
 							if(prop.containsKey("date") && previousReleaseTime != Long.MIN_VALUE) { 
-								logger.info("USCRS Date Filter " + previousReleaseTime);
 								boolean conceptCreated = false;
 								try {
 									vcPreviousRelease = OTFUtility.getViewCoordinate();
@@ -307,7 +316,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 													hasChange = true;
 												}
 												if(hasChange) {
-													logger.info("USCRS - Description change detected");
 													handleChangeDesc(thisDvLatest);
 												}
 											} else {
@@ -336,9 +344,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 								
 								//Export Relationships
 								if(conceptCreated) {
-									logger.info("USCRS Handler - Concept was already created, handeling components accordingly (skip first 3 ISA relationships");
+									logger.debug("USCRS Handler - Concept was already created, handeling components accordingly (skip first 3 ISA relationships");
 								} else {
-									logger.info("Concept NOT previously created - generating relationships now instead");
+									logger.debug("Concept NOT previously created - generating relationships now instead");
 									try {
 										Collection<? extends RelationshipChronicleBI> outgoingRels = concept.getRelationshipsOutgoing();
 										Collection<? extends RelationshipChronicleBI> incomingRels = concept.getRelationshipsIncoming();
@@ -353,11 +361,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 														if(thisVersion.isPresent()) {
 															RelationshipVersionBI<?> tvg = thisVersion.get();
 															exportRelsUnFiltered.add(tvg);
-															try {
-																logger.info("Relationship prepared for export: " + OTFUtility.getDescription(tvg.getDestinationNid()));
-															} catch (Exception e) {
-																logger.error("Error getting Relationship SCT ID or Description for NID", e);
-															}
 														}
 														
 													});
@@ -366,9 +369,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 										logger.error("Error retreiving the incoming relationships", e);
 									}
 								}
-								logger.info("Starting Relationship Export Algorithm");
 								for(RelationshipVersionBI<?> rv : exportRelsUnFiltered) {
-									logger.info("Evaluation Relationship: " + OTFUtility.getDescription(rv.getDestinationNid()));
 									try {
 										Optional<? extends RelationshipVersionBI<?>> rvLatest = rv.getVersion(viewCoordinate);
 										Optional<? extends RelationshipVersionBI<?>> rvInitial = rv.getVersion(vcPreviousRelease);
@@ -428,12 +429,12 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 											}
 										}
 									} catch (Exception e) {
-										logger.info("USCRS Handler - Error exporting with a date filter", e);
+										logger.error("Error exporting Relationship", e);
 									}
 								}
 							} else {
 								//No date filter, process everything that way
-								logger.info("USCRS Handler -Filter Set. Not a Date Filter. Exporting all concepts.");
+								logger.debug("USCRS Handler -Filter Set. Not a Date Filter. Exporting all concepts.");
 								try {
 									exportRelsUnFiltered.addAll(handleNewConcept(concept));
 									for (RelationshipVersionBI<?> r : exportRelsUnFiltered)
@@ -455,7 +456,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 							}
 						} else {
 							 //Export ALL - (No Filter)
-							logger.info("USCRS Handler -Exporting all concepts, no filters");
+							logger.debug("USCRS Handler -Exporting all concepts, no filters");
 							try {
 								exportRelsUnFiltered.addAll(handleNewConcept(concept));
 								
@@ -534,7 +535,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void getNote(int nid, String alternateNote) throws ValidationException, ContradictionException {
 		if(testing) {
-			bt.addStringCell(COLUMN.Note, "SCT ID: " + getSct(nid) + " - Description: " + OTFUtility.getDescription(nid));
+			bt.addStringCell(COLUMN.Note, "SCT ID: " + getSct(nid));
 		} else {
 			bt.addStringCell(COLUMN.Note, alternateNote);
 		}
@@ -620,20 +621,21 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	}
 	
 	private String getJustification() {
-		String namespace = "";
-		try {
-			namespace = ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace();
-		} catch (Exception e) {
-			logger.error("Error getting namespace for Justification column", e);
-		}
-		if(namespace != null) {
-			if(!namespace.trim().equalsIgnoreCase("")) {
-				return namespace;
+		
+		if(namespace != 0) {
+			return "Developed as part of extension namespace " + String.valueOf(namespace); 
+		} else {
+			String userNamespace = "";
+			try {
+				userNamespace = ExtendedAppContext.getCurrentlyLoggedInUserProfile().getExtensionNamespace();
+			} catch (Exception e) {
+				logger.error("Error getting namespace for Justification column", e);
+			}
+			if(userNamespace.trim()!= "") {
+				return userNamespace;
 			} else {
 				return "";
 			}
-		} else {
-			return "";
 		}
 	}
 	
@@ -781,7 +783,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private ArrayList<RelationshipVersionBI<?>> handleNewConcept(ConceptChronicleBI concept) throws Exception
 	{
-		logger.info("Creating new Concept");
 		ArrayList<RelationshipVersionBI<?>> extraRels = new ArrayList<RelationshipVersionBI<?>>();
 		// PARENTS
 		LinkedList<Integer> parentNids = new LinkedList<Integer>();
@@ -905,13 +906,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, ""); //Not in API
 					break;
 				case Definition:
-					if(definitions.size() > 0) 
-					{
-						bt.addStringCell(column, definitions.remove(0));
-					} else {
-						bt.addStringCell(column, "");
-					}
-					
+					bt.addStringCell(column, "Needed for VA purposes");
 					break;
 				case Proposed_Use:
 					bt.addStringCell(column, ""); //User Input
@@ -932,23 +927,24 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 						}
 					}
 					
-					boolean firstDef = false;
-					
 					//Extra Definitions
 					if(definitions.size() > 0) {
-						sb.append("Note: This concept has multiple definitions: ");
+						sb.append("Definitions: ");
 					}
-					boolean firstSyn = false;
 					while(definitions.size() > 0) 
 					{
-						if(firstDef) 
+						if(definitions.size() > 0)
 						{
+							sb.append(definitions.remove(0));
+						} 
+						if(definitions.size() > 0) {
 							sb.append(", ");
 						}
 					}
 					
 					
 					//Extra Synonyms
+					boolean firstSyn = false;
 					if(synonyms.size() > 2) 
 					{
 						sb.append("NOTE: this concept also has the following synonyms: ");
@@ -987,7 +983,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleNewSyn(DescriptionVersionBI<?> descVersion) throws Exception
 	{	
-		logger.info("Creating new Synonym (Description)");
 		bt.selectSheet(SHEET.New_Synonym);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Synonym)) {
@@ -1030,7 +1025,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	{	
 		if (rel.getTypeNid() == Snomed.IS_A.getLenient().getNid()) 
 		{
-			logger.info("Change Parent Handler");
 			bt.selectSheet(SHEET.Change_Parent);
 			bt.addRow();
 			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Parent)) {
@@ -1074,10 +1068,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @param concept the concept
 	 * @throws Exception the exception
 	 */
-	public void handleNewRel(RelationshipVersionBI<?> rel) throws Exception {
+	private void handleNewRel(RelationshipVersionBI<?> rel) throws Exception {
 		if (rel.getTypeNid() != Snomed.IS_A.getLenient().getNid()) 
 		{
-			logger.info("New Relationship Handler");
 			bt.selectSheet(SHEET.New_Relationship);
 			bt.addRow();
 			for (COLUMN column : bt.getColumnsOfSheet(SHEET.New_Relationship)) {
@@ -1137,7 +1130,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	{
 		if (relVersion.getTypeNid() != Snomed.IS_A.getLenient().getNid()) 
 		{
-			logger.info("Change Relationship Handler");
 			bt.selectSheet(SHEET.Change_Relationship);
 			bt.addRow();
 			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Relationship))
@@ -1202,7 +1194,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	private void handleChangeDesc(DescriptionVersionBI<?> d) throws Exception
 	{
 		changeDescCount++;
-		logger.info("Change Description Handler");
 		bt.selectSheet(SHEET.Change_Description);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Change_Description))
@@ -1252,7 +1243,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleRetireConcept(ConceptVersionBI concept) throws Exception
 	{
-		logger.info("Retire Concept Handler");
 		bt.selectSheet(SHEET.Retire_Concept);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Concept))
@@ -1295,7 +1285,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleRetireDescription(DescriptionVersionBI<?> d) throws Exception
 	{
-		logger.info("Retire Description Handler");
 		bt.selectSheet(SHEET.Retire_Description);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Description))
@@ -1338,7 +1327,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleRetireRelationship(RelationshipVersionBI<?> relVersion) throws Exception
 	{
-		logger.info("Retire Relationship Handler");
 		bt.selectSheet(SHEET.Retire_Relationship);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Retire_Relationship))
@@ -1390,7 +1378,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	{
 		if (rel.isActive() && (rel.getTypeNid() == Snomed.IS_A.getLenient().getNid())) 
 		{
-			logger.info("New Parent Handler");
 			bt.selectSheet(SHEET.Add_Parent);
 			bt.addRow();
 			for (COLUMN column : bt.getColumnsOfSheet(SHEET.Add_Parent))
@@ -1435,7 +1422,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	@SuppressWarnings("unused")
 	private void handleOther(ConceptChronicleBI concept) throws Exception
 	{
-		logger.info("Other Spreadsheet Handler");
 		bt.selectSheet(SHEET.Other);
 		bt.addRow();
 		for (COLUMN column : bt.getColumnsOfSheet(SHEET.Other))

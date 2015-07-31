@@ -19,7 +19,6 @@
 package gov.va.isaac.request.uscrs;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +28,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -39,7 +37,6 @@ import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFDataFormat;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -275,6 +272,7 @@ public class USCRSBatchTemplate
 	public USCRSBatchTemplate(InputStream spreadsheetTemplate) throws IOException
 	{
 		wb = new HSSFWorkbook(spreadsheetTemplate);
+		//wb = new XSSFWorkbook(spreadsheetTemplate);
 		ch = wb.getCreationHelper();
 		style = wb.createCellStyle();
 		format = wb.createDataFormat();
@@ -450,6 +448,8 @@ public class USCRSBatchTemplate
 
 		//Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
 		Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27-Id-Cell-Formatted.xls"));
+		//Workbook wb = new XSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27-Id-Cell-Formatted.xls"));
+
 
 		ArrayList<String> sheets = new ArrayList<>();
 		HashSet<String> columns = new HashSet<>();
