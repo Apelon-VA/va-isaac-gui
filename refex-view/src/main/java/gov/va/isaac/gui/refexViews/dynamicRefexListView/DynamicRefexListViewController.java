@@ -30,6 +30,7 @@ import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -152,7 +153,7 @@ public class DynamicRefexListViewController
 
 		conceptNode = new ConceptNode(null, false);
 		conceptNode.getConceptProperty().addListener((invalidation) -> {
-			ConceptVersionBI cv = conceptNode.getConceptProperty().get();  //Need to do a get after each invalidation, otherwise, we won't get the next invalidation
+			ConceptSnapshot cv = conceptNode.getConceptProperty().get();  //Need to do a get after each invalidation, otherwise, we won't get the next invalidation
 			if (cv != null)
 			{
 				//see if it is a valid Dynamic Refex Assemblage
@@ -401,7 +402,7 @@ public class DynamicRefexListViewController
 		{
 			return false;
 		}
-		else if (conceptNode.getConcept() != null && conceptNode.getConcept().getConceptNid() != sdc.getNid())
+		else if (conceptNode.getConcept() != null && conceptNode.getConcept().getNid() != sdc.getNid())
 		{
 			return false;
 		}

@@ -305,7 +305,7 @@ public class SearchHandler
 						// If search query is an ID, look up concept and add the result.
 						if (Utility.isUUID(localQuery) || Utility.isLong(localQuery))
 						{
-							Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> temp = OCHREUtility.lookupIdentifier(localQuery);
+							Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> temp = OCHREUtility.getConceptForUnknownIdentifier(localQuery);
 							if (temp.isPresent())
 							{
 								CompositeSearchResult gsr = new CompositeSearchResult(temp.get(), 2.0f);

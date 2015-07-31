@@ -29,8 +29,8 @@ import gov.va.isaac.gui.refexViews.util.RefexDataTypeNodeDetails;
 import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeFXNodeBuilder;
 import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeNodeDetails;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
@@ -61,7 +61,6 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
@@ -245,10 +244,10 @@ public class ColumnController implements PanelControllersI {
 		
 		newColNameButton.setOnAction(e -> createNewColumnConcept());
 		
-		columnNameSelection_.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>()
+		columnNameSelection_.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue)
+			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 			{
 				RefexDynamicColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
 				if (newValue != null)
@@ -454,10 +453,9 @@ public class ColumnController implements PanelControllersI {
 
 	private void initializeColumnConcepts() {
 		try {
-			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getNid());
-			Set<ConceptVersionBI> colCons = OTFUtility.getAllChildrenOfConcept(colCon, false);
+			Set<Integer> colCons = OCHREUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getConceptSequence(), false, false);
 
-			for (ConceptVersionBI col : colCons) {
+			for (Integer col : colCons) {
 				columnNameChoices.add(new SimpleDisplayConcept(col, colNameReader_));
 			}
 			columnNameSelection_.set(columnNameChoices.get(0));

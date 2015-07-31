@@ -26,19 +26,16 @@ import gov.va.isaac.models.cem.CEMInformationModel;
 import gov.va.isaac.models.fhim.FHIMInformationModel;
 import gov.va.isaac.models.hed.HeDInformationModel;
 import gov.va.isaac.models.util.ExporterBase;
-import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.OCHREUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
 import java.util.List;
-
 import javax.validation.ValidationException;
 import javax.xml.transform.TransformerConfigurationException;
-
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Lists;
 
 /**
@@ -124,12 +121,10 @@ public class FetchHandler extends ExporterBase {
 
     List<InformationModel> models = Lists.newArrayList();
     InformationModelService service = getInformationModelService();
-    ConceptVersionBI hedConcept =
-        OTFUtility.getConceptVersion(InformationModelType.HeD.getUuid());
-    for (ConceptVersionBI hedModel : OTFUtility.getAllChildrenOfConcept(
-        hedConcept.getNid(), true)) {
-      models.add(new HeDInformationModel(service.getInformationModel(hedModel
-          .getPrimordialUuid())));
+    ConceptSnapshot hedConcept =
+        OCHREUtility.getConceptSnapshot(InformationModelType.HeD.getUuid(), null, null).get();
+    for (Integer hedModelSeq : OCHREUtility.getAllChildrenOfConcept(hedConcept.getConceptSequence(), true, false)) {
+      models.add(new HeDInformationModel(service.getInformationModel(Get.identifierService().getUuidPrimordialFromConceptSequence(hedModelSeq).get())));
     }
     return models;
 
@@ -145,12 +140,10 @@ public class FetchHandler extends ExporterBase {
 
     List<InformationModel> models = Lists.newArrayList();
     InformationModelService service = getInformationModelService();
-    ConceptVersionBI fhimConcept =
-        OTFUtility.getConceptVersion(InformationModelType.FHIM.getUuid());
-    for (ConceptVersionBI fhimModel : OTFUtility.getAllChildrenOfConcept(
-        fhimConcept.getNid(), true)) {
-      models.add(new FHIMInformationModel(service.getInformationModel(fhimModel
-          .getPrimordialUuid())));
+    ConceptSnapshot fhimConcept =
+        OCHREUtility.getConceptSnapshot(InformationModelType.FHIM.getUuid(), null, null).get();
+    for (Integer fhimModelSeq : OCHREUtility.getAllChildrenOfConcept(fhimConcept.getConceptSequence(), true, false)) {
+      models.add(new FHIMInformationModel(service.getInformationModel(Get.identifierService().getUuidPrimordialFromConceptSequence(fhimModelSeq).get())));
     }
     return models;
   }
@@ -165,12 +158,10 @@ public class FetchHandler extends ExporterBase {
 
     List<InformationModel> models = Lists.newArrayList();
     InformationModelService service = getInformationModelService();
-    ConceptVersionBI cemConcept =
-        OTFUtility.getConceptVersion(InformationModelType.CEM.getUuid());
-    for (ConceptVersionBI cemModel : OTFUtility.getAllChildrenOfConcept(
-        cemConcept.getNid(), true)) {
-      models.add(new CEMInformationModel(service.getInformationModel(cemModel
-          .getPrimordialUuid())));
+    ConceptSnapshot cemConcept =
+        OCHREUtility.getConceptSnapshot(InformationModelType.CEM.getUuid(), null, null).get();
+    for (Integer cemModelSeq : OCHREUtility.getAllChildrenOfConcept(cemConcept.getConceptSequence(), true, false)) {
+      models.add(new CEMInformationModel(service.getInformationModel(Get.identifierService().getUuidPrimordialFromConceptSequence(cemModelSeq).get())));
     }
     return models;
   }

@@ -27,6 +27,7 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.SearchStringProcessor;
 import gov.va.isaac.util.TaskCompleteCallback;
@@ -74,17 +75,9 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getStatusConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		try
+		for (Integer conSequence : OCHREUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_STATUS.getConceptSequence(), true, false))
 		{
-			for (ConceptVersionBI cv : OTFUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_STATUS.getNid(), true))
-			{
-				result.add(new SimpleDisplayConcept(cv));
-			}
-		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected", e);
-			throw new IOException("Unexpected error");
+			result.add(new SimpleDisplayConcept(conSequence));
 		}
 		
 		Collections.sort(result);
@@ -94,19 +87,11 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getQualifierConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		try
+		for (Integer conSequence : OCHREUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getConceptSequence(), true, false))
 		{
-			for (ConceptVersionBI cv : OTFUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getNid(), true))
-			{
-				result.add(new SimpleDisplayConcept(cv));
-			}
+			result.add(new SimpleDisplayConcept(conSequence));
 		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected", e);
-			throw new IOException("Unexpected error");
-		}
-		
+
 		Collections.sort(result);
 		return result;
 	}
@@ -290,22 +275,16 @@ public class MappingUtils
 	
 	public static List<SimpleDisplayConcept> getExtendedDescriptionTypes() throws IOException
 	{
-		Set<ConceptVersionBI> extendedDescriptionTypes;
+		Set<Integer> extendedDescriptionTypes;
 		ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
-		try
+		extendedDescriptionTypes = OCHREUtility.getAllChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(),
+				true, true);
+		for (Integer seq : extendedDescriptionTypes)
 		{
-			extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
-			for (ConceptVersionBI c : extendedDescriptionTypes)
-			{
-				temp.add(new SimpleDisplayConcept(c));
-			}
-			Collections.sort(temp);
-			return temp;
+			temp.add(new SimpleDisplayConcept(seq));
 		}
-		catch (ContradictionException e)
-		{
-			throw new IOException(e);
-		}
+		Collections.sort(temp);
+		return temp;
 	}
 
 	public static List<SimpleDisplayConcept> getCodeSystems() {

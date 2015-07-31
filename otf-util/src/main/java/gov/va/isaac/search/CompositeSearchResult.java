@@ -68,11 +68,11 @@ public class CompositeSearchResult {
 		
 		if (matchingComponent instanceof SememeChronology<?>)
 		{
-			this.containingConcept = OCHREUtility.getConceptSnapshot(((SememeChronology<?>)matchingComponent).getReferencedComponentNid());
+			this.containingConcept = OCHREUtility.getConceptSnapshot(((SememeChronology<?>)matchingComponent).getReferencedComponentNid(), null, null);
 		}
 		else if (matchingComponent instanceof ConceptChronology<?>)
 		{
-			this.containingConcept = OCHREUtility.getConceptSnapshot(matchingComponent.getNid());
+			this.containingConcept = OCHREUtility.getConceptSnapshot(matchingComponent.getNid(), null, null);
 		}
 		else
 		{
@@ -156,11 +156,11 @@ public class CompositeSearchResult {
 	 * Convenience method to return a filtered list of matchingComponents such that it only returns
 	 * Description type components
 	 */
-	public Set<DescriptionSememe<?>> getMatchingDescriptionComponents() {
-		Set<DescriptionSememe<?>> setToReturn = new HashSet<>();
+	public Set<SememeChronology<DescriptionSememe>> getMatchingDescriptionComponents() {
+		Set<SememeChronology<DescriptionSememe>> setToReturn = new HashSet<>();
 		for (IdentifiedObjectLocal comp : matchingComponents) {
-			if (comp instanceof DescriptionSememe<?>) {
-				setToReturn.add((DescriptionSememe<?>)comp);
+			if (comp instanceof SememeChronology<?> && ((SememeChronology<?>) comp).getSememeType() == SememeType.DESCRIPTION) {
+				setToReturn.add(((SememeChronology<DescriptionSememe>)comp));
 			}
 		}
 		

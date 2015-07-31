@@ -24,6 +24,7 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.Optional;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
@@ -297,9 +298,9 @@ public class RelationshipModelingPopup extends ModelingPopup
 	private void setupType() {
 		createTitleLabel("Type");
 
-		typeCon.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+		typeCon.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> ov, ConceptVersionBI oldVal, ConceptVersionBI newVal) {
+			public void changed(ObservableValue<? extends ConceptSnapshot> ov, ConceptSnapshot oldVal, ConceptSnapshot newVal) {
 				if (rel != null && newVal != null) {
 					if (rel.getTypeNid() != newVal.getNid()) {
 						modificationMade.set(true);
@@ -327,9 +328,9 @@ public class RelationshipModelingPopup extends ModelingPopup
 	private void setupOtherCon() {
 		createTitleLabel("Destination");
 
-		otherEndCon.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+		otherEndCon.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> ov, ConceptVersionBI oldVal, ConceptVersionBI newVal) {
+			public void changed(ObservableValue<? extends ConceptSnapshot> ov, ConceptSnapshot oldVal, ConceptSnapshot newVal) {
 				if (rel != null && newVal != null) {
 					if ((!isDestination && rel.getDestinationNid() != newVal.getNid()) ||
 						(isDestination && rel.getOriginNid() != newVal.getNid())) {

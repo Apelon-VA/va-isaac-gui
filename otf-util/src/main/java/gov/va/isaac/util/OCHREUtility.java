@@ -29,8 +29,9 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
-import gov.vha.isaac.ochre.util.UuidFactory;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
+import gov.vha.isaac.ochre.util.UuidFactory;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -281,7 +282,7 @@ public final class OCHREUtility {
 	//	
 	//	return getChildrenAsConceptNids(child, ancestorTree);
 	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
-		LOG.debug("Getting parents of concept {}...", Get.conceptDescriptionText(child.getNid()));
+		//LOG.debug("Getting parents of concept {}...", Get.conceptDescriptionText(child.getNid()));
 		int[] parentSequences = taxonomyTree.getParentSequences(child.getConceptSequence());
 		
 		Set<Integer> parentNids = new HashSet<>();
@@ -345,6 +346,7 @@ public final class OCHREUtility {
 	 * @param conceptSequence The concept to look at
 	 * @param recursive recurse down from the concept
 	 * @param leafOnly only return leaf nodes
+	 * @return the set of concept sequence ids that represent the children
 	 */
 	public static Set<Integer> getAllChildrenOfConcept(int conceptSequence, boolean recursive, boolean leafOnly)
 	{
@@ -364,8 +366,11 @@ public final class OCHREUtility {
 		}
 
 		AtomicInteger count = new AtomicInteger();
-		IntStream children = Get.taxonomyService().getTaxonomyChildSequences(conceptSequence);
-		children.forEach((conSequence) ->
+		//TODO should be getTaxonomyChildSequences(conceptSequence); but that is broken
+		//TODO take in a taxonomy coord, if we leave it like this - Keith convo on slack on 7/31
+		ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(conceptSequence, AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get());
+
+		children.stream().forEach((conSequence) ->
 		{
 			count.getAndIncrement();
 			if (!leafOnly)
@@ -387,14 +392,25 @@ public final class OCHREUtility {
 		return results;
 	}
 	
-	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConcept(int conceptNidOrSequence)
+	/**
+	 * @param conceptNidOrSequence
+	 * @return the ConceptChronology, or an optional that indicates empty, if the id was invalid
+	 */
+	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConceptChronology(int conceptNidOrSequence)
 	{
 		return Get.conceptService().getOptionalConcept(conceptNidOrSequence);
 	}
 	
-	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence)
+	/**
+	 * @param conceptNidOrSequence
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
+	 *   have a version available on the specified stampCoord
+	 */
+	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence, StampCoordinate<?> stampCoord, LanguageCoordinate langCoord)
 	{
-		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = getConcept(conceptNidOrSequence);
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = getConceptChronology(conceptNidOrSequence);
 		if (c.isPresent())
 		{
 			if (c.get().isLatestVersionActive(AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()))
@@ -407,6 +423,18 @@ public final class OCHREUtility {
 	}
 	
 	/**
+	 * @param conceptUUID
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
+	 *   have a version available on the specified stampCoord
+	 */
+	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate<?> stampCoord, LanguageCoordinate langCoord)
+	{
+		return getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID), stampCoord, langCoord);
+	}
+	
+	/**
 	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
 	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
 	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
@@ -415,7 +443,7 @@ public final class OCHREUtility {
 	 * runtime exception is thrown.
 	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
 	 */
-	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> lookupIdentifier(String identifier)
+	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConceptForUnknownIdentifier(String identifier)
 	{
 		LOG.debug("WB DB String Lookup '{}'", identifier);
 
@@ -524,5 +552,80 @@ public final class OCHREUtility {
 			return Optional.of(desc.get().value().getText());
 		}
 		else return Optional.empty();
+	}
+	
+	/**
+	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
+	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
+	 * then calls {@link #getConceptVersion(UUID)}
+	 * Next, if no hit, if the passed in value is parseable as a int, calls {@link #getConceptVersion(int)}
+	 * 
+	 * All done in a background thread, method returns immediately
+	 * 
+	 * @param identifier - what to search for
+	 * @param callback - who to inform when lookup completes
+	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 */
+	public static void lookupConceptForUnknownIdentifier(
+			final String identifier,
+			final ConceptLookupCallback callback,
+			final Integer callId,
+			final StampCoordinate<?> stampCoord,
+			final LanguageCoordinate langCoord)
+	{
+		LOG.debug("Threaded Lookup: '{}'", identifier);
+		final long submitTime = System.currentTimeMillis();
+		Runnable r = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				ConceptSnapshot result = null;
+				Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = getConceptForUnknownIdentifier(identifier);
+				if (c.isPresent())
+				{
+					Optional<ConceptSnapshot> temp = getConceptSnapshot(c.get().getConceptSequence(), stampCoord, langCoord);
+					if (temp.isPresent())
+					{
+						result = temp.get();
+					}
+				}
+				callback.lookupComplete(result, submitTime, callId);
+			}
+		};
+		Utility.execute(r);
+	}
+	
+	/**
+	 * 
+	 * All done in a background thread, method returns immediately
+	 * 
+	 * @param identifier - The NID to search for
+	 * @param callback - who to inform when lookup completes
+	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 */
+	public static void lookupConceptSnapshot(
+			final int nid,
+			final ConceptLookupCallback callback,
+			final Integer callId,
+			final StampCoordinate<?> stampCoord,
+			final LanguageCoordinate langCoord)
+	{
+		LOG.debug("Threaded Lookup: '{}'", nid);
+		final long submitTime = System.currentTimeMillis();
+		Runnable r = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				Optional<ConceptSnapshot> c = getConceptSnapshot(nid, stampCoord, langCoord);
+				callback.lookupComplete(c.isPresent() ? c.get() : null, submitTime, callId);
+			}
+		};
+		Utility.execute(r);
 	}
 }

@@ -37,8 +37,8 @@ public class DescriptionSememeTypeComparator implements Comparator<DescriptionSe
 	@Override
 	public int compare(DescriptionSememe<?> o1, DescriptionSememe<?> o2)
 	{
-		String o1matchingComponentType = OCHREUtility.getConcept(o1.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
-		String o2matchingComponentType = OCHREUtility.getConcept(o2.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+		String o1matchingComponentType = OCHREUtility.getConceptChronology(o1.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+		String o2matchingComponentType = OCHREUtility.getConceptChronology(o2.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
 
 		return o1matchingComponentType.compareTo(o2matchingComponentType);
 	}

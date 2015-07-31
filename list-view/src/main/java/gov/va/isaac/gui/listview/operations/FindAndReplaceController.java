@@ -23,10 +23,10 @@ import gov.va.isaac.gui.ComboBoxSetupTool;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.gui.util.FxUtils;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import javafx.application.Platform;
@@ -44,7 +44,6 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.slf4j.LoggerFactory;
 
@@ -244,15 +243,9 @@ public class FindAndReplaceController
 		
 		try
 		{
-			for (ConceptVersionBI c : OTFUtility.getAllChildrenOfConcept(OTFUtility.getConceptVersion(Snomed.LANGUAGE_REFEX.getPrimodialUuid()).getNid()
-					, true))
+			for (Integer seqs : OCHREUtility.getAllChildrenOfConcept(Snomed.LANGUAGE_REFEX.getConceptSequence(), true, false))
 			{
-				SimpleDisplayConcept sdc = new SimpleDisplayConcept(c);
-				//TODO OTF Bug - OTF is broken, and doesn't even return hierarchies without duplicates https://jira.ihtsdotools.org/browse/OTFISSUE-21
-				if (!searchInLanguage.getItems().contains(sdc))
-				{
-					searchInLanguage.getItems().add(sdc);
-				}
+				searchInLanguage.getItems().add(new SimpleDisplayConcept(seqs));
 			}
 		}
 		catch (Exception e)

@@ -20,8 +20,9 @@ package gov.va.isaac.gui;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
-import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +44,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.slf4j.Logger;
@@ -56,13 +56,13 @@ import org.slf4j.LoggerFactory;
  */
 public class ConfigureDynamicRefexIndexingView implements PopupViewI
 {
-	ConceptVersionBI assemblageConcept_;
+	ConceptSnapshot assemblageConcept_;
 	private BorderPane root_;
 	private CheckBox indexMember_;
 	private List<CheckBox> indexColumns_;
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 
-	public ConfigureDynamicRefexIndexingView(ConceptVersionBI assemblageConcept)
+	public ConfigureDynamicRefexIndexingView(ConceptSnapshot assemblageConcept)
 	{
 		try
 		{
@@ -78,7 +78,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 			title.setMaxWidth(Double.MAX_VALUE);
 			titleBox.getChildren().add(title);
 			
-			title = new Label(OTFUtility.getDescription(assemblageConcept));
+			title = new Label(assemblageConcept.getConceptDescriptionText());
 			title.setAlignment(Pos.CENTER);
 			title.setMaxWidth(Double.MAX_VALUE);
 			titleBox.getChildren().add(title);

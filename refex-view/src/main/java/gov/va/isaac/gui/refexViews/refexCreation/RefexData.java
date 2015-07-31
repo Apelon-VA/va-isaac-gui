@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation;
 
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -39,11 +40,11 @@ public class RefexData
 	private String refexName_;
 	private String refexDescription_;
 	private boolean isAnnotatedStyle_;
-	private ConceptVersionBI parentConcept_;
+	private ConceptSnapshot parentConcept_;
 	private ComponentType componentTypeRestriction_;
 	private ArrayList<RefexDynamicColumnInfo> columnInfo_ = new ArrayList<>();
 
-	public RefexData(String name, String description, ConceptVersionBI parentConcept, int extendedFieldsCount, boolean isAnnotatedStyle, 
+	public RefexData(String name, String description, ConceptSnapshot parentConcept, int extendedFieldsCount, boolean isAnnotatedStyle, 
 			ComponentType componentTypeRestriction)
 	{
 		this.refexName_ = name;
@@ -107,12 +108,12 @@ public class RefexData
 		refexDescription_ = refexDescription;
 	}
 
-	public ConceptVersionBI getParentConcept()
+	public ConceptSnapshot getParentConcept()
 	{
 		return parentConcept_;
 	}
 	
-	public void setParentConcept(ConceptVersionBI parentConcept)
+	public void setParentConcept(ConceptSnapshot parentConcept)
 	{
 		parentConcept_ = parentConcept;
 	}

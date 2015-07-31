@@ -28,6 +28,7 @@ import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -180,7 +181,7 @@ public class SctTreeViewDockedView  implements DockedViewI, TaxonomyViewI
 	 */
 	@Override
 	public void locateConcept(int nid, BooleanProperty busyIndicator) {
-		locateConcept(OTFUtility.getConceptVersion(nid).getPrimordialUuid(), busyIndicator);
+		locateConcept(Get.identifierService().getUuidPrimordialForNid(nid).get(), busyIndicator);
 	}
 
 	/* (non-Javadoc)

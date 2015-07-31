@@ -4,9 +4,11 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,15 +18,12 @@ import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import gov.vha.isaac.ochre.util.UuidT5Generator;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
-import gov.vha.isaac.ochre.api.index.SearchResult;
 
 public class MappingItemDAO extends MappingDAO
 {
@@ -37,7 +36,7 @@ public class MappingItemDAO extends MappingDAO
 	 * @param editorStatusID - (optional) the primary ID of the status concept
 	 * @throws IOException
 	 */
-	public static MappingItem createMappingItem(ConceptVersionBI sourceConcept, UUID mappingSetID, ConceptVersionBI targetConcept, UUID qualifierID, UUID editorStatusID) throws IOException
+	public static MappingItem createMappingItem(ConceptSnapshot sourceConcept, UUID mappingSetID, ConceptSnapshot targetConcept, UUID qualifierID, UUID editorStatusID) throws IOException
 	{
 		try
 		{
@@ -64,7 +63,7 @@ public class MappingItemDAO extends MappingDAO
 
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 
-			ExtendedAppContext.getDataStore().addUncommitted(sourceConcept);
+			//ExtendedAppContext.getDataStore().addUncommitted(sourceConcept);  //need builder API
 			ExtendedAppContext.getDataStore().commit(/*sourceConcept*/);  //TODO OCHRE
 			
 			return new MappingItem((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));

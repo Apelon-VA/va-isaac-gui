@@ -90,7 +90,7 @@ public class CreateMappingItemController {
 			Utility.execute(() ->
 			{
 				String conceptName 	= concept.getConceptDescriptionText();
-				String pathName 	= OCHREUtility.getConceptSnapshot(concept.getPathSequence()).get().getConceptDescriptionText();
+				String pathName 	= OCHREUtility.getConceptSnapshot(concept.getPathSequence(), null, null).get().getConceptDescriptionText();
 				Platform.runLater(() -> {
 					conceptNameProperty.set(conceptName);
 					codeSystemNameProperty.set(pathName);
@@ -109,13 +109,13 @@ public class CreateMappingItemController {
 		private SimpleDisplayConcept advancedDescriptionType = null; 
 		private SimpleDisplayConcept targetCodeSystemPath = null;
 		private SimpleDisplayConcept memberOfRefset = null;
-		private ConceptVersionBI	 kindOf  = null;
+		private ConceptSnapshot	 kindOf  = null;
 		
 		public LuceneDescriptionType getDescriptionType()		 { return descriptionType;			}
 		public SimpleDisplayConcept  getAdvancedDescriptionType() { return advancedDescriptionType; }
 		public SimpleDisplayConcept  getTargetCodeSystemPath()	  { return targetCodeSystemPath;	}
 		public SimpleDisplayConcept  getMemberOfRefset()		  { return memberOfRefset;		  }
-		public ConceptVersionBI	  getKindOf()				  { return kindOf;				 }
+		public ConceptSnapshot	  getKindOf()				  { return kindOf;				 }
 		
 		public UUID getAdvancedDescriptionTypeUUID() throws IOException { 
 			UUID uuid = null;
@@ -153,7 +153,7 @@ public class CreateMappingItemController {
 		public void setAdvancedDescriptionType(SimpleDisplayConcept advancedDescriptionType) { this.advancedDescriptionType = advancedDescriptionType; }
 		public void setTargetCodeSystemPath(SimpleDisplayConcept targetCodeSystemPath)	   { this.targetCodeSystemPath = targetCodeSystemPath; }
 		public void setMemberOfRefset(SimpleDisplayConcept memberOfRefset)				   { this.memberOfRefset = memberOfRefset; }
-		public void setKindOf(ConceptVersionBI kindOf)									   { this.kindOf = kindOf; }
+		public void setKindOf(ConceptSnapshot kindOf)									   { this.kindOf = kindOf; }
 		
 		public void clear() {
 			descriptionType		 = null;
@@ -326,8 +326,8 @@ public class CreateMappingItemController {
 		saveButton.setOnAction((event) -> {
 			MappingItem mi = null;
 			try	{
-				ConceptVersionBI sourceConcept = sourceConceptNode.getConcept();
-				ConceptVersionBI targetConcept = targetConceptNode.getConcept();
+				ConceptSnapshot sourceConcept = sourceConceptNode.getConcept();
+				ConceptSnapshot targetConcept = targetConceptNode.getConcept();
 				
 				//if (sourceConcept == null || targetConcept == null) {
 				//	AppContext.getCommonDialogs().showInformationDialog("Cannot Create Mapping Item", "Source and Target Concepts must be specified.");
@@ -377,9 +377,9 @@ public class CreateMappingItemController {
 			}
 		});
 		
-		sourceConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+		sourceConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue) {
+			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue) {
 				if (newValue != null) {
 					//criteriaText.setText(OTFUtility.getDescription(newValue));
 					doSearch(newValue);

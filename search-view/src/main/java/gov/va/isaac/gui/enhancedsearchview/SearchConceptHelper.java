@@ -43,6 +43,7 @@ import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.beans.PropertyVetoException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -274,7 +275,7 @@ public class SearchConceptHelper {
 				throw new SearchConceptException(error);
 			}
 			if (filter.getAssemblageConcept() != null) {
-				ConceptVersionBI concept = filter.getAssemblageConcept();
+				ConceptSnapshot concept = filter.getAssemblageConcept();
 				RefexDynamicData assemblageConceptIdData = new RefexDynamicUUID(concept.getPrimordialUuid());
 				filterRefexData[1] = assemblageConceptIdData;
 			}
@@ -690,7 +691,8 @@ public class SearchConceptHelper {
 								ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(uuidCol.getDataUUID());
 								newFilter.setAssemblageConcept(conceptVersion);
 							}
-							LOG.debug("Read assemblage concept from " + dud.getRefexName() + " sememe assemblage: \"" + newFilter.getAssemblageConcept() != null ? ComponentDescriptionHelper.getComponentDescription(newFilter.getAssemblageConcept()) : null + "\"");
+							LOG.debug("Read assemblage concept from " + dud.getRefexName() + " sememe assemblage: \"" + newFilter.getAssemblageConcept() != null ? ComponentDescriptionHelper.getComponentDescription(newFilter.getAssemblageConcept().getNid())
+									: null + "\"");
 	
 							loadEmbeddedSearchTypeFilterAttributes(refex, newFilter);
 	

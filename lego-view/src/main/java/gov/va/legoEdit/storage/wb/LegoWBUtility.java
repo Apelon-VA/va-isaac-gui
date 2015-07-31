@@ -19,8 +19,9 @@
 package gov.va.legoEdit.storage.wb;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.Utility;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
 import gov.va.legoEdit.model.schemaModel.Assertion;
 import gov.va.legoEdit.model.schemaModel.AssertionComponent;
 import gov.va.legoEdit.model.schemaModel.Concept;
@@ -31,10 +32,11 @@ import gov.va.legoEdit.model.schemaModel.Measurement;
 import gov.va.legoEdit.model.schemaModel.Relation;
 import gov.va.legoEdit.model.schemaModel.RelationGroup;
 import gov.va.legoEdit.model.schemaModel.Type;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.id.IdBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.slf4j.Logger;
@@ -53,26 +55,20 @@ public class LegoWBUtility
 	private static UUID snomedIdType = TermAux.SNOMED_IDENTIFIER.getUuids()[0]; // SNOMED integer id
 	private static Integer snomedIdTypeNid = null;
 
-	public static Concept convertConcept(ConceptChronicleBI concept)
+	public static Concept convertConcept(ConceptSnapshot concept)
 	{
 		Concept c = null;
-		if (concept != null && concept.getUUIDs() != null && concept.getUUIDs().size() > 0)
+		if (concept != null)
 		{
 			c = new Concept();
-			c.setDesc(OTFUtility.getDescription(concept));
-			c.setUuid(concept.getUUIDs().get(0).toString());
+			c.setDesc(concept.getConceptDescriptionText());
+			c.setUuid(concept.getPrimordialUuid().toString());
 			try
 			{
-				if (concept.getAdditionalIds() != null)
+				Optional<Long> sctId = OCHREUtility.getSctId(concept.getNid());
+				if (sctId.isPresent())
 				{
-					for (IdBI x : concept.getAdditionalIds())
-					{
-						if (x.getAuthorityNid() == getSnomedIdTypeNid() && Utility.isLong(x.getDenotation().toString()))
-						{
-							c.setSctid(Long.parseLong(x.getDenotation().toString()));
-							break;
-						}
-					}
+					c.setSctid(sctId.get());
 				}
 			}
 			catch (Exception e)

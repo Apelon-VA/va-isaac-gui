@@ -72,7 +72,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 		return new SememeContentSearchTypeFilter(searchText.getText(), searchInRefex != null ? searchInRefex.getConceptNoWait() : null);
 	}
 	public void setSearchType(SememeContentSearchTypeFilter filter) {
-		ConceptVersionBI conceptFromSearchFilter = filter != null ? filter.getAssemblageConcept() : null;
+		ConceptSnapshot conceptFromSearchFilter = filter != null ? filter.getAssemblageConcept() : null;
 		searchInRefex.set(conceptFromSearchFilter);
 		searchText.setText(filter.getSearchParameter());
 	}
@@ -87,7 +87,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 		searchInRefex = new ConceptNode(null, false, dynamicRefexList_, null);
 		searchInRefexHBox.getChildren().addAll(rootExp, searchInRefex.getNode());
 
-		searchInRefex.getConceptProperty().addListener((ChangeListener<ConceptVersionBI>) (observable, oldValue, newValue) -> 
+		searchInRefex.getConceptProperty().addListener((ChangeListener<ConceptSnapshot>) (observable, oldValue, newValue) -> 
 		{
 			if (newValue != null)
 			{

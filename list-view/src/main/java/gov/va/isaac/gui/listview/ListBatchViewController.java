@@ -33,11 +33,14 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OCHREUtility;
+import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.UpdateableDoubleBinding;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -47,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -104,9 +108,6 @@ import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import org.controlsfx.dialog.Dialogs;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import au.com.bytecode.opencsv.CSVReader;
@@ -124,19 +125,19 @@ public class ListBatchViewController
 		COMMIT_CONCEPT_CHANGE("Commit Concept Change", Images.COMMIT),
 		CANCEL_CONCEPT_CHANGE("Cancel Concept Change", Images.CANCEL);
 		
-		final String text;
-		final Images image;
+		final String text_;
+		final Images image_;
 
 		private LocalMenuItem(String text, Images image) {
-			this.text = text;
-			this.image = image;
+			this.text_ = text;
+			this.image_ = image;
 		}
 
 		public String getText() {
-			return text;
+			return text_;
 		}
 		public Images getImage() {
-			return image;
+			return image_;
 		}
 	}
 	
@@ -199,10 +200,10 @@ public class ListBatchViewController
 		conceptTableFooter.getChildren().clear();
 		conceptTableFooter.getChildren().add(cn.getNode());
 
-		cn.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>()
+		cn.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue)
+			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 			{
 				if (newValue != null)
 				{
@@ -661,10 +662,10 @@ public class ListBatchViewController
 												try 
 												{
 													UUID uuid = UUID.fromString(line[0]);
-													ConceptVersionBI c = OTFUtility.getConceptVersion(uuid);
-													if (c != null)
+													Optional<ConceptSnapshot> c = OCHREUtility.getConceptSnapshot(Get.identifierService().getNidForUuids(uuid), null, null);
+													if (c.isPresent())
 													{
-														newConcepts.add(new SimpleDisplayConcept(c));
+														newConcepts.add(new SimpleDisplayConcept(c.get()));
 													}
 													else
 													{
@@ -747,17 +748,18 @@ public class ListBatchViewController
 					public void run()
 					{
 						final ArrayList<SimpleDisplayConcept> concepts = new ArrayList<>();
-						for (ConceptChronicleBI c : ExtendedAppContext.getDataStore().getUncommittedConcepts())
+						
+						for (Integer nid : Get.commitService().getUncommittedConceptNids())
 						{
 							try
 							{
-								SimpleDisplayConcept newCon = new SimpleDisplayConcept(OTFUtility.getDescription(c.getVersion(OTFUtility.getViewCoordinate()).get()), c.getNid());
+								SimpleDisplayConcept newCon = new SimpleDisplayConcept(OCHREUtility.getConceptSnapshot(nid, null, null).get());
 								newCon.setUncommitted(true);
 								concepts.add(newCon);
 							}
-							catch (ContradictionException e)
+							catch (RuntimeException e)
 							{
-								logger_.error("error adding uncommited concept '" + c + "'", e);
+								logger_.error("error adding uncommited concept '" + nid + "'", e);
 							}
 						}
 						Platform.runLater(new Runnable()
@@ -1008,7 +1010,7 @@ public class ListBatchViewController
 	}
 
 	private void updateTableItem(SimpleDisplayConcept oldCon, boolean isUncommitted) {
-		ConceptVersionBI con = OTFUtility.getConceptVersion(oldCon.getNid());
+		ConceptSnapshot con = OCHREUtility.getConceptSnapshot(oldCon.getNid(), null, null).get();
 		SimpleDisplayConcept newCon = new SimpleDisplayConcept(con);
 
 		int idx = conceptTable.getItems().indexOf(oldCon);
@@ -1019,14 +1021,15 @@ public class ListBatchViewController
 		if (isUncommitted) {
 			try
 			{
-				ExtendedAppContext.getDataStore().addUncommitted(con);
+				
+				Get.commitService().addUncommitted(con.getChronology());
 				newCon.setUncommitted(true);
 				
 				if (isUncommitted && (!oldCon.isUncommitted() || idx < 0)) {
 					uncommittedCount++;
 				}
 			}
-			catch (IOException ex)
+			catch (RuntimeException ex)
 			{
 				logger_.error("Unexpected error during add uncommited", ex);
 				AppContext.getCommonDialogs().showErrorDialog("Error committing concept", ex);
@@ -1093,7 +1096,7 @@ public class ListBatchViewController
 		List<SimpleDisplayConcept> displayConcepts = new ArrayList<>();
 		
 		for (int nid : nids) {
-			ConceptVersionBI concept = OTFUtility.getConceptVersion(nid);
+			ConceptSnapshot concept = OCHREUtility.getConceptSnapshot(nid, null, null).get();
 			displayConcepts.add(new SimpleDisplayConcept(concept));
 		}
 		

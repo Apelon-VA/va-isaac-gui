@@ -223,7 +223,7 @@ public class SearchViewController implements TaskCompleteCallback
 			@Override
 			public void invalidated(Observable observable)
 			{
-				ConceptVersionBI newValue = searchInRefex.getConceptProperty().get();
+				ConceptSnapshot newValue = searchInRefex.getConceptProperty().get();
 				if (newValue != null)
 				{
 					searchInColumnsHolder.getChildren().clear();
@@ -305,7 +305,7 @@ public class SearchViewController implements TaskCompleteCallback
 		MenuItem configureIndex =  new MenuItem("Configure Sememe Indexing");
 		configureIndex.setOnAction((action) ->
 		{
-			ConceptVersionBI c = searchInRefex.getConceptProperty().get();
+			ConceptSnapshot c = searchInRefex.getConceptProperty().get();
 			if (c != null)
 			{
 				new ConfigureDynamicRefexIndexingView(c).showView(null);

@@ -1,6 +1,7 @@
 package gov.va.isaac.gui.enhancedsearchview.model;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
@@ -15,6 +16,8 @@ import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OCHREUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -217,8 +220,9 @@ public class SearchResultsTable  {
 		
 		matchingDescTypeCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OCHREUtility.getConcept(param.getValue().getMatchingDescriptionComponents().iterator().next()
-						.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText());
+				return new SimpleStringProperty(OCHREUtility.getConceptChronology(param.getValue().getMatchingDescriptionComponents().iterator().next()
+						.getLatestVersion(DescriptionSememe.class, AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get()
+						.value().getDescriptionTypeConceptSequence()).get().getConceptDescriptionText());
 			} catch (Exception e) {
 				LOG.error("initializeTypeColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 				return new SimpleStringProperty(CELL_ERROR_TEXT);
@@ -328,10 +332,17 @@ public class SearchResultsTable  {
 								e.printStackTrace();
 							}
 
-							List<DescriptionSememe<?>> matchingDescComponents = new ArrayList<DescriptionSememe<?>>(result.getMatchingDescriptionComponents());
+							List<DescriptionSememe<?>> matchingDescComponents = new ArrayList<DescriptionSememe<?>>();
+							
+							for (SememeChronology<DescriptionSememe> ds : result.getMatchingDescriptionComponents())
+							{
+								matchingDescComponents.add(ds.getLatestVersion(DescriptionSememe.class, 
+										AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get().value());
+							}
+							
 							Collections.sort(matchingDescComponents, new DescriptionSememeTypeComparator());
 							for (DescriptionSememe<?> descComp : matchingDescComponents) {
-								String type = OCHREUtility.getConcept(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+								String type = OCHREUtility.getConceptChronology(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
 								buffer.append(type + ": " + descComp.getText() + "\n");
 							}
 							Tooltip tooltip = new Tooltip("Matching descriptions for \"" + fsn + "\":\n" + buffer.toString());

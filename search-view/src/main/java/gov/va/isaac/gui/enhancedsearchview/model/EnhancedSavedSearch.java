@@ -12,9 +12,10 @@ import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.SearchType;
 import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
 import gov.va.isaac.gui.enhancedsearchview.resulthandler.SaveSearchPrompt;
 import gov.va.isaac.util.ComponentDescriptionHelper;
+import gov.va.isaac.util.OCHREUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.ochre.api.Get;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -41,7 +41,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
@@ -251,15 +250,16 @@ public class EnhancedSavedSearch {
 		ObservableList<SearchDisplayConcept> searches = FXCollections.observableList(new ArrayList<>());
 		
 		try {
-			Set<ConceptVersionBI> savedSearches = OTFUtility.getAllChildrenOfConcept(Search.STORED_QUERIES.getNid(), true);
+			Set<Integer> savedSearches = OCHREUtility.getAllChildrenOfConcept(Search.STORED_QUERIES.getConceptSequence(), true, false);
 
 			SearchType currentSearchType = SearchModel.getSearchTypeSelector().getSearchTypeComboBox().getSelectionModel().getSelectedItem();
-			for (ConceptVersionBI concept : savedSearches) {
-				if (getCachedSearchTypeFromSearchConcept(concept) == currentSearchType) {
+			for (Integer conceptSeq : savedSearches) {
+				int nid = Get.identifierService().getConceptNid(conceptSeq);
+				if (getCachedSearchTypeFromSearchConcept(nid) == currentSearchType) {
 					boolean addSearchToList = true;
 					if (currentSearchType == SearchType.TEXT) {
 						ComponentSearchType currentlyViewedComponentSearchType = TextSearchTypeModel.getCurrentComponentSearchType();
-						ComponentSearchType loadedComponentSearchType = getCachedComponentSearchTypeFromSearchConcept(concept);
+						ComponentSearchType loadedComponentSearchType = getCachedComponentSearchTypeFromSearchConcept(nid);
 						
 						if (currentlyViewedComponentSearchType != null && loadedComponentSearchType != null) {
 							if (currentlyViewedComponentSearchType != loadedComponentSearchType) {
@@ -269,9 +269,9 @@ public class EnhancedSavedSearch {
 					}
 					
 					if (addSearchToList) {
-						String fsn = OTFUtility.getFullySpecifiedName(concept);
-						String preferredTerm = OTFUtility.getConPrefTerm(concept.getNid());
-						searches.add(new SearchDisplayConcept(fsn, preferredTerm, concept.getNid()));
+						String fsn = OCHREUtility.getFSNForConceptNid(nid, null).get();
+						String preferredTerm = OCHREUtility.getPreferredTermForConceptNid(nid, null).get();
+						searches.add(new SearchDisplayConcept(fsn, preferredTerm, nid));
 					}
 				}
 			}
@@ -366,26 +366,26 @@ public class EnhancedSavedSearch {
 	}
 	
 	private static Map<Integer, SearchType> conceptSearchTypeCache = new HashMap<>();
-	private static SearchType getCachedSearchTypeFromSearchConcept(ConceptVersionBI concept) throws IOException {
+	private static SearchType getCachedSearchTypeFromSearchConcept(Integer conNid) throws IOException {
 		synchronized (conceptSearchTypeCache) {
-			if (conceptSearchTypeCache.get(concept.getNid()) == null) {
-				conceptSearchTypeCache.put(concept.getConceptNid(), getSearchTypeFromSearchConcept(concept));
+			if (conceptSearchTypeCache.get(conNid) == null) {
+				conceptSearchTypeCache.put(conNid, getSearchTypeFromSearchConcept(conNid));
 			}
 		}
 
-		return conceptSearchTypeCache.get(concept.getNid());
+		return conceptSearchTypeCache.get(conNid);
 	}
 	private static Set<Integer> badSearchConceptsToIgnore = new HashSet<>();
-	private static SearchType getSearchTypeFromSearchConcept(ConceptVersionBI concept) throws IOException {
+	private static SearchType getSearchTypeFromSearchConcept(Integer conNid) throws IOException {
 		synchronized (badSearchConceptsToIgnore) {
-			if (badSearchConceptsToIgnore.contains(concept.getConceptNid())) {
-				LOG.debug("Ignoring invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\"");
+			if (badSearchConceptsToIgnore.contains(conNid)) {
+				LOG.debug("Ignoring invalid/unsupported search filter concept nid=" + conNid + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"");
 			
 				return null;
 			}
 		}
 
-		Collection<? extends RefexDynamicVersionBI<?>> refexes = concept.getRefexesDynamicActive(OTFUtility.getViewCoordinate());
+		Collection<? extends RefexDynamicVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
 		for (RefexDynamicVersionBI<?> refex : refexes) {
 			RefexDynamicUsageDescription dud = null;
 			try {
@@ -403,12 +403,13 @@ public class EnhancedSavedSearch {
 			} else if (dud.getRefexName().equals(Search.SEARCH_SEMEME_CONTENT_FILTER.getConceptDescriptionText())) {
 				return SearchType.SEMEME;
 			} else {
-				LOG.debug("getSearchTypeFromSearchConcept() ignoring refex \"" + dud.getRefexName() + "\" on search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\""); 
+				LOG.debug("getSearchTypeFromSearchConcept() ignoring refex \"" + dud.getRefexName() + "\" on search filter concept nid=" + conNid 
+						+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\""); 
 			}
 		}
 		
 		//String warn = "Automatically RETIRING invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\"";
-		String warn = "Invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\"";
+		String warn = "Invalid/unsupported search filter concept nid=" + conNid+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"";
 
 		LOG.warn(warn);
 		
@@ -433,30 +434,31 @@ public class EnhancedSavedSearch {
 //				// Commit
 //				OTFUtility.commit(concept);
 			} catch (Exception e) {
-				String error = "FAILED to automatically retire invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
+				String error = "FAILED to automatically retire invalid/unsupported search filter concept nid=" + conNid 
+						+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
 				LOG.error(error, e);
 				e.printStackTrace();
 			} finally {
 //				globals.enableAllCommitListeners();
 
-				badSearchConceptsToIgnore.add(concept.getConceptNid());
+				badSearchConceptsToIgnore.add(conNid);
 			}
 		}
 		return null;
 	}
 	
 	private static Map<Integer, ComponentSearchType> componentSearchTypeCache = new HashMap<>();
-	private static ComponentSearchType getCachedComponentSearchTypeFromSearchConcept(ConceptVersionBI concept) throws IOException {
+	private static ComponentSearchType getCachedComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
 		synchronized (componentSearchTypeCache) {
-			if (componentSearchTypeCache.get(concept.getNid()) == null) {
-				componentSearchTypeCache.put(concept.getConceptNid(), getComponentSearchTypeFromSearchConcept(concept));
+			if (componentSearchTypeCache.get(conNid) == null) {
+				componentSearchTypeCache.put(conNid, getComponentSearchTypeFromSearchConcept(conNid));
 			}
 		}
 		
-		return componentSearchTypeCache.get(concept.getNid());
+		return componentSearchTypeCache.get(conNid);
 	}
-	private static ComponentSearchType getComponentSearchTypeFromSearchConcept(ConceptVersionBI concept) throws IOException {
-		Collection<? extends RefexDynamicVersionBI<?>> refexes = concept.getRefexesDynamicActive(OTFUtility.getViewCoordinate());
+	private static ComponentSearchType getComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
+		Collection<? extends RefexDynamicVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
 		for (RefexDynamicVersionBI<?> refex : refexes) {
 			RefexDynamicUsageDescription dud = null;
 			try {
@@ -474,7 +476,7 @@ public class EnhancedSavedSearch {
 			}
 		}
 		
-		String error = "Invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\"";
+		String error = "Invalid/unsupported search filter concept nid=" + conNid + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"";
 		LOG.error(error);
 		return null;
 	}
