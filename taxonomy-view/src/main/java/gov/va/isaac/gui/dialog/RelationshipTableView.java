@@ -39,6 +39,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 
 import java.io.IOException;
@@ -691,10 +692,13 @@ public class RelationshipTableView implements EmbeddableViewI
 						}
 						if (showActiveOnly_.get() == false || r.getState() == State.ACTIVE)
 						{
-							//first one we see with a new UUID is current, others are historical
-							RelationshipVersion newRelationshipVersion = new RelationshipVersion(r, !r.getPrimordialUuid().equals(lastSeenRefex));
-							count++;
-							relationshipsTable.getItems().add(newRelationshipVersion);
+							if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == r.getPremiseType()) {
+
+								//first one we see with a new UUID is current, others are historical
+								RelationshipVersion newRelationshipVersion = new RelationshipVersion(r, !r.getPrimordialUuid().equals(lastSeenRefex));
+								count++;
+								relationshipsTable.getItems().add(newRelationshipVersion);
+							}
 						}
 						lastSeenRefex = r.getPrimordialUuid();
 					}

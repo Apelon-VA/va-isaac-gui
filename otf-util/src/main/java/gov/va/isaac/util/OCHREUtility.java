@@ -71,11 +71,6 @@ public final class OCHREUtility {
 		};
 		sememes.distinct().forEach(action);
 
-//		Iterator<SememeChronology<? extends SememeVersion>> it = sememes.iterator();
-//		for (SememeChronology<? extends SememeVersion> current = it.next(); it.hasNext(); current = it.next()) {
-//			action.accept(current);
-//		}
-
 		if (pathConcepts.isEmpty()) {
 			LOG.error("No paths loaded based on membership in {}", IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE);
 		} else {
@@ -282,8 +277,8 @@ public final class OCHREUtility {
 	
 	// TODO this Tree API should work...
 	//		Tree ancestorTree = taxonomyTree.createAncestorTree(child.getConceptSequence());
-//	
-//	return getChildrenAsConceptNids(child, ancestorTree);
+	//	
+	//	return getChildrenAsConceptNids(child, ancestorTree);
 	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
 		LOG.debug("Getting parents of concept {}...", Get.conceptDescriptionText(child.getNid()));
 		int[] parentSequences = taxonomyTree.getParentSequences(child.getConceptSequence());
@@ -292,16 +287,11 @@ public final class OCHREUtility {
 		
 		for (int parentSequence : parentSequences) {
 			int parentNid = Get.identifierService().getConceptNid(parentSequence);
-//			if (Get.taxonomyService().isChildOf(child.getNid(), parentNid, vc)) {
-				//if (! Get.taxonomyService().isChildOf(parentNid, child.getNid(), vc)) {
-					parentNids.add(parentNid);
-				//} else {
-				//	LOG.debug("{} is both child and parent of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
-				//}
-//			}
-//			else {
-//				LOG.debug("{} is not a child of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
-//			}
+			//if (! Get.taxonomyService().isChildOf(parentNid, child.getNid(), vc)) {
+			parentNids.add(parentNid);
+			//} else {
+			//	LOG.debug("{} is both child and parent of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
+			//}
 		}
 		
 		return parentNids;
