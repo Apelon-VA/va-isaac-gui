@@ -45,10 +45,15 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.tree.Tree;
+
 import java.util.Optional;
 import java.util.UUID;
+
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -73,6 +78,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,31 +122,25 @@ public class ConceptViewController {
 	private int conceptNid = 0;
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private TaxonomyCoordinate taxonomyCoordinate = null;
-    public TaxonomyCoordinate getTaxonomyCoordinate() {
-    	if (taxonomyCoordinate == null) {
-    		taxonomyCoordinate = AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get();
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    
+    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
+    	if (taxonomyCoordinate.get() == null) {
+    		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
     	}
     	
     	return taxonomyCoordinate;
     }
     
-    private ConceptSnapshotService conceptSnapshotService = null;
-    public ConceptSnapshotService getConceptSnapshotService() {
-    	if (conceptSnapshotService == null) {
-    		conceptSnapshotService = LookupService.getService(ConceptService.class).getSnapshot(
-    				getTaxonomyCoordinate().getStampCoordinate(),
-    				getTaxonomyCoordinate().getLanguageCoordinate());
+    private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
+    public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
+    	if (conceptSnapshotService.get() == null) {
+    		conceptSnapshotService.set(LookupService.getService(ConceptService.class).getSnapshot(
+    				getTaxonomyCoordinate().get().getStampCoordinate(),
+    				getTaxonomyCoordinate().get().getLanguageCoordinate()));
     	}
     	
     	return conceptSnapshotService;
-    }
-    
-    public static interface TaxonomyCoordinateProvider {
-    	TaxonomyCoordinate getTaxonomyCoordinate();
-    }
-    public static interface ConceptSnapshotServiceProvider {
-    	ConceptSnapshotService getConceptSnapshotService();
     }
 
 	@FXML
@@ -201,25 +201,12 @@ public class ConceptViewController {
 	}
 
 	public <T extends ConceptVersion<T>> void setConcept(ConceptChronology<T> concept) {
-		if (taxonomyCoordinate == null) {
-			AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().addListener(new ChangeListener<TaxonomyCoordinate>() {
-				@Override
-				public void changed(
-						ObservableValue<? extends TaxonomyCoordinate> observable,
-						TaxonomyCoordinate oldValue, TaxonomyCoordinate newValue) {
-
-					taxonomyCoordinate = newValue;
-					//setConcept(concept);
-				}
-			});
-		}
-
 		conceptUuid = concept.getPrimordialUuid();
 
 		// Update text of labels.
 		ConceptChronology rawCC = (ConceptChronology)concept;
 		Optional<LatestVersion<ConceptVersion>> latestVersionOptional =
-				rawCC.getLatestVersion(ConceptVersion.class, getConceptSnapshotService().getStampCoordinate());
+				rawCC.getLatestVersion(ConceptVersion.class, getConceptSnapshotService().get().getStampCoordinate());
 		conceptStatusLabel.setText(latestVersionOptional.get().value().getState().name());
 		
 		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty("Loading...");
@@ -255,7 +242,7 @@ public class ConceptViewController {
 		VBox.setVgrow(dtv.getView(), Priority.ALWAYS);
 		
 		//rel table section
-		rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), () -> getTaxonomyCoordinate(), ()->getConceptSnapshotService());
+		rtv = new RelationshipTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), getTaxonomyCoordinate(), getConceptSnapshotService());
 		relationshipsTableHolder.getChildren().add(rtv.getView());
 		VBox.setVgrow(rtv.getView(), Priority.ALWAYS);
 
@@ -308,10 +295,10 @@ public class ConceptViewController {
 			relationshipViewMode.setPadding(new Insets(2.0));
 			ImageView taxonomySource = Images.TAXONOMY_SOURCE.createImageView();
 			taxonomySource.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().isEqualTo(RelationshipDirection.SOURCE));
-			Tooltip.install(taxonomySource, new Tooltip("Displaying the Source Relationships only, click to display Target"));
+			Tooltip.install(taxonomySource, new Tooltip("Displaying the Source (parent) Relationships only, click to display Target"));
 			ImageView taxonomyTarget = Images.TAXONOMY_TARGET.createImageView();
 			taxonomyTarget.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().isEqualTo(RelationshipDirection.TARGET));
-			Tooltip.install(taxonomyTarget, new Tooltip("Displaying the Target Relationships only, click to display Source and Target"));
+			Tooltip.install(taxonomyTarget, new Tooltip("Displaying the Target (child) Relationships only, click to display Source and Target"));
 			ImageView taxonomySourceAndTarget = Images.TAXONOMY_SOURCE_AND_TARGET.createImageView();
 			taxonomySourceAndTarget.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().isEqualTo(RelationshipDirection.SOURCE_AND_TARGET));
 			Tooltip.install(taxonomySourceAndTarget, new Tooltip("Displaying the Source and Target Relationships, click to display Source only"));
@@ -399,12 +386,12 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().getLanguageCoordinate(), getConceptSnapshotService().getStampCoordinate());
+			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().get().getLanguageCoordinate(), getConceptSnapshotService().get().getStampCoordinate());
 			ConceptChronology localRawCC = Get.conceptService().getConcept(concept.getPrimordialUuid());
 			
 			Optional<LatestVersion<ConceptVersion>> latestConceptVersionOptional = localRawCC.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
 			ConceptVersion conceptVersion = latestConceptVersionOptional.get().value();
-			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().getConceptSnapshot(concept.getNid());
+			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().get().getConceptSnapshot(concept.getNid());
 			conceptNid = localRawCC.getNid();
 			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(localRawCC.getConceptSequence()));
 

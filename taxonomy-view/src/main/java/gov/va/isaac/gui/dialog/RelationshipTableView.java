@@ -21,8 +21,6 @@ package gov.va.isaac.gui.dialog;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
-import gov.va.isaac.gui.dialog.ConceptViewController.ConceptSnapshotServiceProvider;
-import gov.va.isaac.gui.dialog.ConceptViewController.TaxonomyCoordinateProvider;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
@@ -42,9 +40,11 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 
@@ -88,6 +88,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+import javafx.beans.property.ReadOnlyObjectProperty;
 
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -112,8 +113,8 @@ public class RelationshipTableView implements EmbeddableViewI
 	private TableView<RelationshipVersion> relationshipsTable = new TableView<>();
 	private UUID conceptUUID_;
 	private BooleanProperty showActiveOnly_, showHistory_, showStampColumns_;
-	private final TaxonomyCoordinateProvider taxonomyCoordinateProvider;
-	private final ConceptSnapshotServiceProvider conceptSnapshotServiceProvider;
+	private final ReadOnlyObjectProperty<TaxonomyCoordinate> taxonomyCoordinate;
+	private final ReadOnlyObjectProperty<ConceptSnapshotService> conceptSnapshotService;
 	
 	private ReadOnlyStringWrapper summaryText = new ReadOnlyStringWrapper("0 relationships");
 	
@@ -123,10 +124,10 @@ public class RelationshipTableView implements EmbeddableViewI
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 	private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
-	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, TaxonomyCoordinateProvider tcProvider, ConceptSnapshotServiceProvider cssProvider)
+	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, ReadOnlyObjectProperty<TaxonomyCoordinate> tcProvider, ReadOnlyObjectProperty<ConceptSnapshotService> cssProvider)
 	{
-		taxonomyCoordinateProvider = tcProvider;
-		conceptSnapshotServiceProvider = cssProvider;
+		taxonomyCoordinate = tcProvider;
+		conceptSnapshotService = cssProvider;
 		
 		relationshipsTable.setTableMenuButtonVisible(true);
 		relationshipsTable.setMaxHeight(Double.MAX_VALUE);
@@ -294,7 +295,7 @@ public class RelationshipTableView implements EmbeddableViewI
 									graphic = backgroundLookup(this, (RelationshipColumnType)getTableColumn().getUserData(), ref);
 									break;
 								case TIME: case STATUS_STRING: case UUID: case GROUP:
-									graphic = new Text(ref.getDisplayStrings((RelationshipColumnType)getTableColumn().getUserData(), conceptSnapshotServiceProvider.getConceptSnapshotService()).getKey());
+									graphic = new Text(ref.getDisplayStrings((RelationshipColumnType)getTableColumn().getUserData(), conceptSnapshotService.get()).getKey());
 									break;
 								default :
 									throw new RuntimeException("Unhandeled column");
@@ -450,7 +451,7 @@ public class RelationshipTableView implements EmbeddableViewI
 	{
 		Utility.execute(() ->
 		{
-			String value = ref.getDisplayStrings(type, conceptSnapshotServiceProvider.getConceptSnapshotService()).getKey();
+			String value = ref.getDisplayStrings(type, conceptSnapshotService.get()).getKey();
 			Platform.runLater(() ->
 			{
 				if (cell.isEmpty() || cell.getItem() == null)
@@ -619,13 +620,16 @@ public class RelationshipTableView implements EmbeddableViewI
 			{
 				ConceptChronology localConcept = (concept == null ? Get.conceptService().getConcept(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept.getChronology());
 			
-				//target is the only option where we would exclude source
+				// Display source (parent) relationships
+				// target is the only option where we would exclude source
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
-					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getLatestRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+					//OchreUtility.getParentsAsConceptNids(localConcept, getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
+					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getLatestRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate());
 					allRelationships.addAll(outgoingRelChronicles);
 				}
 
+				// Display target (child) relationships
 				// source is the only option where we would exclude target
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
 				{
@@ -696,7 +700,7 @@ public class RelationshipTableView implements EmbeddableViewI
 						if (showActiveOnly_.get() == false || r.getState() == State.ACTIVE)
 						{
 							// Filter by PremiseType
-							if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == r.getPremiseType()) {
+							if (taxonomyCoordinate.get().getTaxonomyType() == r.getPremiseType()) {
 								//first one we see with a new UUID is current, others are historical
 								RelationshipVersion newRelationshipVersion = new RelationshipVersion(r, !r.getPrimordialUuid().equals(lastSeenRefex));
 								count++;
