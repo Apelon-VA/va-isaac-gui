@@ -112,7 +112,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate()));
+                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get()));
 
                 List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
@@ -127,8 +127,9 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                         SctTreeItem extraParentItem =
                                 new SctTreeItem(extraParent,
                                                 treeItem.getDisplayPolicies(),
-                                                treeItem.getTaxonomyCoordinateProvider(),
-                                                treeItem.getTaxonomyTreeProvider());
+                                                treeItem.getTaxonomyCoordinate(),
+                                                treeItem.getTaxonomyTree(),
+                                                treeItem.getConceptSnapshotService());
                         extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
                         secondaryParentItems.add(extraParentItem);
                 }
@@ -168,7 +169,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
         }
         else if (!empty && taxRef != null) {
             final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
-            ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().getConceptSnapshot(taxRef.getNid());
+            ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().get().getConceptSnapshot(taxRef.getNid());
 
             if (treeItem.getMultiParentDepth() > 0) {
                 if (treeItem.isLeaf()) {
@@ -195,7 +196,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     setGraphic(graphicBorderPane);
                 }
 
-                String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
+                String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
                 if (desc != null) {
                     setText(desc);
                 } else {
@@ -217,7 +218,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
             setDisclosureNode(iv);
 
-            String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
+            String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
             if (desc != null) {
                 setText(desc);
             } else {
