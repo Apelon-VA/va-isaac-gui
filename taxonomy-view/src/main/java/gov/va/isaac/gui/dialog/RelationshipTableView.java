@@ -32,6 +32,7 @@ import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.LogicCoordinates;
@@ -616,50 +617,19 @@ public class RelationshipTableView implements EmbeddableViewI
 			ArrayList<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 			try
 			{
-				ConceptSnapshot localConcept = (concept == null ? conceptSnapshotServiceProvider.getConceptSnapshotService().getConceptSnapshot(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept);
-
-				// Get latest LogicGraph for this concept
-				Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = null;
-				LogicGraphSememeImpl latestStatedGraph = null;
-				LogicGraphSememeImpl latestInferredGraph = null;
-				
-				//if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == PremiseType.STATED)
-				{
-					defChronologyOptional = Get.statedDefinitionChronology(localConcept.getChronology().getNid());
-
-					SememeChronology rawDefChronology = defChronologyOptional.get();
-					Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
-					latestStatedGraph = latestGraphLatestVersionOptional.get().value();
-				}
-				//else
-				{
-					defChronologyOptional = Get.inferredDefinitionChronology(localConcept.getChronology().getNid());
-
-					SememeChronology rawDefChronology = defChronologyOptional.get();
-					Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
-					latestInferredGraph = latestGraphLatestVersionOptional.get().value();
-				}				
+				ConceptChronology localConcept = (concept == null ? Get.conceptService().getConcept(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept.getChronology());
+			
 				//target is the only option where we would exclude source
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
-					List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> outgoingRelChronicles = localConcept.getChronology().getRelationshipListOriginatingFromConcept();
-					for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : outgoingRelChronicles)
-					{
-						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
-						{
-							// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
-							if ((rv.getReferencedComponentNid() == latestStatedGraph.getNid() && rv.getStampSequence() == latestStatedGraph.getStampSequence())
-									|| (rv.getReferencedComponentNid() == latestInferredGraph.getNid() && rv.getStampSequence() == latestInferredGraph.getStampSequence())) {
-								allRelationships.add(rv);
-							}
-						}
-					}
+					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getLatestRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinateProvider.getTaxonomyCoordinate().getStampCoordinate());
+					allRelationships.addAll(outgoingRelChronicles);
 				}
 
-				//source is the only option where we would exclude target
+				// source is the only option where we would exclude target
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
 				{
-					List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> incomingRelChronicles = localConcept.getChronology().getRelationshipListWithConceptAsDestination();
+					List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> incomingRelChronicles = localConcept.getRelationshipListWithConceptAsDestination();
 					for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : incomingRelChronicles)
 					{
 						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
@@ -668,6 +638,7 @@ public class RelationshipTableView implements EmbeddableViewI
 						}
 					}
 				}
+
 				//Sort the newest to the top per UUID
 				Collections.sort(allRelationships, new Comparator<RelationshipVersionAdaptor<?>>()
 				{
@@ -715,15 +686,17 @@ public class RelationshipTableView implements EmbeddableViewI
 					relationshipsTable.getItems().clear();
 					for (RelationshipVersionAdaptor<?> r : allRelationships)
 					{
+						// Filter by most recent, unless historical selected
 						if (!showHistory_.get() && r.getPrimordialUuid().equals(lastSeenRefex))
 						{
 							//Only want the newest one per UUID if history isn't requested
 							continue;
 						}
+						// Filter by State
 						if (showActiveOnly_.get() == false || r.getState() == State.ACTIVE)
 						{
+							// Filter by PremiseType
 							if (taxonomyCoordinateProvider.getTaxonomyCoordinate().getTaxonomyType() == r.getPremiseType()) {
-
 								//first one we see with a new UUID is current, others are historical
 								RelationshipVersion newRelationshipVersion = new RelationshipVersion(r, !r.getPrimordialUuid().equals(lastSeenRefex));
 								count++;

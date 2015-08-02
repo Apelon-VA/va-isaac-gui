@@ -29,7 +29,10 @@ import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
@@ -166,6 +169,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
         }
         else if (!empty && taxRef != null) {
             final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
+            ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().getConceptSnapshot(taxRef.getNid());
 
             if (treeItem.getMultiParentDepth() > 0) {
                 if (treeItem.isLeaf()) {
@@ -199,7 +203,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                 	LOG.debug("No description found for concept {}", taxRef.toUserString());
                 }
 
-                if (! taxRef.isLatestVersionActive(treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate())) {
+                if (snapshot.getState() != State.ACTIVE) {
                 	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                 } else {
                 	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
@@ -220,8 +224,8 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             } else {
             	LOG.debug("No description found for concept {}", taxRef.toUserString());
             }
-
-            if (! taxRef.isLatestVersionActive(treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate())) {
+            
+            if (snapshot.getState() != State.ACTIVE) {
             	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
             } else {
             	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));

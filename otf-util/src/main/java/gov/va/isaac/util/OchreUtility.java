@@ -8,6 +8,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -26,14 +27,20 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.util.UuidFactory;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -41,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +62,65 @@ public final class OchreUtility {
 
 	private OchreUtility() {}
 
+	/**
+	 * @param nid concept nid
+	 * @param stampCoordinate StampCoordinate for retrieving latest LogicGraphSememeImpl
+	 * @return List of RelationshipVersionAdaptor
+	 * 
+	 * This method does not filter by PremiseType (returns both STATED and INFERRED)
+	 */
+	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate stampCoordinate) {
+		return getLatestRelationshipListOriginatingFromConcept(nid, stampCoordinate, (PremiseType)null);
+	}
+	/**
+	 * @param nid concept nid
+	 * @param stampCoordinate StampCoordinate for retrieving latest LogicGraphSememeImpl
+	 * @param premiseType PremiseTypes by which to filter. Passing null disables filtering by PremiseType (returns both STATED and INFERRED)
+	 * @return List of RelationshipVersionAdaptor
+	 * 
+	 * 
+	 */
+	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate stampCoordinate, PremiseType premiseType) {
+		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
+
+		// Get latest LogicGraph for this concept
+		LogicGraphSememeImpl latestStatedGraph = null;
+		LogicGraphSememeImpl latestInferredGraph = null;
+
+		if (premiseType == null || premiseType == PremiseType.STATED)
+		{
+			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
+
+			SememeChronology rawDefChronology = defChronologyOptional.get();
+			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
+			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
+		}	
+		
+		if (premiseType == null || premiseType == PremiseType.INFERRED)
+		{
+			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(nid);
+
+			SememeChronology rawDefChronology = defChronologyOptional.get();
+			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
+			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
+		}				
+		//target is the only option where we would exclude source
+
+		List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> outgoingRelChronicles = Get.conceptService().getConcept(nid).getRelationshipListOriginatingFromConcept();
+		for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : outgoingRelChronicles)
+		{
+			for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
+			{
+				// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
+				if (((premiseType == null || premiseType == PremiseType.STATED) && rv.getReferencedComponentNid() == latestStatedGraph.getNid() && rv.getStampSequence() == latestStatedGraph.getStampSequence())
+						|| ((premiseType == null || premiseType == PremiseType.INFERRED) && rv.getReferencedComponentNid() == latestInferredGraph.getNid() && rv.getStampSequence() == latestInferredGraph.getStampSequence())) {
+					allRelationships.add(rv);
+				}
+			}
+		}
+		return allRelationships;
+	}
+	
 	public static Set<ConceptVersion<?>> getPathConcepts() {
 		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getConceptSequence());
 		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));

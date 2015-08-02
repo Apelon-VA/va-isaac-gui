@@ -24,8 +24,11 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemI;
 import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.util.WorkExecutors;
 
@@ -76,6 +79,11 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
     }
     public TaxonomyTreeProvider getTaxonomyTreeProvider() {
     	return taxonomyTreeProvider;
+    }
+    public ConceptSnapshotService getConceptSnapshotService() {
+    	return LookupService.getService(ConceptService.class).getSnapshot(
+    			getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getStampCoordinate(), 
+    			getTaxonomyCoordinateProvider().getTaxonomyCoordinate().getLanguageCoordinate());
     }
     
     private static WorkExecutors getWorkExecutors()
