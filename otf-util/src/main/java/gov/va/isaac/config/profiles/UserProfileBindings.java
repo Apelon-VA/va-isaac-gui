@@ -18,13 +18,9 @@
  */
 package gov.va.isaac.config.profiles;
 
-import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ViewCoordinateComponents;
-import gov.vha.isaac.cradle.DefaultConfigurationService;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -40,10 +36,12 @@ import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -56,11 +54,14 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
+
 import javax.inject.Singleton;
+
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
@@ -93,9 +94,9 @@ public class UserProfileBindings
 
 	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
 
-	private final ReadOnlyObjectWrapper<StampCoordinate> stampCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<StampCoordinate<?>> stampCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
-	private final ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
 	private final ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
 	
@@ -203,7 +204,7 @@ public class UserProfileBindings
 	/**
 	 * @return the stampCoordinate
 	 */
-	public ReadOnlyObjectProperty<StampCoordinate> getStampCoordinate()
+	public ReadOnlyObjectProperty<StampCoordinate<?>> getStampCoordinate()
 	{
 		return stampCoordinate.getReadOnlyProperty();
 	}
@@ -219,7 +220,7 @@ public class UserProfileBindings
 	/**
 	 * @return the taxonomyCoordinate
 	 */
-	public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate()
+	public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate()
 	{
 		return taxonomyCoordinate.getReadOnlyProperty();
 	}
@@ -356,7 +357,7 @@ public class UserProfileBindings
 			try {
 				updateTaxonomyTree = true;
 
-				TaxonomyCoordinate newCoordinate = null;
+				TaxonomyCoordinate<?> newCoordinate = null;
 				switch (statedInferredPolicy.get()) {
 				case STATED:
 					newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());

@@ -8,7 +8,6 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -46,7 +45,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -106,8 +104,8 @@ public final class OchreUtility {
 		}				
 		//target is the only option where we would exclude source
 
-		List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> outgoingRelChronicles = Get.conceptService().getConcept(nid).getRelationshipListOriginatingFromConcept();
-		for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : outgoingRelChronicles)
+		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(nid).getRelationshipListOriginatingFromConcept();
+		for (SememeChronology<? extends RelationshipVersionAdaptor<?>> chronicle : outgoingRelChronicles)
 		{
 			for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 			{
@@ -149,14 +147,14 @@ public final class OchreUtility {
 		return Collections.unmodifiableSet(pathConcepts);
 	}
 
-	public static ConceptSnapshotService conceptSnapshotService(TaxonomyCoordinate vc) {
+	public static ConceptSnapshotService conceptSnapshotService(TaxonomyCoordinate<?> vc) {
 		return conceptSnapshotService(vc.getStampCoordinate(), vc.getLanguageCoordinate());
 	}
-	public static ConceptSnapshotService conceptSnapshotService(StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
+	public static ConceptSnapshotService conceptSnapshotService(StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
 		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
 	}
 
-	public static String conceptDescriptionText(int conceptId, TaxonomyCoordinate vc) {
+	public static String conceptDescriptionText(int conceptId, TaxonomyCoordinate<?> vc) {
 		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
 	}
 	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
@@ -171,10 +169,10 @@ public final class OchreUtility {
 		return Get.conceptDescriptionText(conceptId);
 	}
 
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate vc) {
+	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate<?> vc) {
 		return getDescriptionOptional(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
 	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
+	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<?> stampCoordinate) {
 		try {
 			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			if (userProfile == null)
@@ -240,16 +238,16 @@ public final class OchreUtility {
 		}
 	}
 
-	public static String getDescription(UUID conceptUuid, TaxonomyCoordinate vc) {
+	public static String getDescription(UUID conceptUuid, TaxonomyCoordinate<?> vc) {
 		return getDescription(conceptSnapshotService(vc).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), vc);
 	}
-	public static String getDescription(ConceptChronology<?> conceptChronology, TaxonomyCoordinate vc) {
+	public static String getDescription(ConceptChronology<?> conceptChronology, TaxonomyCoordinate<?> vc) {
 		return getDescription(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
 	}
-	public static String getDescription(UUID conceptUuid, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
+	public static String getDescription(UUID conceptUuid, LanguageCoordinate languageCoordinate, StampCoordinate<?> stampCoordinate) {
 		return getDescription(conceptSnapshotService(stampCoordinate, languageCoordinate).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), languageCoordinate, stampCoordinate);
 	}
-	public static String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate stampCoordinate) {
+	public static String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<?> stampCoordinate) {
 		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
 
 		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {

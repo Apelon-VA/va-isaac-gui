@@ -122,9 +122,9 @@ public class ConceptViewController {
 	private int conceptNid = 0;
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     
-    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
     	if (taxonomyCoordinate.get() == null) {
     		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
     	}
