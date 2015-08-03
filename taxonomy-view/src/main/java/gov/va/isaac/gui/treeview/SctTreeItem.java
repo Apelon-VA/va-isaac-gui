@@ -68,14 +68,14 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
     private int multiParentDepth = 0;
     private boolean secondaryParentOpened = false;
     private SctTreeItemDisplayPolicies displayPolicies;
-    private final ReadOnlyObjectProperty<TaxonomyCoordinate> taxonomyCoordinate;
+    private final ReadOnlyObjectProperty<TaxonomyCoordinate<?>> taxonomyCoordinate;
     private final ReadOnlyObjectProperty<Tree> taxonomyTree;
     private final ReadOnlyObjectProperty<ConceptSnapshotService> conceptSnapshotService;
     
     public ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
     	return taxonomyTree;
     }
-    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
     	return taxonomyCoordinate;
     }
     public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
@@ -103,11 +103,11 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
         }
     }
     
-    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
         this(taxRef, displayPolicies, vcp, ttp, css, (Node) null);
     }
 
-    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> t, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> t, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
         super(t, node);
         this.taxonomyCoordinate = vcp;
         this.taxonomyTree = ttp;

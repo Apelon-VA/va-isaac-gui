@@ -69,7 +69,7 @@ public final class OchreUtility {
 	 * 
 	 * This method does not filter by PremiseType (returns both STATED and INFERRED)
 	 */
-	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate stampCoordinate) {
+	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate) {
 		return getLatestRelationshipListOriginatingFromConcept(nid, stampCoordinate, (PremiseType)null);
 	}
 	/**
@@ -80,7 +80,7 @@ public final class OchreUtility {
 	 * 
 	 * 
 	 */
-	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate stampCoordinate, PremiseType premiseType) {
+	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, PremiseType premiseType) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 
 		// Get latest LogicGraph for this concept
