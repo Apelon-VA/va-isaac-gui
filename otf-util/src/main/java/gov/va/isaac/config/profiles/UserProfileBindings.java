@@ -18,13 +18,25 @@
  */
 package gov.va.isaac.config.profiles;
 
-import gov.va.isaac.AppContext;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.inject.Singleton;
+
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableSetWrapper;
+
 import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateComponents;
-import gov.vha.isaac.cradle.DefaultConfigurationService;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -40,10 +52,7 @@ import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.UUID;
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -56,12 +65,6 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
-import javax.inject.Singleton;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * {@link UserProfileBindings}
@@ -97,10 +100,6 @@ public class UserProfileBindings
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
-	private final ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
-	
-	private final ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
-
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
 				displayFSN,
@@ -118,9 +117,7 @@ public class UserProfileBindings
 				
 				stampCoordinate,
 				languageCoordinate,
-				taxonomyCoordinate,
-				taxonomyTree,
-				conceptSnapshotService
+				taxonomyCoordinate
 		};
 	}
 
@@ -224,34 +221,16 @@ public class UserProfileBindings
 		return taxonomyCoordinate.getReadOnlyProperty();
 	}
 	
-	/**
-	 * @return the taxonomyTree
-	 */
-	public ReadOnlyObjectProperty<Tree> getTaxonomyTree()
-	{
-		return taxonomyTree.getReadOnlyProperty();
-	}
-	
-	/**
-	 * @return the conceptSnapshotService
-	 */
-	public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService()
-	{
-		return conceptSnapshotService.getReadOnlyProperty();
-	}
-	
 	protected void update(UserProfile up)
 	{
 		boolean updateViewCoordinateComponents = false;
-		boolean updateStampCoordinate = false;
-		boolean updateLanguageCoordinate = false;
-		boolean updateTaxonomyCoordinate = false;
-		boolean updateTaxonomyTree = false;
-		boolean updateConceptSnapshotService = false;
+		AtomicBoolean updateStampCoordinate = new AtomicBoolean(false);
+		AtomicBoolean updateLanguageCoordinate = new AtomicBoolean(false);
+		AtomicBoolean updateTaxonomyCoordinate = new AtomicBoolean(false);
 		
 		if (displayFSN.get() != up.getDisplayFSN())
 		{
-			updateLanguageCoordinate = true;
+			updateLanguageCoordinate.set(true);
 			displayFSN.set(up.getDisplayFSN());
 		}
 		if (displayRelDirection.get() != up.getDisplayRelDirection())
@@ -270,19 +249,19 @@ public class UserProfileBindings
 		if (statedInferredPolicy.get() != up.getStatedInferredPolicy())
 		{
 			updateViewCoordinateComponents = true;
-			updateTaxonomyCoordinate = true;
+			updateTaxonomyCoordinate.set(true);
 			statedInferredPolicy.set(up.getStatedInferredPolicy());
 		}
 		if (!Objects.equals(viewCoordinatePath.get(), up.getViewCoordinatePath()))
 		{
 			updateViewCoordinateComponents = true;
-			updateStampCoordinate = true;
+			updateStampCoordinate.set(true);
 			viewCoordinatePath.set(up.getViewCoordinatePath());
 		}
 		if (!Objects.equals(viewCoordinateTime.get(), up.getViewCoordinateTime()))
 		{
 			updateViewCoordinateComponents = true;
-			updateStampCoordinate = true;
+			updateStampCoordinate.set(true);
 			viewCoordinateTime.set(up.getViewCoordinateTime());
 		}
 		// This depends on the fact that UserProfile.getViewCoordinateStatuses() never returns null
@@ -291,7 +270,7 @@ public class UserProfileBindings
 				|| ! readOnlyViewCoordinateStatuses.get().containsAll(up.getViewCoordinateStatuses())
 				|| ! up.getViewCoordinateStatuses().containsAll(readOnlyViewCoordinateStatuses.get())) {
 			updateViewCoordinateComponents = true;
-			updateStampCoordinate = true;
+			updateStampCoordinate.set(true);
 			viewCoordinateStatuses.get().clear();
 			viewCoordinateStatuses.get().addAll(up.getViewCoordinateStatuses());
 		}
@@ -302,7 +281,7 @@ public class UserProfileBindings
 				|| ! readOnlyViewCoordinateModules.get().containsAll(up.getViewCoordinateModules())
 				|| ! up.getViewCoordinateModules().containsAll(readOnlyViewCoordinateModules.get())) {
 			updateViewCoordinateComponents = true;
-			updateStampCoordinate = true;
+			updateStampCoordinate.set(true);
 			viewCoordinateModules.get().clear();
 			viewCoordinateModules.get().addAll(up.getViewCoordinateModules());
 		}
@@ -317,83 +296,90 @@ public class UserProfileBindings
 			viewCoordinateComponents.set(vcc);
 		}
 		
-		if (updateStampCoordinate || stampCoordinate.get() == null) {
-			updateTaxonomyCoordinate = true;
-			updateConceptSnapshotService = true;
-			
-			StampPosition stampPosition = new StampPositionImpl(
-					viewCoordinateTime.get(),
-					Get.identifierService().getConceptSequenceForUuids(viewCoordinatePath.get()));
-			int[] moduleSequences = new int[viewCoordinateModules.get().size()];
-			int index = 0;
-			for (UUID moduleUuid : viewCoordinateModules.get()) {
-				if (moduleUuid != null) {
-					moduleSequences[index++] = Get.identifierService().getConceptSequenceForUuids(moduleUuid);
+		//From here down, things are expensive, and can't be done on the JavaFX thread...
+		Utility.execute(() ->
+		{
+			try {
+				if (updateStampCoordinate.get() || stampCoordinate.get() == null) {
+					updateTaxonomyCoordinate.set(true);
+					
+					StampPosition stampPosition = new StampPositionImpl(
+							viewCoordinateTime.get(),
+							Get.identifierService().getConceptSequenceForUuids(viewCoordinatePath.get()));
+					int[] moduleSequences = new int[viewCoordinateModules.get().size()];
+					int index = 0;
+					for (UUID moduleUuid : viewCoordinateModules.get()) {
+						if (moduleUuid != null) {
+							moduleSequences[index++] = Get.identifierService().getConceptSequenceForUuids(moduleUuid);
+						}
+					}
+
+					EnumSet<State> allowedStates = EnumSet.allOf(State.class);
+					allowedStates.clear();
+					for (Status status : viewCoordinateStatuses.get()) {
+						allowedStates.add(status.getState());
+					}
+					
+					CountDownLatch cdl = new CountDownLatch(1);
+					
+					Platform.runLater(() ->
+					{
+						stampCoordinate.set(
+							new StampCoordinateImpl(
+									StampPrecedence.PATH,
+									stampPosition, 
+									ConceptSequenceSet.of(moduleSequences), allowedStates));
+						cdl.countDown();
+					});
+					cdl.await();
 				}
-			}
-
-			EnumSet<State> allowedStates = EnumSet.allOf(State.class);
-			allowedStates.clear();
-			for (Status status : viewCoordinateStatuses.get()) {
-				allowedStates.add(status.getState());
-			}
-			stampCoordinate.set(
-					new StampCoordinateImpl(
-							StampPrecedence.PATH,
-							stampPosition, 
-							ConceptSequenceSet.of(moduleSequences), allowedStates));
-		}
-		
-		if (updateLanguageCoordinate || languageCoordinate.get() == null) {
-			updateTaxonomyCoordinate = true;
-			updateConceptSnapshotService = true;
-	
-			languageCoordinate.set(
-					displayFSN.get() ? LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate() : LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
-		}
-		
-		if (updateTaxonomyCoordinate) {
-			try {
-				updateTaxonomyTree = true;
-
-				TaxonomyCoordinate newCoordinate = null;
-				switch (statedInferredPolicy.get()) {
-				case STATED:
-					newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
-					break;
-				case INFERRED:
-					newCoordinate = TaxonomyCoordinates.getInferredTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
-					break;
-				default:
-					throw new RuntimeException("Unsupported StatedInferredOptions value " + statedInferredPolicy.get() + ".  Expected STATED or INFERRED.");
+				
+				
+				if (updateLanguageCoordinate.get() || languageCoordinate.get() == null) {
+					updateTaxonomyCoordinate.set(true);
+					
+					CountDownLatch cdl = new CountDownLatch(1);
+					Platform.runLater(() ->
+					{
+						languageCoordinate.set(
+							displayFSN.get() ? LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate() : LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
+						cdl.countDown();
+					});
+					cdl.await();
 				}
+				
+				if (updateTaxonomyCoordinate.get()) {
+					try {
 
-				taxonomyCoordinate.set(newCoordinate);
-			} catch (Exception e) {
-				LOG.error("Failed updating taxonomyCoordinate in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-				throw e;
-			}
-		}
-		
-		if (updateTaxonomyTree) {
-			try {
-				taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
-			} catch (Exception e) {
-				LOG.error("Failed updating taxonomyTree in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-				throw e;
-			}
-		}
+						TaxonomyCoordinate newCoordinate = null;
+						switch (statedInferredPolicy.get()) {
+						case STATED:
+							newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
+							break;
+						case INFERRED:
+							newCoordinate = TaxonomyCoordinates.getInferredTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
+							break;
+						default:
+							throw new RuntimeException("Unsupported StatedInferredOptions value " + statedInferredPolicy.get() + ".  Expected STATED or INFERRED.");
+						}
+						
+						final TaxonomyCoordinate foo = newCoordinate;
 
-		if (updateConceptSnapshotService) {
-			try {
-				conceptSnapshotService.set(
-						LookupService.getService(ConceptService.class).getSnapshot(
-								getStampCoordinate().get(),
-								getLanguageCoordinate().get()));
+						CountDownLatch cdl = new CountDownLatch(1);
+						Platform.runLater(() ->
+						{
+							taxonomyCoordinate.set(foo);
+							cdl.countDown();
+						});
+						cdl.await();
+					} catch (Exception e) {
+						LOG.error("Failed updating taxonomyCoordinate in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+						throw e;
+					}
+				}
 			} catch (Exception e) {
-				LOG.error("Failed updating conceptSnapshotService in UserProfileBindings. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-				throw e;
+				LOG.error("Unexpected error updating user profile bindings", e);
 			}
-		}
+		});
 	}
 }

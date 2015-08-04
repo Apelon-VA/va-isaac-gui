@@ -116,17 +116,16 @@ class SctTreeView {
     private ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
         if (taxonomyCoordinate.get() == null) {
             taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
-            taxonomyCoordinate.addListener(change -> 
-            {
-                taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
-            });
         }
-        
         return taxonomyCoordinate;
     }
     
     private ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
     private ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
+        taxonomyCoordinate.addListener(change -> 
+        {
+            taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
+        });
         if (taxonomyTree.get() == null) {
             taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
         }
@@ -377,9 +376,9 @@ class SctTreeView {
                     {
                         setComputeOnInvalidate(true);
                         addBinding(
-                                AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate(),
-                                AppContext.getService(UserProfileBindings.class).getTaxonomyTree(),
-                                AppContext.getService(UserProfileBindings.class).getConceptSnapshotService());
+                                getTaxonomyCoordinate(),
+                                getTaxonomyTree(),
+                                getConceptSnapshotService());
                         enabled = true;
                     }
 
@@ -392,9 +391,6 @@ class SctTreeView {
                             return false;
                         }
                         LOG.debug("Kicking off tree refresh() due to change of user preference property");
-                        taxonomyCoordinate.set(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get());
-                        taxonomyTree.set(AppContext.getService(UserProfileBindings.class).getTaxonomyTree().get());
-                        conceptSnapshotService.set(AppContext.getService(UserProfileBindings.class).getConceptSnapshotService().get());
                         SctTreeView.this.refresh();
                         return false;
                     }
