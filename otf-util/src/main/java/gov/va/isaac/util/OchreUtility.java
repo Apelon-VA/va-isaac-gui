@@ -113,6 +113,9 @@ public final class OchreUtility {
 				if (((premiseType == null || premiseType == PremiseType.STATED) && rv.getReferencedComponentNid() == latestStatedGraph.getNid() && rv.getStampSequence() == latestStatedGraph.getStampSequence())
 						|| ((premiseType == null || premiseType == PremiseType.INFERRED) && rv.getReferencedComponentNid() == latestInferredGraph.getNid() && rv.getStampSequence() == latestInferredGraph.getStampSequence())) {
 					allRelationships.add(rv);
+					LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(nid) + ", stampCoord, (PremiseType)" + (premiseType != null ? premiseType.name() : null) + ") adding " + OchreUtility.toString(rv));
+				} else {
+					LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(nid) + ", stampCoord, (PremiseType)" + (premiseType != null ? premiseType.name() : null) + ") NOT adding " + OchreUtility.toString(rv));
 				}
 			}
 		}
@@ -692,5 +695,25 @@ public final class OchreUtility {
 			}
 		};
 		Utility.execute(r);
+	}
+	
+	public static String toString(Object obj) {
+		try {
+			if (obj == null) {
+				return null;
+			} else if (obj instanceof RelationshipVersionAdaptor) {
+				RelationshipVersionAdaptor<?> rva = (RelationshipVersionAdaptor<?>) obj;
+				String orig = Get.conceptDescriptionText(rva.getOriginSequence());
+				String dest = Get.conceptDescriptionText(rva.getDestinationSequence());
+				String type = Get.conceptDescriptionText(rva.getTypeSequence());
+				String stamp = Get.conceptDescriptionText(rva.getStampSequence());
+				return "RelationshipVersionAdaptor: origin=" + orig + " (seq=" + rva.getOriginSequence() + "), dest=" + dest + " (seq=" + rva.getDestinationSequence() + "), type=" + type + ", premise=" + rva.getPremiseType().name() + ", group=" + rva.getGroup() + " stamp=" + stamp;
+			} else {
+				return obj.toString();
+			}
+		} catch (Exception e) {
+			LOG.error("Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
+			return null;
+		}
 	}
 }

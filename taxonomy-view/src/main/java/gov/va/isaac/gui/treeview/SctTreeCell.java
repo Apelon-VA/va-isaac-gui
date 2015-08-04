@@ -116,9 +116,9 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
                 List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
-                	if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
-                		secondaryParents.add(parent);
-                	}
+                    if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
+                        secondaryParents.add(parent);
+                    }
                 }
 
                 ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>(secondaryParents.size());
@@ -154,103 +154,111 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
 
     @Override
     protected void updateItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, boolean empty) {
-        super.updateItem(taxRef, empty);
-        double opacity = 0.0;
-        
-        if (empty)
-        {
-            setText("");
-            setGraphic(null);
-        }
-        else if (!empty && taxRef == null) {
-            LOG.debug("ConceptChronology<? extends ConceptVersion> is null");
-            setText("");
-            setGraphic(null);
-        }
-        else if (!empty && taxRef != null) {
-            final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
-            ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().get().getConceptSnapshot(taxRef.getNid());
-
-            if (treeItem.getMultiParentDepth() > 0) {
-                if (treeItem.isLeaf()) {
-                    BorderPane graphicBorderPane = new BorderPane();
-                    int multiParentInset = (treeItem.getMultiParentDepth() * 16) + 10;
-                    Rectangle leftRect = RectangleBuilder.create().width(multiParentInset).height(16).build();
-
-                    leftRect.setOpacity(opacity);
-                    
-                    StackPane spacerProgressStack = new StackPane();
-                    spacerProgressStack.getChildren().add(leftRect);
-                    
-                    ProgressIndicator pi = new ProgressIndicator();
-                    pi.setPrefSize(16, 16);
-                    pi.setMaxSize(16, 16);
-                    pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
-                    pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
-                    pi.setMouseTransparent(true);
-                    spacerProgressStack.getChildren().add(pi);
-                    StackPane.setAlignment(pi, Pos.CENTER_RIGHT);
-                    StackPane.setMargin(pi, new Insets(0, 10, 0, 0));
-                    graphicBorderPane.setLeft(spacerProgressStack);
-                    graphicBorderPane.setCenter(treeItem.computeGraphic());
-                    setGraphic(graphicBorderPane);
+        try {
+            super.updateItem(taxRef, empty);
+            double opacity = 0.0;
+            
+            if (empty)
+            {
+                setText("");
+                setGraphic(null);
+            }
+            else if (!empty && taxRef == null) {
+                LOG.debug("ConceptChronology<? extends ConceptVersion> is null");
+                setText("");
+                setGraphic(null);
+            }
+            else if (!empty && taxRef != null) {
+                final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
+                ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().get().getConceptSnapshot(taxRef.getNid());
+    
+                if (treeItem.getMultiParentDepth() > 0) {
+                    if (treeItem.isLeaf()) {
+                        BorderPane graphicBorderPane = new BorderPane();
+                        int multiParentInset = (treeItem.getMultiParentDepth() * 16) + 10;
+                        Rectangle leftRect = RectangleBuilder.create().width(multiParentInset).height(16).build();
+    
+                        leftRect.setOpacity(opacity);
+                        
+                        StackPane spacerProgressStack = new StackPane();
+                        spacerProgressStack.getChildren().add(leftRect);
+                        
+                        ProgressIndicator pi = new ProgressIndicator();
+                        pi.setPrefSize(16, 16);
+                        pi.setMaxSize(16, 16);
+                        pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
+                        pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
+                        pi.setMouseTransparent(true);
+                        spacerProgressStack.getChildren().add(pi);
+                        StackPane.setAlignment(pi, Pos.CENTER_RIGHT);
+                        StackPane.setMargin(pi, new Insets(0, 10, 0, 0));
+                        graphicBorderPane.setLeft(spacerProgressStack);
+                        graphicBorderPane.setCenter(treeItem.computeGraphic());
+                        setGraphic(graphicBorderPane);
+                    }
+    
+                    String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
+                    if (desc != null) {
+                        setText(desc);
+                    } else {
+                        LOG.debug("No description found for concept {}", taxRef.toUserString());
+                    }
+    
+                    if (snapshot.getState() != State.ACTIVE) {
+                        setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
+                    } else {
+                        setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
+                    }
+    
+                    return;
                 }
-
+    
+                ImageView iv = treeItem.isExpanded() ? Images.TAXONOMY_CLOSE.createImageView() : Images.TAXONOMY_OPEN.createImageView();
+                iv.setFitHeight(16.0);
+                iv.setFitWidth(16.0);
+    
+                setDisclosureNode(iv);
+    
                 String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
                 if (desc != null) {
                     setText(desc);
                 } else {
-                	LOG.debug("No description found for concept {}", taxRef.toUserString());
+                    LOG.debug("No description found for concept {}", taxRef.toUserString());
                 }
-
+                
                 if (snapshot.getState() != State.ACTIVE) {
-                	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
+                    setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                 } else {
-                	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
+                    setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
                 }
-
-                return;
+                
+                Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
+                leftRect.setOpacity(opacity);
+    
+                BorderPane graphicBorderPane = new BorderPane();
+                StackPane spacerProgressStack = new StackPane();
+                spacerProgressStack.getChildren().add(leftRect);
+                
+                graphicBorderPane.setLeft(spacerProgressStack);
+                graphicBorderPane.setCenter(treeItem.computeGraphic());
+                
+                ProgressIndicator pi = new ProgressIndicator();
+                pi.setPrefSize(16, 16);
+                pi.setMaxSize(16, 16);
+                pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
+                pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
+                pi.setMouseTransparent(true);
+                spacerProgressStack.getChildren().add(pi);
+                StackPane.setAlignment(pi, Pos.CENTER_LEFT);
+                
+                setGraphic(graphicBorderPane);
             }
-
-            ImageView iv = treeItem.isExpanded() ? Images.TAXONOMY_CLOSE.createImageView() : Images.TAXONOMY_OPEN.createImageView();
-            iv.setFitHeight(16.0);
-            iv.setFitWidth(16.0);
-
-            setDisclosureNode(iv);
-
-            String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
-            if (desc != null) {
-                setText(desc);
-            } else {
-            	LOG.debug("No description found for concept {}", taxRef.toUserString());
-            }
-            
-            if (snapshot.getState() != State.ACTIVE) {
-            	setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
-            } else {
-            	setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
-            }
-            
-            Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
-            leftRect.setOpacity(opacity);
-
-            BorderPane graphicBorderPane = new BorderPane();
-            StackPane spacerProgressStack = new StackPane();
-            spacerProgressStack.getChildren().add(leftRect);
-            
-            graphicBorderPane.setLeft(spacerProgressStack);
-            graphicBorderPane.setCenter(treeItem.computeGraphic());
-            
-            ProgressIndicator pi = new ProgressIndicator();
-            pi.setPrefSize(16, 16);
-            pi.setMaxSize(16, 16);
-            pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
-            pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
-            pi.setMouseTransparent(true);
-            spacerProgressStack.getChildren().add(pi);
-            StackPane.setAlignment(pi, Pos.CENTER_LEFT);
-            
-            setGraphic(graphicBorderPane);
+        }
+        catch (Exception e)
+        {
+            LOG.error("Unexpected error updating cell", e);
+            setText("Internal error!");
+            setGraphic(null);
         }
     }
 
@@ -283,10 +291,10 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     if (item != null ) {
                         return Arrays.asList(new Integer[] {ExtendedAppContext.getDataStore().getNidForUuids(item.getPrimordialUuid())});
                     } else if (SctTreeCell.this.isEmpty()) {
-                    	// NOOP This is probably an internally-used empty cell generated by the TreeView
+                        // NOOP This is probably an internally-used empty cell generated by the TreeView
                         return EMPTY_UNMODIFIABLE_INTEGER_COLLECTION;
                     } else {
-                    	String text = SctTreeCell.this.getText();
+                        String text = SctTreeCell.this.getText();
                         LOG.warn("Couldn't locate an identifer for the node (with null item) {}", text);
                         return EMPTY_UNMODIFIABLE_INTEGER_COLLECTION;
                     }

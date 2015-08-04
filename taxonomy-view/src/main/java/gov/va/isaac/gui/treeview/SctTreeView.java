@@ -18,6 +18,17 @@
  */
 package gov.va.isaac.gui.treeview;
 
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.mahout.math.Arrays;
+import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
@@ -31,18 +42,15 @@ import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
-
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -65,11 +73,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
-
-import org.apache.mahout.math.Arrays;
-import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link TreeView} for browsing the SNOMED CT taxonomy.
@@ -109,30 +112,44 @@ class SctTreeView {
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
     
-    private ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
-    private ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
-    	if (taxonomyTree.get() == null) {
-    		taxonomyTree.set(AppContext.getService(UserProfileBindings.class).getTaxonomyTree().get());
-    	}
-    	
-    	return taxonomyTree;
-    }
-    private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
-    public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
-    	if (conceptSnapshotService.get() == null) {
-    		conceptSnapshotService.set(AppContext.getService(UserProfileBindings.class).getConceptSnapshotService().get());
-    	}
-    	
-    	return conceptSnapshotService;
-    }
     private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     private ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
         if (taxonomyCoordinate.get() == null) {
-            taxonomyCoordinate.set(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get());
+            taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
         }
-        
         return taxonomyCoordinate;
     }
+    
+    private ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
+        taxonomyCoordinate.addListener(change -> 
+        {
+            taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
+        });
+        if (taxonomyTree.get() == null) {
+            taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
+        }
+        
+        return taxonomyTree;
+    }
+    private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
+    public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
+        if (conceptSnapshotService.get() == null) {
+            ReadOnlyObjectProperty<StampCoordinate<?>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+            ReadOnlyObjectProperty<LanguageCoordinate> langCoord = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
+            stampCoord.addListener(change -> 
+            {
+                conceptSnapshotService.set(LookupService.getService(ConceptService.class).getSnapshot(stampCoord.get(), langCoord.get()));
+            });
+            langCoord.addListener(change -> 
+            {
+                conceptSnapshotService.set(LookupService.getService(ConceptService.class).getSnapshot(stampCoord.get(), langCoord.get()));
+            });
+            conceptSnapshotService.set(LookupService.getService(ConceptService.class).getSnapshot(stampCoord.get(), langCoord.get()));
+        }
+        return conceptSnapshotService;
+    }
+   
     
     SctTreeView() {
         long startTime = System.currentTimeMillis();
@@ -359,9 +376,9 @@ class SctTreeView {
                     {
                         setComputeOnInvalidate(true);
                         addBinding(
-                                AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate(),
-                                AppContext.getService(UserProfileBindings.class).getTaxonomyTree(),
-                                AppContext.getService(UserProfileBindings.class).getConceptSnapshotService());
+                                getTaxonomyCoordinate(),
+                                getTaxonomyTree(),
+                                getConceptSnapshotService());
                         enabled = true;
                     }
 
@@ -374,9 +391,6 @@ class SctTreeView {
                             return false;
                         }
                         LOG.debug("Kicking off tree refresh() due to change of user preference property");
-                        taxonomyCoordinate.set(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get());
-                        taxonomyTree.set(AppContext.getService(UserProfileBindings.class).getTaxonomyTree().get());
-                        conceptSnapshotService.set(AppContext.getService(UserProfileBindings.class).getConceptSnapshotService().get());
                         SctTreeView.this.refresh();
                         return false;
                     }
@@ -492,10 +506,10 @@ class SctTreeView {
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
                     for (ConceptChronology<? extends ConceptVersion<?>> parent : OchreUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree().get(), getTaxonomyCoordinate().get())) {
-                    	pathToRoot.add(parent.getPrimordialUuid());
-                    	current = parent.getPrimordialUuid();
-                    	found = true;
-                    	break;
+                        pathToRoot.add(parent.getPrimordialUuid());
+                        current = parent.getPrimordialUuid();
+                        found = true;
+                        break;
                     }
 //                    for (RelationshipChronicleDdo chronicle : concept.getOriginRelationships()) {
 //                        RelationshipVersionDdo relationship = chronicle.getVersions().get(chronicle.getVersions().size() - 1);
