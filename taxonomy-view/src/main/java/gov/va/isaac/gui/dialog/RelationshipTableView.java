@@ -23,30 +23,22 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.LogicCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
-import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
-import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,13 +46,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
@@ -68,10 +60,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -82,19 +72,13 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-import javafx.beans.property.ReadOnlyObjectProperty;
 
-import org.controlsfx.control.PopOver;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,12 +131,12 @@ public class RelationshipTableView implements EmbeddableViewI
 		{
 			{
 				setComputeOnInvalidate(true);
-				addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(),
-						AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
-						AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy(),
+				addBinding(
 						AppContext.getService(UserProfileBindings.class).getDisplayRelDirection(),
 						showActiveOnly,
-						showHistory);
+						showHistory,
+						taxonomyCoordinate,
+						conceptSnapshotService);
 			}
 
 			@Override
@@ -618,7 +602,7 @@ public class RelationshipTableView implements EmbeddableViewI
 			ArrayList<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 			try
 			{
-				ConceptChronology localConcept = (concept == null ? Get.conceptService().getConcept(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept.getChronology());
+				ConceptChronology<?> localConcept = (concept == null ? Get.conceptService().getConcept(Get.identifierService().getConceptSequenceForUuids(conceptUUID_)) : concept.getChronology());
 			
 				// Display source (parent) relationships
 				// target is the only option where we would exclude source

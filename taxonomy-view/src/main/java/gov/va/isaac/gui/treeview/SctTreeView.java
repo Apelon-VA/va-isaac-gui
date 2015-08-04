@@ -377,7 +377,9 @@ class SctTreeView {
                     {
                         setComputeOnInvalidate(true);
                         addBinding(
-                                AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
+                                AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate(),
+                                AppContext.getService(UserProfileBindings.class).getTaxonomyTree(),
+                                AppContext.getService(UserProfileBindings.class).getConceptSnapshotService());
                         enabled = true;
                     }
 
@@ -390,6 +392,9 @@ class SctTreeView {
                             return false;
                         }
                         LOG.debug("Kicking off tree refresh() due to change of user preference property");
+                        taxonomyCoordinate.set(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get());
+                        taxonomyTree.set(AppContext.getService(UserProfileBindings.class).getTaxonomyTree().get());
+                        conceptSnapshotService.set(AppContext.getService(UserProfileBindings.class).getConceptSnapshotService().get());
                         SctTreeView.this.refresh();
                         return false;
                     }
