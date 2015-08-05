@@ -609,7 +609,7 @@ public class RelationshipTableView implements EmbeddableViewI
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
 					//OchreUtility.getParentsAsConceptNids(localConcept, getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
-					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getLatestRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate());
+					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate(), showHistory_.get());
 					allRelationships.addAll(outgoingRelChronicles);
 				}
 

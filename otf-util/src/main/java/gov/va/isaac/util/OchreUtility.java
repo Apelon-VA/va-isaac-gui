@@ -67,8 +67,8 @@ public final class OchreUtility {
 	 * 
 	 * This method does not filter by PremiseType (returns both STATED and INFERRED)
 	 */
-	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate) {
-		return getLatestRelationshipListOriginatingFromConcept(nid, stampCoordinate, (PremiseType)null);
+	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, boolean historical) {
+		return getRelationshipListOriginatingFromConcept(nid, stampCoordinate, historical, (PremiseType)null);
 	}
 	/**
 	 * @param nid concept nid
@@ -78,44 +78,47 @@ public final class OchreUtility {
 	 * 
 	 * 
 	 */
-	public static List<RelationshipVersionAdaptor<?>> getLatestRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, PremiseType premiseType) {
+	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, boolean historical, PremiseType premiseType) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
-
-		// Get latest LogicGraph for this concept
-		LogicGraphSememeImpl latestStatedGraph = null;
-		LogicGraphSememeImpl latestInferredGraph = null;
-
-		if (premiseType == null || premiseType == PremiseType.STATED)
-		{
-			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
-
-			SememeChronology rawDefChronology = defChronologyOptional.get();
-			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
-		}	
 		
-		if (premiseType == null || premiseType == PremiseType.INFERRED)
-		{
-			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(nid);
-
-			SememeChronology rawDefChronology = defChronologyOptional.get();
-			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
-		}				
-		//target is the only option where we would exclude source
-
+		// Code for examining LogicGraphs only
+//		LogicGraphSememeImpl latestStatedGraph = null;
+//		LogicGraphSememeImpl latestInferredGraph = null;
+//
+//		if (premiseType == null || premiseType == PremiseType.STATED)
+//		{
+//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
+//
+//			SememeChronology rawDefChronology = defChronologyOptional.get();
+//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
+//			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
+//		}	
+//		
+//		if (premiseType == null || premiseType == PremiseType.INFERRED)
+//		{
+//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(nid);
+//
+//			SememeChronology rawDefChronology = defChronologyOptional.get();
+//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
+//			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
+//		}
+		
 		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(nid).getRelationshipListOriginatingFromConcept();
 		for (SememeChronology<? extends RelationshipVersionAdaptor<?>> chronicle : outgoingRelChronicles)
 		{
-			for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
-			{
-				// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
-				if (((premiseType == null || premiseType == PremiseType.STATED) && rv.getReferencedComponentNid() == latestStatedGraph.getNid() && rv.getStampSequence() == latestStatedGraph.getStampSequence())
-						|| ((premiseType == null || premiseType == PremiseType.INFERRED) && rv.getReferencedComponentNid() == latestInferredGraph.getNid() && rv.getStampSequence() == latestInferredGraph.getStampSequence())) {
-					allRelationships.add(rv);
-					LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(nid) + ", stampCoord, (PremiseType)" + (premiseType != null ? premiseType.name() : null) + ") adding " + OchreUtility.toString(rv));
-				} else {
-					LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(nid) + ", stampCoord, (PremiseType)" + (premiseType != null ? premiseType.name() : null) + ") NOT adding " + OchreUtility.toString(rv));
+			if (historical) {
+				for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
+				{
+					// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
+					if (premiseType == null || premiseType == rv.getPremiseType()) {
+						allRelationships.add(rv);
+						LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(nid) + ", stampCoord, (PremiseType)" + (premiseType != null ? premiseType.name() : null) + ") adding " + OchreUtility.toString(rv));
+					}
+				}
+			} else {
+				Optional<LatestVersion<? extends RelationshipVersionAdaptor>> latest = ((SememeChronology)chronicle).getLatestVersion(RelationshipVersionAdaptor.class, stampCoordinate);
+				if (latest.isPresent() && latest.get().value() != null && (premiseType == null || premiseType == latest.get().value().getPremiseType())) {
+					allRelationships.add(latest.get().value());
 				}
 			}
 		}
@@ -316,7 +319,7 @@ public final class OchreUtility {
 		return nidSet;
 	}
 	
-	public static Set<ConceptSnapshot> getChildrenAsConceptSnapshots(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate sc, LanguageCoordinate lc) {
+	public static Set<ConceptSnapshot> getChildrenAsConceptSnapshots(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate<?> sc, LanguageCoordinate lc) {
 		Set<ConceptSnapshot> conceptVersions = new HashSet<>();
 	
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
@@ -325,7 +328,7 @@ public final class OchreUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate sc, LanguageCoordinate lc) {
+	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate<?> sc, LanguageCoordinate lc) {
 		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
 	
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
@@ -571,7 +574,7 @@ public final class OchreUtility {
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate stamp)
+	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate<?> stamp)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stamp); 
@@ -599,7 +602,7 @@ public final class OchreUtility {
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate stamp)
+	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate<?> stamp)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stamp); 

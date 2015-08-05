@@ -30,6 +30,7 @@ import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import javafx.collections.ObservableList;
@@ -170,7 +172,9 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             }
             else if (!empty && taxRef != null) {
                 final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
-                ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().get().getConceptSnapshot(taxRef.getNid());
+           
+                final Optional<LatestVersion<? extends ConceptVersion>> optional = ((ConceptChronology)taxRef).getLatestVersion(ConceptVersion.class, treeItem.getTaxonomyCoordinate().get().getStampCoordinate());
+                final boolean active = optional.isPresent() && optional.get().value() != null && optional.get().value().getState() == State.ACTIVE;
     
                 if (treeItem.getMultiParentDepth() > 0) {
                     if (treeItem.isLeaf()) {
@@ -204,7 +208,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                         LOG.debug("No description found for concept {}", taxRef.toUserString());
                     }
     
-                    if (snapshot.getState() != State.ACTIVE) {
+                    if (! active) {
                         setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                     } else {
                         setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
@@ -226,7 +230,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     LOG.debug("No description found for concept {}", taxRef.toUserString());
                 }
                 
-                if (snapshot.getState() != State.ACTIVE) {
+                if (! active) {
                     setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                 } else {
                     setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
