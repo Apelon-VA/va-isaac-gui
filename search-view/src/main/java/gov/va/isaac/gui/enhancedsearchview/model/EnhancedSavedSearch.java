@@ -16,6 +16,8 @@ import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -44,7 +46,6 @@ import javafx.scene.control.MenuItem;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

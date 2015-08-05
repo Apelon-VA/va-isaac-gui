@@ -25,6 +25,7 @@
 package gov.va.isaac.gui.enhancedsearchview;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -37,7 +38,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -25,6 +25,8 @@ import gov.va.isaac.drools.helper.ResultsItem;
 import gov.va.isaac.drools.helper.TerminologyHelperDrools;
 import gov.va.isaac.drools.manager.DroolsExecutor;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI;
+
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +35,6 @@ import java.util.UUID;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.ExternalValidatorBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicArrayBI;
@@ -55,7 +56,7 @@ import org.slf4j.LoggerFactory;
 @Service
 @Singleton
 @Named("RefexDroolsValidator")
-public class RefexDroolsValidator implements ExternalValidatorBI
+public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 {
 	private static Logger logger = LoggerFactory.getLogger(RefexDroolsValidator.class);
 
@@ -155,7 +156,7 @@ public class RefexDroolsValidator implements ExternalValidatorBI
 
 	/**
 	 * In our implementation - the validatorDefinitionData contains two things - the first - is the @name of this implementation of an
-	 * {@link ExternalValidatorBI} - for example "RefexDroolsValidator" - the rest is corresponding name from the 
+	 * {@link DynamicSememeExternalValidatorBI} - for example "RefexDroolsValidator" - the rest is corresponding name from the 
 	 * {@link RefexDroolsValidatorImplInfo} enum String[]{"RefexDroolsValidator", "REFEX_STRING_RULES"}
 	 * 
 	 * @param validatorDefinitionData
@@ -192,7 +193,7 @@ public class RefexDroolsValidator implements ExternalValidatorBI
 	}
 
 	/**
-	 * @see org.ihtsdo.otf.tcc.api.refexDynamic.data.ExternalValidatorBI#validate(org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI,
+	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI#validate(org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI,
 	 * org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI, org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate)
 	 */
 	@Override
@@ -216,7 +217,7 @@ public class RefexDroolsValidator implements ExternalValidatorBI
 	}
 
 	/**
-	 * @see org.ihtsdo.otf.tcc.api.refexDynamic.data.ExternalValidatorBI#validatorSupportsType(org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI, org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType)
+	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI#validatorSupportsType(org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI, org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType)
 	 */
 	@Override
 	public boolean validatorSupportsType(RefexDynamicArrayBI<RefexDynamicStringBI> validatorDefinitionData, RefexDynamicDataType dataType)
