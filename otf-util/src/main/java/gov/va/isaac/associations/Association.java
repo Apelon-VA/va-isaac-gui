@@ -21,6 +21,9 @@ package gov.va.isaac.associations;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+
 import java.io.IOException;
 import java.util.Optional;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
@@ -32,8 +35,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 
 /**
  * {@link Association}
@@ -67,11 +68,11 @@ public class Association
 			{
 				if (data[targetColIndex].getRefexDataType() == RefexDynamicDataType.UUID)
 				{
-					return ExtendedAppContext.getDataStore().getComponent(((RefexDynamicUUID) data[targetColIndex]).getDataUUID());
+					return ExtendedAppContext.getDataStore().getComponent(((DynamicSememeUUID) data[targetColIndex]).getDataUUID());
 				}
 				else if (data[targetColIndex].getRefexDataType() == RefexDynamicDataType.NID)
 				{
-					return ExtendedAppContext.getDataStore().getComponent(((RefexDynamicNid) data[targetColIndex]).getDataNid());
+					return ExtendedAppContext.getDataStore().getComponent(((DynamicSememeNid) data[targetColIndex]).getDataNid());
 				}
 			}
 		}

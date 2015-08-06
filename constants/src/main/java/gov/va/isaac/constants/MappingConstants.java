@@ -19,6 +19,8 @@
 package gov.va.isaac.constants;
 
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+
 import java.beans.PropertyVetoException;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
@@ -29,7 +31,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpecWithDescriptions;
 import org.ihtsdo.otf.tcc.api.spec.DynamicRefexConceptSpec;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 
 /**
  * {@link MappingConstants}
@@ -105,7 +106,7 @@ public class MappingConstants
 				"A Sememe used to specify how user-created mapping Sememes are structured", 
 				new RefexDynamicColumnInfo[] {
 					new RefexDynamicColumnInfo(0, MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
-						RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MAPPING_STATUS.getPrimodialUuid())),
+						RefexDynamicValidatorType.IS_KIND_OF, new DynamicSememeUUID(MAPPING_STATUS.getPrimodialUuid())),
 					new RefexDynamicColumnInfo(1, COLUMN_PURPOSE.getPrimodialUuid(), RefexDynamicDataType.STRING, null, false, null, null)},
 				RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES,
 				new Integer[] {});  //want to index this sememe, but don't need to index the data columns

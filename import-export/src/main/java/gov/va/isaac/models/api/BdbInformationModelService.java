@@ -61,10 +61,11 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
+
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -360,25 +361,25 @@ public class BdbInformationModelService implements InformationModelService {
             new DefaultInformationModelProperty();
         RefexDynamicDataBI[] data = refexVersion.get().getData();
         if (data[0] != null)
-          property.setLabel(((RefexDynamicString) data[0]).getDataString());
+          property.setLabel(((DynamicSememeString) data[0]).getDataString());
         if (data[1] != null)
-          property.setType(((RefexDynamicString) data[1]).getDataString());
+          property.setType(((DynamicSememeString) data[1]).getDataString());
         if (data[2] != null)
-          property.setName(((RefexDynamicString) data[2]).getDataString());
+          property.setName(((DynamicSememeString) data[2]).getDataString());
         if (data[3] != null)
-          property.setDefaultValue(((RefexDynamicString) data[3])
+          property.setDefaultValue(((DynamicSememeString) data[3])
               .getDataString());
         if (data[4] != null)
-          property.setValue(((RefexDynamicString) data[4]).getDataString());
+          property.setValue(((DynamicSememeString) data[4]).getDataString());
         if (data[5] != null)
-          property.setCardinalityMin(((RefexDynamicString) data[5])
+          property.setCardinalityMin(((DynamicSememeString) data[5])
               .getDataString());
         if (data[6] != null)
-          property.setCardinalityMax(((RefexDynamicString) data[6])
+          property.setCardinalityMax(((DynamicSememeString) data[6])
               .getDataString());
         if (data[7] != null)
           property
-              .setVisibility(((RefexDynamicString) data[7]).getDataString());
+              .setVisibility(((DynamicSememeString) data[7]).getDataString());
         LOG.debug("    property " + property.getLabel() + ", "
             + property.getName());
         model.addProperty(property);
@@ -738,14 +739,14 @@ public class BdbInformationModelService implements InformationModelService {
       }
       RefexDynamicDataBI[] data =
           new RefexDynamicDataBI[propertyRefset.getColumnInfo().length];
-      data[0] = new RefexDynamicString(property.getLabel());
-      data[1] = new RefexDynamicString(property.getType());
-      data[2] = new RefexDynamicString(property.getName());
-      data[3] = new RefexDynamicString(property.getDefaultValue());
-      data[4] = new RefexDynamicString(property.getValue());
-      data[5] = new RefexDynamicString(property.getCardinalityMin());
-      data[6] = new RefexDynamicString(property.getCardinalityMax());
-      data[7] = new RefexDynamicString(property.getVisibility());
+      data[0] = new DynamicSememeString(property.getLabel());
+      data[1] = new DynamicSememeString(property.getType());
+      data[2] = new DynamicSememeString(property.getName());
+      data[3] = new DynamicSememeString(property.getDefaultValue());
+      data[4] = new DynamicSememeString(property.getValue());
+      data[5] = new DynamicSememeString(property.getCardinalityMin());
+      data[6] = new DynamicSememeString(property.getCardinalityMax());
+      data[7] = new DynamicSememeString(property.getVisibility());
       refexBlueprint.setData(data, OTFUtility.getViewCoordinate());
 
       // Construct and wire the dynamic refex

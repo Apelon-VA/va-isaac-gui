@@ -21,6 +21,8 @@ package gov.va.isaac.gui.mapping.data;
 import gov.va.isaac.constants.ISAAC;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,8 +39,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,10 +194,10 @@ public class MappingSet extends MappingObject
 			{
 				primordialUUID = mappingConcept.getPrimordialUuid();
 				readStampDetails(mappingConcept);
-				setEditorStatusConcept((refex.getData().length > 0 && refex.getData()[0] != null ? ((RefexDynamicUUID) refex.getData()[0]).getDataUUID() : null));
+				setEditorStatusConcept((refex.getData().length > 0 && refex.getData()[0] != null ? ((DynamicSememeUUID) refex.getData()[0]).getDataUUID() : null));
 				if (refex.getData().length > 1 && refex.getData()[1] != null)
 				{
-					setPurpose(((RefexDynamicString) refex.getData()[1]).getDataString());
+					setPurpose(((DynamicSememeString) refex.getData()[1]).getDataString());
 				}
 
 				for (DescriptionVersionBI<?> desc : mappingConcept.getDescriptionsActive())

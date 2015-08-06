@@ -26,6 +26,15 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeBoolean;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeByteArray;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDouble;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeFloat;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLong;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import gov.va.isaac.util.OTFUtility;
 
 import java.beans.PropertyVetoException;
@@ -62,15 +71,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicLongBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicBoolean;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicByteArray;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicDouble;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicFloat;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicInteger;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicLong;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -201,7 +201,7 @@ public class RefexDataTypeFXNodeBuilder
 			
 			if (currentValue != null)
 			{
-				dataHolder.data = ((RefexDynamicByteArray)currentValue).getData();
+				dataHolder.data = ((DynamicSememeByteArray)currentValue).getData();
 				choosenFile.setText("Currently has " + dataHolder.data.length + " bytes attached");
 				if (valueIsRequired != null)
 				{
@@ -210,7 +210,7 @@ public class RefexDataTypeFXNodeBuilder
 			}
 			else if (defaultValue != null)
 			{
-				dataHolder.data = ((RefexDynamicByteArray)defaultValue).getData();
+				dataHolder.data = ((DynamicSememeByteArray)defaultValue).getData();
 				choosenFile.setText("Will attach the default value of " + dataHolder.data.length + " bytes");
 				if (valueIsRequired != null)
 				{
@@ -250,7 +250,7 @@ public class RefexDataTypeFXNodeBuilder
 					{
 						if (defaultValue != null)
 						{
-							dataHolder.data = ((RefexDynamicByteArray)defaultValue).getData();
+							dataHolder.data = ((DynamicSememeByteArray)defaultValue).getData();
 							choosenFile.setText("Will attach the default value of " + dataHolder.data.length + " bytes");
 							if (valueIsRequired != null)
 							{
@@ -279,7 +279,7 @@ public class RefexDataTypeFXNodeBuilder
 			returnValue.nodeForDisplay = hbox;
 			if (defaultValue != null && defaultValueAndValidatorTooltip != null)
 			{
-				defaultValueAndValidatorTooltip.set("If no file is selected, the default value of " + ((RefexDynamicByteArray)defaultValue).getData().length +  " bytes will be used");
+				defaultValueAndValidatorTooltip.set("If no file is selected, the default value of " + ((DynamicSememeByteArray)defaultValue).getData().length +  " bytes will be used");
 			}
 			if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
 			{
@@ -322,7 +322,7 @@ public class RefexDataTypeFXNodeBuilder
 							{
 								valueIsRequired.set("");
 							}
-							RefexDynamicDouble data = new RefexDynamicDouble(Double.parseDouble(tf.getText()));
+							DynamicSememeDouble data = new DynamicSememeDouble(Double.parseDouble(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
@@ -346,7 +346,7 @@ public class RefexDataTypeFXNodeBuilder
 							{
 								valueIsRequired.set("");
 							}
-							RefexDynamicFloat data = new RefexDynamicFloat(Float.parseFloat(tf.getText()));
+							DynamicSememeFloat data = new DynamicSememeFloat(Float.parseFloat(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
@@ -369,7 +369,7 @@ public class RefexDataTypeFXNodeBuilder
 							{
 								valueIsRequired.set("");
 							}
-							RefexDynamicInteger data = new RefexDynamicInteger(Integer.parseInt(tf.getText()));
+							DynamicSememeInteger data = new DynamicSememeInteger(Integer.parseInt(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
@@ -392,7 +392,7 @@ public class RefexDataTypeFXNodeBuilder
 							{
 								valueIsRequired.set("");
 							}
-							RefexDynamicLong data = new RefexDynamicLong(Long.parseLong(tf.getText()));
+							DynamicSememeLong data = new DynamicSememeLong(Long.parseLong(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
@@ -417,7 +417,7 @@ public class RefexDataTypeFXNodeBuilder
 						{
 							try
 							{
-								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new RefexDynamicString(tf.getText()), validatorData.get(), 
+								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new DynamicSememeString(tf.getText()), validatorData.get(), 
 										OTFUtility.getViewCoordinate()));
 							}
 							catch (PropertyVetoException e)
@@ -442,7 +442,7 @@ public class RefexDataTypeFXNodeBuilder
 							{
 								try
 								{
-									valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new RefexDynamicUUID(UUID.fromString(tf.getText())), 
+									valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(tf.getText())), 
 										validatorData.get(), OTFUtility.getViewCoordinate()));
 								}
 								catch (PropertyVetoException e)
@@ -529,7 +529,7 @@ public class RefexDataTypeFXNodeBuilder
 					{
 						try
 						{
-							String isInvalid = validatorType.get().passesValidatorStringReturn(new RefexDynamicNid(cn.getConceptProperty().get().getNid()), 
+							String isInvalid = validatorType.get().passesValidatorStringReturn(new DynamicSememeNid(cn.getConceptProperty().get().getNid()), 
 									validatorData.get(), OTFUtility.getViewCoordinate());
 							if (isInvalid.length() > 0)
 							{
@@ -639,7 +639,7 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				value =  ((RefexDynamicBooleanBI) ci.getDefaultColumnValue()).getDataBoolean();
 			}
-			return (value == null ? null : new RefexDynamicBoolean(value));
+			return (value == null ? null : new DynamicSememeBoolean(value));
 		}
 		else if (RefexDynamicDataType.BYTEARRAY == ci.getColumnDataType())
 		{
@@ -650,9 +650,9 @@ public class RefexDataTypeFXNodeBuilder
 			ByteArrayDataHolder holder = (ByteArrayDataHolder) data;
 			if (holder == null || holder.data == null)
 			{
-				return (RefexDynamicByteArray)ci.getDefaultColumnValue();
+				return (DynamicSememeByteArray)ci.getDefaultColumnValue();
 			}
-			return new RefexDynamicByteArray(holder.data);
+			return new DynamicSememeByteArray(holder.data);
 		}
 		else if (RefexDynamicDataType.DOUBLE == ci.getColumnDataType() || RefexDynamicDataType.FLOAT == ci.getColumnDataType()
 				|| RefexDynamicDataType.INTEGER == ci.getColumnDataType() || RefexDynamicDataType.LONG == ci.getColumnDataType()
@@ -666,27 +666,27 @@ public class RefexDataTypeFXNodeBuilder
 			}
 			if (RefexDynamicDataType.DOUBLE == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new RefexDynamicDouble(Double.parseDouble(text)) : (RefexDynamicDoubleBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeDouble(Double.parseDouble(text)) : (RefexDynamicDoubleBI)ci.getDefaultColumnValue());
 			}
 			else if (RefexDynamicDataType.FLOAT == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new RefexDynamicFloat(Float.parseFloat(text)) : (RefexDynamicFloatBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeFloat(Float.parseFloat(text)) : (RefexDynamicFloatBI)ci.getDefaultColumnValue());
 			}
 			else if (RefexDynamicDataType.INTEGER == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new RefexDynamicInteger(Integer.parseInt(text)) : (RefexDynamicIntegerBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeInteger(Integer.parseInt(text)) : (RefexDynamicIntegerBI)ci.getDefaultColumnValue());
 			}
 			else if (RefexDynamicDataType.LONG == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new RefexDynamicLong(Long.parseLong(text)) : (RefexDynamicLongBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeLong(Long.parseLong(text)) : (RefexDynamicLongBI)ci.getDefaultColumnValue());
 			}
 			else if (RefexDynamicDataType.STRING == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new RefexDynamicString(text) : (RefexDynamicStringBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeString(text) : (RefexDynamicStringBI)ci.getDefaultColumnValue());
 			}
 			else if (RefexDynamicDataType.UUID == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new RefexDynamicUUID(UUID.fromString(text)) : (RefexDynamicUUIDBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeUUID(UUID.fromString(text)) : (RefexDynamicUUIDBI)ci.getDefaultColumnValue());
 			}
 			else
 			{
@@ -698,9 +698,9 @@ public class RefexDataTypeFXNodeBuilder
 			ConceptNode cn = (ConceptNode)data;
 			if (cn.getConcept() == null)
 			{
-				return (RefexDynamicNid)ci.getDefaultColumnValue();
+				return (DynamicSememeNid)ci.getDefaultColumnValue();
 			}
-			return new RefexDynamicNid(cn.getConcept().getNid());
+			return new DynamicSememeNid(cn.getConcept().getNid());
 		}
 		else if (RefexDynamicDataType.POLYMORPHIC == ci.getColumnDataType())
 		{
@@ -728,11 +728,11 @@ public class RefexDataTypeFXNodeBuilder
 				String temp = null;
 				if (defaultValue.getRefexDataType() == RefexDynamicDataType.NID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicNid) defaultValue).getDataNid());
+					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) defaultValue).getDataNid());
 				}
 				else if (defaultValue.getRefexDataType() == RefexDynamicDataType.UUID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicUUID) defaultValue).getDataUUID());
+					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) defaultValue).getDataUUID());
 				}
 				if (temp == null)
 				{
@@ -754,11 +754,11 @@ public class RefexDataTypeFXNodeBuilder
 					String temp = null;
 					if (validatorData.get().getRefexDataType() == RefexDynamicDataType.NID)
 					{
-						temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicNid) validatorData.get()).getDataNid());
+						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) validatorData.get()).getDataNid());
 					}
 					else if (validatorData.get().getRefexDataType() == RefexDynamicDataType.UUID)
 					{
-						temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicUUID) validatorData.get()).getDataUUID());
+						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) validatorData.get()).getDataUUID());
 					}
 					if (temp == null)
 					{

@@ -32,6 +32,7 @@ import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
 
 import java.io.IOException;
 import java.net.URL;
@@ -64,7 +65,6 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +160,7 @@ public class DynamicRefexListViewController
 				//see if it is a valid Dynamic Refex Assemblage
 				try
 				{
-					RefexDynamicUsageDescription.read(cv.getNid());
+					RefexDynamicUsageDescription.readDynamicSememeUsageDescription(cv.getNid());
 				}
 				catch (Exception e)
 				{

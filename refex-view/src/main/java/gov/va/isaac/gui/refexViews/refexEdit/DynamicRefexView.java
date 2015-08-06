@@ -398,7 +398,7 @@ public class DynamicRefexView implements RefexViewI
 						//Need to find out if this component has a the dynamic refex definition annotation on it.
 						try
 						{
-							RefexDynamicUsageDescription.read(setFromType_.getComponentNid());
+							RefexDynamicUsageDescription.readDynamicSememeUsageDescription(setFromType_.getComponentNid());
 							show = true;
 						}
 						catch (Exception e)
@@ -901,7 +901,7 @@ public class DynamicRefexView implements RefexViewI
 					//want to rework it at this point... might come back and cleanup this mess later.
 					uniqueColumns = new Hashtable<>();
 					
-					RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.read(setFromType_.getAssemblyNid());
+					RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(setFromType_.getAssemblyNid());
 					for (RefexDynamicColumnInfo col : rdud.getColumnInfo())
 					{
 						Hashtable<UUID, List<RefexDynamicColumnInfo>> nested = uniqueColumns.get(col.getColumnDescriptionConcept());

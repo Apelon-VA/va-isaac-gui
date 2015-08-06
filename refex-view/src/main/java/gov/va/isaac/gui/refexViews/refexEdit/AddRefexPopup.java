@@ -39,6 +39,10 @@ import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -94,10 +98,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicData;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,8 +207,8 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							assemblageIsValid_.set(true);
 							if (assemblageInfo_.getReferencedComponentTypeRestriction() != null)
 							{
-								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new RefexDynamicNid(createRefexFocus_.getComponentNid()), 
-										new RefexDynamicString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
+								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(createRefexFocus_.getComponentNid()), 
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
 									selectableConcept_.isValid().setInvalid("The selected assemblage requires the component type to be " 
@@ -258,8 +258,8 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						{
 							if (Utility.isUUID(value))
 							{
-								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new RefexDynamicUUID(UUID.fromString(value)), 
-										new RefexDynamicString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
+								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(value)), 
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
 									setInvalidReason(result);
@@ -269,8 +269,8 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							}
 							else if (Utility.isInt(value))
 							{
-								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new RefexDynamicNid(Integer.parseInt(value)), 
-										new RefexDynamicString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
+								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(Integer.parseInt(value)), 
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
 									setInvalidReason(result);

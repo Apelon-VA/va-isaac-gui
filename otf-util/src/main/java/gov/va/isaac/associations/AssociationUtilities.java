@@ -23,6 +23,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.ISAAC;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 import java.beans.PropertyVetoException;
 import java.io.IOException;
@@ -40,7 +41,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 
 /**
  * {@link AssociationUtilities}
@@ -95,7 +95,7 @@ public class AssociationUtilities
 		for (ConceptChronicleBI associationType : getAssociationTypes())
 		{
 			int colIndex = findTargetColumnIndex(associationType.getNid());
-			List<SearchResult> refexes = indexer.query(new RefexDynamicString(component.getNid() + " OR " + component.getPrimordialUuid()),
+			List<SearchResult> refexes = indexer.query(new DynamicSememeString(component.getNid() + " OR " + component.getPrimordialUuid()),
 					associationType.getNid(), false, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
 			for (SearchResult sr : refexes)
 			{
@@ -159,7 +159,7 @@ public class AssociationUtilities
 	 */
 	public static int findTargetColumnIndex(int assemblageNid) throws IOException, ContradictionException
 	{
-		RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.read(assemblageNid);
+		RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(assemblageNid);
 
 		for (RefexDynamicColumnInfo rdci : rdud.getColumnInfo())
 		{

@@ -47,6 +47,7 @@ import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 import java.io.IOException;
 import java.net.URL;
@@ -108,7 +109,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,7 +230,7 @@ public class SearchViewController implements TaskCompleteCallback
 					searchInColumnsHolder.getChildren().clear();
 					try
 					{
-						RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.read(newValue.getNid());
+						RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(newValue.getNid());
 						displayIndexConfigMenu_.set(true);
 						currentlyEnteredAssemblageNid = rdud.getRefexUsageDescriptorNid();
 						Integer[] indexedColumns = LuceneDynamicRefexIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageNid);
@@ -826,7 +826,7 @@ public class SearchViewController implements TaskCompleteCallback
 						{
 							try
 							{
-								return indexer.query(new RefexDynamicString(searchText.getText()), currentlyEnteredAssemblageNid, false, 
+								return indexer.query(new DynamicSememeString(searchText.getText()), currentlyEnteredAssemblageNid, false, 
 										getSearchColumns(), searchLimit.getValue(), null);
 							}
 							catch (Exception e2)

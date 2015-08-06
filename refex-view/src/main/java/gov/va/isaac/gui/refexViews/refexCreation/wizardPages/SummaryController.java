@@ -25,6 +25,8 @@ import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import javafx.fxml.FXML;
@@ -40,7 +42,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**

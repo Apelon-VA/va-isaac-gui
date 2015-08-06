@@ -94,7 +94,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 			vbox.setPadding(new Insets(10));
 			vbox.setSpacing(5.0);
 			
-			RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.read(assemblageConcept.getNid());
+			RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(assemblageConcept.getNid());
 			Integer[] currentIndexConfig = LuceneDynamicRefexIndexerConfiguration.readIndexInfo(assemblageConcept.getNid());
 			
 			if (rdud.isAnnotationStyle())

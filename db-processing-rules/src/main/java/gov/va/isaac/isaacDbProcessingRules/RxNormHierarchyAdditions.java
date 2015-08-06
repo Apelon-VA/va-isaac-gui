@@ -22,6 +22,8 @@ import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.mojo.termstore.transforms.TransformArbitraryI;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -38,7 +40,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -137,7 +138,7 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 						RefexDynamicVersionBI<?> currentRefex = OTFUtility.getLatestDynamicRefexVersion(refex.getVersionList());
 						if (currentRefex.getAssemblageNid() == rxNormDescTypeAssemblageNid)
 						{
-							if (((RefexDynamicUUID)currentRefex.getData()[0]).getDataUUID().equals(termTypeIN))
+							if (((DynamicSememeUUID)currentRefex.getData()[0]).getDataUUID().equals(termTypeIN))
 							{
 								isRxNormIN = true;
 								break;

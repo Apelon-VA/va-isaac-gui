@@ -21,6 +21,9 @@ package gov.va.isaac.gui.refexViews.util;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeByteArray;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -35,9 +38,6 @@ import javafx.scene.layout.Region;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicByteArray;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -108,11 +108,11 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 			{
 				if (item.getColumnDataType() == RefexDynamicDataType.BYTEARRAY)
 				{
-					temp = "Byte array of size " + ((RefexDynamicByteArray) item.getDefaultColumnValue()).getDataByteArray().length;
+					temp = "Byte array of size " + ((DynamicSememeByteArray) item.getDefaultColumnValue()).getDataByteArray().length;
 				}
 				else if (item.getColumnDataType() == RefexDynamicDataType.NID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicNid)item.getDefaultColumnValue()).getDataNid());
+					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)item.getDefaultColumnValue()).getDataNid());
 					if (temp == null)
 					{
 						temp = "NID: " + item.getDefaultColumnValue().getDataObject().toString();
@@ -120,7 +120,7 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 				}
 				else if (item.getColumnDataType() == RefexDynamicDataType.UUID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicUUID)item.getDefaultColumnValue()).getDataUUID());
+					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)item.getDefaultColumnValue()).getDataUUID());
 					if (temp == null)
 					{
 						temp = "UUID: " + item.getDefaultColumnValue().getDataObject().toString();
@@ -153,11 +153,11 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 				}
 				else if (item.getValidatorData().getRefexDataType() == RefexDynamicDataType.BYTEARRAY)
 				{
-					validatorData = "Byte array of size " + ((RefexDynamicByteArray) item.getValidatorData()).getDataByteArray().length;
+					validatorData = "Byte array of size " + ((DynamicSememeByteArray) item.getValidatorData()).getDataByteArray().length;
 				}
 				else if (item.getValidatorData().getRefexDataType() == RefexDynamicDataType.NID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicNid)item.getValidatorData()).getDataNid());
+					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)item.getValidatorData()).getDataNid());
 					if (validatorData == null)
 					{
 						validatorData = "NID: " + item.getValidatorData().getDataObject().toString();
@@ -165,7 +165,7 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 				}
 				else if (item.getValidatorData().getRefexDataType() == RefexDynamicDataType.UUID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicUUID)item.getValidatorData()).getDataUUID());
+					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)item.getValidatorData()).getDataUUID());
 					if (validatorData == null)
 					{
 						validatorData = "UUID: " + item.getValidatorData().getDataObject().toString();

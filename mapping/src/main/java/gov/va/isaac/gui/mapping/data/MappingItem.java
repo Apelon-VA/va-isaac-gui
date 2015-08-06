@@ -20,6 +20,7 @@ package gov.va.isaac.gui.mapping.data;
 
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -31,7 +32,6 @@ import javafx.beans.property.SimpleStringProperty;
 
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,7 @@ public class MappingItem extends MappingObject
 	
 	protected MappingItem(RefexDynamicVersionBI<?> refex) throws IOException
 	{
-		read(refex);
+		readDynamicSememeUsageDescription(refex);
 	}
 	
 	private void read(RefexDynamicVersionBI<?> refex) throws IOException
@@ -68,9 +68,9 @@ public class MappingItem extends MappingObject
 		readStampDetails(refex);
 		
 		RefexDynamicDataBI[] data = refex.getData();
-		setTargetConcept      (((data != null && data.length > 0 && data[0] != null) ? ((RefexDynamicUUID) data[0]).getDataUUID() : null));
-		setQualifierConcept   (((data != null && data.length > 1 && data[1] != null) ? ((RefexDynamicUUID) data[1]).getDataUUID() : null)); 
-		setEditorStatusConcept(((data != null && data.length > 2 && data[2] != null) ? ((RefexDynamicUUID) data[2]).getDataUUID() : null));
+		setTargetConcept      (((data != null && data.length > 0 && data[0] != null) ? ((DynamicSememeUUID) data[0]).getDataUUID() : null));
+		setQualifierConcept   (((data != null && data.length > 1 && data[1] != null) ? ((DynamicSememeUUID) data[1]).getDataUUID() : null)); 
+		setEditorStatusConcept(((data != null && data.length > 2 && data[2] != null) ? ((DynamicSememeUUID) data[2]).getDataUUID() : null));
 		
 		targetConceptNid    = getNidForUuidSafe(targetConcept);
 		qualifierConceptNid = getNidForUuidSafe(qualifierConcept);

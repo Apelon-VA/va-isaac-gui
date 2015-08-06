@@ -45,6 +45,12 @@ import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeBoolean;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeByteArray;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import java.beans.PropertyVetoException;
 import java.io.ByteArrayInputStream;
@@ -76,12 +82,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicData;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicBoolean;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicByteArray;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicInteger;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,12 +166,12 @@ public class SearchConceptHelper {
 				oos.flush();
 
 				// Construct and populate RefexDynamicData for View Coordinate
-				RefexDynamicData viewCoordinateColumnData = new RefexDynamicByteArray(output.toByteArray());
+				RefexDynamicData viewCoordinateColumnData = new DynamicSememeByteArray(output.toByteArray());
 				searchGlobalAttributesData[0] = viewCoordinateColumnData;
-				RefexDynamicData maxResultsColumnData = new RefexDynamicInteger(SearchModel.getSearchTypeSelector().getTypeSpecificModel().getMaxResults());
+				RefexDynamicData maxResultsColumnData = new DynamicSememeInteger(SearchModel.getSearchTypeSelector().getTypeSpecificModel().getMaxResults());
 				searchGlobalAttributesData[1] = maxResultsColumnData;
 				if (SearchModel.getSearchTypeSelector().getTypeSpecificModel().getDroolsExpr() != null) {
-					RefexDynamicData droolsExprColumnData = new RefexDynamicString(SearchModel.getSearchTypeSelector().getTypeSpecificModel().getDroolsExpr());
+					RefexDynamicData droolsExprColumnData = new DynamicSememeString(SearchModel.getSearchTypeSelector().getTypeSpecificModel().getDroolsExpr());
 					searchGlobalAttributesData[2] = droolsExprColumnData;
 				}
 
@@ -260,7 +260,7 @@ public class SearchConceptHelper {
 
 			if (filter.getSearchParameter() != null) {
 
-				RefexDynamicData searchParameterData = new RefexDynamicString(filter.getSearchParameter());
+				RefexDynamicData searchParameterData = new DynamicSememeString(filter.getSearchParameter());
 				filterRefexData[0] = searchParameterData;
 			}
 		} else if (currentFilter instanceof SememeContentSearchTypeFilter) {
@@ -268,7 +268,7 @@ public class SearchConceptHelper {
 			SememeContentSearchTypeFilter filter = (SememeContentSearchTypeFilter)currentFilter;
 
 			if (filter.getSearchParameter() != null) {
-				RefexDynamicData searchParameterData = new RefexDynamicString(filter.getSearchParameter());
+				RefexDynamicData searchParameterData = new DynamicSememeString(filter.getSearchParameter());
 				filterRefexData[0] = searchParameterData;
 			} else {
 				final String error = "Attempting to save SememeContentSearchTypeFilter with null search string parameter";
@@ -277,7 +277,7 @@ public class SearchConceptHelper {
 			}
 			if (filter.getAssemblageConcept() != null) {
 				ConceptSnapshot concept = filter.getAssemblageConcept();
-				RefexDynamicData assemblageConceptIdData = new RefexDynamicUUID(concept.getPrimordialUuid());
+				RefexDynamicData assemblageConceptIdData = new DynamicSememeUUID(concept.getPrimordialUuid());
 				filterRefexData[1] = assemblageConceptIdData;
 			}
 		} else if (currentFilter instanceof RegExpSearchTypeFilter) {
@@ -286,7 +286,7 @@ public class SearchConceptHelper {
 
 			if (filter.getSearchParameter() != null) {
 
-				RefexDynamicData searchParameterData = new RefexDynamicString(filter.getSearchParameter());
+				RefexDynamicData searchParameterData = new DynamicSememeString(filter.getSearchParameter());
 				filterRefexData[0] = searchParameterData;
 			}
 		} else if (currentFilter instanceof IsDescendantOfFilter) {
@@ -295,7 +295,7 @@ public class SearchConceptHelper {
 
 			if (isDescendantOfFilter.getNid() != 0) {
 				UUID uuid = OTFUtility.getConceptVersion(isDescendantOfFilter.getNid()).getPrimordialUuid();
-				RefexDynamicData ascendantUuidData = new RefexDynamicUUID(uuid);
+				RefexDynamicData ascendantUuidData = new DynamicSememeUUID(uuid);
 				filterRefexData[0] = ascendantUuidData;
 			}
 		} else if (currentFilter instanceof IsAFilter) {
@@ -304,7 +304,7 @@ public class SearchConceptHelper {
 
 			if (isAFilter.getNid() != 0) {
 				UUID uuid = OTFUtility.getConceptVersion(isAFilter.getNid()).getPrimordialUuid();
-				RefexDynamicData matchUuidData = new RefexDynamicUUID(uuid);
+				RefexDynamicData matchUuidData = new DynamicSememeUUID(uuid);
 				filterRefexData[0] = matchUuidData;
 			}
 		}
@@ -333,11 +333,11 @@ public class SearchConceptHelper {
 		RefexDynamicData[] nestedFilterAttributesRefexData = new RefexDynamicData[nestedFilterAttributesRDUD.getColumnInfo().length];
 
 		// Construct and populate RefexDynamicData for search order
-		RefexDynamicData filterOrderData = new RefexDynamicInteger(filterIndex);
+		RefexDynamicData filterOrderData = new DynamicSememeInteger(filterIndex);
 		nestedFilterAttributesRefexData[0] = filterOrderData;
 		// If relevant, populate with invert boolean
 		if (currentFilter instanceof Invertable) {
-			RefexDynamicData filterInvertData = new RefexDynamicBoolean(((Invertable)currentFilter).getInvert());
+			RefexDynamicData filterInvertData = new DynamicSememeBoolean(((Invertable)currentFilter).getInvert());
 			nestedFilterAttributesRefexData[1] = filterInvertData;
 		}
 
@@ -687,7 +687,7 @@ public class SearchConceptHelper {
 							newFilter.setSearchParameter(searchParamCol != null ? searchParamCol.getDataString() : null);
 							LOG.debug("Read String search parameter from " + dud.getRefexName() + " sememe: \"" + newFilter.getSearchParameter() + "\"");
 
-							RefexDynamicUUID uuidCol = (RefexDynamicUUID)refex.getData(Search.UUID_COLUMN.getConceptDescriptionText());
+							DynamicSememeUUID uuidCol = (DynamicSememeUUID)refex.getData(Search.UUID_COLUMN.getConceptDescriptionText());
 							if (uuidCol != null) {
 								ConceptVersionBI conceptVersion = OTFUtility.getConceptVersion(uuidCol.getDataUUID());
 								newFilter.setAssemblageConcept(conceptVersion);

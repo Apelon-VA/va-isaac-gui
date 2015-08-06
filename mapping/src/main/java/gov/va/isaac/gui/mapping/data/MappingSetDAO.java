@@ -33,11 +33,12 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
+
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,9 +77,9 @@ public class MappingSetDAO extends MappingDAO
 					new RefexDynamicColumnInfo[] {
 						new RefexDynamicColumnInfo(0, ISAAC.REFEX_COLUMN_TARGET_COMPONENT.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, null, null),
 						new RefexDynamicColumnInfo(1, MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
-								RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
+								RefexDynamicValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
 						new RefexDynamicColumnInfo(2, MappingConstants.MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
-								RefexDynamicValidatorType.IS_KIND_OF, new RefexDynamicUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
+								RefexDynamicValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
 					null, true, ComponentType.CONCEPT, ViewCoordinates.getMetadataViewCoordinate());
 			
 			Utility.execute(() ->
@@ -110,8 +111,8 @@ public class MappingSetDAO extends MappingDAO
 			
 			RefexDynamicCAB mappingAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), MappingConstants.MAPPING_SEMEME_TYPE.getNid());
 			mappingAnnotation.setData(new RefexDynamicDataBI[] {
-					(editorStatus == null ? null : new RefexDynamicUUID(editorStatus)),
-					(StringUtils.isBlank(purpose) ? null : new RefexDynamicString(purpose))}, OTFUtility.getViewCoordinateAllowInactive());
+					(editorStatus == null ? null : new DynamicSememeUUID(editorStatus)),
+					(StringUtils.isBlank(purpose) ? null : new DynamicSememeString(purpose))}, OTFUtility.getViewCoordinateAllowInactive());
 			OTFUtility.getBuilder().construct(mappingAnnotation);
 			
 			RefexDynamicCAB associationAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_SEMEME.getNid());
@@ -204,8 +205,8 @@ public class MappingSetDAO extends MappingDAO
 			
 			RefexDynamicCAB mappingRefexCab = mappingRefex.get().makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 			mappingRefexCab.setData(new RefexDynamicDataBI[] {
-					(mappingSet.getEditorStatusConcept() == null ? null : new RefexDynamicUUID(mappingSet.getEditorStatusConcept())),
-					(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new RefexDynamicString(mappingSet.getPurpose()))}, OTFUtility.getViewCoordinateAllowInactive());
+					(mappingSet.getEditorStatusConcept() == null ? null : new DynamicSememeUUID(mappingSet.getEditorStatusConcept())),
+					(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new DynamicSememeString(mappingSet.getPurpose()))}, OTFUtility.getViewCoordinateAllowInactive());
 			OTFUtility.getBuilder().construct(mappingRefexCab);
 
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();

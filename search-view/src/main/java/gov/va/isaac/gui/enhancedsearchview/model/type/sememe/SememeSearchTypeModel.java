@@ -46,10 +46,11 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
+
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +96,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				searchInColumnsHolder.getChildren().clear();
 				try
 				{
-					RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.read(newValue.getNid());
+					RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(newValue.getNid());
 					currentlyEnteredAssemblageNid = rdud.getRefexUsageDescriptorNid();
 					Integer[] indexedColumns = LuceneDynamicRefexIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageNid);
 					if (indexedColumns == null || indexedColumns.length == 0)
@@ -311,7 +312,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 					{
 						try
 						{
-							return indexer.query(new RefexDynamicString(searchText.getText()), currentlyEnteredAssemblageNid, false, 
+							return indexer.query(new DynamicSememeString(searchText.getText()), currentlyEnteredAssemblageNid, false, 
 									getSearchColumns(), Integer.parseInt(modelMaxResults), null);
 						}
 						catch (Exception e2)

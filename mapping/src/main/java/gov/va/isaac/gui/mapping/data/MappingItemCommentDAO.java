@@ -21,8 +21,9 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
+
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 public class MappingItemCommentDAO extends MappingDAO 
 {
@@ -49,8 +50,8 @@ public class MappingItemCommentDAO extends MappingDAO
 		{
 			RefexDynamicCAB commentAnnotation = new RefexDynamicCAB(pMappingItemUUID, ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid());
 			commentAnnotation.setData(new RefexDynamicDataBI[] { 
-					new RefexDynamicString(pCommentText),
-					(StringUtils.isBlank(commentContext) ? null : new RefexDynamicString(commentContext))}, null);
+					new DynamicSememeString(pCommentText),
+					(StringUtils.isBlank(commentContext) ? null : new DynamicSememeString(commentContext))}, null);
 
 			commentAnnotation.computeMemberUuid();
 
@@ -151,8 +152,8 @@ public class MappingItemCommentDAO extends MappingDAO
 		{
 			RefexDynamicVersionBI<?> rdv = readCurrentRefex(comment.getPrimordialUUID());
 			RefexDynamicCAB commentCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-			commentCab.getData()[0] = new RefexDynamicString(comment.getCommentText());
-			commentCab.getData()[1] = (StringUtils.isNotBlank(comment.getCommentContext()) ? new RefexDynamicString(comment.getCommentContext()) : null);
+			commentCab.getData()[0] = new DynamicSememeString(comment.getCommentText());
+			commentCab.getData()[1] = (StringUtils.isNotBlank(comment.getCommentContext()) ? new DynamicSememeString(comment.getCommentContext()) : null);
 			commentCab.validate(null);
 			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentCab);
 

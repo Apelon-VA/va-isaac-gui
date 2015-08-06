@@ -21,10 +21,11 @@ package gov.va.isaac.util;
 import java.beans.PropertyVetoException;
 import java.math.BigDecimal;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicDouble;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicFloat;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicInteger;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicLong;
+
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDouble;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeFloat;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLong;
 
 /**
  * {@link NumberUtilities}
@@ -46,19 +47,19 @@ public class NumberUtilities
 		{
 			if (value instanceof Integer)
 			{
-				return new RefexDynamicInteger(value.intValue());
+				return new DynamicSememeInteger(value.intValue());
 			}
 			else if (value instanceof Long)
 			{
-				return new RefexDynamicLong(value.longValue());
+				return new DynamicSememeLong(value.longValue());
 			}
 			else if (value instanceof Float)
 			{
-				return new RefexDynamicFloat(value.floatValue());
+				return new DynamicSememeFloat(value.floatValue());
 			}
 			else if (value instanceof Double)
 			{
-				return new RefexDynamicDouble(value.doubleValue());
+				return new DynamicSememeDouble(value.doubleValue());
 			}
 			else
 			{

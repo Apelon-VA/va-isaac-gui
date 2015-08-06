@@ -20,7 +20,7 @@ public class MappingItemComment extends StampedItem
 
 	protected MappingItemComment(RefexDynamicVersionBI<?> comment) throws IOException
 	{
-		read(comment);
+		readDynamicSememeUsageDescription(comment);
 	}
 
 	private void read(RefexDynamicVersionBI<?> commentRefex) throws IOException

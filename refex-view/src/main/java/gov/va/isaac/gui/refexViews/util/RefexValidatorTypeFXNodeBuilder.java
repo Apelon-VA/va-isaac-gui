@@ -27,6 +27,9 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.NumberUtilities;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.va.isaac.util.OTFUtility;
 
 import java.util.ArrayList;
@@ -46,9 +49,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicInteger;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,8 +103,8 @@ public class RefexValidatorTypeFXNodeBuilder
 						try
 						{
 							//Don't actually care if it passes the validator - just want to know if the validator can parse it.
-							RefexDynamicString s = new RefexDynamicString(tf.getText());
-							RefexDynamicValidatorType.INTERVAL.passesValidator(new RefexDynamicInteger(0), s, null);
+							DynamicSememeString s = new DynamicSememeString(tf.getText());
+							RefexDynamicValidatorType.INTERVAL.passesValidator(new DynamicSememeInteger(0), s, null);
 							returnValue.validatorData.set(s);
 							valueInvalidReason.set("");
 						}
@@ -119,8 +119,8 @@ public class RefexValidatorTypeFXNodeBuilder
 						try
 						{
 							//Don't actually care if it passes the validator - just want to know if the validator can parse it.
-							RefexDynamicString s = new RefexDynamicString(tf.getText());
-							RefexDynamicValidatorType.REGEXP.passesValidator(new RefexDynamicString("a"), s, null);
+							DynamicSememeString s = new DynamicSememeString(tf.getText());
+							RefexDynamicValidatorType.REGEXP.passesValidator(new DynamicSememeString("a"), s, null);
 							returnValue.validatorData.set(s);
 							valueInvalidReason.set("");
 						}
@@ -170,7 +170,7 @@ public class RefexValidatorTypeFXNodeBuilder
 				{
 					try
 					{
-						returnValue.validatorData.set(new RefexDynamicNid(cn.getConceptProperty().getValue().getNid()));
+						returnValue.validatorData.set(new DynamicSememeNid(cn.getConceptProperty().getValue().getNid()));
 					}
 					catch (Exception e)
 					{
@@ -340,7 +340,7 @@ public class RefexValidatorTypeFXNodeBuilder
 			{
 				try
 				{
-					returnValue.validatorData.set(new RefexDynamicString(cb.getValue().name()));
+					returnValue.validatorData.set(new DynamicSememeString(cb.getValue().name()));
 				}
 				catch (Exception e)
 				{

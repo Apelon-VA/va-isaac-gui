@@ -6,13 +6,14 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -6,6 +6,7 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
 
 import java.beans.PropertyVetoException;
 import java.io.IOException;
@@ -17,7 +18,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 
 public class ResultsToRefset {
 	

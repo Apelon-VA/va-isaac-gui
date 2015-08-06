@@ -30,6 +30,8 @@ import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +55,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -261,7 +262,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 				{
 					throw new RuntimeException("No sememe indexer found, aborting.");
 				}
-				List<SearchResult> searchResults = refexIndexer.query(new RefexDynamicString("\"" + sc.getValueId().replaceAll("-", "\\\\-") + "\""), 
+				List<SearchResult> searchResults = refexIndexer.query(new DynamicSememeString("\"" + sc.getValueId().replaceAll("-", "\\\\-") + "\""), 
 						getNid(sc.getValueId().startsWith("LP") ? CODE : LOINC_NUM), false, new Integer[] {0}, 5, null);
 				if (searchResults.size() != 1)
 				{

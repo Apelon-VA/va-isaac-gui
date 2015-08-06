@@ -26,6 +26,9 @@ import gov.va.isaac.drools.helper.TerminologyHelperDrools;
 import gov.va.isaac.drools.manager.DroolsExecutor;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.RefexDynamicArray;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
@@ -40,9 +43,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicArrayBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicArray;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +87,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 			{
 				//switch it to a UUID, for drools purposes.
 				UUID temp = ExtendedAppContext.getDataStore().getUuidsForNid(((RefexDynamicNidBI)dataToValidate).getDataNid()).get(0);
-				facts.add(new RefexDynamicUUID(temp));
+				facts.add(new DynamicSememeUUID(temp));
 			}
 			else
 			{
@@ -139,12 +139,12 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 		return true;
 	}
 
-	public static RefexDynamicArray<RefexDynamicString> createValidatorDefinitionData(RefexDroolsValidatorImplInfo rdvii)
+	public static RefexDynamicArray<DynamicSememeString> createValidatorDefinitionData(RefexDroolsValidatorImplInfo rdvii)
 	{
 		try
 		{
-			return new RefexDynamicArray<RefexDynamicString>(
-					new RefexDynamicString[]{new RefexDynamicString("RefexDroolsValidator"), new RefexDynamicString(rdvii.name())});
+			return new RefexDynamicArray<DynamicSememeString>(
+					new DynamicSememeString[]{new DynamicSememeString("RefexDroolsValidator"), new DynamicSememeString(rdvii.name())});
 		}
 		catch (PropertyVetoException e)
 		{
