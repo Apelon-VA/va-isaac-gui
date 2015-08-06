@@ -19,8 +19,11 @@
 package gov.va.isaac.gui.treeview;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -103,6 +106,7 @@ class SctTreeView {
     private SctTreeItem rootTreeItem;
     private TreeView<ConceptChronology<? extends ConceptVersion<?>>> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
+    //private ConcurrentSkipListSet<Integer> multiParentConceptCache = new ConcurrentSkipListSet<Integer>();
         
     private UpdateableBooleanBinding refreshRequiredListenerHack;
 

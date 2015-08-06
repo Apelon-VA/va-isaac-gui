@@ -32,7 +32,6 @@ import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
@@ -115,7 +114,12 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                 removeExtraParents(treeItem, siblings);
             } else {
                 ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get()));
-
+               
+//                List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(value.getNid(), treeItem.getTaxonomyCoordinate().get().getStampCoordinate(), false, treeItem.getTaxonomyCoordinate().getValue().getTaxonomyType());
+//                if (allParents.size() != outgoingRelChronicles.size()) {
+//                	LOG.warn("For {} getParentsAsConceptChronologies() returns {} and getRelationshipListOriginatingFromConcept() returns {}", Get.conceptDescriptionText(value.getNid()), allParents.size(), outgoingRelChronicles.size());
+//                }
+                
                 List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
                     if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
@@ -175,7 +179,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
            
                 final Optional<LatestVersion<? extends ConceptVersion>> optional = ((ConceptChronology)taxRef).getLatestVersion(ConceptVersion.class, treeItem.getTaxonomyCoordinate().get().getStampCoordinate());
                 final boolean active = optional.isPresent() && optional.get().value() != null && optional.get().value().getState() == State.ACTIVE;
-    
+                
                 if (treeItem.getMultiParentDepth() > 0) {
                     if (treeItem.isLeaf()) {
                         BorderPane graphicBorderPane = new BorderPane();

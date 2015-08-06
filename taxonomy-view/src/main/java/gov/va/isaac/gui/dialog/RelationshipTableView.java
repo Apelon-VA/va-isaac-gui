@@ -37,6 +37,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 
@@ -609,7 +610,7 @@ public class RelationshipTableView implements EmbeddableViewI
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
 					//OchreUtility.getParentsAsConceptNids(localConcept, getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
-					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate(), showHistory_.get());
+					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate(), showHistory_.get(), (PremiseType)null, (Integer)null);
 					allRelationships.addAll(outgoingRelChronicles);
 				}
 

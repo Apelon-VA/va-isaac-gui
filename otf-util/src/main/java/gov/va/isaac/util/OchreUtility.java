@@ -32,7 +32,6 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.util.UuidFactory;
 
@@ -60,16 +59,31 @@ public final class OchreUtility {
 
 	private OchreUtility() {}
 
-	/**
-	 * @param nid concept nid
-	 * @param stampCoordinate StampCoordinate for retrieving latest LogicGraphSememeImpl
-	 * @return List of RelationshipVersionAdaptor
-	 * 
-	 * This method does not filter by PremiseType (returns both STATED and INFERRED)
-	 */
-	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, boolean historical) {
-		return getRelationshipListOriginatingFromConcept(nid, stampCoordinate, historical, (PremiseType)null);
+	
+	@SuppressWarnings("unchecked")
+	public static List<? extends SememeChronology<? extends DescriptionSememe<?>>> getConceptDescriptionList(ConceptChronology<?> cc) {
+		@SuppressWarnings("rawtypes")
+		List<? extends SememeChronology<? extends DescriptionSememe>> rawList = cc.getConceptDescriptionList();
+		
+		return (List<? extends SememeChronology<? extends DescriptionSememe<?>>>)rawList;
 	}
+
+    @SuppressWarnings("unchecked")
+	public static Optional<LatestVersion<? extends ConceptVersion<?>>> getLatestConceptVersion(ConceptChronology<? extends ConceptVersion<?>> cc, StampCoordinate<?> sc) {
+		@SuppressWarnings("rawtypes")
+		ConceptChronology raw = (ConceptChronology)cc;
+    	
+    	return raw.getLatestVersion(ConceptVersion.class, sc);
+    }
+    
+	@SuppressWarnings("unchecked")
+	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptorVersion(SememeChronology<? extends RelationshipVersionAdaptor<?>> sc, StampCoordinate<?> stampCoordinate) {
+		@SuppressWarnings("rawtypes")
+		SememeChronology rawSememChronology = (SememeChronology)sc;
+		
+		return rawSememChronology.getLatestVersion(RelationshipVersionAdaptor.class, stampCoordinate);
+	}
+
 	/**
 	 * @param nid concept nid
 	 * @param stampCoordinate StampCoordinate for retrieving latest LogicGraphSememeImpl
@@ -78,7 +92,7 @@ public final class OchreUtility {
 	 * 
 	 * 
 	 */
-	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, boolean historical, PremiseType premiseType) {
+	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<?> stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 		
 		// Code for examining LogicGraphs only
@@ -116,8 +130,10 @@ public final class OchreUtility {
 					}
 				}
 			} else {
-				Optional<LatestVersion<? extends RelationshipVersionAdaptor>> latest = ((SememeChronology)chronicle).getLatestVersion(RelationshipVersionAdaptor.class, stampCoordinate);
-				if (latest.isPresent() && latest.get().value() != null && (premiseType == null || premiseType == latest.get().value().getPremiseType())) {
+				Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> latest = getLatestRelationshipVersionAdaptorVersion(chronicle, stampCoordinate);
+				if (latest.isPresent() && latest.get().value() != null
+						&& (premiseType == null || premiseType == latest.get().value().getPremiseType())
+						&& (relTypeSequence == null || relTypeSequence == latest.get().value().getTypeSequence())) {
 					allRelationships.add(latest.get().value());
 				}
 			}
@@ -135,8 +151,7 @@ public final class OchreUtility {
 			public void accept(SememeChronology<? extends SememeVersion> t) {
 				ConceptChronology<? extends ConceptVersion<?>> pathCC = Get.conceptService().getConcept(t.getReferencedComponentNid());
 				
-				ConceptChronology pathCCTemp = (ConceptChronology)pathCC;
-				Optional<LatestVersion<ConceptVersion<?>>> latestPathConceptVersion = pathCCTemp.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+				Optional<LatestVersion<? extends ConceptVersion<?>>> latestPathConceptVersion = getLatestConceptVersion(pathCC, StampCoordinates.getDevelopmentLatest());
 				if (latestPathConceptVersion.isPresent()) {
 					pathConcepts.add(latestPathConceptVersion.get().value());
 				}
@@ -160,6 +175,7 @@ public final class OchreUtility {
 		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
 	}
 
+	@Deprecated
 	public static String conceptDescriptionText(int conceptId, TaxonomyCoordinate<?> vc) {
 		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
 	}
@@ -370,7 +386,7 @@ public final class OchreUtility {
 		return parentNids;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate<?> vc) {
 		Set<ConceptChronology<? extends ConceptVersion<?>>> parentConcepts = new HashSet<>();
 		for (int nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
 			parentConcepts.add(Get.conceptService().getConcept(nid));
@@ -710,7 +726,7 @@ public final class OchreUtility {
 				String dest = Get.conceptDescriptionText(rva.getDestinationSequence());
 				String type = Get.conceptDescriptionText(rva.getTypeSequence());
 				String stamp = Get.conceptDescriptionText(rva.getStampSequence());
-				return "RelationshipVersionAdaptor: origin=" + orig + " (seq=" + rva.getOriginSequence() + "), dest=" + dest + " (seq=" + rva.getDestinationSequence() + "), type=" + type + ", premise=" + rva.getPremiseType().name() + ", group=" + rva.getGroup() + " stamp=" + stamp;
+				return "RelationshipVersionAdaptor: origin=" + orig + " (seq=" + rva.getOriginSequence() + "), dest=" + dest + " (seq=" + rva.getDestinationSequence() + "), type=" + type + " (seq=" + rva.getTypeSequence() + "), premise=" + rva.getPremiseType().name() + ", group=" + rva.getGroup() + " stamp=" + stamp;
 			} else {
 				return obj.toString();
 			}

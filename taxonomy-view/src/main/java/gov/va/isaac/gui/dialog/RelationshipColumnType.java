@@ -32,7 +32,7 @@ public enum RelationshipColumnType
 	UUID("UUID"),
 	GROUP("Group"),
 	//REFINEABILITY("Refineability"),
-	CHARACTERISTIC("Characteristic"),
+	CHARACTERISTIC("Premise Type"),
 	STATUS_STRING("Status"),
 	TIME("Time"),
 	AUTHOR("Author"),

@@ -36,6 +36,8 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTre
  *
  */
 public class DefaultSctTreeItemDisplayPolicies implements SctTreeItemDisplayPolicies {
+    //private static final Logger LOG = LoggerFactory.getLogger(DefaultSctTreeItemDisplayPolicies.class);
+
 	/* (non-Javadoc)
 	 * @see gov.va.isaac.interfaces.treeview.SctTreeItemDisplayPolicies#computeGraphic(gov.va.isaac.interfaces.treeview.SctTreeItemI)
 	 */

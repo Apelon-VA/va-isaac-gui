@@ -83,7 +83,6 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
     }
     
     private static WorkExecutors workExecutors_ = null;
-    
     private static WorkExecutors getWorkExecutors()
     {
         if (workExecutors_ == null)
@@ -103,12 +102,12 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
         }
     }
     
-    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
-        this(taxRef, displayPolicies, vcp, ttp, css, (Node) null);
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
+        this(conceptChronology, displayPolicies, vcp, ttp, css, (Node) null);
     }
 
-    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> t, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
-        super(t, node);
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
+        super(conceptChronology, node);
         this.taxonomyCoordinate = vcp;
         this.taxonomyTree = ttp;
         this.conceptSnapshotService = css;
@@ -123,20 +122,20 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
         childLoadStarts();
         try
         {
-            final ConceptChronology<? extends ConceptVersion<?>> taxRef = getValue();
+            final ConceptChronology<? extends ConceptVersion<?>> conceptChronology = getValue();
             if (! shouldDisplay()) {
                 // Don't add children to something that shouldn't be displayed
                 LOG.debug("this.shouldDisplay() == false: not adding children to " + this.getConceptUuid());
-            } else if (taxRef == null) {
-                LOG.debug("addChildren(): taxRef={}", taxRef);
-            } else { // if (taxRef != null)
+            } else if (conceptChronology == null) {
+                LOG.debug("addChildren(): conceptChronology={}", conceptChronology);
+            } else { // if (conceptChronology != null)
                 // Gather the children
                 ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
                 ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
     
-                Collection<ConceptChronology<? extends ConceptVersion<?>>> revisions = OchreUtility.getChildrenAsConceptChronologies(taxRef, getTaxonomyTree().get(), this.getTaxonomyCoordinate().get());
-                for (ConceptChronology<? extends ConceptVersion<?>> rv : revisions) {
-                    SctTreeItem childItem = new SctTreeItem(rv, displayPolicies, taxonomyCoordinate, taxonomyTree, conceptSnapshotService);
+                Collection<ConceptChronology<? extends ConceptVersion<?>>> children = OchreUtility.getChildrenAsConceptChronologies(conceptChronology, getTaxonomyTree().get(), this.getTaxonomyCoordinate().get());
+                for (ConceptChronology<? extends ConceptVersion<?>> child : children) {
+                    SctTreeItem childItem = new SctTreeItem(child, displayPolicies, taxonomyCoordinate, taxonomyTree, conceptSnapshotService);
                     if (childItem.shouldDisplay()) {
                         childrenToAdd.add(childItem);
                         childrenToProcess.add(new GetSctTreeItemConceptCallable(childItem));
