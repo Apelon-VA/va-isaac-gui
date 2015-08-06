@@ -18,20 +18,6 @@
  */
 package gov.va.isaac.gui.treeview;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.mahout.math.Arrays;
-import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
@@ -54,6 +40,13 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
+
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -76,6 +69,11 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
+
+import org.apache.mahout.math.Arrays;
+import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link TreeView} for browsing the SNOMED CT taxonomy.
@@ -509,7 +507,7 @@ class SctTreeView {
                     
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OchreUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree().get(), getTaxonomyCoordinate().get())) {
+                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OchreUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree().get())) {
                         pathToRoot.add(parent.getPrimordialUuid());
                         current = parent.getPrimordialUuid();
                         found = true;

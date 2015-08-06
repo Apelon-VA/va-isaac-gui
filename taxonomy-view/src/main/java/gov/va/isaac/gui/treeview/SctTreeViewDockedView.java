@@ -27,11 +27,12 @@ import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
-import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.Get;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.control.MenuItem;
@@ -39,8 +40,10 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
+
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

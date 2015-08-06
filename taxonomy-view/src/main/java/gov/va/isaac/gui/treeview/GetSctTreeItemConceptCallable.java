@@ -82,7 +82,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
 
-            int numParentsFromTree = OchreUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get()).size();
+            int numParentsFromTree = OchreUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTree().get()).size();
             if (numParentsFromTree > 1) {
                 treeItem.setMultiParent(true);
             }
@@ -98,7 +98,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
             		}
             		SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getTaxonomyCoordinate(), treeItem.getTaxonomyTree(), treeItem.getConceptSnapshotService());
             		if (childItem.shouldDisplay()) {
-                        int numParents = OchreUtility.getParentsAsConceptNids(childItem.getValue(), childItem.getTaxonomyTree().get(), childItem.getTaxonomyCoordinate().get()).size();
+                        int numParents = OchreUtility.getParentsAsConceptNids(childItem.getValue(), childItem.getTaxonomyTree().get()).size();
                         if (numParents > 1) {
                         	childItem.setMultiParent(true);
                         }

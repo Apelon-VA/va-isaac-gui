@@ -27,6 +27,7 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
@@ -583,8 +584,8 @@ public class DescriptionTableView implements EmbeddableViewI
 			{
 				ConceptSnapshot localConcept = (concept == null ? Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID_)) : concept);
 	
-				List<? extends SememeChronology<? extends DescriptionSememe>> descs = localConcept.getChronology().getConceptDescriptionList();
-				for (SememeChronology<? extends DescriptionSememe> descChronology : descs)
+				List<? extends SememeChronology<? extends DescriptionSememe<?>>> descs = OchreUtility.getConceptDescriptionList(localConcept.getChronology());
+				for (SememeChronology<? extends DescriptionSememe<?>> descChronology : descs)
 				{
 					for (DescriptionSememe<?> dv : descChronology.getVersionList())
 					{

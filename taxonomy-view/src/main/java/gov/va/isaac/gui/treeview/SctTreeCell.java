@@ -113,7 +113,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get()));
+                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get()));
                
 //                List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(value.getNid(), treeItem.getTaxonomyCoordinate().get().getStampCoordinate(), false, treeItem.getTaxonomyCoordinate().getValue().getTaxonomyType());
 //                if (allParents.size() != outgoingRelChronicles.size()) {
@@ -177,7 +177,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             else if (!empty && taxRef != null) {
                 final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
            
-                final Optional<LatestVersion<? extends ConceptVersion>> optional = ((ConceptChronology)taxRef).getLatestVersion(ConceptVersion.class, treeItem.getTaxonomyCoordinate().get().getStampCoordinate());
+                final Optional<LatestVersion<? extends ConceptVersion<?>>> optional = OchreUtility.getLatestConceptVersion(taxRef, treeItem.getTaxonomyCoordinate().get().getStampCoordinate());
                 final boolean active = optional.isPresent() && optional.get().value() != null && optional.get().value().getState() == State.ACTIVE;
                 
                 if (treeItem.getMultiParentDepth() > 0) {

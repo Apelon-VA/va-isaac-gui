@@ -77,7 +77,7 @@ public final class OchreUtility {
     }
     
 	@SuppressWarnings("unchecked")
-	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptorVersion(SememeChronology<? extends RelationshipVersionAdaptor<?>> sc, StampCoordinate<?> stampCoordinate) {
+	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptor(SememeChronology<? extends RelationshipVersionAdaptor<?>> sc, StampCoordinate<?> stampCoordinate) {
 		@SuppressWarnings("rawtypes")
 		SememeChronology rawSememChronology = (SememeChronology)sc;
 		
@@ -130,7 +130,7 @@ public final class OchreUtility {
 					}
 				}
 			} else {
-				Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> latest = getLatestRelationshipVersionAdaptorVersion(chronicle, stampCoordinate);
+				Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> latest = getLatestRelationshipVersionAdaptor(chronicle, stampCoordinate);
 				if (latest.isPresent() && latest.get().value() != null
 						&& (premiseType == null || premiseType == latest.get().value().getPremiseType())
 						&& (relTypeSequence == null || relTypeSequence == latest.get().value().getTypeSequence())) {
@@ -146,9 +146,9 @@ public final class OchreUtility {
 		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
 
 		final Set<ConceptVersion<?>> pathConcepts = new HashSet<>();
-		Consumer<? super SememeChronology<? extends SememeVersion>> action = new Consumer<SememeChronology<? extends SememeVersion>>() {
+		Consumer<? super SememeChronology<? extends SememeVersion<?>>> action = new Consumer<SememeChronology<? extends SememeVersion<?>>>() {
 			@Override
-			public void accept(SememeChronology<? extends SememeVersion> t) {
+			public void accept(SememeChronology<? extends SememeVersion<?>> t) {
 				ConceptChronology<? extends ConceptVersion<?>> pathCC = Get.conceptService().getConcept(t.getReferencedComponentNid());
 				
 				Optional<LatestVersion<? extends ConceptVersion<?>>> latestPathConceptVersion = getLatestConceptVersion(pathCC, StampCoordinates.getDevelopmentLatest());
@@ -321,8 +321,16 @@ public final class OchreUtility {
 		return getDescription(Get.conceptService().getConcept(uuid));
 	}
 	
-	public static Set<Integer> getChildrenAsConceptNids(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree) {
-	
+	public static Set<Integer> getChildrenAsConceptSequences(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree) {
+		Set<Integer> sequenceSet = new HashSet<>();
+		
+		for (int childSeq : taxonomyTree.getChildrenSequences(AppContext.getService(IdentifierService.class).getConceptSequence(parent.getNid()))) {
+			sequenceSet.add(childSeq);
+		}
+		
+		return sequenceSet;
+	}
+	public static Set<Integer> getChildrenAsConceptNids(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree) {
 		Set<Integer> nidSet = new HashSet<>();
 		
 		for (int childSeq : taxonomyTree.getChildrenSequences(AppContext.getService(IdentifierService.class).getConceptSequence(parent.getNid()))) {
@@ -335,7 +343,7 @@ public final class OchreUtility {
 		return nidSet;
 	}
 	
-	public static Set<ConceptSnapshot> getChildrenAsConceptSnapshots(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate<?> sc, LanguageCoordinate lc) {
+	public static Set<ConceptSnapshot> getChildrenAsConceptSnapshots(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, StampCoordinate<?> sc, LanguageCoordinate lc) {
 		Set<ConceptSnapshot> conceptVersions = new HashSet<>();
 	
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
@@ -344,8 +352,8 @@ public final class OchreUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, StampCoordinate<?> sc, LanguageCoordinate lc) {
-		Set<ConceptChronology<? extends ConceptVersion>> conceptVersions = new HashSet<>();
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, StampCoordinate<?> sc, LanguageCoordinate lc) {
+		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
 	
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
 			conceptVersions.add(conceptSnapshotService(sc, lc).getConceptSnapshot(nid).getChronology());
@@ -353,7 +361,7 @@ public final class OchreUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion> parent, Tree taxonomyTree, TaxonomyCoordinate vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, TaxonomyCoordinate<?> vc) {
 		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
 		
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
@@ -363,12 +371,7 @@ public final class OchreUtility {
 		return conceptVersions;
 	}
 	
-	
-	// TODO this Tree API should work...
-	//		Tree ancestorTree = taxonomyTree.createAncestorTree(child.getConceptSequence());
-	//	
-	//	return getChildrenAsConceptNids(child, ancestorTree);
-	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate vc) {
+	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion<?>> child, Tree taxonomyTree) {
 		//LOG.debug("Getting parents of concept {}...", Get.conceptDescriptionText(child.getNid()));
 		int[] parentSequences = taxonomyTree.getParentSequences(child.getConceptSequence());
 		
@@ -376,28 +379,19 @@ public final class OchreUtility {
 		
 		for (int parentSequence : parentSequences) {
 			int parentNid = Get.identifierService().getConceptNid(parentSequence);
-			//if (! Get.taxonomyService().isChildOf(parentNid, child.getNid(), vc)) {
 			parentNids.add(parentNid);
-			//} else {
-			//	LOG.debug("{} is both child and parent of concept (retrieved by taxonomyTree.getParentSequences()) {}", getDescription(child), getDescription(Get.conceptService().getConcept(parentNid)));
-			//}
 		}
 		
 		return parentNids;
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion> child, Tree taxonomyTree, TaxonomyCoordinate<?> vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> child, Tree taxonomyTree) {
 		Set<ConceptChronology<? extends ConceptVersion<?>>> parentConcepts = new HashSet<>();
-		for (int nid : getParentsAsConceptNids(child, taxonomyTree, vc)) {
+		for (int nid : taxonomyTree.getParentSequences(child.getConceptSequence())) {
 			parentConcepts.add(Get.conceptService().getConcept(nid));
 		}
 		
 		return parentConcepts;
-		
-		// TODO this Tree API should work...
-		//		Tree ancestorTree = taxonomyTree.createAncestorTree(child.getConceptSequence());
-//	
-//		return getChildrenAsConceptVersions(child, ancestorTree, vc);
 	}
 
 	public static Optional<Long> getSctId(int componentNid)

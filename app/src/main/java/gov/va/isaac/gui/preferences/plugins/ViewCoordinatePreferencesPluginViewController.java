@@ -31,13 +31,13 @@ import gov.va.isaac.util.ViewCoordinateFactory;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 
 import java.io.IOException;
 import java.net.URL;
@@ -92,10 +92,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,7 +152,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	
 	private PersistenceInterface persistenceInterface = null;
 
-	final ViewCoordinate panelViewCoordinate;
+	final private TaxonomyCoordinate<?> panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 	
 	final private ProgressIndicator progressIndicator = new ProgressIndicator();
 	{
@@ -191,18 +188,6 @@ public class ViewCoordinatePreferencesPluginViewController {
 		FXMLLoader loader = new FXMLLoader(resource);
 		loader.load();
 		return loader.getController();
-	}
-
-	{
-		try {
-			panelViewCoordinate = ViewCoordinates.getDevelopmentStatedLatest();
-		} catch (IOException e) {
-			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to initialize ViewCoordinate";
-			log.error(msg, e);
-			e.printStackTrace();
-
-			throw new RuntimeException(msg, e);
-		}
 	}
 	
 	@FXML
@@ -517,8 +502,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 				} else {
 					TextErrorColorHelper.clearTextErrorColor(pathComboBox);
 				}
-				ConceptChronology<? extends ConceptVersion> pathCC = Get.conceptService().getConcept(currentPathProperty.get());
-				Optional<LatestVersion<ConceptVersion>> optionalLatestVersion = ((ConceptChronology)pathCC).getLatestVersion(ConceptVersion.class, ViewCoordinateFactory.getSystemViewCoordinate());
+				ConceptChronology<? extends ConceptVersion<?>> pathCC = Get.conceptService().getConcept(currentPathProperty.get());
+				Optional<LatestVersion<? extends ConceptVersion<?>>> optionalLatestVersion = OchreUtility.getLatestConceptVersion(pathCC, ViewCoordinateFactory.getSystemViewCoordinate());
 				if (! optionalLatestVersion.isPresent()) {
 					this.setInvalidReason("Invalid path");
 					TextErrorColorHelper.setTextErrorColor(pathComboBox);
@@ -597,7 +582,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 						// Populate selectableModules
 						//final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
-						ConceptChronology<? extends ConceptVersion> moduleRootConcept = Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid())).getChronology();
+						ConceptChronology<? extends ConceptVersion<?>> moduleRootConcept = Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid())).getChronology();
 						
 						Set<ConceptSnapshot> children = OchreUtility.getChildrenAsConceptSnapshots(moduleRootConcept, Get.taxonomyService().getTaxonomyTree(TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate())), StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 						final Set<ConceptSnapshot> moduleConcepts = new HashSet<>();
