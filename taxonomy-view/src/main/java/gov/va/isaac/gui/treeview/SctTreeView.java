@@ -40,7 +40,7 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
-
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
@@ -137,7 +137,7 @@ class SctTreeView {
     private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
     public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
         if (conceptSnapshotService.get() == null) {
-            ReadOnlyObjectProperty<StampCoordinate<?>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+            ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
             ReadOnlyObjectProperty<LanguageCoordinate> langCoord = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
             stampCoord.addListener(change -> 
             {

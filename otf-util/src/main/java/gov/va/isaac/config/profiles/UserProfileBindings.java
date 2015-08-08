@@ -93,7 +93,7 @@ public class UserProfileBindings
 
 	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
 
-	private final ReadOnlyObjectWrapper<StampCoordinate<?>> stampCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<StampCoordinate<StampCoordinateImpl>> stampCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
@@ -197,7 +197,7 @@ public class UserProfileBindings
 	/**
 	 * @return the stampCoordinate
 	 */
-	public ReadOnlyObjectProperty<StampCoordinate<?>> getStampCoordinate()
+	public ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> getStampCoordinate()
 	{
 		return stampCoordinate.getReadOnlyProperty();
 	}
