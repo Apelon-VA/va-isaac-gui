@@ -175,10 +175,6 @@ public final class OchreUtility {
 		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
 	}
 
-	@Deprecated
-	public static String conceptDescriptionText(int conceptId, TaxonomyCoordinate<?> vc) {
-		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
-	}
 	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
 		Optional<LatestVersion<DescriptionSememe<?>>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
 		if (descriptionOptional.isPresent()) {
