@@ -75,13 +75,14 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
+				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface());
 				slaveValidationFailureMessageProperty.bind(drlvc_.validationFailureMessageProperty());
 			}
 			catch (IOException e)
 			{
 				LoggerFactory.getLogger(this.getClass()).error("Unexpected error initing ViewCoordinatePreferencesPluginViewController", e);
 				AppContext.getCommonDialogs().showErrorDialog("Unexpected error creating ViewCoordinatePreferencesPluginViewController", e);
-				return new Label("Unexpected error initializing view, see log file");
+				return new Label("Unexpected error initializing view, see LOG file");
 			}
 
 		}

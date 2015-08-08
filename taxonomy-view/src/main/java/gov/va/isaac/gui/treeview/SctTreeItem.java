@@ -20,26 +20,30 @@ package gov.va.isaac.gui.treeview;
 
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemI;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.util.WorkExecutors;
-import java.io.IOException;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Node;
 import javafx.scene.control.TreeItem;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.ddo.ComponentReference;
-import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctTreeItemI, Comparable<SctTreeItem> {
+class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>>> implements SctTreeItemI, Comparable<SctTreeItem> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeItem.class);
 
@@ -64,9 +68,21 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     private int multiParentDepth = 0;
     private boolean secondaryParentOpened = false;
     private SctTreeItemDisplayPolicies displayPolicies;
+    private final ReadOnlyObjectProperty<TaxonomyCoordinate<?>> taxonomyCoordinate;
+    private final ReadOnlyObjectProperty<Tree> taxonomyTree;
+    private final ReadOnlyObjectProperty<ConceptSnapshotService> conceptSnapshotService;
+    
+    public ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
+    	return taxonomyTree;
+    }
+    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    	return taxonomyCoordinate;
+    }
+    public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
+    	return conceptSnapshotService;
+    }
     
     private static WorkExecutors workExecutors_ = null;
-    
     private static WorkExecutors getWorkExecutors()
     {
         if (workExecutors_ == null)
@@ -76,8 +92,8 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
         return workExecutors_;
     }
 
-    private static TreeItem<TaxonomyReferenceWithConcept> getTreeRoot(TreeItem<TaxonomyReferenceWithConcept> item) {
-        TreeItem<TaxonomyReferenceWithConcept> parent = item.getParent();
+    private static TreeItem<ConceptChronology<? extends ConceptVersion<?>>> getTreeRoot(TreeItem<ConceptChronology<? extends ConceptVersion<?>>> item) {
+        TreeItem<ConceptChronology<? extends ConceptVersion<?>>> parent = item.getParent();
         
         if (parent == null) {
             return item;
@@ -86,12 +102,15 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
         }
     }
     
-    SctTreeItem(TaxonomyReferenceWithConcept taxRef, SctTreeItemDisplayPolicies displayPolicies) {
-        this(taxRef, displayPolicies, (Node) null);
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
+        this(conceptChronology, displayPolicies, vcp, ttp, css, (Node) null);
     }
 
-    SctTreeItem(TaxonomyReferenceWithConcept t, SctTreeItemDisplayPolicies displayPolicies, Node node) {
-        super(t, node);
+    SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, SctTreeItemDisplayPolicies displayPolicies, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
+        super(conceptChronology, node);
+        this.taxonomyCoordinate = vcp;
+        this.taxonomyTree = ttp;
+        this.conceptSnapshotService = css;
         this.displayPolicies = displayPolicies;
     }
 
@@ -103,34 +122,25 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
         childLoadStarts();
         try
         {
-            final TaxonomyReferenceWithConcept taxRef = getValue();
+            final ConceptChronology<? extends ConceptVersion<?>> conceptChronology = getValue();
             if (! shouldDisplay()) {
                 // Don't add children to something that shouldn't be displayed
                 LOG.debug("this.shouldDisplay() == false: not adding children to " + this.getConceptUuid());
-            } else if (taxRef == null || taxRef.getConcept() == null) {
-                LOG.debug("addChildren(): taxRef={}, taxRef.getConcept()={}", taxRef, taxRef.getConcept());
-            } else if (taxRef.getConcept() != null) {
+            } else if (conceptChronology == null) {
+                LOG.debug("addChildren(): conceptChronology={}", conceptChronology);
+            } else { // if (conceptChronology != null)
                 // Gather the children
                 ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
                 ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
     
-                for (RelationshipChronicleDdo r : taxRef.conceptProperty().get().getDestinationRelationships()) {
-                    for (RelationshipVersionDdo rv : r.getVersions()) {
-                        if (cancelLookup) {
-                            return;
-                        }
-                        try {
-                            TaxonomyReferenceWithConcept fxtrc = new TaxonomyReferenceWithConcept(rv);
-                            SctTreeItem childItem = new SctTreeItem(fxtrc, displayPolicies);
-                            if (childItem.shouldDisplay()) {
-                                childrenToAdd.add(childItem);
-                                childrenToProcess.add(new GetSctTreeItemConceptCallable(childItem));
-                            } else {
-                                LOG.debug("item.shouldDisplay() == false: not adding " + childItem.getConceptUuid() + " as child of " + this.getConceptUuid());
-                            }
-                        } catch (IOException | ContradictionException ex) {
-                            LOG.error(null, ex);
-                        }
+                Collection<ConceptChronology<? extends ConceptVersion<?>>> children = OchreUtility.getChildrenAsConceptChronologies(conceptChronology, getTaxonomyTree().get(), this.getTaxonomyCoordinate().get());
+                for (ConceptChronology<? extends ConceptVersion<?>> child : children) {
+                    SctTreeItem childItem = new SctTreeItem(child, displayPolicies, taxonomyCoordinate, taxonomyTree, conceptSnapshotService);
+                    if (childItem.shouldDisplay()) {
+                        childrenToAdd.add(childItem);
+                        childrenToProcess.add(new GetSctTreeItemConceptCallable(childItem));
+                    } else {
+                        LOG.debug("item.shouldDisplay() == false: not adding " + childItem.getConceptUuid() + " as child of " + this.getConceptUuid());
                     }
                 }
     
@@ -169,14 +179,14 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                 // Don't add children to something that shouldn't be displayed
                 LOG.debug("this.shouldDisplay() == false: not adding children concepts and grandchildren items to " + this.getConceptUuid());
             } else {
-                for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren()) {
+                for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : getChildren()) {
                     if (cancelLookup) {
                         return;
                     }
                     if (((SctTreeItem)child).shouldDisplay()) {
-                        if (child.getChildren().isEmpty() && (child.getValue().getConcept() != null)) {
-                            if (child.getValue().getConcept().getDestinationRelationships().isEmpty()) {
-                                TaxonomyReferenceWithConcept value = child.getValue();
+                        if (child.getChildren().isEmpty() && (child.getValue() != null)) {
+                            if (OchreUtility.getChildrenAsConceptNids(child.getValue(), getTaxonomyTree().get()).size() == 0) {
+                                ConceptChronology<? extends ConceptVersion<?>> value = child.getValue();
                                 child.setValue(null);
                                 SctTreeItem noChildItem = (SctTreeItem) child;
                                 noChildItem.computeGraphic();
@@ -185,14 +195,11 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                                 ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
                                 ((SctTreeItem)child).childLoadStarts();
     
-                                for (RelationshipChronicleDdo r : child.getValue().conceptProperty().get().getDestinationRelationships()) {
+                                for (ConceptChronology<? extends ConceptVersion<?>> r : OchreUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTree().get(), getTaxonomyCoordinate().get())) {
                                     if (cancelLookup) {
                                         return;
                                     }
-                                    for (RelationshipVersionDdo rv : r.getVersions()) {
-                                        try {
-                                            TaxonomyReferenceWithConcept taxRef = new TaxonomyReferenceWithConcept(rv);
-                                            SctTreeItem grandChildItem = new SctTreeItem(taxRef, displayPolicies);
+                                            SctTreeItem grandChildItem = new SctTreeItem(r, displayPolicies, taxonomyCoordinate, taxonomyTree, conceptSnapshotService);
     
                                             if (grandChildItem.shouldDisplay()) {
                                                 grandChildrenToProcess.add(new GetSctTreeItemConceptCallable(grandChildItem));
@@ -200,10 +207,6 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                                             } else {
                                                 LOG.debug("grandChildItem.shouldDisplay() == false: not adding " + grandChildItem.getConceptUuid() + " as child of " + ((SctTreeItem)child).getConceptUuid());
                                             }
-                                        } catch (IOException | ContradictionException ex) {
-                                            LOG.error(null, ex);
-                                        }
-                                    }
                                 }
     
                                 Collections.sort(grandChildrenToAdd);
@@ -220,7 +223,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
                                 });
                                 wait.await();
                             }
-                        } else if ((child.getValue() == null || child.getValue().getConcept() == null) && ((SctTreeItem)child).getChildLoadPercentComplete().get() == -2.0) {
+                        } else if ((child.getValue() == null) && ((SctTreeItem)child).getChildLoadPercentComplete().get() == -2.0) {
                             grandChildrenToProcess.add(new GetSctTreeItemConceptCallable((SctTreeItem) child));
                         }
                     } else {
@@ -254,41 +257,24 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     }
 
     public UUID getConceptUuid() {
-        TaxonomyReferenceWithConcept ref = getValue();
-        
-        if (ref != null && ref.getConceptFromRelationshipOrConceptProperties() != null) {
-            return getValue().getConceptFromRelationshipOrConceptProperties().getUuid();
-        } else {
-            return null;
-        }
+        return getValue() != null ? getValue().getPrimordialUuid() : null;
     }
     @Override
     public Integer getConceptNid() {
-        return getConceptNid(getValue());
+        return getValue() != null ? getValue().getNid() : null;
     }
-    private static Integer getConceptNid(TreeItem<TaxonomyReferenceWithConcept> item) {
-        return getConceptNid(item.getValue());
-    }
-    private static Integer getConceptNid(TaxonomyReferenceWithConcept ref) {
-        if (ref != null && ref.getConceptFromRelationshipOrConceptProperties() != null) {
-            return ref.getConceptFromRelationshipOrConceptProperties().getNid();
-        } else {
-            return null;
-        }
+    private static Integer getConceptNid(TreeItem<ConceptChronology<? extends ConceptVersion<?>>> item) {
+        return item != null && item.getValue() != null ? item.getValue().getNid() : null;
     }
     
     @Override
     public boolean isRoot() {
-        TaxonomyReferenceWithConcept ref = getValue();
-
         if (IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getPrimodialUuid().equals(this.getConceptUuid())) {
-            return true;
-        } else if (ref != null && ref.getRelationshipVersion() == null) {
             return true;
         } else if (this.getParent() == null) {
             return true;
         } else {
-            TreeItem<TaxonomyReferenceWithConcept> root = getTreeRoot(this);
+            TreeItem<ConceptChronology<? extends ConceptVersion<?>>> root = getTreeRoot(this);
 
             if (this == root) {
                 return true;
@@ -320,28 +306,13 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     
     public static String toString(SctTreeItem item) {
         try {
-            if (item.getValue().getRelationshipVersion() != null) {
-                if (item.getMultiParentDepth() > 0) {
-                    ComponentReference destRef = item.getValue().getRelationshipVersion().getDestinationReference();
-                    String temp = OTFUtility.getDescription(destRef.getUuid());
-                    if (temp == null) {
-                        return destRef.getText();
-                    } else {
-                        return temp;
-                    }
+            if (item.getValue() != null) {
+            	String desc = OchreUtility.getDescription(item.getValue(), item.getTaxonomyCoordinate().get());
+                if (desc != null) {
+                	return desc;
                 } else {
-                    ComponentReference originRef = item.getValue().getRelationshipVersion().getOriginReference();
-                    String temp = OTFUtility.getDescription(originRef.getUuid());
-                    if (temp == null) {
-                        return originRef.getText();
-                    } else {
-                        return temp;
-                    }
+                	LOG.debug("No description found for concept {}", item.getValue().toUserString());
                 }
-            }
-
-            if (item.getValue().conceptProperty().get() != null) {
-                return OTFUtility.getDescription(item.getValue().conceptProperty().get());
             }
 
             return "root";
@@ -426,7 +397,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     {
         cancelLookup = true;
         childrenLoadedLatch.countDown();
-        for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren())
+        for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : getChildren())
         {
             ((SctTreeItem)child).clearChildren();
         }
@@ -467,7 +438,7 @@ class SctTreeItem extends TreeItem<TaxonomyReferenceWithConcept> implements SctT
     }
     
     public void removeGrandchildren() {
-        for (TreeItem<TaxonomyReferenceWithConcept> child : getChildren()) {
+        for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : getChildren()) {
            ((SctTreeItem)child).clearChildren();
            ((SctTreeItem)child).resetChildrenCalculators();
         }

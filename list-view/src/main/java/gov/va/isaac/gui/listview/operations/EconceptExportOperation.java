@@ -144,6 +144,7 @@ public class EconceptExportOperation extends Operation
 		fileExtension =	ExportFileExtensionEnum.Econcept.extensionFormat;
 		fileChooser.setInitialFileName(fileName + fileExtension);
 		toggleSelected = ExportFileExtensionEnum.Econcept.name;
+		outputField.setDisable(true);
 		
 		openFileChooser.setOnAction(
 			new EventHandler<ActionEvent>() {

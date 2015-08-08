@@ -134,7 +134,7 @@ public class ExportFileSettingsDialogController {
               try {
                 return arg0.getVersion(OTFUtility.getViewCoordinate()).get()
                     .getPreferredDescription().getText()
-                    .startsWith(TermAux.SNOMED_CORE.getDescription() + " ");
+                    .startsWith(TermAux.SNOMED_CORE.getConceptDescriptionText() + " ");
               } catch (IOException e) {
                 e.printStackTrace();
               } catch (ContradictionException e) {

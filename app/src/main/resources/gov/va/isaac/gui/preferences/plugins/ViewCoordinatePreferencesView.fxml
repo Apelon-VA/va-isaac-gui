@@ -8,7 +8,7 @@
 
 <StackPane fx:id="rootStackPaneInTab" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewController">
    <children>
-      <GridPane fx:id="gridPaneInRootStackPane" maxHeight="1.7976931348623157E308" prefHeight="600.0">
+      <GridPane fx:id="gridPaneInRootStackPane" maxHeight="1.7976931348623157E308" minHeight="600.0" prefHeight="600.0">
          <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
          </columnConstraints>
@@ -109,7 +109,7 @@
                         </HBox>
                         <HBox alignment="TOP_CENTER">
                            <children>
-                              <Label alignment="TOP_RIGHT" text="Taxonomy Rel Type" wrapText="true">
+                              <Label alignment="TOP_RIGHT" maxWidth="-Infinity" prefWidth="110.0" text="Stated/Inferred View" wrapText="true">
                                  <HBox.margin>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>

@@ -19,7 +19,6 @@
 package gov.va.isaac.util;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
@@ -32,6 +31,13 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationV
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,8 +60,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -859,15 +863,17 @@ public class CommonMenus
 		ArrayList<Long> sctIds = new ArrayList<>();
 
 		for (Integer i : nids.getNIds()) {
-			ComponentChronicleBI<?> component = OTFUtility.getComponentChronicle(i);
-			
-			if (component != null && component.getPrimordialUuid() != null) {
-				uuids.add(component.getPrimordialUuid());
-				if (component instanceof ConceptChronicleBI)
+			ConceptChronology<?> ochreConceptChronology = Get.conceptService().getConcept(i);
+
+			//LOG.debug("Get.conceptService().getConcept({}) returned component {}", i, ochreConceptChronology.getPrimordialUuid());
+
+			if (ochreConceptChronology != null && ochreConceptChronology.getPrimordialUuid() != null) {
+				uuids.add(ochreConceptChronology.getPrimordialUuid());
+				if (Get.identifierService().getChronologyTypeForNid(i) == ObjectChronologyType.CONCEPT)
 				{
-					ConceptVersionBI concept = OTFUtility.getConceptVersion(i);
-					if (concept != null) {
-						Optional<Long> conceptSct = ConceptViewerHelper.getSctId(concept.getNid());
+					ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
+					if (conceptSnapshot != null) {
+						Optional<Long> conceptSct = OchreUtility.getSctId(conceptSnapshot.getNid());
 						if(conceptSct.isPresent()) {
 							sctIds.add(conceptSct.get());
 						}
@@ -942,8 +948,58 @@ public class CommonMenus
 		//TODO Dan doesn't like this, because it is being done at menu execution time, in the FX Thread, rather
 		//that in the background... but not sure how to restructure this class just now to properly handle other 
 		//types of nids...
-		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
 		
+		// TODO Complete this
+		ObjectChronologyType nidType = Get.identifierService().getChronologyTypeForNid(nid);
+		switch (nidType) {
+		case CONCEPT:
+			LOG.debug("NID {} passed is for CONCEPT {}", nid, Get.conceptDescriptionText(nid));
+			ConceptChronology<? extends ConceptVersion> conceptC = Get.conceptService().getConcept(nid);
+			return conceptC.getNid();
+		case SEMEME:
+			SememeChronology<? extends SememeVersion> sememeC = Get.sememeService().getSememe(Get.identifierService().getSememeSequence(nid));
+			LOG.debug("NID {} passed is for {} SEMEME {}", nid, sememeC.getSememeType(), Get.conceptDescriptionText(nid));
+
+			switch(sememeC.getSememeType()) {
+			case MEMBER:
+				break;
+			case COMPONENT_NID:
+				return sememeC.getReferencedComponentNid();
+			case LONG:
+				break;
+			case LOGIC_GRAPH:
+				break;
+			case STRING:
+				break;
+			case DYNAMIC:
+				break;
+			case DESCRIPTION:
+				break;
+			case RELATIONSHIP_ADAPTOR:
+				break;
+			default:
+				throw new RuntimeException("Unsupported SememeType " + sememeC.getSememeType().name());
+			}
+			
+			return sememeC.getNid();
+		case REFEX:
+			LOG.debug("NID {} passed is for REFEX {}", nid, Get.conceptDescriptionText(nid));
+
+			break;
+		case OTHER:
+			LOG.debug("NID {} passed is for OTHER {}", nid, Get.conceptDescriptionText(nid));
+
+			break;
+		case UNKNOWN_NID:
+			LOG.debug("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
+
+			break;
+			default:
+				throw new RuntimeException("Unsupported ObjectChronologyType " + nidType.name());
+		}
+		
+		LOG.debug("Using OTF API to get parent concept nid for component {} (nid={})", Get.conceptDescriptionText(nid), nid);
+		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
 		if (cc != null) {
 			if (cc instanceof RefexDynamicChronicleBI) {
 				RefexDynamicChronicleBI<?> refexChron = (RefexDynamicChronicleBI<?>)cc;

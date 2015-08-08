@@ -18,15 +18,15 @@
  */
 package gov.va.isaac.gui.dialog;
 
-import gov.va.isaac.util.OTFUtility;
-import java.io.IOException;
+import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+
 import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.ToIntFunction;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +42,11 @@ public class RelationshipVersion
 {
 	private static final Logger LOG = LoggerFactory.getLogger(RelationshipVersion.class);
 	private boolean isLatest_;
-	private RelationshipVersionBI<?> rv_;
+	private RelationshipVersionAdaptor<?> rv_;
 	
 	private HashMap<String, AbstractMap.SimpleImmutableEntry<String, String>> stringCache_ = new HashMap<>();
 	
-	public RelationshipVersion(RelationshipVersionBI<?> rv, boolean isLatest)
+	public RelationshipVersion(RelationshipVersionAdaptor<?> rv, boolean isLatest)
 	{
 		isLatest_ = isLatest;
 		rv_ = rv;
@@ -57,33 +57,33 @@ public class RelationshipVersion
 		return isLatest_;
 	}
 	
-	public RelationshipVersionBI<?> getRelationshipVersion()
+	public RelationshipVersionAdaptor<?> getRelationshipVersion()
 	{
 		return rv_;
 	}
 	
-	public boolean hasDynamicRefex()
-	{
-		try
-		{
-			Collection<? extends RefexDynamicChronicleBI<?>> foo = rv_.getRefexDynamicAnnotations();
-			if (foo != null && foo.size() > 0)
-			{
-				return true;
-			}
-		}
-		catch (IOException e)
-		{
-			LOG.error("Unexpeted", e);
-		}
-		return false;
-	}
+//	public boolean hasDynamicRefex()
+//	{
+//		try
+//		{
+//			Collection<? extends RefexDynamicChronicleBI<?>> foo = rv_.getRefexDynamicAnnotations();
+//			if (foo != null && foo.size() > 0)
+//			{
+//				return true;
+//			}
+//		}
+//		catch (IOException e)
+//		{
+//			LOG.error("Unexpeted", e);
+//		}
+//		return false;
+//	}
 	
 	/**
 	 * Returns the string for display, and the tooltip, if applicable.  Either / or may be null.
 	 * Key is for the display, value is for the tooltip.
 	 */
-	public AbstractMap.SimpleImmutableEntry<String, String> getDisplayStrings(RelationshipColumnType desiredColumn)
+	public AbstractMap.SimpleImmutableEntry<String, String> getDisplayStrings(RelationshipColumnType desiredColumn, ConceptSnapshotService css)
 	{
 		String cacheKey = desiredColumn.name();
 		
@@ -101,15 +101,15 @@ public class RelationshipVersion
 				//Just easier to leave the impl in StatusCell for this one.  We don't need filters on this column either.
 				throw new RuntimeException("No text for this field");
 			}
-			case AUTHOR: case PATH: case MODULE: case TYPE: case CHARACTERISTIC: case DESTINATION: case REFINEABILITY: case SOURCE:
+			case AUTHOR: case PATH: case MODULE: case TYPE: case DESTINATION: case SOURCE:
 			{
-				String text = getConceptComponentText(getNidFetcher(desiredColumn));
+				String text = getConceptComponentText(getIdFetcher(desiredColumn), css);
 				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(text, text);
 				break;
 			}
 			case STATUS_STRING:
 			{
-				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(rv_.getStatus().toString(), null);
+				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(rv_.getState().toString(), null);
 				break;
 			}
 			case UUID:
@@ -128,6 +128,11 @@ public class RelationshipVersion
 					new Date(rv_.getTime()).toString()), null);
 				break;
 			}
+			case CHARACTERISTIC:
+			{
+				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(rv_.getPremiseType().name(), null);
+				break;
+			}
 			default:
 				throw new RuntimeException("Missing implementation: " + desiredColumn);
 		}
@@ -136,90 +141,72 @@ public class RelationshipVersion
 		return returnValue;
 	}
 	
-	public ToIntFunction<RelationshipVersionBI<?>> getNidFetcher(RelationshipColumnType desiredColumn)
+	public ToIntFunction<RelationshipVersionAdaptor<?>> getIdFetcher(RelationshipColumnType desiredColumn)
 	{
 		switch (desiredColumn)
 		{
-			case STATUS_CONDENSED: case STATUS_STRING: case TIME: case UUID: case GROUP:
+			case STATUS_CONDENSED: case STATUS_STRING: case TIME: case UUID: case GROUP: case CHARACTERISTIC:
 			{
 				throw new RuntimeException("Improper API usage");
 			}
 			case AUTHOR:
 			{
-				return new ToIntFunction<RelationshipVersionBI<?>>()
+				return new ToIntFunction<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
+					public int applyAsInt(RelationshipVersionAdaptor<?> value)
 					{
-						return value.getAuthorNid();
+						return value.getAuthorSequence();
 					}
 				};
 			}
 			case MODULE:
 			{
-				return new ToIntFunction<RelationshipVersionBI<?>>()
+				return new ToIntFunction<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
+					public int applyAsInt(RelationshipVersionAdaptor<?> value)
 					{
-						return value.getModuleNid();
+						return value.getModuleSequence();
 					}
 				};
 			}
 			case PATH:
 			{
-				return new ToIntFunction<RelationshipVersionBI<?>>()
+				return new ToIntFunction<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
+					public int applyAsInt(RelationshipVersionAdaptor<?> value)
 					{
-						return value.getPathNid();
+						return value.getPathSequence();
 					}
 				};
 			}
 			case TYPE:
-				return new ToIntFunction<RelationshipVersionBI<?>>()
+				return new ToIntFunction<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
+					public int applyAsInt(RelationshipVersionAdaptor<?> value)
 					{
-						return value.getTypeNid();
-					}
-				};
-			case CHARACTERISTIC:
-				return new ToIntFunction<RelationshipVersionBI<?>>()
-				{
-					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
-					{
-						return value.getCharacteristicNid();
+						return value.getTypeSequence();
 					}
 				};
 			case DESTINATION:
-				return new ToIntFunction<RelationshipVersionBI<?>>()
+				return new ToIntFunction<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
+					public int applyAsInt(RelationshipVersionAdaptor<?> value)
 					{
-						return value.getDestinationNid();
-					}
-				};
-			case REFINEABILITY:
-				return new ToIntFunction<RelationshipVersionBI<?>>()
-				{
-					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
-					{
-						return value.getRefinabilityNid();
+						return value.getDestinationSequence();
 					}
 				};
 			case SOURCE:
-				return new ToIntFunction<RelationshipVersionBI<?>>()
+				return new ToIntFunction<RelationshipVersionAdaptor<?>>()
 				{
 					@Override
-					public int applyAsInt(RelationshipVersionBI<?> value)
+					public int applyAsInt(RelationshipVersionAdaptor<?> value)
 					{
-						return value.getOriginNid();
+						return value.getOriginSequence();
 					}
 				};
 			default:
@@ -227,11 +214,11 @@ public class RelationshipVersion
 		}
 	}
 	
-	private String getConceptComponentText(ToIntFunction<RelationshipVersionBI<?>> nidFetcher)
+	private String getConceptComponentText(ToIntFunction<RelationshipVersionAdaptor<?>> nidFetcher, ConceptSnapshotService css)
 	{
 		try
 		{
-			return OTFUtility.getDescription(OTFUtility.getConceptVersion(nidFetcher.applyAsInt(rv_)));
+			return OchreUtility.getDescription(css.getConceptSnapshot(nidFetcher.applyAsInt(rv_)).getChronology(), css.getLanguageCoordinate(), css.getStampCoordinate());
 		}
 		catch (Exception e)
 		{

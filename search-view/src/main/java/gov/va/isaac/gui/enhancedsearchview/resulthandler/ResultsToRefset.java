@@ -40,11 +40,12 @@ public class ResultsToRefset {
 																									 ViewCoordinates.getMetadataViewCoordinate());
 		    // Create a dynamic refex CAB for each result
 			for (CompositeSearchResult con : tableView.getItems()) {
-				RefexDynamicCAB refexBlueprint = new RefexDynamicCAB(con.getContainingConcept().getNid(), refset.getRefexUsageDescriptorNid());
+				RefexDynamicCAB refexBlueprint = new RefexDynamicCAB(con.getContainingConcept().get().getNid(), refset.getRefexUsageDescriptorNid());
 				OTFUtility.getBuilder().construct(refexBlueprint);
 				
 				if (prompt.getAnnot().isSelected()) {
-					ExtendedAppContext.getDataStore().addUncommitted(con.getContainingConcept());
+					//TODO Dan broke this - it needs to be rewritten with builder anyway
+					//ExtendedAppContext.getDataStore().addUncommitted(con.getContainingConcept().get());
 				} 
 			}
 			

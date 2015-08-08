@@ -46,13 +46,14 @@ public class CompositeSearchResultComparator implements Comparator<CompositeSear
 			return -1;
 		}
 		
-		if (o1.getContainingConcept() == null || o2.getContainingConcept() == null)
+		//Sort off path ones to the bottom
+		if (!o1.getContainingConcept().isPresent() || !o2.getContainingConcept().isPresent())
 		{
-			if (o1.getContainingConcept() == null && o2.getContainingConcept() != null)
+			if (!o1.getContainingConcept().isPresent() && o2.getContainingConcept().isPresent())
 			{
 				return 1;
 			}
-			else if (o1.getContainingConcept() != null && o2.getContainingConcept() == null)
+			else if (o1.getContainingConcept().isPresent() && !o2.getContainingConcept().isPresent())
 			{
 				return -1;
 			}
@@ -61,43 +62,10 @@ public class CompositeSearchResultComparator implements Comparator<CompositeSear
 				return 0;
 			}
 		}
-		// else same score
-		String o1FSN = null;
-		try {
-			o1FSN = o1.getContainingConcept().getFullySpecifiedDescription().getText().trim();
-		} catch (Exception e) {
-			LOG.warn("Failed calling getFullySpecifiedDescription() (" + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\") on concept " + o1, e);
-		}
-		String o2FSN = null;
-		try {
-			o2FSN = o2.getContainingConcept().getFullySpecifiedDescription().getText().trim();
-		} catch (Exception e) {
-			LOG.warn("Failed calling getFullySpecifiedDescription() (" + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\") on concept " + o2, e);
-		}
-		
-		int fsnComparison = ObjectUtils.compare(o1FSN, o2FSN);
-		if (fsnComparison != 0) {
-			return fsnComparison;
-		}
-		
-		// else same score and FSN
-		String o1PreferredDescription = null;
-		try {
-			o1PreferredDescription = o1.getContainingConcept().getPreferredDescription().getText().trim();
-		} catch (Exception e) {
-			LOG.debug("Failed calling getPreferredDescription() (" + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\") on concept " + o1, e);
-		}
-
-		String o2PreferredDescription = null;
-		try {
-			o2PreferredDescription = o2.getContainingConcept().getPreferredDescription().getText().trim();
-		} catch (Exception e) {
-			LOG.debug("Failed calling getPreferredDescription() (" + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\") on concept " + o2, e);
-		}
-		
-		int prefDescComparison = ObjectUtils.compare(o1PreferredDescription, o2PreferredDescription);
-		if (prefDescComparison != 0) {
-			return prefDescComparison;
+		// sort on text
+		int textComparison = ObjectUtils.compare(o1.getContainingConcept().get().getConceptDescriptionText(), o2.getContainingConcept().get().getConceptDescriptionText());
+		if (textComparison != 0) {
+			return textComparison;
 		}
 		
 		// else same score and FSN and preferred description - sort on type

@@ -21,6 +21,8 @@ package gov.va.isaac.gui.refexViews.refexEdit;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
+import gov.vha.isaac.ochre.api.LookupService;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -58,13 +60,14 @@ public class DynamicRefexViewRunner extends Application
 
 	public static void main(String[] args) throws Exception
 	{
-		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../isaac-pa/app/"));
+		Exception dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../va-isaac-gui-pa/app-assembly/"));
 		if (dataStoreLocationInitException != null)
 		{
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
 			System.exit(-1);
 		}
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
+		LookupService.startupIsaac();
 		launch(args);
 	}
 

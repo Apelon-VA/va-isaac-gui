@@ -97,7 +97,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		for (CompositeSearchResult result : results) {
 			if (result.getContainingConcept() != null)
 			{
-				forSetCustomCollection.add(result.getContainingConcept().getPrimordialUuid());
+				forSetCustomCollection.add(result.getContainingConcept().get().getPrimordialUuid());
 			}
 		}
 
@@ -196,7 +196,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		try {
 			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + forSetCustomCollection.size() + " uuids");
 
-			q.setStampCoordinate(OTFUtility.getViewCoordinate());
+			q.setTaxonomyCoordinate(OTFUtility.getViewCoordinate());
 			outputNids = q.compute();
 			
 			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection.size() + " uuids");
@@ -207,8 +207,11 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		}
 		
 		for (CompositeSearchResult result : results) {
-			if (outputNids.contains(result.getContainingConcept().getNid())) {
-				filteredResults.add(result);
+			if (result.getContainingConcept() != null)
+			{
+				if (outputNids.contains(result.getContainingConcept().get().getNid())) {
+					filteredResults.add(result);
+				}
 			}
 		}
 		

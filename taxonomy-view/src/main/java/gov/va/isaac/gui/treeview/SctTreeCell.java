@@ -27,14 +27,22 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -49,24 +57,22 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.ddo.ComponentReference;
-import org.ihtsdo.otf.tcc.ddo.TaxonomyReferenceWithConcept;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.relationship.RelationshipVersionDdo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link TreeCell} for rendering {@link TaxonomyReferenceWithConcept} objects.
+ * A {@link TreeCell} for rendering {@link ConceptChronology<ConceptVersion>} objects.
  *
  * @author kec
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @SuppressWarnings("deprecation")
-final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
+final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVersion<?>>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SctTreeCell.class);
 
@@ -87,7 +93,7 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
             @Override
             public String getConceptId()
             {
-                final ConceptChronicleDdo conceptChronicle = SctTreeCell.this.getItem().getConcept();
+                final ConceptChronology<? extends ConceptVersion<?>> conceptChronicle = SctTreeCell.this.getItem();
                 final UUID conceptUuid = conceptChronicle.getPrimordialUuid();
 
                 return conceptUuid.toString();
@@ -96,43 +102,53 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
     }
 
     private void openOrCloseParent(SctTreeItem treeItem) throws IOException, ContradictionException {
-        TaxonomyReferenceWithConcept value = treeItem.getValue();
-        ConceptChronicleDdo c = value.getConcept();
+        ConceptChronology<? extends ConceptVersion<?>> value = treeItem.getValue();
 
-        if (c != null) {
+        if (value != null) {
             treeItem.setValue(null);
 
             SctTreeItem parentItem = (SctTreeItem) treeItem.getParent();
-            ObservableList<TreeItem<TaxonomyReferenceWithConcept>> siblings = parentItem.getChildren();
+            ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion<?>>>> siblings = parentItem.getChildren();
 
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<RelationshipChronicleDdo> extraParents = new ArrayList<>(c.getOriginRelationships());
-
-                extraParents.remove(value.getRelationshipVersion().getChronicle());
-
-                ArrayList<SctTreeItem> extraParentItems = new ArrayList<>(extraParents.size());
-
-                for (RelationshipChronicleDdo extraParent : extraParents) {
-                    for (RelationshipVersionDdo extraParentVersion : extraParent.getVersions()) {
-                        SctTreeItem extraParentItem =
-                                new SctTreeItem(new TaxonomyReferenceWithConcept(extraParentVersion,
-                                                TaxonomyReferenceWithConcept.WhichConcept.DESTINATION), treeItem.getDisplayPolicies());
-                        extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
-                        extraParentItems.add(extraParentItem);
+                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get()));
+               
+//                List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(value.getNid(), treeItem.getTaxonomyCoordinate().get().getStampCoordinate(), false, treeItem.getTaxonomyCoordinate().getValue().getTaxonomyType());
+//                if (allParents.size() != outgoingRelChronicles.size()) {
+//                	LOG.warn("For {} getParentsAsConceptChronologies() returns {} and getRelationshipListOriginatingFromConcept() returns {}", Get.conceptDescriptionText(value.getNid()), allParents.size(), outgoingRelChronicles.size());
+//                }
+                
+                List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
+                for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
+                    if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
+                        secondaryParents.add(parent);
                     }
                 }
 
-                Collections.sort(extraParentItems);
-                Collections.reverse(extraParentItems);
+                ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>(secondaryParents.size());
+
+                for (ConceptChronology<? extends ConceptVersion<?>> extraParent : secondaryParents) {
+                        SctTreeItem extraParentItem =
+                                new SctTreeItem(extraParent,
+                                                treeItem.getDisplayPolicies(),
+                                                treeItem.getTaxonomyCoordinate(),
+                                                treeItem.getTaxonomyTree(),
+                                                treeItem.getConceptSnapshotService());
+                        extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
+                        secondaryParentItems.add(extraParentItem);
+                }
+
+                Collections.sort(secondaryParentItems);
+                Collections.reverse(secondaryParentItems);
 
                 int startIndex = siblings.indexOf(treeItem);
 
-                for (SctTreeItem extraParent : extraParentItems) {
-                    parentItem.getChildren().add(startIndex++, extraParent);
-                    treeItem.getExtraParents().add(extraParent);
-                    Utility.execute(new GetSctTreeItemConceptCallable(extraParent, false));
+                for (SctTreeItem extraParentItem : secondaryParentItems) {
+                    parentItem.getChildren().add(startIndex++, extraParentItem);
+                    treeItem.getExtraParents().add(extraParentItem);
+                    Utility.execute(new GetSctTreeItemConceptCallable(extraParentItem, false));
                 }
             }
 
@@ -143,95 +159,126 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
     }
 
     @Override
-    protected void updateItem(TaxonomyReferenceWithConcept taxRef, boolean empty) {
-        super.updateItem(taxRef, empty);
-        double opacity = 0.0;
-        
-        if (empty)
-        {
-            setText("");
-            setGraphic(null);
-        }
-        else if (!empty && taxRef == null) {
-            LOG.debug("TaxonomyReferenceWithConcept is null");
-            setText("");
-            setGraphic(null);
-        }
-        else if (!empty && taxRef != null) {
-            final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
-
-            if (treeItem.getMultiParentDepth() > 0) {
-                if (treeItem.isLeaf()) {
-                    BorderPane graphicBorderPane = new BorderPane();
-                    int multiParentInset = (treeItem.getMultiParentDepth() * 16) + 10;
-                    Rectangle leftRect = RectangleBuilder.create().width(multiParentInset).height(16).build();
-
-                    leftRect.setOpacity(opacity);
-                    
-                    StackPane spacerProgressStack = new StackPane();
-                    spacerProgressStack.getChildren().add(leftRect);
-                    
-                    ProgressIndicator pi = new ProgressIndicator();
-                    pi.setPrefSize(16, 16);
-                    pi.setMaxSize(16, 16);
-                    pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
-                    pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
-                    pi.setMouseTransparent(true);
-                    spacerProgressStack.getChildren().add(pi);
-                    StackPane.setAlignment(pi, Pos.CENTER_RIGHT);
-                    StackPane.setMargin(pi, new Insets(0, 10, 0, 0));
-                    graphicBorderPane.setLeft(spacerProgressStack);
-                    graphicBorderPane.setCenter(treeItem.computeGraphic());
-                    setGraphic(graphicBorderPane);
+    protected void updateItem(ConceptChronology<? extends ConceptVersion<?>> taxRef, boolean empty) {
+        try {
+            super.updateItem(taxRef, empty);
+            double opacity = 0.0;
+            
+            if (empty)
+            {
+                setText("");
+                setGraphic(null);
+            }
+            else if (!empty && taxRef == null) {
+                LOG.debug("ConceptChronology<? extends ConceptVersion> is null");
+                setText("");
+                setGraphic(null);
+            }
+            else if (!empty && taxRef != null) {
+                final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
+           
+                final Optional<LatestVersion<? extends ConceptVersion<?>>> optional = OchreUtility.getLatestConceptVersion(taxRef, treeItem.getTaxonomyCoordinate().get().getStampCoordinate());
+                final boolean active = optional.isPresent() && optional.get().value() != null && optional.get().value().getState() == State.ACTIVE;
+                
+                if (treeItem.getMultiParentDepth() > 0) {
+                    if (treeItem.isLeaf()) {
+                        BorderPane graphicBorderPane = new BorderPane();
+                        int multiParentInset = (treeItem.getMultiParentDepth() * 16) + 10;
+                        Rectangle leftRect = RectangleBuilder.create().width(multiParentInset).height(16).build();
+    
+                        leftRect.setOpacity(opacity);
+                        
+                        StackPane spacerProgressStack = new StackPane();
+                        spacerProgressStack.getChildren().add(leftRect);
+                        
+                        ProgressIndicator pi = new ProgressIndicator();
+                        pi.setPrefSize(16, 16);
+                        pi.setMaxSize(16, 16);
+                        pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
+                        pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
+                        pi.setMouseTransparent(true);
+                        spacerProgressStack.getChildren().add(pi);
+                        StackPane.setAlignment(pi, Pos.CENTER_RIGHT);
+                        StackPane.setMargin(pi, new Insets(0, 10, 0, 0));
+                        graphicBorderPane.setLeft(spacerProgressStack);
+                        graphicBorderPane.setCenter(treeItem.computeGraphic());
+                        setGraphic(graphicBorderPane);
+                    }
+    
+                    String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
+                    if (desc != null) {
+                        setText(desc);
+                    } else {
+                        LOG.debug("No description found for concept {}", taxRef.toUserString());
+                    }
+    
+                    if (! active) {
+                        setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
+                    } else {
+                        setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
+                    }
+    
+                    return;
                 }
-
-                setText(OTFUtility.getDescription(taxRef.getConcept()));
-
-                return;
+    
+                ImageView iv = treeItem.isExpanded() ? Images.TAXONOMY_CLOSE.createImageView() : Images.TAXONOMY_OPEN.createImageView();
+                iv.setFitHeight(16.0);
+                iv.setFitWidth(16.0);
+    
+                setDisclosureNode(iv);
+    
+                String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
+                if (desc != null) {
+                    setText(desc);
+                } else {
+                    LOG.debug("No description found for concept {}", taxRef.toUserString());
+                }
+                
+                if (! active) {
+                    setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
+                } else {
+                    setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
+                }
+                
+                Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
+                leftRect.setOpacity(opacity);
+    
+                BorderPane graphicBorderPane = new BorderPane();
+                StackPane spacerProgressStack = new StackPane();
+                spacerProgressStack.getChildren().add(leftRect);
+                
+                graphicBorderPane.setLeft(spacerProgressStack);
+                graphicBorderPane.setCenter(treeItem.computeGraphic());
+                
+                ProgressIndicator pi = new ProgressIndicator();
+                pi.setPrefSize(16, 16);
+                pi.setMaxSize(16, 16);
+                pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
+                pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
+                pi.setMouseTransparent(true);
+                spacerProgressStack.getChildren().add(pi);
+                StackPane.setAlignment(pi, Pos.CENTER_LEFT);
+                
+                setGraphic(graphicBorderPane);
             }
-
-            ImageView iv = treeItem.isExpanded() ? Images.TAXONOMY_CLOSE.createImageView() : Images.TAXONOMY_OPEN.createImageView();
-            iv.setFitHeight(16.0);
-            iv.setFitWidth(16.0);
-
-            setDisclosureNode(iv);
-
-            if (taxRef.getConcept() == null) {
-                setText(taxRef.toString());
-            } else {
-                setText(OTFUtility.getDescription(taxRef.getConcept()));
-            }
-
-            Rectangle leftRect = RectangleBuilder.create().width(treeItem.isLeaf() ? 16 : 18).height(16).build();
-            leftRect.setOpacity(opacity);
-
-            BorderPane graphicBorderPane = new BorderPane();
-            StackPane spacerProgressStack = new StackPane();
-            spacerProgressStack.getChildren().add(leftRect);
-            
-            graphicBorderPane.setLeft(spacerProgressStack);
-            graphicBorderPane.setCenter(treeItem.computeGraphic());
-            
-            ProgressIndicator pi = new ProgressIndicator();
-            pi.setPrefSize(16, 16);
-            pi.setMaxSize(16, 16);
-            pi.progressProperty().bind(treeItem.getChildLoadPercentComplete());
-            pi.visibleProperty().bind(treeItem.getChildLoadPercentComplete().lessThan(1.0).and(treeItem.getChildLoadPercentComplete().greaterThanOrEqualTo(-1.0)));
-            pi.setMouseTransparent(true);
-            spacerProgressStack.getChildren().add(pi);
-            StackPane.setAlignment(pi, Pos.CENTER_LEFT);
-            
-            setGraphic(graphicBorderPane);
+        }
+        catch (Exception e)
+        {
+            LOG.error("Unexpected error updating cell", e);
+            setText("Internal error!");
+            setGraphic(null);
         }
     }
 
-    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<TaxonomyReferenceWithConcept>> siblings) {
+    private void removeExtraParents(SctTreeItem treeItem, ObservableList<TreeItem<ConceptChronology<? extends ConceptVersion<?>>>> siblings) {
         for (SctTreeItem extraParent : treeItem.getExtraParents()) {
             removeExtraParents(extraParent, siblings);
             siblings.remove(extraParent);
         }
     }
 
+    private final static Collection<Integer> EMPTY_UNMODIFIABLE_INTEGER_COLLECTION = Collections.unmodifiableCollection(new ArrayList<Integer>());
+    
     private ContextMenu buildContextMenu() {
         ContextMenu cm = new ContextMenu();
 
@@ -246,14 +293,18 @@ final class SctTreeCell extends TreeCell<TaxonomyReferenceWithConcept> {
             @Override
             public Collection<Integer> getNIds()
             {
-                ComponentReference item = SctTreeCell.this.getItem().getConceptFromRelationshipOrConceptProperties();
+                ConceptChronology<? extends ConceptVersion<?>> item = SctTreeCell.this.getItem();
                 try
                 {
                     if (item != null ) {
-                        return Arrays.asList(new Integer[] {ExtendedAppContext.getDataStore().getNidForUuids(item.getUuid())});
+                        return Arrays.asList(new Integer[] {ExtendedAppContext.getDataStore().getNidForUuids(item.getPrimordialUuid())});
+                    } else if (SctTreeCell.this.isEmpty()) {
+                        // NOOP This is probably an internally-used empty cell generated by the TreeView
+                        return EMPTY_UNMODIFIABLE_INTEGER_COLLECTION;
                     } else {
-                        LOG.warn("Couldn't locate an identifer for the node {}", SctTreeCell.this);
-                        return Arrays.asList(new Integer[] {});
+                        String text = SctTreeCell.this.getText();
+                        LOG.warn("Couldn't locate an identifer for the node (with null item) {}", text);
+                        return EMPTY_UNMODIFIABLE_INTEGER_COLLECTION;
                     }
                 }
                 catch (Exception e)

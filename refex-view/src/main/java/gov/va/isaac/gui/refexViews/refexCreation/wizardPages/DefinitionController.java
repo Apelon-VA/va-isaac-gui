@@ -20,6 +20,7 @@ package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dialog.YesNoDialog;
@@ -29,6 +30,7 @@ import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -286,7 +288,9 @@ public class DefinitionController implements PanelControllersI {
 	public boolean checkParentHierarchy() {
 		try 
 		{
-			if (!parentConcept.getConcept().isKindOf(OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getNid()))) 
+			;
+			if (!Get.taxonomyService().isKindOf(parentConcept.getConcept().getConceptSequence(), RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), 
+					AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get())) 
 			{
 				YesNoDialog yn = new YesNoDialog(refsetCreationPane.getScene().getWindow());
 				DialogResponse r = yn.showYesNoDialog("Continue?", "The parent concept you selected is not a descendent of the concept 'Dynamic Sememes'.\n"
@@ -298,7 +302,7 @@ public class DefinitionController implements PanelControllersI {
 				return false;
 			}
 			return true;
-		} catch (IOException | ContradictionException e) 
+		} catch (RuntimeException e) 
 		{
 			logger.error("Unable to verify if concept is ancestor of Dynamic Sememe Concept", e);
 			AppContext.getCommonDialogs().showErrorDialog("Unexpected error", "Error Reading Parent Concept", e.getMessage(), refsetCreationPane.getScene().getWindow());

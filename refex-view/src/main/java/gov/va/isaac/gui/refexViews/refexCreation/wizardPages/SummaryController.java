@@ -116,7 +116,7 @@ public class SummaryController implements PanelControllersI {
 	private void setupRefexContent(RefexData refexData) {
 		actualRefexName.setText(refexData.getRefexName());
 		actualRefexDescription.setText(refexData.getRefexDescription());
-		actualParentConcept.setText(OTFUtility.getDescription(refexData.getParentConcept()));
+		actualParentConcept.setText(refexData.getParentConcept().getConceptDescriptionText());
 		actualComponentTypeRestriction.setText(refexData.getComponentRestrictionType() == ComponentType.UNKNOWN ? "No Restriction" 
 				: refexData.getComponentRestrictionType().toString());
 		if (refexData.isAnnotatedStyle()) {

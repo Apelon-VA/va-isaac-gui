@@ -59,9 +59,9 @@ class IsASearchResultsFilter implements Function<List<CompositeSearchResult>, Li
 			
 			for (CompositeSearchResult result : results) {
 				currentResult = result;
-				if (result.getContainingConcept().getConceptNid() == filter.getNid() && ! filter.getInvert()) {
+				if (result.getContainingConcept().get().getNid() == filter.getNid() && ! filter.getInvert()) {
 					filteredResults.add(result);
-				} else if (result.getContainingConcept().getConceptNid() != filter.getNid() && filter.getInvert()) {
+				} else if (result.getContainingConcept().get().getNid() != filter.getNid() && filter.getInvert()) {
 					filteredResults.add(result);
 				}
 			}
@@ -70,7 +70,7 @@ class IsASearchResultsFilter implements Function<List<CompositeSearchResult>, Li
 			
 			return filteredResults;
 		} catch (Exception e) {
-			throw new SearchResultsFilterException(this, "Failed calling (" + OTFUtility.getDescription(currentResult.getContainingConcept()) 
+			throw new SearchResultsFilterException(this, "Failed calling (" + currentResult.getContainingConcept().get().getConceptDescriptionText() 
 					+ " (nid=" + currentResult.getContainingConcept() + ")).isKindOf(" + OTFUtility.getDescription(possibleMatchingConcept) 
 					+ " (nid=" + possibleMatchingConcept.getConceptNid() + "))", e);
 		}

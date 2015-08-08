@@ -19,7 +19,6 @@
 package gov.va.isaac.request.uscrs;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,10 +31,13 @@ import java.util.Map.Entry;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link USCRSBatchTemplate}
@@ -47,6 +49,8 @@ import org.apache.poi.ss.usermodel.Workbook;
  */
 public class USCRSBatchTemplate
 {
+	
+	private org.slf4j.Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	/**
 	 * All of the following code, down through the end comment - is generated automatically by executing the main(String[] args) method
 	 * which is part of this class. That method reads the excel template, and creates this set of enums.
@@ -262,16 +266,23 @@ public class USCRSBatchTemplate
 	private SHEET editSheetEnum = null;
 	private int editSheetRowNum = Integer.MIN_VALUE;
 	private Row currentEditRow = null;
+	private CellStyle style;
+	private DataFormat format;
 
 	public USCRSBatchTemplate(InputStream spreadsheetTemplate) throws IOException
 	{
 		wb = new HSSFWorkbook(spreadsheetTemplate);
+		//wb = new XSSFWorkbook(spreadsheetTemplate);
 		ch = wb.getCreationHelper();
+		style = wb.createCellStyle();
+		format = wb.createDataFormat();
+		style.setDataFormat(format.getFormat("0"));
 
 		for (int i = 0; i < wb.getNumberOfSheets(); i++)
 		{
 			Sheet s = wb.getSheetAt(i);
 			SHEET sheetEnum = SHEET.valueOf(enumSafeCharExchange(s.getSheetName()));
+			s.autoSizeColumn(i);
 			if (sheetEnum == null)
 			{
 				throw new RuntimeException("No enum type found for sheet " + s.getSheetName() + " - code out of sync with template");
@@ -371,14 +382,20 @@ public class USCRSBatchTemplate
 		}
 		Cell cell = currentEditRow.createCell(cellPos, Cell.CELL_TYPE_NUMERIC);
 		cell.setCellValue(value);
+		cell.setCellStyle(style);
 	}
 
 	public void saveFile(File writeTo) throws IOException
 	{
-		FileOutputStream out = new FileOutputStream(writeTo);
-		wb.write(out);
-		out.flush();
-		out.close();
+		try {
+			FileOutputStream out = new FileOutputStream(writeTo);
+			wb.write(out);
+			out.flush();
+			out.close();
+			logger_.info("succesfully wrote Workbook to Excel file (" + writeTo.getAbsolutePath() + ") and closed DOS");
+		} catch(Exception e) {
+			logger_.error("Error closing DOS or writing to file", e);
+		}
 
 	}
 	
@@ -429,7 +446,10 @@ public class USCRSBatchTemplate
 	{
 		//USCRSBatchTemplate b = new USCRSBatchTemplate(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
 
-		Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
+		//Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27.xls"));
+		Workbook wb = new HSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27-Id-Cell-Formatted.xls"));
+		//Workbook wb = new XSSFWorkbook(USCRSBatchTemplate.class.getResourceAsStream("/USCRS_Batch_Template-2015-01-27-Id-Cell-Formatted.xls"));
+
 
 		ArrayList<String> sheets = new ArrayList<>();
 		HashSet<String> columns = new HashSet<>();

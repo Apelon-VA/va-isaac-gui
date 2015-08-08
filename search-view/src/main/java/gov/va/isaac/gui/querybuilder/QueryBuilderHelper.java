@@ -25,7 +25,6 @@
 package gov.va.isaac.gui.querybuilder;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.querybuilder.node.AssertionNode;
 import gov.va.isaac.gui.querybuilder.node.InvertableNode;
@@ -42,7 +41,7 @@ import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.collections.NidSet;
 
 import java.io.IOException;
@@ -69,11 +68,7 @@ import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
 import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetItrBI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +81,7 @@ import org.slf4j.LoggerFactory;
 public class QueryBuilderHelper {
 	private final static Logger logger = LoggerFactory.getLogger(QueryBuilderHelper.class);
 	
-	private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
+	//private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static NidSet results;
 
@@ -182,21 +177,21 @@ public class QueryBuilderHelper {
 				Label nodeEditorLabel = new Label(singleConceptAssertionNode.getNodeTypeName());
 				nodeEditorGridPane.addRow(rowIndex++, nodeEditorLabel);
 				nodeEditorGridPane.addRow(rowIndex++, new Label());
-				ConceptVersionBI currentConcept = null;
+				ConceptSnapshot currentConcept = null;
 				if (singleConceptAssertionNode.getNid() != null) {
 					currentConcept = OTFUtility.getConceptVersion(singleConceptAssertionNode.getNid());
 				}
 				ConceptNode conceptNode = new ConceptNode(currentConcept, true);
-				conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+				conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 					@Override
 					public void changed(
-							ObservableValue<? extends ConceptVersionBI> observable,
-							ConceptVersionBI oldValue,
-							ConceptVersionBI newValue) {
+							ObservableValue<? extends ConceptSnapshot> observable,
+							ConceptSnapshot oldValue,
+							ConceptSnapshot newValue) {
 						if (newValue == null) {
 							singleConceptAssertionNode.getNidProperty().set(0);
 						} else {
-							singleConceptAssertionNode.setNid(newValue.getConceptNid());
+							singleConceptAssertionNode.setNid(newValue.getNid());
 						}
 					}
 				});
@@ -233,63 +228,63 @@ public class QueryBuilderHelper {
 				nodeEditorGridPane.addRow(rowIndex++, new Label());
 				
 				{
-					ConceptVersionBI currentRelRestrictionConcept = null;
+					ConceptSnapshot currentRelRestrictionConcept = null;
 					if (relRestrictionNode.getRelRestrictionConceptNid() != null) {
 						currentRelRestrictionConcept = OTFUtility.getConceptVersion(relRestrictionNode.getRelRestrictionConceptNid());
 					}
 					ConceptNode relRestrictionConceptNode = new ConceptNode(currentRelRestrictionConcept, true);
-					relRestrictionConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					relRestrictionConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								relRestrictionNode.setRelRestrictionConceptNid(0);
 							} else {
-								relRestrictionNode.setRelRestrictionConceptNid(newValue.getConceptNid());
+								relRestrictionNode.setRelRestrictionConceptNid(newValue.getNid());
 							}
 						}
 					});
 					nodeEditorGridPane.addRow(rowIndex++, new Label("Restriction Concept"), relRestrictionConceptNode.getNode());
 				}
 				{
-					ConceptVersionBI currentRelTypeConcept = null;
+					ConceptSnapshot currentRelTypeConcept = null;
 					if (relRestrictionNode.getRelTypeConceptNid() != null) {
 						currentRelTypeConcept = OTFUtility.getConceptVersion(relRestrictionNode.getRelTypeConceptNid());
 					}
 					ConceptNode relTypeConceptNode = new ConceptNode(currentRelTypeConcept, true);
-					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								relRestrictionNode.setRelTypeConceptNid(0);
 							} else {
-								relRestrictionNode.setRelTypeConceptNid(newValue.getConceptNid());
+								relRestrictionNode.setRelTypeConceptNid(newValue.getNid());
 							}
 						}
 					});
 					nodeEditorGridPane.addRow(rowIndex++, new Label("RelType Concept"), relTypeConceptNode.getNode());
 				}
 				{
-					ConceptVersionBI currentSourceConcept = null;
+					ConceptSnapshot currentSourceConcept = null;
 					if (relRestrictionNode.getSourceConceptNid() != null) {
 						currentSourceConcept = OTFUtility.getConceptVersion(relRestrictionNode.getSourceConceptNid());
 					}
 					ConceptNode sourceConceptNode = new ConceptNode(currentSourceConcept, true);
-					sourceConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					sourceConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								relRestrictionNode.setSourceConceptNid(0);
 							} else {
-								relRestrictionNode.setSourceConceptNid(newValue.getConceptNid());
+								relRestrictionNode.setSourceConceptNid(newValue.getNid());
 							}
 						}
 					});
@@ -342,42 +337,42 @@ public class QueryBuilderHelper {
 				nodeEditorGridPane.addRow(rowIndex++, new Label());
 
 				{
-					ConceptVersionBI currentRelTypeConcept = null;
+					ConceptSnapshot currentRelTypeConcept = null;
 					if (relTypeNode.getRelTypeConceptNid() != null) {
 						currentRelTypeConcept = OTFUtility.getConceptVersion(relTypeNode.getRelTypeConceptNid());
 					}
 					ConceptNode relTypeConceptNode = new ConceptNode(currentRelTypeConcept, true);
-					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								relTypeNode.setRelTypeConceptNid(0);
 							} else {
-								relTypeNode.setRelTypeConceptNid(newValue.getConceptNid());
+								relTypeNode.setRelTypeConceptNid(newValue.getNid());
 							}
 						}
 					});
 					nodeEditorGridPane.addRow(rowIndex++, new Label("RelType Concept"), relTypeConceptNode.getNode());
 				}
 				{
-					ConceptVersionBI currentTargetConcept = null;
+					ConceptSnapshot currentTargetConcept = null;
 					if (relTypeNode.getTargetConceptNid() != null) {
 						currentTargetConcept = OTFUtility.getConceptVersion(relTypeNode.getTargetConceptNid());
 					}
 					ConceptNode targetConceptNode = new ConceptNode(currentTargetConcept, true);
-					targetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					targetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								relTypeNode.setTargetConceptNid(0);
 							} else {
-								relTypeNode.setTargetConceptNid(newValue.getConceptNid());
+								relTypeNode.setTargetConceptNid(newValue.getNid());
 							}
 						}
 					});
@@ -413,42 +408,42 @@ public class QueryBuilderHelper {
 				nodeEditorGridPane.addRow(rowIndex++, new Label());
 				
 				{
-					ConceptVersionBI currentRelTypeConcept = null;
+					ConceptSnapshot currentRelTypeConcept = null;
 					if (refsetContainsConceptNode.getRefsetConceptNid() != null) {
 						currentRelTypeConcept = OTFUtility.getConceptVersion(refsetContainsConceptNode.getRefsetConceptNid());
 					}
 					ConceptNode relTypeConceptNode = new ConceptNode(currentRelTypeConcept, true);
-					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								refsetContainsConceptNode.setRefsetConceptNid(0);
 							} else {
-								refsetContainsConceptNode.setRefsetConceptNid(newValue.getConceptNid());
+								refsetContainsConceptNode.setRefsetConceptNid(newValue.getNid());
 							}
 						}
 					});
 					nodeEditorGridPane.addRow(rowIndex++, new Label("Refset Concept"), relTypeConceptNode.getNode());
 				}
 				{
-					ConceptVersionBI currentTargetConcept = null;
+					ConceptSnapshot currentTargetConcept = null;
 					if (refsetContainsConceptNode.getConceptNid() != null) {
 						currentTargetConcept = OTFUtility.getConceptVersion(refsetContainsConceptNode.getConceptNid());
 					}
 					ConceptNode targetConceptNode = new ConceptNode(currentTargetConcept, true);
-					targetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					targetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								refsetContainsConceptNode.setConceptNid(0);
 							} else {
-								refsetContainsConceptNode.setConceptNid(newValue.getConceptNid());
+								refsetContainsConceptNode.setConceptNid(newValue.getNid());
 							}
 						}
 					});
@@ -467,42 +462,42 @@ public class QueryBuilderHelper {
 				nodeEditorGridPane.addRow(rowIndex++, new Label());
 				
 				{
-					ConceptVersionBI currentRelTypeConcept = null;
+					ConceptSnapshot currentRelTypeConcept = null;
 					if (refsetContainsKindOfConceptNode.getRefsetConceptNid() != null) {
 						currentRelTypeConcept = OTFUtility.getConceptVersion(refsetContainsKindOfConceptNode.getRefsetConceptNid());
 					}
 					ConceptNode relTypeConceptNode = new ConceptNode(currentRelTypeConcept, true);
-					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					relTypeConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								refsetContainsKindOfConceptNode.setRefsetConceptNid(0);
 							} else {
-								refsetContainsKindOfConceptNode.setRefsetConceptNid(newValue.getConceptNid());
+								refsetContainsKindOfConceptNode.setRefsetConceptNid(newValue.getNid());
 							}
 						}
 					});
 					nodeEditorGridPane.addRow(rowIndex++, new Label("Refset Concept"), relTypeConceptNode.getNode());
 				}
 				{
-					ConceptVersionBI currentTargetConcept = null;
+					ConceptSnapshot currentTargetConcept = null;
 					if (refsetContainsKindOfConceptNode.getConceptNid() != null) {
 						currentTargetConcept = OTFUtility.getConceptVersion(refsetContainsKindOfConceptNode.getConceptNid());
 					}
 					ConceptNode targetConceptNode = new ConceptNode(currentTargetConcept, true);
-					targetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					targetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								refsetContainsKindOfConceptNode.setConceptNid(0);
 							} else {
-								refsetContainsKindOfConceptNode.setConceptNid(newValue.getConceptNid());
+								refsetContainsKindOfConceptNode.setConceptNid(newValue.getNid());
 							}
 						}
 					});
@@ -521,21 +516,21 @@ public class QueryBuilderHelper {
 				nodeEditorGridPane.addRow(rowIndex++, new Label());
 				
 				{
-					ConceptVersionBI refsetConcept = null;
+					ConceptSnapshot refsetConcept = null;
 					if (refsetContainsKindOfConceptNode.getRefsetConceptNid() != null) {
 						refsetConcept = OTFUtility.getConceptVersion(refsetContainsKindOfConceptNode.getRefsetConceptNid());
 					}
 					ConceptNode refsetConceptNode = new ConceptNode(refsetConcept, true);
-					refsetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>() {
+					refsetConceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 						@Override
 						public void changed(
-								ObservableValue<? extends ConceptVersionBI> observable,
-								ConceptVersionBI oldValue,
-								ConceptVersionBI newValue) {
+								ObservableValue<? extends ConceptSnapshot> observable,
+								ConceptSnapshot oldValue,
+								ConceptSnapshot newValue) {
 							if (newValue == null) {
 								refsetContainsKindOfConceptNode.setRefsetConceptNid(0);
 							} else {
-								refsetContainsKindOfConceptNode.setRefsetConceptNid(newValue.getConceptNid());
+								refsetContainsKindOfConceptNode.setRefsetConceptNid(newValue.getNid());
 							}
 						}
 					});
@@ -663,9 +658,9 @@ public class QueryBuilderHelper {
 			}
 
 			@Override
-            protected ForSetSpecification ForSetSpecification() {
-                return new ForSetSpecification(ComponentCollectionTypes.ALL_CONCEPTS);
-            }
+			protected ForSetSpecification ForSetSpecification() {
+				return new ForSetSpecification(ComponentCollectionTypes.ALL_CONCEPTS);
+			}
 		};
 		
 		return syntheticQuery;
@@ -676,10 +671,10 @@ public class QueryBuilderHelper {
 		
 		if (results != null) {
 			results.stream().forEach((nid) -> {
-				ConceptVersionBI con = OTFUtility.getConceptVersion(nid);
+				ConceptSnapshot con = OTFUtility.getConceptVersion(nid);
 				CompositeSearchResult nidResult = new CompositeSearchResult(con, 0);
 				collection.add(nidResult);
-                        });
+						});
 		}
 
 		return collection;

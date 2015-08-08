@@ -19,34 +19,34 @@
 package gov.va.isaac.search;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.index.SearchResult;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.description.DescriptionAnalogBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.model.cc.refex.RefexService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,9 @@ import org.slf4j.LoggerFactory;
  * 
  * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
- */
+   */
+
+//TODO need to rework these APIs to take in path info - so that the path for the search can easily be customized from the search GUI
 public class SearchHandler
 {
 	private static final Logger LOG = LoggerFactory.getLogger(SearchHandler.class);
@@ -83,6 +85,8 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle descriptionSearch(
@@ -93,7 +97,8 @@ public class SearchHandler
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
-			boolean mergeOnConcepts)
+			boolean mergeOnConcepts,
+			boolean includeOffPathResults)
 	{
 		return descriptionSearch(query, 
 				(index, queryString) ->
@@ -107,7 +112,7 @@ public class SearchHandler
 						throw new RuntimeException(e);
 					}
 				},
-		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts); 
+		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
 	}
 	
 	/**
@@ -131,6 +136,8 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle descriptionSearch(
@@ -142,7 +149,8 @@ public class SearchHandler
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
-			boolean mergeOnConcepts)
+			boolean mergeOnConcepts,
+			boolean includeOffPathResults)
 	{
 		
 		return descriptionSearch(query, 
@@ -157,7 +165,7 @@ public class SearchHandler
 						throw new RuntimeException(e);
 					}
 				},
-		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts); 
+		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
 	}
 	
 	/**
@@ -172,7 +180,7 @@ public class SearchHandler
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
 	 *   See {@link LuceneDescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
 	 * @param extendedDescriptionType - The UUID of the concept that represents the extended (terminology specific) description type.
-	 * This concept should be a child of {@link SnomedMetadataRf2#DESCRIPTION_NAME_IN_SOURCE_TERM_RF2 }
+	 * This concept should be a child of {@link IsaacMetadataAuxiliaryBinding#DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY}
 	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
@@ -182,6 +190,8 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle descriptionSearch(
@@ -193,7 +203,8 @@ public class SearchHandler
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
-			boolean mergeOnConcepts)
+			boolean mergeOnConcepts,
+			boolean includeOffPathResults)
 	{
 		
 		return descriptionSearch(query, 
@@ -208,7 +219,7 @@ public class SearchHandler
 						throw new RuntimeException(e);
 					}
 				},
-		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts); 
+		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
 	}
 	
 	/**
@@ -220,10 +231,12 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
-	public static SearchHandle descriptionSearch(String query, int resultLimit, TaskCompleteCallback callback, boolean mergeResultsOnConcepts) {
-		return descriptionSearch(query, resultLimit, false, callback, (Integer)null, null, null, mergeResultsOnConcepts);
+	public static SearchHandle descriptionSearch(String query, int resultLimit, TaskCompleteCallback callback, boolean mergeResultsOnConcepts, boolean includeOffPathResults) {
+		return descriptionSearch(query, resultLimit, false, callback, (Integer)null, null, null, mergeResultsOnConcepts, includeOffPathResults);
 	}
 	
 	
@@ -252,6 +265,8 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle descriptionSearch(
@@ -262,10 +277,9 @@ public class SearchHandler
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
-			boolean mergeOnConcepts)
+			boolean mergeOnConcepts,
+			boolean includeOffPathResults)
 	{
-		ViewCoordinate vc = OTFUtility.getViewCoordinate();
-		
 		final SearchHandle searchHandle = new SearchHandle();
 
 		if (!prefixSearch)
@@ -283,8 +297,6 @@ public class SearchHandler
 			@Override
 			public void run()
 			{
-				//make sure the data store is loaded
-				TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 				List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
 				try
 				{
@@ -293,10 +305,10 @@ public class SearchHandler
 						// If search query is an ID, look up concept and add the result.
 						if (Utility.isUUID(localQuery) || Utility.isLong(localQuery))
 						{
-							ConceptVersionBI temp = OTFUtility.lookupIdentifier(localQuery);
-							if (temp != null)
+							Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> temp = OchreUtility.getConceptForUnknownIdentifier(localQuery);
+							if (temp.isPresent())
 							{
-								CompositeSearchResult gsr = new CompositeSearchResult(temp, 2.0f);
+								CompositeSearchResult gsr = new CompositeSearchResult(temp.get(), 2.0f);
 								initialSearchResults.add(gsr);
 							}
 						}
@@ -338,20 +350,20 @@ public class SearchHandler
 									}
 
 									// Get the description object.
-									//TODO figure out how we handle view coordinate for search
-									Optional<? extends ComponentVersionBI> cc = dataStore.getComponentVersion(vc, searchResult.getNid());
+									Optional<? extends ObjectChronology<? extends StampedVersion>> io = Get.identifiedObjectService()
+											.getIdentifiedObjectChronology(searchResult.getNid());
 
 									// normalize the scores between 0 and 1
 									float normScore = (searchResult.getScore() / maxScore);
-									CompositeSearchResult csr = (cc.isPresent() ? new CompositeSearchResult(cc.get(), normScore) : 
+									CompositeSearchResult csr = (io.isPresent() ? new CompositeSearchResult(io.get(), normScore) : 
 										new CompositeSearchResult(searchResult.getNid(), normScore));
 									initialSearchResults.add(csr);
 									
 
 									// add one to the scores when we are doing a prefix search, and it hits.
-									if (prefixSearch && csr.getBestScore() <= 1.0f && cc.isPresent() && cc.get() instanceof DescriptionAnalogBI)
+									if (prefixSearch && csr.getBestScore() <= 1.0f && io.isPresent() && io.get() instanceof DescriptionSememe<?>)
 									{
-										String matchingString = ((DescriptionAnalogBI<?>) cc.get()).getText();
+										String matchingString = ((DescriptionSememe<?>) io.get()).getText();
 										float adjustValue = 0f;
 
 										if (matchingString.toLowerCase().equals(localQuery.trim().toLowerCase()))
@@ -375,7 +387,7 @@ public class SearchHandler
 						}
 					} 
 					// sort, filter and merge the results as necessary
-					processResults(searchHandle, initialSearchResults, filter, comparator, mergeOnConcepts);
+					processResults(searchHandle, initialSearchResults, filter, comparator, mergeOnConcepts, includeOffPathResults);
 				}
 				catch (Exception ex)
 				{
@@ -413,6 +425,8 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle dynamicRefexSearch(
@@ -421,11 +435,10 @@ public class SearchHandler
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
-			boolean mergeOnConcepts)
+			boolean mergeOnConcepts,
+			boolean includeOffPathResults)
 	{
 		final SearchHandle searchHandle = new SearchHandle();
-
-		ViewCoordinate vc = OTFUtility.getViewCoordinate();
 		
 		// Do search in background.
 		Runnable r = new Runnable()
@@ -435,8 +448,6 @@ public class SearchHandler
 			{
 				try
 				{
-					//make sure the data store is loaded
-					TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 					List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
 					LuceneDynamicRefexIndexer refexIndexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
 					
@@ -474,30 +485,31 @@ public class SearchHandler
 								}
 
 								// Get the match object.
-								ComponentChronicleBI<?> cc = dataStore.getComponent(searchResult.getNid());
-								if (cc == null)
+								Optional<? extends ObjectChronology<? extends StampedVersion>> io = Get.identifiedObjectService()
+										.getIdentifiedObjectChronology(searchResult.getNid());
+								if (!io.isPresent())
 								{
 									//TODO OCHRE this code should be unecessary - the getComponent call above 
 									//currently isn't working correctly.  Wait for fix from Keith...
-									cc = dataStore.getRefex(searchResult.getNid());
+									ComponentChronicleBI<? extends StampedVersion> cc =  AppContext.getService(RefexService.class).getRefex(searchResult.getNid());
 									if (cc == null)
 									{
-										cc = dataStore.getDynamicRefex(searchResult.getNid());
+										cc = AppContext.getService(RefexService.class).getRefexDynamic(searchResult.getNid());
+									}
+									
+									if (cc != null)
+									{
+										io = Optional.of(cc);
+									}
+									else
+									{
+										io = Optional.empty();
 									}
 								}
-								Optional<? extends ComponentVersionBI> cv;
-								if (cc != null)
-								{
-									cv = cc.getVersion(vc);
-								}
-								else
-								{
-									cv = Optional.empty();
-								}
-
+								
 								// normalize the scores between 0 and 1
 								float normScore = (searchResult.getScore() / maxScore);
-								CompositeSearchResult csr = (cv.isPresent() ? new CompositeSearchResult(cv.get(), normScore) :
+								CompositeSearchResult csr = (io.isPresent() ? new CompositeSearchResult(io.get(), normScore) :
 									new CompositeSearchResult(searchResult.getNid(), normScore));
 								initialSearchResults.add(csr);
 							}
@@ -505,7 +517,7 @@ public class SearchHandler
 					}
 
 					// sort, filter and merge the results as necessary
-					processResults(searchHandle, initialSearchResults, filter, comparator, mergeOnConcepts);
+					processResults(searchHandle, initialSearchResults, filter, comparator, mergeOnConcepts, includeOffPathResults);
 				}
 				catch (Exception ex)
 				{
@@ -537,6 +549,8 @@ public class SearchHandler
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle dynamicRefexSearch(
@@ -548,7 +562,8 @@ public class SearchHandler
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
-			boolean mergeOnConcepts)
+			boolean mergeOnConcepts, 
+			boolean includeOffPathResults)
 	{
 		return dynamicRefexSearch(index -> 
 			{
@@ -560,11 +575,12 @@ public class SearchHandler
 				{
 					throw new RuntimeException(e);
 				}
-			}, callback, taskId, filter, comparator, mergeOnConcepts);
+			}, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults);
 	}
 	
 	private static void processResults(SearchHandle searchHandle, List<CompositeSearchResult> rawResults, 
-			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>>  filter, Comparator<CompositeSearchResult> comparator, boolean mergeOnConcepts)
+			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>>  filter, Comparator<CompositeSearchResult> comparator,
+			boolean mergeOnConcepts, boolean includeOffPathResults)
 					throws SearchResultsFilterException {
 		
 		//filter and sort the results
@@ -575,6 +591,28 @@ public class SearchHandler
 
 			LOG.debug(rawResults.size() + " results remained after running the filter");
 		} 
+		if (!includeOffPathResults)
+		{
+			LOG.debug("Applying Path filter to " + rawResults.size() + " search results");
+			rawResults = new Function<List<CompositeSearchResult>, List<CompositeSearchResult>>()
+			{
+				@Override
+				public List<CompositeSearchResult> apply(List<CompositeSearchResult> t)
+				{
+					Iterator<CompositeSearchResult> it = t.iterator();
+					while (it.hasNext())
+					{
+						if (!it.next().getContainingConcept().isPresent())
+						{
+							it.remove();
+						}
+					}
+					return t;
+				}
+			}.apply(rawResults);
+			
+			LOG.debug(rawResults.size() + " results remained after running path filter");
+		}
 		
 		if (mergeOnConcepts)
 		{
@@ -582,15 +620,15 @@ public class SearchHandler
 			ArrayList<CompositeSearchResult> unmergeable = new ArrayList<>();
 			for (CompositeSearchResult csr : rawResults)
 			{
-				if (csr.getContainingConcept() == null)
+				if (!csr.getContainingConcept().isPresent())
 				{
 					unmergeable.add(csr);
 					continue;
 				}
-				CompositeSearchResult found = merged.get(csr.getContainingConcept().getNid());
+				CompositeSearchResult found = merged.get(csr.getContainingConcept().get().getNid());
 				if (found == null)
 				{
-					merged.put(csr.getContainingConcept().getNid(), csr);
+					merged.put(csr.getContainingConcept().get().getNid(), csr);
 				}
 				else
 				{

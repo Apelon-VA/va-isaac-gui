@@ -24,10 +24,10 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.scene.control.CheckBox;
@@ -39,20 +39,17 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
 import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
-import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -75,7 +72,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 		return new SememeContentSearchTypeFilter(searchText.getText(), searchInRefex != null ? searchInRefex.getConceptNoWait() : null);
 	}
 	public void setSearchType(SememeContentSearchTypeFilter filter) {
-		ConceptVersionBI conceptFromSearchFilter = filter != null ? filter.getAssemblageConcept() : null;
+		ConceptSnapshot conceptFromSearchFilter = filter != null ? filter.getAssemblageConcept() : null;
 		searchInRefex.set(conceptFromSearchFilter);
 		searchText.setText(filter.getSearchParameter());
 	}
@@ -90,7 +87,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 		searchInRefex = new ConceptNode(null, false, dynamicRefexList_, null);
 		searchInRefexHBox.getChildren().addAll(rootExp, searchInRefex.getNode());
 
-		searchInRefex.getConceptProperty().addListener((ChangeListener<ConceptVersionBI>) (observable, oldValue, newValue) -> 
+		searchInRefex.getConceptProperty().addListener((ChangeListener<ConceptSnapshot>) (observable, oldValue, newValue) -> 
 		{
 			if (newValue != null)
 			{
@@ -282,7 +279,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 					{
 						throw new RuntimeException(e);
 					}
-				}, this, null, null, null, true);
+				}, this, null, null, null, true, false);
 			}
 			catch (NumberFormatException e)
 			{
@@ -303,7 +300,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 						{
 							throw new RuntimeException(e1);
 						}
-					}, this, null, null, null, true);
+					}, this, null, null, null, true, false);
 				}
 				catch (NumberFormatException e1) 
 				{
@@ -320,7 +317,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 						{
 							throw new RuntimeException(e2);
 						}
-					}, this, null, null, null, true);
+					}, this, null, null, null, true, false);
 				}
 			}
 		}
@@ -378,9 +375,9 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 		List<CompositeSearchResult> retList = new ArrayList<CompositeSearchResult>();
 		
 		for (CompositeSearchResult refConResult : results) {
-			ConceptVersionBI refCon = refConResult.getContainingConcept();
+			Optional<ConceptSnapshot> refCon = refConResult.getContainingConcept();
 			
-			for (ComponentVersionBI c : refConResult.getMatchingComponents())
+			for (IdentifiedObjectLocal c : refConResult.getMatchingComponents())
 			{
 				if (c instanceof RefexDynamicVersionBI<?>)
 				{
@@ -406,7 +403,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 								attachedData = ci[i].getColumnName() + " - " + data.getDataObject().toString();
 							}	
 
-							SememeSearchResult result = new SememeSearchResult(refCon, assembCon, attachedData);
+							SememeSearchResult result = new SememeSearchResult(refCon.get(), assembCon, attachedData);
 							retList.add(result);
 							i++;
 						}

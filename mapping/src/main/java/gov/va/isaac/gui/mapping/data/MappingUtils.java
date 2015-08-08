@@ -27,11 +27,12 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.SearchStringProcessor;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-
+import gov.vha.isaac.ochre.api.Get;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -75,17 +75,9 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getStatusConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		try
+		for (Integer conSequence : OchreUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_STATUS.getConceptSequence(), true, false))
 		{
-			for (ConceptVersionBI cv : OTFUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_STATUS.getNid(), true))
-			{
-				result.add(new SimpleDisplayConcept(cv));
-			}
-		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected", e);
-			throw new IOException("Unexpected error");
+			result.add(new SimpleDisplayConcept(conSequence));
 		}
 		
 		Collections.sort(result);
@@ -95,19 +87,11 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getQualifierConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		try
+		for (Integer conSequence : OchreUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getConceptSequence(), true, false))
 		{
-			for (ConceptVersionBI cv : OTFUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getNid(), true))
-			{
-				result.add(new SimpleDisplayConcept(cv));
-			}
+			result.add(new SimpleDisplayConcept(conSequence));
 		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected", e);
-			throw new IOException("Unexpected error");
-		}
-		
+
 		Collections.sort(result);
 		return result;
 	}
@@ -119,7 +103,7 @@ public class MappingUtils
 	 * @param descriptionType - (optional) if provided, only searches within the specified description type
 	 * @param advancedDescriptionType - (optional) if provided, only searches within the specified advanced description type.  
 	 * When this parameter is provided, the descriptionType parameter is ignored.
-	 * @param targetCodeSystemPathNid - (optional) Restrict the results to concepts from the specified path. 
+	 * @param targetCodeSystemPathNidOrSequence - (optional) Restrict the results to concepts from the specified path. 
 	 * @param memberOfRefsetNid - (optional) Restrict the results to concepts that are members of the specified refset.
 	 * @param kindOfNid - (optional) restrict the results to concepts that are a kind of the specified concept
 	 * @param childOfNid - (optional) restrict the results to concepts that are children of the specified concept
@@ -127,12 +111,15 @@ public class MappingUtils
 	 * @throws IOException
 	 */
 	public static SearchHandle search(String searchString, TaskCompleteCallback callback, LuceneDescriptionType descriptionType, 
-			UUID advancedDescriptionType, Integer targetCodeSystemPathNid, Integer memberOfRefsetNid, Integer kindOfNid) throws IOException
+			UUID advancedDescriptionType, Integer targetCodeSystemPathNidOrSequence, Integer memberOfRefsetNid, Integer kindOfNid) throws IOException
 	{
 		ArrayList<Function<List<CompositeSearchResult>, List<CompositeSearchResult>>> filters = new ArrayList<>();
 		
-		if (targetCodeSystemPathNid != null)
+		if (targetCodeSystemPathNidOrSequence != null)
 		{
+			int pathFilterSequence = targetCodeSystemPathNidOrSequence < 0 ? Get.identifierService().getConceptSequence(targetCodeSystemPathNidOrSequence)
+					: targetCodeSystemPathNidOrSequence;
+
 			filters.add(new Function<List<CompositeSearchResult>, List<CompositeSearchResult>>()
 			{
 				@Override
@@ -142,7 +129,7 @@ public class MappingUtils
 					
 					for (CompositeSearchResult csr : t)
 					{
-						if (csr.getContainingConcept().getPathNid() == targetCodeSystemPathNid)
+						if (csr.getContainingConcept().isPresent() && csr.getContainingConcept().get().getPathSequence() == pathFilterSequence)
 						{
 							keep.add(csr);
 						}
@@ -171,7 +158,7 @@ public class MappingUtils
 						
 						for (CompositeSearchResult csr : t)
 						{
-							if (refsetMembers.contains(csr.getContainingConcept().getNid()))
+							if (csr.getContainingConcept().isPresent() && refsetMembers.contains(csr.getContainingConcept().get().getNid()))
 							{
 								keep.add(csr);
 							}
@@ -201,7 +188,7 @@ public class MappingUtils
 						
 						for (CompositeSearchResult csr : t)
 						{
-							if (ds.isKindOf(csr.getContainingConcept().getNid(), kindOfNid, vc))
+							if (csr.getContainingConcept().isPresent() && ds.isKindOf(csr.getContainingConcept().get().getNid(), kindOfNid, vc))
 							{
 								keep.add(csr);
 							}
@@ -225,15 +212,15 @@ public class MappingUtils
 		
 		if (descriptionType == null && advancedDescriptionType == null)
 		{
-			return SearchHandler.descriptionSearch(searchString, 500, false, (UUID)null, callback, null, filterSet, null, true);
+			return SearchHandler.descriptionSearch(searchString, 500, false, (UUID)null, callback, null, filterSet, null, true, false);
 		}
 		else if (advancedDescriptionType != null)
 		{
-			return SearchHandler.descriptionSearch(searchString, 500, false, advancedDescriptionType, callback, null, filterSet, null, true);
+			return SearchHandler.descriptionSearch(searchString, 500, false, advancedDescriptionType, callback, null, filterSet, null, true, false);
 		}
 		else if (descriptionType != null)
 		{
-			return SearchHandler.descriptionSearch(searchString, 500, false, descriptionType, callback, null, filterSet, null, true);
+			return SearchHandler.descriptionSearch(searchString, 500, false, descriptionType, callback, null, filterSet, null, true, false);
 		}
 		else
 		{
@@ -288,22 +275,16 @@ public class MappingUtils
 	
 	public static List<SimpleDisplayConcept> getExtendedDescriptionTypes() throws IOException
 	{
-		Set<ConceptVersionBI> extendedDescriptionTypes;
+		Set<Integer> extendedDescriptionTypes;
 		ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
-		try
+		extendedDescriptionTypes = OchreUtility.getAllChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(),
+				true, true);
+		for (Integer seq : extendedDescriptionTypes)
 		{
-			extendedDescriptionTypes = OTFUtility.getAllLeafChildrenOfConcept(IsaacMetadataAuxiliaryBinding.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getNid());
-			for (ConceptVersionBI c : extendedDescriptionTypes)
-			{
-				temp.add(new SimpleDisplayConcept(c));
-			}
-			Collections.sort(temp);
-			return temp;
+			temp.add(new SimpleDisplayConcept(seq));
 		}
-		catch (ContradictionException e)
-		{
-			throw new IOException(e);
-		}
+		Collections.sort(temp);
+		return temp;
 	}
 
 	public static List<SimpleDisplayConcept> getCodeSystems() {

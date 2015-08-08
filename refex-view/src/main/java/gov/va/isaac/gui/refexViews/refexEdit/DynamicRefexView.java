@@ -371,7 +371,7 @@ public class DynamicRefexView implements RefexViewI
 					{
 						throw new Exception("Unexpected case");
 					}
-					SimpleDisplayConcept sdc = new SimpleDisplayConcept(c, null);
+					SimpleDisplayConcept sdc = new SimpleDisplayConcept(c.getConceptSequence(), null);
 					DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
 					driv.showView(null);
 				}

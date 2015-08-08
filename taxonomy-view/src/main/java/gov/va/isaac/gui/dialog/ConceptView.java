@@ -19,17 +19,22 @@
 package gov.va.isaac.gui.dialog;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.ConceptViewMode;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
+
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
@@ -39,12 +44,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+
 import javax.inject.Named;
+
 import org.glassfish.hk2.api.PerLookup;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
-import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
-import org.ihtsdo.otf.tcc.ddo.store.FxTerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +76,7 @@ public class ConceptView implements PopupConceptViewI {
 		controller = loader.getController();
 	}
 
-	public void setConcept(ConceptChronicleDdo concept) {
+	public void setConcept(ConceptChronology<?> concept) {
 		// Make sure in application thread.
 		FxUtils.checkFxUserThread();
 		controller.setConcept(concept);
@@ -85,17 +88,18 @@ public class ConceptView implements PopupConceptViewI {
 	@Override
 	public void setConcept(UUID conceptUUID)
 	{
-		Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>()
+		Task<ConceptChronology<?>> task = new Task<ConceptChronology<?>>()
 		{
 			@Override
-			protected ConceptChronicleDdo call() throws Exception
+			protected ConceptChronology<?> call() throws Exception
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
-				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(conceptUUID, OTFUtility.getViewCoordinateAllowInactive(),
-						RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+				ConceptSnapshot concept = Get.conceptService().getSnapshot(
+						StampCoordinates.getDevelopmentLatest(),
+						LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate()).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID));
 				LOG.info("Finished loading concept with UUID " + conceptUUID);
 
-				return concept;
+				return concept.getChronology();
 			}
 
 			@Override
@@ -103,7 +107,7 @@ public class ConceptView implements PopupConceptViewI {
 			{
 				try
 				{
-					ConceptChronicleDdo result = this.getValue();
+					ConceptChronology<?> result = this.getValue();
 					setConcept(result);
 				}
 				catch (Exception e)
@@ -135,17 +139,17 @@ public class ConceptView implements PopupConceptViewI {
 	@Override
 	public void setConcept(int conceptNid)
 	{
-		Task<ConceptChronicleDdo> task = new Task<ConceptChronicleDdo>()
+		Task<ConceptChronology<?>> task = new Task<ConceptChronology<?>>()
 		{
 			@Override
-			protected ConceptChronicleDdo call() throws Exception
+			protected ConceptChronology<?> call() throws Exception
 			{
 				LOG.info("Loading concept with nid " + conceptNid);
-				ConceptChronicleDdo concept = ExtendedAppContext.getService(FxTerminologyStoreDI.class).getFxConcept(ExtendedAppContext.getDataStore().getUuidPrimordialForNid(conceptNid), 
-						OTFUtility.getViewCoordinateAllowInactive(),
-						RefexPolicy.NONE, RelationshipPolicy.ORIGINATING_RELATIONSHIPS);
+				ConceptSnapshot concept = Get.conceptService().getSnapshot(
+						StampCoordinates.getDevelopmentLatest(),
+						LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate()).getConceptSnapshot(conceptNid);
 				LOG.info("Finished loading concept with nid " + conceptNid);
-				return concept;
+				return concept.getChronology();
 			}
 
 			@Override
@@ -153,7 +157,7 @@ public class ConceptView implements PopupConceptViewI {
 			{
 				try
 				{
-					ConceptChronicleDdo result = this.getValue();
+					ConceptChronology<?> result = this.getValue();
 					if (result == null)
 					{
 						throw new Exception("Failed to load concept");

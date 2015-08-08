@@ -29,16 +29,15 @@ import gov.va.isaac.gui.refexViews.util.RefexDataTypeNodeDetails;
 import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeFXNodeBuilder;
 import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeNodeDetails;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Function;
-
 import javafx.application.Platform;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -61,16 +60,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
@@ -111,7 +107,7 @@ public class ColumnController implements PanelControllersI {
 	private RefexDataTypeNodeDetails currentDefaultNodeDetails_;
 
 	private ObservableList<SimpleDisplayConcept> columnNameChoices = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
-	private Function<ConceptVersionBI, String> colNameReader_ = (conceptVersion) -> 
+	private Function<ConceptSnapshot, String> colNameReader_ = (conceptVersion) -> 
 	{
 		RefexDynamicColumnInfo rdc = new RefexDynamicColumnInfo();
 		rdc.setColumnDescriptionConcept(conceptVersion.getPrimordialUuid());
@@ -248,10 +244,10 @@ public class ColumnController implements PanelControllersI {
 		
 		newColNameButton.setOnAction(e -> createNewColumnConcept());
 		
-		columnNameSelection_.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>()
+		columnNameSelection_.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue)
+			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 			{
 				RefexDynamicColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
 				if (newValue != null)
@@ -445,7 +441,7 @@ public class ColumnController implements PanelControllersI {
 			
 			if (newCon != null) {
 				
-				SimpleDisplayConcept sdc = new SimpleDisplayConcept(newCon, colNameReader_); 
+				SimpleDisplayConcept sdc = new SimpleDisplayConcept(newCon.getConceptSequence(), colNameReader_); 
 				columnNameChoices.add(sdc);
 				columnNameSelection_.set(sdc);
 			}
@@ -457,10 +453,9 @@ public class ColumnController implements PanelControllersI {
 
 	private void initializeColumnConcepts() {
 		try {
-			ConceptVersionBI colCon = OTFUtility.getConceptVersion(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getNid());
-			Set<ConceptVersionBI> colCons = OTFUtility.getAllChildrenOfConcept(colCon, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getConceptSequence(), false, false);
 
-			for (ConceptVersionBI col : colCons) {
+			for (Integer col : colCons) {
 				columnNameChoices.add(new SimpleDisplayConcept(col, colNameReader_));
 			}
 			columnNameSelection_.set(columnNameChoices.get(0));

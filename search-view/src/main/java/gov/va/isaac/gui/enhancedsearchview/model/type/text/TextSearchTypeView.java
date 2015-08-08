@@ -18,10 +18,9 @@ import gov.va.isaac.gui.enhancedsearchview.model.SearchModel;
 import gov.va.isaac.gui.enhancedsearchview.model.SearchTypeModel;
 import gov.va.isaac.gui.enhancedsearchview.model.type.SearchTypeSpecificView;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.ArrayList;
 import java.util.List;
-
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -41,9 +40,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
-
 import org.apache.mahout.math.Arrays;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -325,14 +322,14 @@ public class TextSearchTypeView implements SearchTypeSpecificView {
 			//HBox.setHgrow(cn.getNode(), Priority.SOMETIMES);
 			//HBox.setMargin(cn.getNode(), new Insets(5, 5, 5, 5));
 
-			cn.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>()
+			cn.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>()
 			{
 				@Override
-				public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue)
+				public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 				{
 					if (newValue != null)
 					{
-						displayableIsDescendantOfFilter.setNid(newValue.getConceptNid());
+						displayableIsDescendantOfFilter.setNid(newValue.getNid());
 						LOG.debug("isDescendantFilter should now contain concept with NID " + displayableIsDescendantOfFilter.getNid() + ": " + Arrays.toString(model.getFilters().toArray()));
 					} else {
 						displayableIsDescendantOfFilter.setNid(0);
@@ -371,14 +368,14 @@ public class TextSearchTypeView implements SearchTypeSpecificView {
 			//HBox.setHgrow(cn.getNode(), Priority.SOMETIMES);
 			//HBox.setMargin(cn.getNode(), new Insets(5, 5, 5, 5));
 
-			cn.getConceptProperty().addListener(new ChangeListener<ConceptVersionBI>()
+			cn.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>()
 			{
 				@Override
-				public void changed(ObservableValue<? extends ConceptVersionBI> observable, ConceptVersionBI oldValue, ConceptVersionBI newValue)
+				public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 				{
 					if (newValue != null)
 					{
-						displayableIsAFilter.setNid(newValue.getConceptNid());
+						displayableIsAFilter.setNid(newValue.getNid());
 						LOG.debug("isAFilter should now contain concept with NID " + displayableIsAFilter.getNid() + ": " + Arrays.toString(model.getFilters().toArray()));
 					} else {
 						displayableIsAFilter.setNid(0);

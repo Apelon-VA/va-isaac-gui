@@ -19,18 +19,25 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+//import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.va.isaac.util.ViewCoordinateFactory;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 
 import java.io.IOException;
 import java.net.URL;
@@ -45,6 +52,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -84,10 +92,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,6 +106,16 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 
 public class ViewCoordinatePreferencesPluginViewController {
 	private final static Logger log = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginViewController.class);
+
+	public static interface PersistenceInterface {
+		public UUID getPath();
+		public StatedInferredOptions getStatedInferredOption();
+		public Long getTime();
+		public Set<Status> getStatuses();
+		public Set<UUID> getModules();
+		
+		public void save(ViewCoordinateComponents components) throws IOException;
+	}
 
 	/**
 	 * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
@@ -134,8 +149,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 	@FXML VBox statedInferredToggleGroupVBox;
 
 	private boolean contentLoaded = false;
+	
+	private PersistenceInterface persistenceInterface = null;
 
-	final ViewCoordinate panelViewCoordinate;
+	final private TaxonomyCoordinate<?> panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 	
 	final private ProgressIndicator progressIndicator = new ProgressIndicator();
 	{
@@ -166,37 +183,25 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	protected static ViewCoordinatePreferencesPluginViewController construct() throws IOException {
 		// Load from FXML.
-		URL resource = ViewCoordinatePreferencesPluginViewController.class.getResource("ViewCoordinatePreferencesPluginView.fxml");
+		URL resource = ViewCoordinatePreferencesPluginViewController.class.getResource("ViewCoordinatePreferencesView.fxml");
 		log.debug("Loaded URL {}", resource);
 		FXMLLoader loader = new FXMLLoader(resource);
 		loader.load();
 		return loader.getController();
 	}
-
-	{
-		try {
-			panelViewCoordinate = ViewCoordinates.getDevelopmentStatedLatest();
-		} catch (IOException e) {
-			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to initialize ViewCoordinate";
-			log.error(msg, e);
-			e.printStackTrace();
-
-			throw new RuntimeException(msg, e);
-		}
-	}
 	
 	@FXML
 	void initialize() {
-		assert rootStackPaneInTab != null : "fx:id=\"rootStackPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert gridPaneInRootStackPane != null : "fx:id=\"gridPaneInRootStackPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert dateSelectionMethodComboBox != null : "fx:id=\"dateSelectionMethodComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert pathComboBox != null : "fx:id=\"pathComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert selectableModuleListView != null : "fx:id=\"selectableModuleListView\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert statusesToggleGroupVBox != null : "fx:id=\"statusesToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
-		assert statedInferredToggleGroupVBox != null : "fx:id=\"statedInferredToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesPluginView.fxml'.";
+		assert rootStackPaneInTab != null : "fx:id=\"rootStackPaneInTab\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert gridPaneInRootStackPane != null : "fx:id=\"gridPaneInRootStackPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert topGridPane != null : "fx:id=\"topGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert bottomGridPane != null : "fx:id=\"bottomGridPane\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert datePicker != null : "fx:id=\"datePicker\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert dateSelectionMethodComboBox != null : "fx:id=\"dateSelectionMethodComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert pathComboBox != null : "fx:id=\"pathComboBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert selectableModuleListView != null : "fx:id=\"selectableModuleListView\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert statusesToggleGroupVBox != null : "fx:id=\"statusesToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
+		assert statedInferredToggleGroupVBox != null : "fx:id=\"statedInferredToggleGroupVBox\" was not injected: check your FXML file 'ViewCoordinatePreferencesView.fxml'.";
 
 		RowConstraints gridPaneRowConstraints = new RowConstraints();
 		gridPaneRowConstraints.setVgrow(Priority.NEVER);
@@ -227,6 +232,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 		initializeValidBooleanBinding();
 	}
 
+	public void setPersistenceInterface(PersistenceInterface pi) {
+		persistenceInterface = pi;
+	}
+	
 	private void setCurrentTimePropertyFromDatePicker() {
 		Long dateSelected = null;
 		if (datePicker.getValue() != null) {
@@ -338,7 +347,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					if(c == null) {
 						setText(null);
 					} else {
-						String desc = OTFUtility.getDescription(c, panelViewCoordinate);
+						String desc = OchreUtility.getDescription(c, panelViewCoordinate);
 						setText(desc);
 					}
 				}
@@ -352,7 +361,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (emptyRow) {
 					setText("");
 				} else {
-					String desc = OTFUtility.getDescription(c, panelViewCoordinate);
+					String desc = OchreUtility.getDescription(c, panelViewCoordinate);
 					//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
@@ -364,7 +373,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (uuid == null){
 					return null;
 				} else {
-					return OTFUtility.getDescription(uuid, panelViewCoordinate);
+					return OchreUtility.getDescription(uuid, panelViewCoordinate);
 				}
 			}
 
@@ -493,7 +502,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 				} else {
 					TextErrorColorHelper.clearTextErrorColor(pathComboBox);
 				}
-				if (OTFUtility.getConceptVersion(currentPathProperty.get()) == null) {
+				ConceptChronology<? extends ConceptVersion<?>> pathCC = Get.conceptService().getConcept(currentPathProperty.get());
+				Optional<LatestVersion<? extends ConceptVersion<?>>> optionalLatestVersion = OchreUtility.getLatestConceptVersion(pathCC, ViewCoordinateFactory.getSystemViewCoordinate());
+				if (! optionalLatestVersion.isPresent()) {
 					this.setInvalidReason("Invalid path");
 					TextErrorColorHelper.setTextErrorColor(pathComboBox);
 
@@ -570,17 +581,20 @@ public class ViewCoordinatePreferencesPluginViewController {
 						contentLoaded = true;
 
 						// Populate selectableModules
-						final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
-						final Set<ConceptVersionBI> moduleConcepts = new HashSet<>();
+						//final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
+						ConceptChronology<? extends ConceptVersion<?>> moduleRootConcept = Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid())).getChronology();
+						
+						Set<ConceptSnapshot> children = OchreUtility.getChildrenAsConceptSnapshots(moduleRootConcept, Get.taxonomyService().getTaxonomyTree(TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate())), StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+						final Set<ConceptSnapshot> moduleConcepts = new HashSet<>();
 						try {
-							moduleConcepts.addAll(OTFUtility.getAllChildrenOfConcept(moduleRootConcept.getNid(), panelViewCoordinate, false));
+							moduleConcepts.addAll(children);
 						} catch (Exception e) {
 							log.error("Failed loading module concepts as children of " + moduleRootConcept, e);
 							e.printStackTrace();
 							AppContext.getCommonDialogs().showErrorDialog("Failed loading module concepts as children of " + moduleRootConcept + ". See logs.", e);
 						}
 						List<SelectableModule> modules = new ArrayList<>();
-						for (ConceptVersionBI cv : moduleConcepts) {
+						for (ConceptSnapshot cv : moduleConcepts) {
 							modules.add(new SelectableModule(cv.getNid()));
 						}
 						selectableModules.clear();
@@ -616,16 +630,20 @@ public class ViewCoordinatePreferencesPluginViewController {
 						Collections.sort(selectableModules);
 						selectableModuleListView.getItems().addAll(selectableModules);
 
-						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OTFUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OchreUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
 						
 						pathComboBox.getItems().clear();
-						pathComboBox.getItems().addAll(getPathOptions());
+						runLaterIfNotFXApplicationThread(() -> {
+							pathComboBox.getItems().addAll(getPathOptions());
+							pathComboBox.getSelectionModel().select(persistenceInterface.getPath());
+						} );
+					} else {
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.getSelectionModel().select(persistenceInterface.getPath()));
 					}
 
 					// Reload persisted values every time
 
-					UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					pathComboBox.getSelectionModel().select(loggedIn.getViewCoordinatePath());
+					//UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 
 					// Reload storedStatedInferredOption
 					loadStoredStatedInferredOption();
@@ -667,11 +685,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 					Long storedTime = getStoredTime();
 					if (storedTime.equals(Long.MAX_VALUE)) {
-						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST);
-						currentTimeProperty.set(Long.MAX_VALUE);
+						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.USE_LATEST));
+						runLaterIfNotFXApplicationThread(() -> currentTimeProperty.set(Long.MAX_VALUE));
 						runLaterIfNotFXApplicationThread(() -> datePicker.setValue(LocalDate.now()));
 					} else {
-						dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY);
+						runLaterIfNotFXApplicationThread(() -> dateSelectionMethodComboBox.getSelectionModel().select(DateSelectionMethod.SPECIFY));
 						currentTimeProperty.set(storedTime);
 						setDatePickerFromCurrentTimeProperty();
 					}
@@ -724,18 +742,18 @@ public class ViewCoordinatePreferencesPluginViewController {
 		// Reload storedStatuses
 		final Set<Status> storedStatuses = getStoredStatuses();
 		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
-			statusesToggleGroup.selectToggle(activeAndInactiveStatusButton);
+			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(activeAndInactiveStatusButton));
 		} else if (storedStatuses.contains(Status.ACTIVE)) {
-			statusesToggleGroup.selectToggle(activeStatusButton);
+			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(activeStatusButton));
 		} else if (storedStatuses.contains(Status.INACTIVE)) {
-			statusesToggleGroup.selectToggle(inactiveStatusButton);
+			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(inactiveStatusButton));
 		} else if (storedStatuses.size() == 0) {
-			log.warn("UserProfile does not contain any view coordinate Status values");
+			log.warn("No view coordinate Status values");
 		} else {
-			log.error("UserProfile contains unsupported view coordinate Status values: {}", storedStatuses.toArray());
+			log.error("Unsupported view coordinate Status values: {}", storedStatuses.toArray());
 			AppContext.getCommonDialogs().showErrorDialog(
 					"Unsupported View Coordinate Status",
-					"UserProfile contains unsupported view coordinate Status values",
+					"Unsupported view coordinate Status values",
 					Arrays.toString(storedStatuses.toArray()));
 		}
 	}
@@ -755,37 +773,13 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	public void save() throws IOException {
-		log.debug("Saving ViewCoordinatePreferencesPluginView data");
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-
-		//Path Property
-		log.debug("Setting stored VC path (currently \"{}\") to {}", loggedIn.getViewCoordinatePath(), currentPathProperty().get()); 
-		loggedIn.setViewCoordinatePath(currentPathProperty().get());
-
-		//Stated/Inferred Policy
-		log.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", loggedIn.getStatedInferredPolicy(), currentStatedInferredOptionProperty().get()); 
-		loggedIn.setStatedInferredPolicy(currentStatedInferredOptionProperty().get());
-
-		//Time Property
-		log.debug("Setting stored VC time to :" + currentTimeProperty().get());
-		loggedIn.setViewCoordinateTime(currentTimeProperty().get());
-
-		//Statuses Property
-		log.debug("Setting stored VC statuses to :" + currentStatusesProperty().get());
-		loggedIn.setViewCoordinateStatuses(currentStatusesProperty().get());
-
-		//Modules Property
-		log.debug("Setting stored VC modules to :" + selectedModules);
-		loggedIn.setViewCoordinateModules(selectedModules);
-
-		try {
-			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);
-		} catch (InvalidUserException e) {
-			String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " attempting to save UserProfile for " + getClass().getName();
-
-			log.error(msg, e);
-			throw new IOException(msg, e);
-		}
+		persistenceInterface.save(
+				new ViewCoordinateComponents(
+						currentStatedInferredOptionProperty.get(),
+						currentPathProperty.get(),
+						currentStatusesProperty.get(),
+						currentTimeProperty.get(),
+						selectedModules));
 	}
 
 	public static Date getEndOfDay(Date date) {
@@ -806,9 +800,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			List<ConceptChronicleBI> pathConcepts = OTFUtility.getPathConcepts();
-			for (ConceptChronicleBI cc : pathConcepts) {
-				list.add(cc.getPrimordialUuid());
+			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
+			for (ConceptVersion<?> cv : pathConcepts) {
+				list.add(cv.getChronology().getPrimordialUuid());
 			}
 		} catch (Exception e) {
 			log.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
@@ -825,28 +819,25 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	protected Long getStoredTime() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinateTime();
+		return persistenceInterface.getTime();
 	}
 
 	protected UUID getStoredPath() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinatePath();
+		return persistenceInterface.getPath();
+
 	}
 
 	protected StatedInferredOptions getStoredStatedInferredOption() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getStatedInferredPolicy();
+		return persistenceInterface.getStatedInferredOption();
+
 	}
 
 	protected Set<Status> getStoredStatuses() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinateStatuses();
+		return persistenceInterface.getStatuses();
 	}
 
 	protected Set<UUID> getStoredModules() {
-		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-		return loggedIn.getViewCoordinateModules();
+		return persistenceInterface.getModules();
 	}
 	protected Set<UUID> getDefaultModules() {
 		return UserProfileDefaults.getDefaultViewCoordinateModules();
@@ -902,7 +893,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			String desc = null;
 			try {
-				desc = OTFUtility.getDescription(nid, panelViewCoordinate);
+				desc = OchreUtility.getDescription(nid);
 			} catch (Exception e) {
 				log.error("Failed to set description for concept with nid={}", nid);
 			}
@@ -910,7 +901,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			UUID aUuid = null;
 			try {
-				ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, panelViewCoordinate);
+				ConceptSnapshot cv = Get.conceptSnapshot().getConceptSnapshot(nid);
 				aUuid = cv.getPrimordialUuid();
 			} catch (Exception e) {
 				log.error("Failed to set uuid for concept with nid={} and desc={}", nid, description);
@@ -918,9 +909,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 			uuid = aUuid;
 		}
 
-		public Integer getNid() {
-			return nid.get();
-		}
+//		public Integer getNid() {
+//			return nid.get();
+//		}
 		public BooleanProperty selectedProperty() {
 			return selected;
 		}

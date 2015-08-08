@@ -24,28 +24,28 @@
  */
 package gov.va.isaac.gui.enhancedsearchview.filters;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-
 import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.ComponentSearchType;
 import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.SearchType;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 
 public class SememeContentSearchTypeFilter extends SearchTypeFilter<SememeContentSearchTypeFilter> {
-	final private ObjectProperty<ConceptVersionBI> assemblageConcept;
+	final private ObjectProperty<ConceptSnapshot> assemblageConcept;
 
 	public SememeContentSearchTypeFilter() {
 		this(new SimpleStringProperty(), new SimpleObjectProperty<>());
 	}
-	public SememeContentSearchTypeFilter(String param, ConceptVersionBI assemblage) {
+	public SememeContentSearchTypeFilter(String param, ConceptSnapshot assemblage) {
 		this(new SimpleStringProperty(param), new SimpleObjectProperty<>(assemblage));
 	}
-	public SememeContentSearchTypeFilter(StringProperty param, ObjectProperty<ConceptVersionBI> assemblage) {
+	public SememeContentSearchTypeFilter(StringProperty param, ObjectProperty<ConceptSnapshot> assemblage) {
 		super(param);
 
 		this.assemblageConcept = assemblage != null ? assemblage : new SimpleObjectProperty<>();
@@ -78,7 +78,7 @@ public class SememeContentSearchTypeFilter extends SearchTypeFilter<SememeConten
 		return isValid;
 	}
 
-	public ConceptVersionBI getAssemblageConcept() {
+	public ConceptSnapshot getAssemblageConcept() {
 		return assemblageConcept.get();
 	}
 	public void setAssemblageConcept(ConceptVersionBI concept) {

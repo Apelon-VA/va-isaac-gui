@@ -22,6 +22,7 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import java.net.URL;
 import java.util.ArrayList;
@@ -234,7 +235,7 @@ public class DefinitionController implements PanelControllers {
 		
 		for (Node parentNode : parentVBox.getChildren()) {
 			ConceptNode parent = nodeToConMap.get(parentNode);
-			parents.add(parent.getConcept());	
+			parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
 		}
 		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents,
 												isPrimitive.isSelected()); 

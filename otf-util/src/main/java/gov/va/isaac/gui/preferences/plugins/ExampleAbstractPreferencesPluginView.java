@@ -28,15 +28,21 @@ import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginComboBox
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginLabelProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+
 import javafx.scene.control.Control;
+
 import javax.inject.Singleton;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 //import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -142,13 +148,12 @@ public class ExampleAbstractPreferencesPluginView extends AbstractPreferencesPlu
 		List<UUID> list = new ArrayList<>();
 
 		try {
-			List<ConceptChronicleBI> pathConcepts = OTFUtility.getPathConcepts();
-			for (ConceptChronicleBI cc : pathConcepts) {
-				list.add(cc.getPrimordialUuid());
+			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
+			for (ConceptVersion<?> cv : pathConcepts) {
+				list.add(cv.getChronology().getPrimordialUuid());
 			}
-		} catch (IOException | ContradictionException e) {
-			logger.error("Failed loading path concepts. Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-			e.printStackTrace();
+		} catch (RuntimeException e) {
+			logger.error("Failed loading path concepts", e);
 		}
 		UUID current = viewCoordinatePathProperty.readFromPersistedPreferences();
 		if (current != null && ! list.contains(current)) {

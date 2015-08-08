@@ -81,10 +81,10 @@ public class ResultsToTaxonomy {
 						return taxonomyDisplayPolicies;
 					}
 
-					searchResults.add(c.getContainingConcept().getNid());
+					searchResults.add(c.getContainingConcept().get().getNid());
 
 					Set<ConceptVersionBI> ancestorNids = null;
-					ancestorNids = OTFUtility.getConceptAncestors(c.getContainingConcept().getNid());
+					ancestorNids = OTFUtility.getConceptAncestors(c.getContainingConcept().get().getNid());
 
 					for (ConceptVersionBI concept : ancestorNids) {
 						searchResultAncestors.add(concept.getNid());

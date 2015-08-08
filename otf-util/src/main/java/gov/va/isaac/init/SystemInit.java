@@ -19,12 +19,18 @@
 package gov.va.isaac.init;
 
 import gov.va.isaac.util.DBLocator;
+import static gov.vha.isaac.cradle.concept.ConceptProviderOchreModel.CRADLE_CONCEPT_MODEL_PROPERTY;
+import static gov.vha.isaac.cradle.concept.ConceptProviderOchreModel.CRADLE_PROPERTIES_FILE_NAME;
 import gov.vha.isaac.ochre.api.ConceptModel;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Properties;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -48,6 +54,8 @@ public class SystemInit
 		
 		//Make sure the service Locator comes up ok
 		LookupService.get();
+		
+		LookupService.startupWorkExecutors();
 
 		try
 		{
@@ -79,6 +87,23 @@ public class SystemInit
 		}
 		LoggerFactory.getLogger(SystemInit.class).info("Configuring cradle to use the data store " + dataStoreLocation.getAbsolutePath());
 		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(dataStoreLocation.toPath());
-		LookupService.getService(ConfigurationService.class).setConceptModel(ConceptModel.OTF_CONCEPT_MODEL);
+		Path propertiesPath = Paths.get(dataStoreLocation.getAbsolutePath(), "object-chronicles", CRADLE_PROPERTIES_FILE_NAME);
+		LoggerFactory.getLogger(SystemInit.class).debug("Looking for Cradle properties file \"{}\"...", propertiesPath.toAbsolutePath());
+		ConceptModel model = null;
+		if (propertiesPath.toFile().exists()) {
+			LoggerFactory.getLogger(SystemInit.class).debug("Found Cradle properties file \"{}\".", propertiesPath.toAbsolutePath());
+			Properties dataStoreProperties = new Properties();
+			try (FileInputStream in = new FileInputStream(propertiesPath.toFile())) {
+				dataStoreProperties.load(in);
+			}
+			final String cradleConceptModelPropertyValue = dataStoreProperties.getProperty(CRADLE_CONCEPT_MODEL_PROPERTY);
+			LoggerFactory.getLogger(SystemInit.class).debug("Loaded CRADLE_CONCEPT_MODEL_PROPERTY value \"{}\".", cradleConceptModelPropertyValue);
+			model = ConceptModel.valueOf(cradleConceptModelPropertyValue);
+		} else {
+			model = ConceptModel.OTF_CONCEPT_MODEL;
+		}
+		LoggerFactory.getLogger(SystemInit.class).debug("Setting ConceptModel to \"{}\".", model.name());
+
+		LookupService.getService(ConfigurationService.class).setConceptModel(model);
 	}
 }

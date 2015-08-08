@@ -22,22 +22,29 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -46,10 +53,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -60,19 +65,16 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-import org.controlsfx.control.PopOver;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sun.javafx.tk.Toolkit;
 
 /**
@@ -157,7 +159,7 @@ public class DescriptionTableView implements EmbeddableViewI
 
 									try
 									{
-										if (ref.getDescriptionVersion().isActive())
+										if (ref.getDescriptionVersion().getState() == State.ACTIVE)
 										{
 											sizeAndPosition(Images.BLACK_DOT.createImageView(), sp, Pos.TOP_LEFT);
 											tooltipText += "Active";
@@ -183,50 +185,50 @@ public class DescriptionTableView implements EmbeddableViewI
 											sizeAndPosition(Images.YELLOW_DOT.createImageView(), sp, Pos.TOP_RIGHT);
 											tooltipText += " - Uncommitted";
 										}
-										if (ref.hasDynamicRefex())
-										{
-											//I can't seem to get just and image view to pick up mouse clicks
-											//but it works in a button... sigh.
-											Button b = new Button();
-											b.setPadding(new Insets(0));
-											b.setPrefHeight(12.0);
-											b.setPrefWidth(12.0);
-											ImageView iv = Images.ATTACH.createImageView();
-											iv.setFitHeight(12.0);
-											iv.setFitWidth(12.0);
-											b.setGraphic(iv);
-											b.setOnAction((event) ->
-											{
-												DynamicRefexView drv = AppContext.getService(DynamicRefexView.class);
-												drv.setComponent(ref.getDescriptionVersion().getNid(), null, null, null, true);
-												
-												BorderPane bp = new BorderPane();
-												
-												Label title = new Label("Sememes attached to Description ");
-												title.setMaxWidth(Double.MAX_VALUE);
-												title.setAlignment(Pos.CENTER);
-												title.setPadding(new Insets(10));
-												title.getStyleClass().add("boldLabel");
-												title.getStyleClass().add("headerBackground");
-												
-												bp.setTop(title);
-												bp.setCenter(drv.getView());
-												
-												
-												PopOver po = new PopOver();
-												po.setContentNode(bp);
-												po.setAutoHide(true);
-												po.detachedTitleProperty().set("Sememes attached to Description");
-												po.detachedProperty().addListener((change) ->
-												{
-													po.setAutoHide(false);
-												});
-												
-												Point2D point = b.localToScreen(b.getWidth(), -32);
-												po.show(b.getScene().getWindow(), point.getX(), point.getY());
-											});
-											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
-										}
+//										if (ref.hasDynamicRefex())
+//										{
+//											//I can't seem to get just and image view to pick up mouse clicks
+//											//but it works in a button... sigh.
+//											Button b = new Button();
+//											b.setPadding(new Insets(0));
+//											b.setPrefHeight(12.0);
+//											b.setPrefWidth(12.0);
+//											ImageView iv = Images.ATTACH.createImageView();
+//											iv.setFitHeight(12.0);
+//											iv.setFitWidth(12.0);
+//											b.setGraphic(iv);
+//											b.setOnAction((event) ->
+//											{
+//												DynamicRefexView drv = AppContext.getService(DynamicRefexView.class);
+//												drv.setComponent(ref.getDescriptionVersion().getNid(), null, null, null, true);
+//												
+//												BorderPane bp = new BorderPane();
+//												
+//												Label title = new Label("Sememes attached to Description ");
+//												title.setMaxWidth(Double.MAX_VALUE);
+//												title.setAlignment(Pos.CENTER);
+//												title.setPadding(new Insets(10));
+//												title.getStyleClass().add("boldLabel");
+//												title.getStyleClass().add("headerBackground");
+//												
+//												bp.setTop(title);
+//												bp.setCenter(drv.getView());
+//												
+//												
+//												PopOver po = new PopOver();
+//												po.setContentNode(bp);
+//												po.setAutoHide(true);
+//												po.detachedTitleProperty().set("Sememes attached to Description");
+//												po.detachedProperty().addListener((change) ->
+//												{
+//													po.setAutoHide(false);
+//												});
+//												
+//												Point2D point = b.localToScreen(b.getWidth(), -32);
+//												po.show(b.getScene().getWindow(), point.getX(), point.getY());
+//											});
+//											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
+//										}
 									}
 									catch (Exception e)
 									{
@@ -542,14 +544,14 @@ public class DescriptionTableView implements EmbeddableViewI
 		}
 	}
 
-	public void setConcept(ConceptVersionBI concept) throws IOException, ContradictionException
+	public void setConcept(ConceptSnapshot concept) throws IOException, ContradictionException
 	{
 		// Populate description table data model.
-		conceptUUID_ = concept.getPrimordialUuid();
+		conceptUUID_ = concept.getChronology().getPrimordialUuid();
 		refresh(concept);
 	}
 	
-	private void refresh(ConceptVersionBI concept)
+	private void refresh(ConceptSnapshot concept)
 	{
 		if (concept == null && conceptUUID_ == null)
 		{
@@ -576,29 +578,39 @@ public class DescriptionTableView implements EmbeddableViewI
 		}
 		Utility.execute(() ->
 		{
-			ArrayList<DescriptionVersionBI<?>> allDescriptions = new ArrayList<>();
+			ArrayList<DescriptionSememe<?>> allDescriptions = new ArrayList<>();
 			
 			try
 			{
-				ConceptVersionBI localConcept = (concept == null ? OTFUtility.getConceptVersion(conceptUUID_) : concept);
-				
-				for (DescriptionChronicleBI chronicle : localConcept.getDescriptions())
+				ConceptSnapshot localConcept = (concept == null ? Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID_)) : concept);
+	
+				List<? extends SememeChronology<? extends DescriptionSememe<?>>> descs = OchreUtility.getConceptDescriptionList(localConcept.getChronology());
+				for (SememeChronology<? extends DescriptionSememe<?>> descChronology : descs)
 				{
-					for (DescriptionVersionBI<?> dv : chronicle.getVersions())
+					for (DescriptionSememe<?> dv : descChronology.getVersionList())
 					{
 						allDescriptions.add(dv);
 					}
 				}	
 				
 				//Sort the newest to the top per UUID
-				Collections.sort(allDescriptions, new Comparator<DescriptionVersionBI<?>>()
+				Collections.sort(allDescriptions, new Comparator<DescriptionSememe<?>>()
 				{
 					@Override
-					public int compare(DescriptionVersionBI<?> o1, DescriptionVersionBI<?> o2)
+					public int compare(DescriptionSememe<?> o1, DescriptionSememe<?> o2)
 					{
+					
 						if (o1.getPrimordialUuid().equals(o2.getPrimordialUuid()))
 						{
-							return o2.getStamp() - o1.getStamp();
+							long diff = o2.getTime() - o1.getTime();
+							
+							if (diff > 0) {
+								return 1;
+							} else if (diff < 0) {
+								return -1;
+							} else {
+								return 0;
+							}
 						}
 						else
 						{
@@ -627,14 +639,14 @@ public class DescriptionTableView implements EmbeddableViewI
 					UUID lastSeenRefex = null;
 					
 					descriptionsTable.getItems().clear();
-					for (DescriptionVersionBI<?> d : allDescriptions)
+					for (DescriptionSememe<?> d : allDescriptions)
 					{
 						if (!showHistory_.get() && d.getPrimordialUuid().equals(lastSeenRefex))
 						{
 							//Only want the newest one per UUID if history isn't requested
 							continue;
 						}
-						if (showActiveOnly_.get() == false || d.isActive())
+						if (showActiveOnly_.get() == false || d.getState() == State.ACTIVE)
 						{
 							//first one we see with a new UUID is current, others are historical
 							DescriptionVersion newDescriptionVersion = new DescriptionVersion(d, !d.getPrimordialUuid().equals(lastSeenRefex));  
