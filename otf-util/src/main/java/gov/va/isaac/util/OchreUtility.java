@@ -176,21 +176,14 @@ public final class OchreUtility {
 	}
 
 	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
-		Optional<LatestVersion<DescriptionSememe<?>>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
+		Optional<LatestVersion<DescriptionSememe>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
 		if (descriptionOptional.isPresent()) {
 			return descriptionOptional.get().value().getText();
 		}
 
 		return null;
 	}
-	public static String conceptDescriptionText(int conceptId) {
-		return Get.conceptDescriptionText(conceptId);
-	}
-
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate<?> vc) {
-		return getDescriptionOptional(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
-	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+	public static <T extends DescriptionSememe<T>> Optional<LatestVersion<T>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
 		try {
 			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			if (userProfile == null)
@@ -207,7 +200,7 @@ public final class OchreUtility {
 				}
 			}
 
-			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
+			Optional<LatestVersion<T>> optional = null;
 			if (userProfile.getDisplayFSN()) {
 				optional = OchreUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
 			} else {
@@ -221,10 +214,10 @@ public final class OchreUtility {
 			throw e;
 		}
 	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(int conceptId) {
+	public static <T extends DescriptionSememe<T>> Optional<LatestVersion<T>> getDescriptionOptional(int conceptId) {
 		return getDescriptionOptional(Get.conceptSnapshot().getConceptSnapshot(conceptId).getChronology());
 	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
+	public static <T extends DescriptionSememe<T>> Optional<LatestVersion<T>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
 		try {
 			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 			if (userProfile == null)
@@ -241,7 +234,7 @@ public final class OchreUtility {
 				}
 			}
 
-			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
+			Optional<LatestVersion<T>> optional = null;
 			if (userProfile.getDisplayFSN()) {
 				optional = Get.conceptSnapshot().getFullySpecifiedDescription(conceptChronology.getNid());
 			} else {
@@ -265,8 +258,8 @@ public final class OchreUtility {
 	public static String getDescription(UUID conceptUuid, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
 		return getDescription(conceptSnapshotService(stampCoordinate, languageCoordinate).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), languageCoordinate, stampCoordinate);
 	}
-	public static String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
-		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
+	public static <T extends DescriptionSememe<T>> String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+		Optional<LatestVersion<T>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
 
 		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
 			return optional.get().value().getText();
@@ -276,7 +269,7 @@ public final class OchreUtility {
 				return desc;
 			}
 			
-			desc = conceptDescriptionText(conceptChronology.getNid());
+			desc = Get.conceptDescriptionText(conceptChronology.getNid());
 			if (desc != null) {
 				return desc;
 			}
@@ -289,32 +282,6 @@ public final class OchreUtility {
 
 			return null;
 		}
-	}
-	public static String getDescription(int conceptId) {
-		return getDescription(Get.conceptService().getConcept(conceptId));
-	}
-	public static String getDescription(ConceptChronology<?> conceptChronology) {
-		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology);
-
-		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
-			return optional.get().value().getText();
-		} else {
-			String desc = conceptDescriptionText(conceptChronology.getNid());
-			if (desc != null) {
-				return desc;
-			}
-
-			desc = OTFUtility.getDescription(conceptChronology.getNid());
-			if (desc != null) {
-				return desc;
-			}
-			LOG.warn("In OCHREUtility.getDescription() OTFUtility.getDescription({}) returned {}", conceptChronology.getNid(), desc);
-
-			return null;
-		}
-	}
-	public static String getDescription(UUID uuid) {
-		return getDescription(Get.conceptService().getConcept(uuid));
 	}
 	
 	public static Set<Integer> getChildrenAsConceptSequences(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree) {
@@ -357,7 +324,7 @@ public final class OchreUtility {
 		
 		return conceptVersions;
 	}
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, TaxonomyCoordinate<?> vc) {
+	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree) {
 		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
 		
 		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {

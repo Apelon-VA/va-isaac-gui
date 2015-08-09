@@ -92,7 +92,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-            	for (ConceptChronology<? extends ConceptVersion<?>> destRel : OchreUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get())) {
+            	for (ConceptChronology<? extends ConceptVersion<?>> destRel : OchreUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTree().get())) {
             		if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
             			return false;
             		}

@@ -133,7 +133,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
                 ArrayList<SctTreeItem> childrenToAdd = new ArrayList<>();
                 ArrayList<GetSctTreeItemConceptCallable> childrenToProcess = new ArrayList<>();
     
-                Collection<ConceptChronology<? extends ConceptVersion<?>>> children = OchreUtility.getChildrenAsConceptChronologies(conceptChronology, getTaxonomyTree().get(), this.getTaxonomyCoordinate().get());
+                Collection<ConceptChronology<? extends ConceptVersion<?>>> children = OchreUtility.getChildrenAsConceptChronologies(conceptChronology, getTaxonomyTree().get());
                 for (ConceptChronology<? extends ConceptVersion<?>> child : children) {
                     SctTreeItem childItem = new SctTreeItem(child, displayPolicies, taxonomyCoordinate, taxonomyTree, conceptSnapshotService);
                     if (childItem.shouldDisplay()) {
@@ -195,7 +195,7 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
                                 ArrayList<SctTreeItem> grandChildrenToAdd = new ArrayList<>();
                                 ((SctTreeItem)child).childLoadStarts();
     
-                                for (ConceptChronology<? extends ConceptVersion<?>> r : OchreUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTree().get(), getTaxonomyCoordinate().get())) {
+                                for (ConceptChronology<? extends ConceptVersion<?>> r : OchreUtility.getChildrenAsConceptChronologies(child.getValue(), getTaxonomyTree().get())) {
                                     if (cancelLookup) {
                                         return;
                                     }
