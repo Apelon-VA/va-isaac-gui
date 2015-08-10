@@ -18,6 +18,22 @@
  */
 package gov.va.isaac.config.profiles;
 
+import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.util.Utility;
+import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
@@ -25,33 +41,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.inject.Singleton;
-
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableSetWrapper;
-
-import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.ViewCoordinateComponents;
-import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
-import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.State;
-import gov.vha.isaac.ochre.api.component.concept.ConceptService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
-import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.StampPosition;
-import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.tree.Tree;
-import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
-import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -66,6 +55,14 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
 
+import javax.inject.Singleton;
+
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.sun.javafx.collections.ObservableSetWrapper;
 /**
  * {@link UserProfileBindings}
  *
@@ -96,9 +93,9 @@ public class UserProfileBindings
 
 	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
 
-	private final ReadOnlyObjectWrapper<StampCoordinate> stampCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<StampCoordinate<StampCoordinateImpl>> stampCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
-	private final ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
@@ -200,7 +197,7 @@ public class UserProfileBindings
 	/**
 	 * @return the stampCoordinate
 	 */
-	public ReadOnlyObjectProperty<StampCoordinate> getStampCoordinate()
+	public ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> getStampCoordinate()
 	{
 		return stampCoordinate.getReadOnlyProperty();
 	}
@@ -216,7 +213,7 @@ public class UserProfileBindings
 	/**
 	 * @return the taxonomyCoordinate
 	 */
-	public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate()
+	public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate()
 	{
 		return taxonomyCoordinate.getReadOnlyProperty();
 	}
@@ -332,9 +329,7 @@ public class UserProfileBindings
 						cdl.countDown();
 					});
 					cdl.await();
-				}
-				
-				
+				}			
 				if (updateLanguageCoordinate.get() || languageCoordinate.get() == null) {
 					updateTaxonomyCoordinate.set(true);
 					
@@ -351,7 +346,7 @@ public class UserProfileBindings
 				if (updateTaxonomyCoordinate.get()) {
 					try {
 
-						TaxonomyCoordinate newCoordinate = null;
+						TaxonomyCoordinate<?> newCoordinate = null;
 						switch (statedInferredPolicy.get()) {
 						case STATED:
 							newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
@@ -363,7 +358,7 @@ public class UserProfileBindings
 							throw new RuntimeException("Unsupported StatedInferredOptions value " + statedInferredPolicy.get() + ".  Expected STATED or INFERRED.");
 						}
 						
-						final TaxonomyCoordinate foo = newCoordinate;
+						final TaxonomyCoordinate<?> foo = newCoordinate;
 
 						CountDownLatch cdl = new CountDownLatch(1);
 						Platform.runLater(() ->
@@ -377,9 +372,11 @@ public class UserProfileBindings
 						throw e;
 					}
 				}
+				
 			} catch (Exception e) {
 				LOG.error("Unexpected error updating user profile bindings", e);
 			}
 		});
+		
 	}
 }

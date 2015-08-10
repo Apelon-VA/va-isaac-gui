@@ -29,6 +29,7 @@ import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginLabelPro
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
 import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
@@ -145,7 +146,7 @@ public class WorkflowPreferencesPluginView extends AbstractPreferencesPluginView
 					public String convertToString(UUID value) {
 						if (value != null) {
 							try {
-								return OchreUtility.getDescription(value);
+								return Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(value));
 							} catch (Exception e) {
 								String msg = "Caught " + e.getClass().getName() + " " + e.getLocalizedMessage() + " getting description for workflow promotion path uuid " + value;
 								logger.error(msg, e);

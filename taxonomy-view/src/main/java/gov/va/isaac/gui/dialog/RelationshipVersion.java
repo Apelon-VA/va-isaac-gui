@@ -19,18 +19,14 @@
 package gov.va.isaac.gui.dialog;
 
 import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 
-import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.ToIntFunction;
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

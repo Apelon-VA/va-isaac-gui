@@ -26,7 +26,6 @@ package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.config.profiles.UserProfileManager;
@@ -34,6 +33,7 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
@@ -50,16 +50,12 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.util.Callback;
 
 import javax.inject.Singleton;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,7 +122,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 							if(c == null) {
 								setText(null);
 							}else {
-								String desc = OchreUtility.getDescription(c);
+								String desc = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(c));
 								setText(desc);
 							}
 						}
@@ -142,7 +138,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 					if (emptyRow) {
 						setText("");
 					} else {
-						String desc = OchreUtility.getDescription(c);
+						String desc = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(c));
 						setText(desc);
 					}
 				}

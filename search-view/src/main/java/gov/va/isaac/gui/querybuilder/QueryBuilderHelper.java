@@ -25,7 +25,6 @@
 package gov.va.isaac.gui.querybuilder;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.querybuilder.node.AssertionNode;
 import gov.va.isaac.gui.querybuilder.node.InvertableNode;
@@ -44,12 +43,14 @@ import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.collections.NidSet;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -61,13 +62,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.GridPane;
+
 import org.ihtsdo.otf.query.implementation.Clause;
 import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
 import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +81,7 @@ import org.slf4j.LoggerFactory;
 public class QueryBuilderHelper {
 	private final static Logger logger = LoggerFactory.getLogger(QueryBuilderHelper.class);
 	
-	private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
+	//private final static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 
 	private static NidSet results;
 

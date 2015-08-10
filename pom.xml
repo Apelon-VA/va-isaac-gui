@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>gov.vha.isaac</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>1.8-SNAPSHOT</version>
+		<version>1.9-SNAPSHOT</version>
 	</parent>
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>23.3-SNAPSHOT</version>
+	<version>23.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
@@ -32,12 +32,12 @@
 	</distributionManagement>
 
 	<properties>
-		<logic.version>1.15-SNAPSHOT</logic.version>
-		<query.version>2.15-SNAPSHOT</query.version>
-		<ochre.version>2.30-SNAPSHOT</ochre.version>
-		<isaac-mojo.version>1.9-SNAPSHOT</isaac-mojo.version>
-		<isaac-metadata.version>1.32-SNAPSHOT</isaac-metadata.version>
-		<newtons-cradle.version>1.20-SNAPSHOT</newtons-cradle.version>
+		<logic.version>1.16-SNAPSHOT</logic.version>
+		<query.version>2.16-SNAPSHOT</query.version>
+		<ochre.version>2.31-SNAPSHOT</ochre.version>
+		<isaac-mojo.version>1.10-SNAPSHOT</isaac-mojo.version>
+		<isaac-metadata.version>1.33-SNAPSHOT</isaac-metadata.version>
+		<newtons-cradle.version>1.21-SNAPSHOT</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>

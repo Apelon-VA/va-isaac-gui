@@ -22,20 +22,17 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 
@@ -56,10 +53,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -70,18 +65,13 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 
-import org.controlsfx.control.PopOver;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -594,8 +584,8 @@ public class DescriptionTableView implements EmbeddableViewI
 			{
 				ConceptSnapshot localConcept = (concept == null ? Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID_)) : concept);
 	
-				List<? extends SememeChronology<? extends DescriptionSememe>> descs = localConcept.getChronology().getConceptDescriptionList();
-				for (SememeChronology<? extends DescriptionSememe> descChronology : descs)
+				List<? extends SememeChronology<? extends DescriptionSememe<?>>> descs = OchreUtility.getConceptDescriptionList(localConcept.getChronology());
+				for (SememeChronology<? extends DescriptionSememe<?>> descChronology : descs)
 				{
 					for (DescriptionSememe<?> dv : descChronology.getVersionList())
 					{
