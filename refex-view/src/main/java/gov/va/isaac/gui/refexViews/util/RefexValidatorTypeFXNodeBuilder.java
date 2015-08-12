@@ -18,6 +18,10 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
+import java.util.ArrayList;
+import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.drools.manager.DroolsExecutor;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
@@ -26,14 +30,15 @@ import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.NumberUtilities;
+import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
-import gov.va.isaac.util.OTFUtility;
-
-import java.util.ArrayList;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -44,14 +49,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.util.StringConverter;
 
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * {@link RefexValidatorTypeFXNodeBuilder}
  *
@@ -61,12 +58,12 @@ public class RefexValidatorTypeFXNodeBuilder
 {
 	private static Logger logger = LoggerFactory.getLogger(RefexValidatorTypeFXNodeBuilder.class);
 	
-	public static RefexValidatorTypeNodeDetails buildNodeForType(RefexDynamicValidatorType dt, RefexDynamicDataBI currentValue, 
-			ObjectProperty<RefexDynamicDataType> refexDataType, UpdateableBooleanBinding allValid)
+	public static RefexValidatorTypeNodeDetails buildNodeForType(DynamicSememeValidatorType dt, DynamicSememeDataBI currentValue, 
+			ObjectProperty<DynamicSememeDataType> refexDataType, UpdateableBooleanBinding allValid)
 	{
 		RefexValidatorTypeNodeDetails returnValue = new RefexValidatorTypeNodeDetails();
-		if (RefexDynamicValidatorType.GREATER_THAN == dt || RefexDynamicValidatorType.GREATER_THAN_OR_EQUAL == dt || RefexDynamicValidatorType.INTERVAL == dt
-				|| RefexDynamicValidatorType.LESS_THAN == dt || RefexDynamicValidatorType.LESS_THAN_OR_EQUAL == dt || RefexDynamicValidatorType.REGEXP == dt)
+		if (DynamicSememeValidatorType.GREATER_THAN == dt || DynamicSememeValidatorType.GREATER_THAN_OR_EQUAL == dt || DynamicSememeValidatorType.INTERVAL == dt
+				|| DynamicSememeValidatorType.LESS_THAN == dt || DynamicSememeValidatorType.LESS_THAN_OR_EQUAL == dt || DynamicSememeValidatorType.REGEXP == dt)
 		{
 			TextField tf = new TextField();
 
@@ -84,8 +81,8 @@ public class RefexValidatorTypeFXNodeBuilder
 					{
 						valueInvalidReason.setValue("You must specify a value for this field");
 					}
-					else if (RefexDynamicValidatorType.GREATER_THAN == dt || RefexDynamicValidatorType.GREATER_THAN_OR_EQUAL == dt
-							|| RefexDynamicValidatorType.LESS_THAN == dt || RefexDynamicValidatorType.LESS_THAN_OR_EQUAL == dt)
+					else if (DynamicSememeValidatorType.GREATER_THAN == dt || DynamicSememeValidatorType.GREATER_THAN_OR_EQUAL == dt
+							|| DynamicSememeValidatorType.LESS_THAN == dt || DynamicSememeValidatorType.LESS_THAN_OR_EQUAL == dt)
 					{
 						try
 						{
@@ -98,13 +95,13 @@ public class RefexValidatorTypeFXNodeBuilder
 							returnValue.validatorData.set(null);
 						}
 					}
-					else if (RefexDynamicValidatorType.INTERVAL == dt)
+					else if (DynamicSememeValidatorType.INTERVAL == dt)
 					{
 						try
 						{
 							//Don't actually care if it passes the validator - just want to know if the validator can parse it.
 							DynamicSememeString s = new DynamicSememeString(tf.getText());
-							RefexDynamicValidatorType.INTERVAL.passesValidator(new DynamicSememeInteger(0), s, null);
+							DynamicSememeValidatorType.INTERVAL.passesValidator(new DynamicSememeInteger(0), s, null);
 							returnValue.validatorData.set(s);
 							valueInvalidReason.set("");
 						}
@@ -114,13 +111,13 @@ public class RefexValidatorTypeFXNodeBuilder
 							returnValue.validatorData.set(null);
 						}
 					}
-					else if (RefexDynamicValidatorType.REGEXP == dt)
+					else if (DynamicSememeValidatorType.REGEXP == dt)
 					{
 						try
 						{
 							//Don't actually care if it passes the validator - just want to know if the validator can parse it.
 							DynamicSememeString s = new DynamicSememeString(tf.getText());
-							RefexDynamicValidatorType.REGEXP.passesValidator(new DynamicSememeString("a"), s, null);
+							DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeString("a"), s, null);
 							returnValue.validatorData.set(s);
 							valueInvalidReason.set("");
 						}
@@ -147,7 +144,7 @@ public class RefexValidatorTypeFXNodeBuilder
 			}
 			returnValue.nodeForDisplay = n;
 		}
-		else if (RefexDynamicValidatorType.IS_CHILD_OF == dt || RefexDynamicValidatorType.IS_KIND_OF == dt)
+		else if (DynamicSememeValidatorType.IS_CHILD_OF == dt || DynamicSememeValidatorType.IS_KIND_OF == dt)
 		{
 			ConceptNode cn = new ConceptNode(null, true);
 			returnValue.boundToAllValid.add(cn.isValid().getReasonWhyInvalid());
@@ -155,7 +152,7 @@ public class RefexValidatorTypeFXNodeBuilder
 
 			if (currentValue != null)
 			{
-				cn.set(OTFUtility.getConceptVersion(((RefexDynamicNidBI) currentValue).getDataNid()));
+				cn.set(OTFUtility.getConceptVersion(((DynamicSememeNidBI) currentValue).getDataNid()));
 			}
 
 			returnValue.nodeForDisplay = cn.getNode();
@@ -180,7 +177,7 @@ public class RefexValidatorTypeFXNodeBuilder
 				}
 			});
 		}
-		else if (RefexDynamicValidatorType.EXTERNAL == dt)
+		else if (DynamicSememeValidatorType.EXTERNAL == dt)
 		{
 			ChoiceBox<RefexDroolsValidatorImplInfo> cb = new ChoiceBox<>();
 			cb.setMaxWidth(Double.MAX_VALUE);
@@ -243,7 +240,7 @@ public class RefexValidatorTypeFXNodeBuilder
 				refexDataType.addListener((change) ->
 				{
 					boolean matched = false;
-					for (RefexDynamicDataType rddt : cb.getValue().getApplicableDataTypes())
+					for (DynamicSememeDataType rddt : cb.getValue().getApplicableDataTypes())
 					{
 						if (rddt == refexDataType.get())
 						{
@@ -266,7 +263,7 @@ public class RefexValidatorTypeFXNodeBuilder
 					try
 					{
 						boolean matched = false;
-						for (RefexDynamicDataType rddt : cb.getValue().getApplicableDataTypes())
+						for (DynamicSememeDataType rddt : cb.getValue().getApplicableDataTypes())
 						{
 							if (rddt == refexDataType.get())
 							{
@@ -308,7 +305,7 @@ public class RefexValidatorTypeFXNodeBuilder
 				throw new RuntimeException("Unexpected", e);
 			}
 		}
-		else if (RefexDynamicValidatorType.COMPONENT_TYPE == dt)
+		else if (DynamicSememeValidatorType.COMPONENT_TYPE == dt)
 		{
 			ChoiceBox<ComponentType> cb = new ChoiceBox<>();
 			cb.setMaxWidth(Double.MAX_VALUE);

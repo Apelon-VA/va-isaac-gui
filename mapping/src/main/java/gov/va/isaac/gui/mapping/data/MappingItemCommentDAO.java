@@ -1,9 +1,5 @@
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.ISAAC;
-import gov.va.isaac.util.OTFUtility;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,14 +10,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.constants.ISAAC;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
@@ -48,8 +44,8 @@ public class MappingItemCommentDAO extends MappingDAO
 
 		try
 		{
-			RefexDynamicCAB commentAnnotation = new RefexDynamicCAB(pMappingItemUUID, ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid());
-			commentAnnotation.setData(new RefexDynamicDataBI[] { 
+			DynamicSememeCAB commentAnnotation = new DynamicSememeCAB(pMappingItemUUID, ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid());
+			commentAnnotation.setData(new DynamicSememeDataBI[] { 
 					new DynamicSememeString(pCommentText),
 					(StringUtils.isBlank(commentContext) ? null : new DynamicSememeString(commentContext))}, null);
 
@@ -65,14 +61,14 @@ public class MappingItemCommentDAO extends MappingDAO
 			}
 			*/
 
-			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentAnnotation);
+			DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentAnnotation);
 
 			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 			ExtendedAppContext.getDataStore().addUncommitted(cc);
 			ExtendedAppContext.getDataStore().commit(/* cc */);
 
-			return new MappingItemComment((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore()
+			return new MappingItemComment((DynamicSememeVersionBI<?>) ExtendedAppContext.getDataStore()
 					.getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), rdc.getPrimordialUuid()).get());
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
@@ -100,7 +96,7 @@ public class MappingItemCommentDAO extends MappingDAO
 			int mappingNid = ExtendedAppContext.getDataStore().getNidForUuids(mappingUUID);
 			for (SearchResult sr : search(ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid()))
 			{
-				Optional<RefexDynamicVersionBI<?>> rc = (Optional<RefexDynamicVersionBI<?>>) ExtendedAppContext.getDataStore().
+				Optional<DynamicSememeVersionBI<?>> rc = (Optional<DynamicSememeVersionBI<?>>) ExtendedAppContext.getDataStore().
 						getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
 				if (rc.isPresent())
 				{
@@ -150,12 +146,12 @@ public class MappingItemCommentDAO extends MappingDAO
 	{
 		try
 		{
-			RefexDynamicVersionBI<?> rdv = readCurrentRefex(comment.getPrimordialUUID());
-			RefexDynamicCAB commentCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+			DynamicSememeVersionBI<?> rdv = readCurrentRefex(comment.getPrimordialUUID());
+			DynamicSememeCAB commentCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 			commentCab.getData()[0] = new DynamicSememeString(comment.getCommentText());
 			commentCab.getData()[1] = (StringUtils.isNotBlank(comment.getCommentContext()) ? new DynamicSememeString(comment.getCommentContext()) : null);
 			commentCab.validate(null);
-			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentCab);
+			DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentCab);
 
 			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();

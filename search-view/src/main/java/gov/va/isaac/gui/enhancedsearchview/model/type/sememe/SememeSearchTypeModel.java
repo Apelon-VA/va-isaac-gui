@@ -1,23 +1,5 @@
 package gov.va.isaac.gui.enhancedsearchview.model.type.sememe;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.ResultsType;
-import gov.va.isaac.gui.enhancedsearchview.filters.SememeContentSearchTypeFilter;
-import gov.va.isaac.gui.enhancedsearchview.model.SearchModel;
-import gov.va.isaac.gui.enhancedsearchview.model.SearchTypeModel;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.ResultsToTaxonomy;
-import gov.va.isaac.refexDynamic.RefexDynamicUtil;
-import gov.va.isaac.search.CompositeSearchResult;
-import gov.va.isaac.search.SearchHandle;
-import gov.va.isaac.search.SearchHandler;
-import gov.va.isaac.util.Interval;
-import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.TaskCompleteCallback;
-import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,6 +7,34 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableListWrapper;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.ResultsType;
+import gov.va.isaac.gui.enhancedsearchview.filters.SememeContentSearchTypeFilter;
+import gov.va.isaac.gui.enhancedsearchview.model.SearchModel;
+import gov.va.isaac.gui.enhancedsearchview.model.SearchTypeModel;
+import gov.va.isaac.refexDynamic.DynamicSememeUtil;
+import gov.va.isaac.search.CompositeSearchResult;
+import gov.va.isaac.search.SearchHandle;
+import gov.va.isaac.search.SearchHandler;
+import gov.va.isaac.util.Interval;
+import gov.va.isaac.util.NumberUtilities;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.TaskCompleteCallback;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -39,22 +49,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-
-import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableListWrapper;
 
 public class SememeSearchTypeModel extends SearchTypeModel implements TaskCompleteCallback {
 	final static Logger logger = LoggerFactory.getLogger(SememeSearchTypeModel.class);
@@ -96,9 +90,9 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				searchInColumnsHolder.getChildren().clear();
 				try
 				{
-					RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(newValue.getNid());
+					DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(newValue.getNid());
 					currentlyEnteredAssemblageNid = rdud.getRefexUsageDescriptorNid();
-					Integer[] indexedColumns = LuceneDynamicRefexIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageNid);
+					Integer[] indexedColumns = DynamicSememeIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageNid);
 					if (indexedColumns == null || indexedColumns.length == 0)
 					{
 						searchInRefex.isValid().setInvalid("Sememe searches can only be performed on indexed columns in the sememe.  The selected "
@@ -110,17 +104,17 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 						Label l = new Label("Search in Columns");
 						searchInColumnsHolder.getChildren().add(l);
 						l.minWidthProperty().bind(((Label)searchInRefexHBox.getChildren().get(0)).widthProperty());
-						RefexDynamicColumnInfo[] rdci = rdud.getColumnInfo();
+						DynamicSememeColumnInfo[] rdci = rdud.getColumnInfo();
 						if (rdci.length > 0)
 						{
 							Arrays.sort(rdci);  //We will depend on them being in the correct order later.
 							HashSet<Integer> indexedColumnsSet = new HashSet<>(Arrays.asList(indexedColumns));
 							int indexNumber = 0;
-							for (RefexDynamicColumnInfo ci : rdci)
+							for (DynamicSememeColumnInfo ci : rdci)
 							{
 								StackPane cbStack = new StackPane();
 								CheckBox cb = new CheckBox(ci.getColumnName());
-								if (ci.getColumnDataType() == RefexDynamicDataType.BYTEARRAY || !indexedColumnsSet.contains(indexNumber))
+								if (ci.getColumnDataType() == DynamicSememeDataType.BYTEARRAY || !indexedColumnsSet.contains(indexNumber))
 								{
 									cb.setDisable(true);  //No index on this column... not searchable
 									Tooltip.install(cbStack, new Tooltip("Column Datatype: " + ci.getColumnDataType().getDisplayName() + " is not indexed"));
@@ -269,7 +263,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			String searchString = searchText.getText().trim();
 			try
 			{
-				RefexDynamicDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseNumber(searchString));
+				DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseNumber(searchString));
 				LOG.debug("Doing a sememe search with a numeric value");
 				ssh = SearchHandler.dynamicRefexSearch((indexer) ->
 				{
@@ -381,17 +375,17 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			
 			for (IdentifiedObjectLocal c : refConResult.getMatchingComponents())
 			{
-				if (c instanceof RefexDynamicVersionBI<?>)
+				if (c instanceof DynamicSememeVersionBI<?>)
 				{
-					RefexDynamicVersionBI<?> rv = (RefexDynamicVersionBI<?>)c;
+					DynamicSememeVersionBI<?> rv = (DynamicSememeVersionBI<?>)c;
 					ConceptVersionBI assembCon = OTFUtility.getConceptVersion(rv.getAssemblageNid());	
 					
 					try
 					{
-						RefexDynamicColumnInfo[] ci = rv.getRefexDynamicUsageDescription().getColumnInfo();
+						DynamicSememeColumnInfo[] ci = rv.getDynamicSememeUsageDescription().getColumnInfo();
 						int i = 0;
 						
-						for (RefexDynamicDataBI data : rv.getData())
+						for (DynamicSememeDataBI data : rv.getData())
 						{
 							if (data == null)  //might be an unset column, if the col is optional
 							{
@@ -399,7 +393,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 							}
 
 							String attachedData;
-							if (RefexDynamicDataType.BYTEARRAY == data.getRefexDataType()) {
+							if (DynamicSememeDataType.BYTEARRAY == data.getRefexDataType()) {
 								attachedData = ci[i].getColumnName()+  " - [Binary]";
 							} else {
 								attachedData = ci[i].getColumnName() + " - " + data.getDataObject().toString();
@@ -445,7 +439,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			protected Void call() throws Exception
 			{
 				dynamicRefexAssemblages = new HashSet<>();
-				dynamicRefexAssemblages.addAll(RefexDynamicUtil.getAllRefexDefinitions());
+				dynamicRefexAssemblages.addAll(DynamicSememeUtil.getAllRefexDefinitions());
 				return null;
 			}
 

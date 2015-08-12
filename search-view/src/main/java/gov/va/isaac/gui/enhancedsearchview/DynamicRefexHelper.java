@@ -24,22 +24,18 @@
  */
 package gov.va.isaac.gui.enhancedsearchview;
 
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 
 /**
  * DynamicRefexHelper
@@ -62,7 +58,7 @@ public class DynamicRefexHelper {
 		String desc = null;
 		try {
 			desc = OTFUtility.getDescription(conceptContainingRefexes);
-			for (RefexDynamicVersionBI<?> refex : conceptContainingRefexes.getRefexesDynamicActive(OTFUtility.getViewCoordinate())) {
+			for (DynamicSememeVersionBI<?> refex : conceptContainingRefexes.getRefexesDynamicActive(OTFUtility.getViewCoordinate())) {
 				DynamicRefexHelper.displayDynamicRefex(refex);
 			}
 		} catch (IOException e) {
@@ -70,44 +66,44 @@ public class DynamicRefexHelper {
 			e.printStackTrace();
 		}
 	}
-	public static void displayDynamicRefex(RefexDynamicVersionBI<?> refex) {
+	public static void displayDynamicRefex(DynamicSememeVersionBI<?> refex) {
 		displayDynamicRefex(refex, 0);
 	}
-	public static void displayDynamicRefex(RefexDynamicVersionBI<?> refex, int depth) {
+	public static void displayDynamicRefex(DynamicSememeVersionBI<?> refex, int depth) {
 		String indent = "";
 		
 		for (int i = 0; i < depth; ++i) {
 			indent += "\t";
 		}
 		
-		RefexDynamicUsageDescription dud = null;
+		DynamicSememeUsageDescription dud = null;
 		try {
-			dud = refex.getRefexDynamicUsageDescription();
+			dud = refex.getDynamicSememeUsageDescription();
 		} catch (IOException | ContradictionException e) {
-			LOG.error("Failed executing getRefexDynamicUsageDescription().  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
+			LOG.error("Failed executing getDynamicSememeUsageDescription().  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
 			e.printStackTrace();
 			
 			return;
 		}
-		RefexDynamicColumnInfo[] colInfo = dud.getColumnInfo();
-		RefexDynamicDataBI[] data = refex.getData();
+		DynamicSememeColumnInfo[] colInfo = dud.getColumnInfo();
+		DynamicSememeDataBI[] data = refex.getData();
 		LOG.debug(indent + "dynamic sememe nid=" + refex.getNid() + ", uuid=" + refex.getPrimordialUuid());
 		LOG.debug(indent + "dynamic sememe name=\"" + dud.getRefexName() + "\": " + refex.toUserString() + " with " + colInfo.length + " columns:");
 		for (int colIndex = 0; colIndex < colInfo.length; ++colIndex) {
-			RefexDynamicColumnInfo currentCol = colInfo[colIndex];
+			DynamicSememeColumnInfo currentCol = colInfo[colIndex];
 			String name = currentCol.getColumnName();
-			RefexDynamicDataType type = currentCol.getColumnDataType();
+			DynamicSememeDataType type = currentCol.getColumnDataType();
 			UUID colUuid = currentCol.getColumnDescriptionConcept();
-			RefexDynamicDataBI colData = data[colIndex];
+			DynamicSememeDataBI colData = data[colIndex];
 
 			LOG.debug(indent + "\t" + "dynamic sememe: " + refex.toUserString() + " col #" + colIndex + " (uuid=" + colUuid + ", type=" + type.getDisplayName() + "): " + name + "=" + (colData != null ? colData.getDataObject() : null));
 		}
 		
-		Collection<? extends RefexDynamicVersionBI<?>> embeddedRefexes = null;
+		Collection<? extends DynamicSememeVersionBI<?>> embeddedRefexes = null;
 		try {
 			embeddedRefexes = refex.getRefexesDynamicActive(OTFUtility.getViewCoordinate());
 
-			for (RefexDynamicVersionBI<?> embeddedRefex : embeddedRefexes) {
+			for (DynamicSememeVersionBI<?> embeddedRefex : embeddedRefexes) {
 				displayDynamicRefex(embeddedRefex, depth + 1);
 			}
 		} catch (IOException e) {

@@ -1,12 +1,5 @@
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.ISAAC;
-import gov.va.isaac.constants.MappingConstants;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,12 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
@@ -27,21 +19,22 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-
-import gov.vha.isaac.ochre.api.index.SearchResult;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.constants.ISAAC;
+import gov.va.isaac.constants.MappingConstants;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 /**
  * {@link MappingSet}
@@ -72,14 +65,14 @@ public class MappingSetDAO extends MappingDAO
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 
 			//We need to create a new concept - which itself is defining a dynamic refex - so set that up here.
-			RefexDynamicUsageDescription rdud = RefexDynamicUsageDescriptionBuilder
-					.createNewRefexDynamicUsageDescriptionConcept(mappingName, mappingName, description, 
-					new RefexDynamicColumnInfo[] {
-						new RefexDynamicColumnInfo(0, ISAAC.REFEX_COLUMN_TARGET_COMPONENT.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, null, null),
-						new RefexDynamicColumnInfo(1, MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
-								RefexDynamicValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
-						new RefexDynamicColumnInfo(2, MappingConstants.MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
-								RefexDynamicValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
+			DynamicSememeUsageDescription rdud = DynamicSememeUsageDescriptionBuilder
+					.createNewDynamicSememeUsageDescriptionConcept(mappingName, mappingName, description, 
+					new DynamicSememeColumnInfo[] {
+						new DynamicSememeColumnInfo(0, ISAAC.REFEX_COLUMN_TARGET_COMPONENT.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, null, null),
+						new DynamicSememeColumnInfo(1, MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, 
+								DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
+						new DynamicSememeColumnInfo(2, MappingConstants.MAPPING_STATUS.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, 
+								DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
 					null, true, ComponentType.CONCEPT, ViewCoordinates.getMetadataViewCoordinate());
 			
 			Utility.execute(() ->
@@ -87,7 +80,7 @@ public class MappingSetDAO extends MappingDAO
 				try
 				{
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					LuceneDynamicRefexIndexerConfiguration.configureColumnsToIndex(rdud.getRefexUsageDescriptorNid(), new Integer[] {0, 1, 2}, true);
+					DynamicSememeIndexerConfiguration.configureColumnsToIndex(rdud.getRefexUsageDescriptorNid(), new Integer[] {0, 1, 2}, true);
 				}
 				catch (Exception e)
 				{
@@ -105,25 +98,25 @@ public class MappingSetDAO extends MappingDAO
 			{
 				DescriptionCAB dCab = new DescriptionCAB(createdConcept.getNid(), Snomed.SYNONYM_DESCRIPTION_TYPE.getNid(), LanguageCode.EN, inverseName,
 						false, IdDirective.GENERATE_HASH);
-				dCab.addAnnotationBlueprint(new RefexDynamicCAB(dCab.getComponentUuid(), ISAAC.ASSOCIATION_INVERSE_NAME.getPrimodialUuid()));
+				dCab.addAnnotationBlueprint(new DynamicSememeCAB(dCab.getComponentUuid(), ISAAC.ASSOCIATION_INVERSE_NAME.getPrimodialUuid()));
 				OTFUtility.getBuilder().construct(dCab);
 			}
 			
-			RefexDynamicCAB mappingAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), MappingConstants.MAPPING_SEMEME_TYPE.getNid());
-			mappingAnnotation.setData(new RefexDynamicDataBI[] {
+			DynamicSememeCAB mappingAnnotation = new DynamicSememeCAB(rdud.getRefexUsageDescriptorNid(), MappingConstants.MAPPING_SEMEME_TYPE.getNid());
+			mappingAnnotation.setData(new DynamicSememeDataBI[] {
 					(editorStatus == null ? null : new DynamicSememeUUID(editorStatus)),
 					(StringUtils.isBlank(purpose) ? null : new DynamicSememeString(purpose))}, OTFUtility.getViewCoordinateAllowInactive());
 			OTFUtility.getBuilder().construct(mappingAnnotation);
 			
-			RefexDynamicCAB associationAnnotation = new RefexDynamicCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_SEMEME.getNid());
-			associationAnnotation.setData(new RefexDynamicDataBI[] {}, null);
+			DynamicSememeCAB associationAnnotation = new DynamicSememeCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_SEMEME.getNid());
+			associationAnnotation.setData(new DynamicSememeDataBI[] {}, null);
 			OTFUtility.getBuilder().construct(associationAnnotation);
 			
 			ExtendedAppContext.getDataStore().addUncommitted(createdConcept);
 			ExtendedAppContext.getDataStore().commit(/* createdConcept */);
 			
 			//Find the constructed dynamic refset
-			return new MappingSet((RefexDynamicVersionBI<?>)ExtendedAppContext.getDataStore().getComponent(mappingAnnotation.getMemberUUID())
+			return new MappingSet((DynamicSememeVersionBI<?>)ExtendedAppContext.getDataStore().getComponent(mappingAnnotation.getMemberUUID())
 					.getVersion(OTFUtility.getViewCoordinateAllowInactive()).get());
 		
 		}
@@ -162,7 +155,7 @@ public class MappingSetDAO extends MappingDAO
 					else
 					//see if it is the inverse name
 					{
-						for (RefexDynamicChronicleBI<?> annotation : desc.getRefexDynamicAnnotations())
+						for (DynamicSememeChronicleBI<?> annotation : desc.getDynamicSememeAnnotations())
 						{
 							if (annotation.getAssemblageNid() == ISAAC.ASSOCIATION_INVERSE_NAME.getNid())
 							{
@@ -187,8 +180,8 @@ public class MappingSetDAO extends MappingDAO
 				}
 			}
 			
-			Optional<? extends RefexDynamicVersionBI<?>> mappingRefex = null;
-			for (RefexDynamicChronicleBI<?> refex : mappingConcept.getRefexDynamicAnnotations())
+			Optional<? extends DynamicSememeVersionBI<?>> mappingRefex = null;
+			for (DynamicSememeChronicleBI<?> refex : mappingConcept.getDynamicSememeAnnotations())
 			{
 				if (refex.getAssemblageNid() == MappingConstants.MAPPING_SEMEME_TYPE.getNid())
 				{
@@ -203,8 +196,8 @@ public class MappingSetDAO extends MappingDAO
 				throw new IOException("internal error");
 			}
 			
-			RefexDynamicCAB mappingRefexCab = mappingRefex.get().makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-			mappingRefexCab.setData(new RefexDynamicDataBI[] {
+			DynamicSememeCAB mappingRefexCab = mappingRefex.get().makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+			mappingRefexCab.setData(new DynamicSememeDataBI[] {
 					(mappingSet.getEditorStatusConcept() == null ? null : new DynamicSememeUUID(mappingSet.getEditorStatusConcept())),
 					(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new DynamicSememeString(mappingSet.getPurpose()))}, OTFUtility.getViewCoordinateAllowInactive());
 			OTFUtility.getBuilder().construct(mappingRefexCab);
@@ -231,7 +224,7 @@ public class MappingSetDAO extends MappingDAO
 			ArrayList<MappingSet> result = new ArrayList<>();
 			for (SearchResult sr : search(MappingConstants.MAPPING_SEMEME_TYPE.getPrimodialUuid()))
 			{
-				Optional<RefexDynamicVersionBI<?>> rc = (Optional<RefexDynamicVersionBI<?>>) ExtendedAppContext.getDataStore().
+				Optional<DynamicSememeVersionBI<?>> rc = (Optional<DynamicSememeVersionBI<?>>) ExtendedAppContext.getDataStore().
 						getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
 				if (rc.isPresent())
 				{
@@ -262,7 +255,7 @@ public class MappingSetDAO extends MappingDAO
 		setConceptStatus(mappingSetPrimordialUUID, Status.ACTIVE);
 	}
 	
-	public static ConceptVersionBI getMappingConcept(RefexDynamicVersionBI<?> refex) throws IOException {
+	public static ConceptVersionBI getMappingConcept(DynamicSememeVersionBI<?> refex) throws IOException {
 		return ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinateAllowInactive(), refex.getReferencedComponentNid());
 	}
 }

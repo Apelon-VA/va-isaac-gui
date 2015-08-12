@@ -5,8 +5,8 @@ import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescriptionBuilder;
 
 import java.beans.PropertyVetoException;
 import java.io.IOException;
@@ -15,9 +15,9 @@ import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
+import org.ihtsdo.otf.tcc.api.blueprint.DynamicSememeCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
+import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeColumnInfo;
 
 public class ResultsToRefset {
 	
@@ -29,18 +29,18 @@ public class ResultsToRefset {
 		
 		// Create RefsetDynamic
 		if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
-			RefexDynamicUsageDescription refset = 
-					RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(prompt.getNameTextField().getText(), 
+			DynamicSememeUsageDescription refset = 
+					DynamicSememeUsageDescriptionBuilder.createNewDynamicSememeUsageDescriptionConcept(prompt.getNameTextField().getText(), 
 																									 prompt.getNameTextField().getText(), 
 																									 prompt.getDescTextField().getText(),
-																									 new RefexDynamicColumnInfo[] {},
+																									 new DynamicSememeColumnInfo[] {},
 																									 prompt.getParentConcept().getConcept().getPrimordialUuid(),
 																									 prompt.getAnnot().isSelected(),
 																									 null,
 																									 ViewCoordinates.getMetadataViewCoordinate());
 		    // Create a dynamic refex CAB for each result
 			for (CompositeSearchResult con : tableView.getItems()) {
-				RefexDynamicCAB refexBlueprint = new RefexDynamicCAB(con.getContainingConcept().get().getNid(), refset.getRefexUsageDescriptorNid());
+				DynamicSememeCAB refexBlueprint = new DynamicSememeCAB(con.getContainingConcept().get().getNid(), refset.getRefexUsageDescriptorNid());
 				OTFUtility.getBuilder().construct(refexBlueprint);
 				
 				if (prompt.getAnnot().isSelected()) {

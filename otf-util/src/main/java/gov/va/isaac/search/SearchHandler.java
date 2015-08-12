@@ -41,9 +41,9 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DescriptionIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.model.cc.refex.RefexService;
@@ -75,7 +75,7 @@ public class SearchHandler
 	 * @param query - The query string
 	 * @param resultLimit - limit to X results.  Use {@link Integer#MAX_VALUE} for no limit.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
-	 *   See {@link LuceneDescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
+	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
 	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
@@ -125,7 +125,7 @@ public class SearchHandler
 	 * @param query - The query text
 	 * @param resultLimit - limit to X results.  Use {@link Integer#MAX_VALUE} for no limit.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
-	 *   See {@link LuceneDescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
+	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
 	 * @param descriptionType - The type to search within (FSN / Synonym / Description)
 	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
@@ -178,7 +178,7 @@ public class SearchHandler
 	 * @param query - The query text
 	 * @param resultLimit - limit to X results.  Use {@link Integer#MAX_VALUE} for no limit.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
-	 *   See {@link LuceneDescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
+	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
 	 * @param extendedDescriptionType - The UUID of the concept that represents the extended (terminology specific) description type.
 	 * This concept should be a child of {@link IsaacMetadataAuxiliaryBinding#DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY}
 	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
@@ -243,7 +243,7 @@ public class SearchHandler
 	/**
 	 * ** ADVANCED API** - you probably don't want this method....
 	 * 
-	 * 	 This is really just a convenience wrapper with threading and results conversion on top of the APIs available in {@link LuceneDescriptionIndexer}
+	 * 	 This is really just a convenience wrapper with threading and results conversion on top of the APIs available in {@link DescriptionIndexer}
 	 * 
 	 * Execute a Query against the description indexes in a background thread, hand back a handle to the search object which will 
 	 * allow you to get the results (when they are ready) and also cancel an in-progress query.
@@ -252,10 +252,10 @@ public class SearchHandler
 	 * {@link SearchHandle#getResults()} method of the SearchHandle is called.
 	 * 
 	 * @param query - The query string
-	 * @param searchFunction -  A function that will call one of the query(...) methods within {@link LuceneDescriptionIndexer}.  See
+	 * @param searchFunction -  A function that will call one of the query(...) methods within {@link DescriptionIndexer}.  See
 	 * that class for documentation on the various search types supported.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
-	 *   See {@link LuceneDescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
+	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
 	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
@@ -271,7 +271,7 @@ public class SearchHandler
 	 */
 	public static SearchHandle descriptionSearch(
 			String query,
-			final BiFunction<LuceneDescriptionIndexer, String, List<SearchResult>> searchFunction,
+			final BiFunction<DescriptionIndexer, String, List<SearchResult>> searchFunction,
 			final boolean prefixSearch, 
 			final TaskCompleteCallback callback, 
 			final Integer taskId, 
@@ -315,7 +315,7 @@ public class SearchHandler
 
 						LOG.debug("Lucene Search: '" + localQuery + "'");
 
-						LuceneDescriptionIndexer descriptionIndexer = AppContext.getService(LuceneDescriptionIndexer.class);
+						DescriptionIndexer descriptionIndexer = AppContext.getService(DescriptionIndexer.class);
 						if (descriptionIndexer == null)
 						{
 							LOG.warn("No description indexer found, aborting.");
@@ -413,9 +413,9 @@ public class SearchHandler
 	 * If there is a problem with the internal indexes - an error will be logged, and the exception will be re-thrown when the 
 	 * {@link SearchHandle#getResults()} method of the SearchHandle is called.
 	 * 
-	 * This is really just a convenience wrapper with threading and results conversion on top of the APIs available in {@link LuceneDynamicRefexIndexer}
+	 * This is really just a convenience wrapper with threading and results conversion on top of the APIs available in {@link DynamicSememeIndexer}
 	 * 
-	 * @param searchFunction A function that will call one of the query(...) methods within {@link LuceneDynamicRefexIndexer}.  See
+	 * @param searchFunction A function that will call one of the query(...) methods within {@link DynamicSememeIndexer}.  See
 	 * that class for documentation on the various search types supported.
 	 * @param callback - Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
@@ -430,7 +430,7 @@ public class SearchHandler
 	 * @return A handle to the running search.
 	 */
 	public static SearchHandle dynamicRefexSearch(
-			Function<LuceneDynamicRefexIndexer, List<SearchResult>> searchFunction,
+			Function<DynamicSememeIndexer, List<SearchResult>> searchFunction,
 			final TaskCompleteCallback callback, 
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
@@ -449,7 +449,7 @@ public class SearchHandler
 				try
 				{
 					List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
-					LuceneDynamicRefexIndexer refexIndexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+					DynamicSememeIndexer refexIndexer = AppContext.getService(DynamicSememeIndexer.class);
 					
 					if (refexIndexer == null)
 					{
@@ -494,7 +494,7 @@ public class SearchHandler
 									ComponentChronicleBI<? extends StampedVersion> cc =  AppContext.getService(RefexService.class).getRefex(searchResult.getNid());
 									if (cc == null)
 									{
-										cc = AppContext.getService(RefexService.class).getRefexDynamic(searchResult.getNid());
+										cc = AppContext.getService(RefexService.class).getDynamicSememe(searchResult.getNid());
 									}
 									
 									if (cc != null)
@@ -538,7 +538,7 @@ public class SearchHandler
 	 * 
 	 * @param searchString - The value to search for within the refex index
 	 * @param resultLimit - cap the number of results
-	 * @param prefixSearch - use the prefix search text algorithm.  See {@link LuceneDescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for 
+	 * @param prefixSearch - use the prefix search text algorithm.  See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for 
 	 *  a description on the prefix search algorithm.
 	 * @param assemblageNid - (optional) limit the search to the specified assemblage type, or all assemblage objects (if null)
 	 * @param callback - Pass the handle that you want to have notified when the search is complete, and the results are ready for use.

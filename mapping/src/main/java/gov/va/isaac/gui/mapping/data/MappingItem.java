@@ -18,22 +18,18 @@
  */
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-
-import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
-
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 
 /**
  * {@link MappingItem}
@@ -53,12 +49,12 @@ public class MappingItem extends MappingObject
 	protected final SimpleStringProperty qualifierConceptProperty = new SimpleStringProperty();
 	protected final SimpleStringProperty commentsProperty		  = new SimpleStringProperty();
 	
-	protected MappingItem(RefexDynamicVersionBI<?> refex) throws IOException
+	protected MappingItem(DynamicSememeVersionBI<?> refex) throws IOException
 	{
 		readDynamicSememeUsageDescription(refex);
 	}
 	
-	private void read(RefexDynamicVersionBI<?> refex) throws IOException
+	private void read(DynamicSememeVersionBI<?> refex) throws IOException
 	{
 		sourceConceptNid = refex.getReferencedComponentNid();
 		
@@ -67,7 +63,7 @@ public class MappingItem extends MappingObject
 		mappingSetIDConcept = dataStore.getUuidPrimordialForNid(refex.getAssemblageNid());
 		readStampDetails(refex);
 		
-		RefexDynamicDataBI[] data = refex.getData();
+		DynamicSememeDataBI[] data = refex.getData();
 		setTargetConcept      (((data != null && data.length > 0 && data[0] != null) ? ((DynamicSememeUUID) data[0]).getDataUUID() : null));
 		setQualifierConcept   (((data != null && data.length > 1 && data[1] != null) ? ((DynamicSememeUUID) data[1]).getDataUUID() : null)); 
 		setEditorStatusConcept(((data != null && data.length > 2 && data[2] != null) ? ((DynamicSememeUUID) data[2]).getDataUUID() : null));

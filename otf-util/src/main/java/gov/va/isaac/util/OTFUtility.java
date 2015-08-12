@@ -18,21 +18,6 @@
  */
 package gov.va.isaac.util;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
-import gov.vha.isaac.cradle.Builder;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.ConceptModel;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.IdentifierService;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.util.UuidFactory;
-
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -44,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -52,7 +36,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
@@ -72,8 +55,6 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
@@ -90,6 +71,18 @@ import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.config.profiles.UserProfile;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.config.users.InvalidUserException;
+import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.ConceptModel;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.util.UuidFactory;
 
 /**
  * 
@@ -1077,7 +1070,7 @@ public class OTFUtility {
 					RefexCAB cab = (RefexCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 					cbi = builder.construct(cab);
 				} else if (type == ComponentType.SEMEME_DYNAMIC) {
-					RefexDynamicCAB cab = (RefexDynamicCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+					DynamicSememeCAB cab = (DynamicSememeCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 					cbi = builder.construct(cab);
 				}
 			}	
@@ -1105,7 +1098,7 @@ public class OTFUtility {
 			refsetMember.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rm) -> retSet.add(rm));
 		}
 
-		for(RefexDynamicChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
+		for(DynamicSememeChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
 			dynRef.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rdv) -> retSet.add(rdv));
 		}
 
@@ -1157,11 +1150,11 @@ public class OTFUtility {
 		return newest;
 	}
 	
-	public static RefexDynamicVersionBI<?> getLatestDynamicRefexVersion(@SuppressWarnings("rawtypes") Collection<? extends RefexDynamicVersionBI> collection)
+	public static DynamicSememeVersionBI<?> getLatestDynamicRefexVersion(@SuppressWarnings("rawtypes") Collection<? extends DynamicSememeVersionBI> collection)
 	{
-		RefexDynamicVersionBI<?> newest = null;;
+		DynamicSememeVersionBI<?> newest = null;;
 		long newestTime = Long.MIN_VALUE;
-		for (RefexDynamicVersionBI<?> x : collection)
+		for (DynamicSememeVersionBI<?> x : collection)
 		{
 			if (x.getTime() > newestTime)
 			{

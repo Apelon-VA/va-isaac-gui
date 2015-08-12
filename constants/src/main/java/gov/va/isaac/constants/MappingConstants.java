@@ -18,19 +18,15 @@
  */
 package gov.va.isaac.constants;
 
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
 import java.beans.PropertyVetoException;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Taxonomies;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpecWithDescriptions;
-import org.ihtsdo.otf.tcc.api.spec.DynamicRefexConceptSpec;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 /**
  * {@link MappingConstants}
@@ -46,7 +42,7 @@ public class MappingConstants
 {
 	public static ConceptSpec MAPPING_METADATA = new ConceptSpec("mapping metadata", 
 		UUID.fromString("9b5de306-e582-58e3-a23a-0dbf49cbdfe7"), 
-		RefexDynamic.DYNAMIC_SEMEME_METADATA);
+		DynamicSememe.DYNAMIC_SEMEME_METADATA);
 	
 	//This is just used as salt for generating other UUIDs
 	public static ConceptSpecWithDescriptions MAPPING_NAMESPACE = new ConceptSpecWithDescriptions("mapping namespace", 
@@ -92,7 +88,7 @@ public class MappingConstants
 		UUID.fromString("e5de9548-35b9-5e3b-9968-fd9c0a665b51"),
 		new String[] {"purpose"},
 		new String[] {"Stores the editor stated purpose of the mapping set"},
-		RefexDynamic.DYNAMIC_SEMEME_COLUMNS);
+		DynamicSememe.DYNAMIC_SEMEME_COLUMNS);
 	
 	public static DynamicRefexConceptSpec MAPPING_SEMEME_TYPE;
 	static
@@ -104,11 +100,11 @@ public class MappingConstants
 				UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
 				true, 
 				"A Sememe used to specify how user-created mapping Sememes are structured", 
-				new RefexDynamicColumnInfo[] {
-					new RefexDynamicColumnInfo(0, MAPPING_STATUS.getPrimodialUuid(), RefexDynamicDataType.UUID, null, false, 
-						RefexDynamicValidatorType.IS_KIND_OF, new DynamicSememeUUID(MAPPING_STATUS.getPrimodialUuid())),
-					new RefexDynamicColumnInfo(1, COLUMN_PURPOSE.getPrimodialUuid(), RefexDynamicDataType.STRING, null, false, null, null)},
-				RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES,
+				new DynamicSememeColumnInfo[] {
+					new DynamicSememeColumnInfo(0, MAPPING_STATUS.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, 
+						DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(MAPPING_STATUS.getPrimodialUuid())),
+					new DynamicSememeColumnInfo(1, COLUMN_PURPOSE.getPrimodialUuid(), DynamicSememeDataType.STRING, null, false, null, null)},
+				DynamicSememe.DYNAMIC_SEMEME_ASSEMBLAGES,
 				new Integer[] {});  //want to index this sememe, but don't need to index the data columns
 		}
 		catch (PropertyVetoException e)

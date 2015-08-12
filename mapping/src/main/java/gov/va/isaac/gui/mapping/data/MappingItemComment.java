@@ -3,7 +3,7 @@ package gov.va.isaac.gui.mapping.data;
 import gov.va.isaac.ExtendedAppContext;
 import java.io.IOException;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 
 /**
  * {@link MappingItemComment}
@@ -18,12 +18,12 @@ public class MappingItemComment extends StampedItem
 	private UUID primoridalUUID;
 
 
-	protected MappingItemComment(RefexDynamicVersionBI<?> comment) throws IOException
+	protected MappingItemComment(DynamicSememeVersionBI<?> comment) throws IOException
 	{
 		readDynamicSememeUsageDescription(comment);
 	}
 
-	private void read(RefexDynamicVersionBI<?> commentRefex) throws IOException
+	private void read(DynamicSememeVersionBI<?> commentRefex) throws IOException
 	{
 		commentText = commentRefex.getData()[0].getDataObject().toString();
 		commentContext = ((commentRefex.getData().length > 1 && commentRefex.getData()[1] != null) ? commentRefex.getData()[1].getDataObject().toString() : null);

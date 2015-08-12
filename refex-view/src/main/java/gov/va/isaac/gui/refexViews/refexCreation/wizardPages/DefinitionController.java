@@ -57,7 +57,7 @@ import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
+import org.ihtsdo.otf.tcc.api.metadata.binding.DynamicSememe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +115,7 @@ public class DefinitionController implements PanelControllersI {
 		
 		parentConcept = new ConceptNode(null, true);
 		//this will cause it to look it up in a background thread...
-		parentConcept.set(new SimpleDisplayConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getUuids()[0].toString()));
+		parentConcept.set(new SimpleDisplayConcept(DynamicSememe.DYNAMIC_SEMEME_ASSEMBLAGES.getUuids()[0].toString()));
 		
 		parentConceptHBox.getChildren().add(parentConcept.getNode());
 		HBox.setHgrow(parentConcept.getNode(), Priority.ALWAYS);
@@ -289,7 +289,7 @@ public class DefinitionController implements PanelControllersI {
 		try 
 		{
 			;
-			if (!Get.taxonomyService().isKindOf(parentConcept.getConcept().getConceptSequence(), RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), 
+			if (!Get.taxonomyService().isKindOf(parentConcept.getConcept().getConceptSequence(), DynamicSememe.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), 
 					AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get())) 
 			{
 				YesNoDialog yn = new YesNoDialog(refsetCreationPane.getScene().getWindow());

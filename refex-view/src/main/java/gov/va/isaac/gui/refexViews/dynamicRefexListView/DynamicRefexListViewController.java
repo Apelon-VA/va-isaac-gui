@@ -18,22 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.dynamicRefexListView;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
-import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.refexDynamic.RefexDynamicUtil;
-import gov.va.isaac.util.CommonMenus;
-import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -42,6 +26,24 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.ResourceBundle;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
+import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.refexDynamic.DynamicSememeUtil;
+import gov.va.isaac.util.CommonMenus;
+import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -63,10 +65,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link DynamicRefexListViewController}
@@ -88,7 +86,7 @@ public class DynamicRefexListViewController
 	@FXML private Button viewUsage;
 	@FXML private Label statusLabel;
 	@FXML private Label selectedRefexDescriptionLabel;
-	@FXML private ListView<RefexDynamicColumnInfo> extensionFields;
+	@FXML private ListView<DynamicSememeColumnInfo> extensionFields;
 	@FXML private ToolBar executeOperationsToolbar;
 	@FXML private Label selectedRefexNameLabel;
 	@FXML private VBox conceptNodeFilterPlaceholder;
@@ -160,7 +158,7 @@ public class DynamicRefexListViewController
 				//see if it is a valid Dynamic Refex Assemblage
 				try
 				{
-					RefexDynamicUsageDescription.readDynamicSememeUsageDescription(cv.getNid());
+					DynamicSememeUsageDescription.readDynamicSememeUsageDescription(cv.getNid());
 				}
 				catch (Exception e)
 				{
@@ -246,10 +244,10 @@ public class DynamicRefexListViewController
 			DynamicReferencedItemsView driv = new DynamicReferencedItemsView(refexList.getSelectionModel().getSelectedItem());
 			driv.showView(null);
 		});
-		extensionFields.setCellFactory(new Callback<ListView<RefexDynamicColumnInfo>, ListCell<RefexDynamicColumnInfo>>()
+		extensionFields.setCellFactory(new Callback<ListView<DynamicSememeColumnInfo>, ListCell<DynamicSememeColumnInfo>>()
 		{
 			@Override
-			public ListCell<RefexDynamicColumnInfo> call(ListView<RefexDynamicColumnInfo> param)
+			public ListCell<DynamicSememeColumnInfo> call(ListView<DynamicSememeColumnInfo> param)
 			{
 				return new DynamicRefexDataColumnListCell();
 			}
@@ -311,7 +309,7 @@ public class DynamicRefexListViewController
 				if (allRefexDefinitions == null)
 				{
 					allRefexDefinitions = new HashSet<>();
-					allRefexDefinitions.addAll(RefexDynamicUtil.getAllRefexDefinitions());
+					allRefexDefinitions.addAll(DynamicSememeUtil.getAllRefexDefinitions());
 				}
 				
 				//This code for adding the concept from the concept filter panel can be removed, if we fix the above code to actually
@@ -456,12 +454,12 @@ public class DynamicRefexListViewController
 
 		Task<Void> t = new Task<Void>()
 		{
-			ArrayList<RefexDynamicColumnInfo> tempColumnInfo = new ArrayList<>();
+			ArrayList<DynamicSememeColumnInfo> tempColumnInfo = new ArrayList<>();
 			
 			@Override
 			protected Void call() throws Exception
 			{
-				RefexDynamicUsageDescription rdud = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(sdn.getNid());
+				DynamicSememeUsageDescription rdud = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(sdn.getNid());
 				//fill in the header stuff
 				Platform.runLater(() -> 
 				{
@@ -474,7 +472,7 @@ public class DynamicRefexListViewController
 				
 				//now fill in the data column details...
 				
-				for (RefexDynamicColumnInfo rdci : rdud.getColumnInfo())
+				for (DynamicSememeColumnInfo rdci : rdud.getColumnInfo())
 				{
 					//force the read on the column info - this may have to be read from the DB.
 					rdci.getColumnName();

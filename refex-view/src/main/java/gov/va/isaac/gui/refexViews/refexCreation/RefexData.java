@@ -18,15 +18,15 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation;
 
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
 
 /**
  * 
@@ -42,7 +42,7 @@ public class RefexData
 	private boolean isAnnotatedStyle_;
 	private ConceptSnapshot parentConcept_;
 	private ComponentType componentTypeRestriction_;
-	private ArrayList<RefexDynamicColumnInfo> columnInfo_ = new ArrayList<>();
+	private ArrayList<DynamicSememeColumnInfo> columnInfo_ = new ArrayList<>();
 
 	public RefexData(String name, String description, ConceptSnapshot parentConcept, int extendedFieldsCount, boolean isAnnotatedStyle, 
 			ComponentType componentTypeRestriction)
@@ -54,17 +54,17 @@ public class RefexData
 		this.componentTypeRestriction_ = componentTypeRestriction;
 		for (int i = 0; i < extendedFieldsCount; i++)
 		{
-			RefexDynamicColumnInfo rdci = new RefexDynamicColumnInfo();
+			DynamicSememeColumnInfo rdci = new DynamicSememeColumnInfo();
 			rdci.setColumnOrder(i);
 			columnInfo_.add(rdci);
 		}
 	}
 
-	public void setColumnVals(int currentCol, ConceptVersionBI colNameConcept, RefexDynamicDataType type, RefexDynamicDataBI defaultValueObject, boolean isMandatory,
-			RefexDynamicValidatorType validatorType, RefexDynamicDataBI validatorData)
+	public void setColumnVals(int currentCol, ConceptVersionBI colNameConcept, DynamicSememeDataType type, DynamicSememeDataBI defaultValueObject, boolean isMandatory,
+			DynamicSememeValidatorType validatorType, DynamicSememeDataBI validatorData)
 	{
 		adjustColumnCount(currentCol);
-		RefexDynamicColumnInfo rdci = columnInfo_.get(currentCol);
+		DynamicSememeColumnInfo rdci = columnInfo_.get(currentCol);
 		rdci.setColumnDescriptionConcept(colNameConcept.getPrimordialUuid());
 		rdci.setColumnDataType(type);
 		rdci.setColumnDefaultData(defaultValueObject);
@@ -77,7 +77,7 @@ public class RefexData
 	{
 		while (col > columnInfo_.size())
 		{
-			RefexDynamicColumnInfo rdci = new RefexDynamicColumnInfo();
+			DynamicSememeColumnInfo rdci = new DynamicSememeColumnInfo();
 			rdci.setColumnOrder(columnInfo_.size());
 			columnInfo_.add(rdci);
 		}
@@ -143,7 +143,7 @@ public class RefexData
 		return componentTypeRestriction_;
 	}
 
-	public List<RefexDynamicColumnInfo> getColumnInfo()
+	public List<DynamicSememeColumnInfo> getColumnInfo()
 	{
 		return columnInfo_;
 	}

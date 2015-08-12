@@ -66,7 +66,7 @@ public class DescriptionVersion
 //	{
 //		try
 //		{
-//			Collection<? extends RefexDynamicChronicleBI<?>> foo = dv_.getRefexDynamicAnnotations();
+//			Collection<? extends DynamicSememeChronicleBI<?>> foo = dv_.getDynamicSememeAnnotations();
 //			if (foo != null && foo.size() > 0)
 //			{
 //				return true;

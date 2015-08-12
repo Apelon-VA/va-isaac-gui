@@ -51,7 +51,7 @@ import com.sun.javafx.collections.ObservableListWrapper;
  */
 public class HeaderNode<T> {
 	public static interface DataProvider<T> {
-		public T getData(RefexDynamicGUI source);
+		public T getData(DynamicSememeGUI source);
 	}
 	public static class Filter<T> {
 		private final Set<T> allPotentialFilterValues = new HashSet<>();
@@ -67,7 +67,7 @@ public class HeaderNode<T> {
 			this.dataProvider = dataProvider;
 		}
 		
-		public boolean accept(RefexDynamicGUI data) {
+		public boolean accept(DynamicSememeGUI data) {
 			if (filterValues.size() > 0) {
 				return filterValues.contains(dataProvider.getData(data));
 			} else {
@@ -94,7 +94,7 @@ public class HeaderNode<T> {
 		}
 	}
 	
-	private final TreeTableColumn<RefexDynamicGUI, ?> column;
+	private final TreeTableColumn<DynamicSememeGUI, ?> column;
 	private final Scene scene;
 	private final DataProvider<T> dataProvider;
 	private final Button filterConfigurationButton = new Button();
@@ -109,7 +109,7 @@ public class HeaderNode<T> {
 	
 	public HeaderNode(
 			ObservableMap<ColumnId, Filter<?>> filterCache,
-			TreeTableColumn<RefexDynamicGUI, ?> col,
+			TreeTableColumn<DynamicSememeGUI, ?> col,
 			ColumnId columnId,
 			Scene scene,
 			DataProvider<T> dataProvider) {
@@ -158,7 +158,7 @@ public class HeaderNode<T> {
 		}
 	}
 
-	private static <T> Set<T> getUniqueDisplayObjects(TreeItem<RefexDynamicGUI> item, DataProvider<T> dataProvider) {
+	private static <T> Set<T> getUniqueDisplayObjects(TreeItem<DynamicSememeGUI> item, DataProvider<T> dataProvider) {
 		Set<T> stringSet = new HashSet<>();
 		
 		if (item == null) {
@@ -169,7 +169,7 @@ public class HeaderNode<T> {
 			stringSet.add(dataProvider.getData(item.getValue()));
 		}
 		
-		for (TreeItem<RefexDynamicGUI> childItem : item.getChildren()) {
+		for (TreeItem<DynamicSememeGUI> childItem : item.getChildren()) {
 			stringSet.addAll(getUniqueDisplayObjects(childItem, dataProvider));
 		}
 		
@@ -203,7 +203,7 @@ public class HeaderNode<T> {
 	}
 
 	public Button getButton() { return filterConfigurationButton; }
-	public TreeTableColumn<RefexDynamicGUI, ?> getColumn() { return column; }
+	public TreeTableColumn<DynamicSememeGUI, ?> getColumn() { return column; }
 	public ObservableList<Object> getUserFilters() { return filter.getFilterValues(); }
 
 	public Node getNode() { return filterConfigurationButton; }

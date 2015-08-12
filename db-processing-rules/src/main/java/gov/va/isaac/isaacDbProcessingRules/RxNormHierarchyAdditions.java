@@ -36,8 +36,8 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
@@ -133,9 +133,9 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 						continue;
 					}
 					
-					for (RefexDynamicChronicleBI<?> refex : currentDescription.getRefexesDynamic())
+					for (DynamicSememeChronicleBI<?> refex : currentDescription.getRefexesDynamic())
 					{
-						RefexDynamicVersionBI<?> currentRefex = OTFUtility.getLatestDynamicRefexVersion(refex.getVersionList());
+						DynamicSememeVersionBI<?> currentRefex = OTFUtility.getLatestDynamicRefexVersion(refex.getVersionList());
 						if (currentRefex.getAssemblageNid() == rxNormDescTypeAssemblageNid)
 						{
 							if (((DynamicSememeUUID)currentRefex.getData()[0]).getDataUUID().equals(termTypeIN))

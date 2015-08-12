@@ -25,19 +25,19 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
+import org.ihtsdo.otf.tcc.api.blueprint.DynamicSememeCAB;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +51,9 @@ public abstract class MappingDAO
 {
 	protected static final Logger LOG = LoggerFactory.getLogger(MappingDAO.class);
 	
-	protected static RefexDynamicVersionBI<?> readCurrentRefex(UUID refexUUID) throws IOException, ContradictionException
+	protected static DynamicSememeVersionBI<?> readCurrentRefex(UUID refexUUID) throws IOException, ContradictionException
 	{
-		return (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), refexUUID).get();
+		return (DynamicSememeVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), refexUUID).get();
 	}
 	
 	protected static void setConceptStatus(UUID conceptUUID, Status status) throws IOException
@@ -93,16 +93,16 @@ public abstract class MappingDAO
 	{
 		try
 		{
-			RefexDynamicVersionBI<?> rdv = readCurrentRefex(refexUUID);
+			DynamicSememeVersionBI<?> rdv = readCurrentRefex(refexUUID);
 			if (rdv.getStatus() == status)
 			{
 				LOG.warn("Tried set the status to the value it already has.  Doing nothing");
 			}
 			else
 			{
-				RefexDynamicCAB mappingCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+				DynamicSememeCAB mappingCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 				mappingCab.setStatus(status);
-				RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingCab);
+				DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingCab);
 
 				ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 				ExtendedAppContext.getDataStore().addUncommitted(cc);
@@ -120,7 +120,7 @@ public abstract class MappingDAO
 	{
 		try
 		{
-			LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+			DynamicSememeIndexer indexer = AppContext.getService(DynamicSememeIndexer.class);
 			if (indexer == null)
 			{
 				LOG.error("Required index on dynamic refexes is missing!");

@@ -30,7 +30,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
+import org.ihtsdo.otf.tcc.api.metadata.binding.DynamicSememe;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
@@ -51,7 +51,7 @@ public class DynamicRefexViewRunner extends Application
 		primaryStage.setTitle("Sememe View");
 
 		DynamicRefexView refexView = AppContext.getService(DynamicRefexView.class);
-		refexView.setComponent(RefexDynamic.DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), null, null, null, true);
+		refexView.setComponent(DynamicSememe.DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), null, null, null, true);
 
 		primaryStage.setScene(new Scene(refexView.getView(), 800, 600));
 

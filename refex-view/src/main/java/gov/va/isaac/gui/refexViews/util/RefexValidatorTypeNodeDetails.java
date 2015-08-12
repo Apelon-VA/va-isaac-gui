@@ -19,13 +19,13 @@
 package gov.va.isaac.gui.refexViews.util;
 
 import java.util.ArrayList;
+import com.sun.javafx.collections.ObservableListWrapper;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * {@link RefexValidatorTypeNodeDetails}
@@ -37,7 +37,7 @@ public class RefexValidatorTypeNodeDetails
 {
 	protected Node nodeForDisplay;
 	protected ObservableList<ReadOnlyStringProperty> boundToAllValid = new ObservableListWrapper<>(new ArrayList<>());
-	protected ObjectProperty<RefexDynamicDataBI> validatorData = new SimpleObjectProperty<RefexDynamicDataBI>();
+	protected ObjectProperty<DynamicSememeDataBI> validatorData = new SimpleObjectProperty<DynamicSememeDataBI>();
 	
 	/**
 	 * @return the nodeForDisplay
@@ -56,7 +56,7 @@ public class RefexValidatorTypeNodeDetails
 	/**
 	 * @return the validatorData
 	 */
-	public ObjectProperty<RefexDynamicDataBI> getValidatorDataProperty()
+	public ObjectProperty<DynamicSememeDataBI> getValidatorDataProperty()
 	{
 		return validatorData;
 	}

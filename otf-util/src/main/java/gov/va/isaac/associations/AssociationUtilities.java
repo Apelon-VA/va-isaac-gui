@@ -22,7 +22,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.ISAAC;
 import gov.vha.isaac.ochre.api.index.SearchResult;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 import java.beans.PropertyVetoException;
@@ -31,15 +31,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeColumnInfo;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 
 /**
@@ -63,11 +63,11 @@ public class AssociationUtilities
 	public static List<Association> getSourceAssociations(ComponentChronicleBI<?> component, ViewCoordinate vc) throws IOException
 	{
 		ArrayList<Association> result = new ArrayList<>();
-		for (RefexDynamicVersionBI<?> refex : component.getRefexesDynamicActive(vc))
+		for (DynamicSememeVersionBI<?> refex : component.getRefexesDynamicActive(vc))
 		{
 			ConceptVersionBI refexAssemblageType = ExtendedAppContext.getDataStore().getConceptVersion(vc, refex.getAssemblageNid());
 
-			for (RefexDynamicChronicleBI<?> refexAttachedToAssemblage : refexAssemblageType.getRefexesDynamic())
+			for (DynamicSememeChronicleBI<?> refexAttachedToAssemblage : refexAssemblageType.getRefexesDynamic())
 			{
 				if (refexAttachedToAssemblage.getAssemblageNid() == getAssociationNid())
 				{
@@ -86,7 +86,7 @@ public class AssociationUtilities
 		
 		//TODO validate the concept is annotated for association?
 
-		LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+		DynamicSememeIndexer indexer = AppContext.getService(DynamicSememeIndexer.class);
 		if (indexer == null)
 		{
 			throw new RuntimeException("Required index is not available");
@@ -99,8 +99,8 @@ public class AssociationUtilities
 					associationType.getNid(), false, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
 			for (SearchResult sr : refexes)
 			{
-				RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
-				Optional<? extends RefexDynamicVersionBI<?>> rv = rc.getVersion(vc);
+				DynamicSememeChronicleBI<?> rc = (DynamicSememeChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
+				Optional<? extends DynamicSememeVersionBI<?>> rv = rc.getVersion(vc);
 				if (rv.isPresent())
 				{
 					result.add(new Association(rv.get()));
@@ -116,7 +116,7 @@ public class AssociationUtilities
 
 		//TODO validate the concept is annotated for association?
 
-		LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+		DynamicSememeIndexer indexer = AppContext.getService(DynamicSememeIndexer.class);
 		if (indexer == null)
 		{
 			throw new RuntimeException("Required index is not available");
@@ -124,8 +124,8 @@ public class AssociationUtilities
 		List<SearchResult> refexes = indexer.queryAssemblageUsage(concept.getNid(), Integer.MAX_VALUE, null);
 		for (SearchResult sr : refexes)
 		{
-			RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
-			Optional<? extends RefexDynamicVersionBI<?>> rv = rc.getVersion(vc);
+			DynamicSememeChronicleBI<?> rc = (DynamicSememeChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
+			Optional<? extends DynamicSememeVersionBI<?>> rv = rc.getVersion(vc);
 			if (rv.isPresent())
 			{
 				result.add(new Association(rv.get()));
@@ -139,7 +139,7 @@ public class AssociationUtilities
 	{
 		ArrayList<ConceptChronicleBI> result = new ArrayList<>();
 
-		LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+		DynamicSememeIndexer indexer = AppContext.getService(DynamicSememeIndexer.class);
 		if (indexer == null)
 		{
 			throw new RuntimeException("Required index is not available");
@@ -159,9 +159,9 @@ public class AssociationUtilities
 	 */
 	public static int findTargetColumnIndex(int assemblageNid) throws IOException, ContradictionException
 	{
-		RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(assemblageNid);
+		DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(assemblageNid);
 
-		for (RefexDynamicColumnInfo rdci : rdud.getColumnInfo())
+		for (DynamicSememeColumnInfo rdci : rdud.getColumnInfo())
 		{
 			if (rdci.getColumnDescriptionConcept().equals(ISAAC.REFEX_COLUMN_TARGET_COMPONENT.getPrimodialUuid()))
 			{

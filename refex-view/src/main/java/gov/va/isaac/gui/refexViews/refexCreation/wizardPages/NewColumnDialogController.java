@@ -18,10 +18,15 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
-import gov.va.isaac.AppContext;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import java.net.URL;
 import java.util.ResourceBundle;
+import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
+import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import javafx.beans.binding.BooleanBinding;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -31,11 +36,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -92,7 +92,7 @@ public class NewColumnDialogController implements Initializable
 				try
 				{
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					newColumnConcept = RefexDynamicColumnInfo.createNewRefexDynamicColumnInfoConcept(newColName.getText().trim(), newColDesc.getText().trim(), 
+					newColumnConcept = DynamicSememeColumnInfo.createNewDynamicSememeColumnInfoConcept(newColName.getText().trim(), newColDesc.getText().trim(), 
 							ViewCoordinates.getMetadataViewCoordinate());
 				} catch (InvalidCAB e) {
 					AppContext.getCommonDialogs().showInformationDialog("Concept Creation Error", e.getMessage(), rootPane.getScene().getWindow());

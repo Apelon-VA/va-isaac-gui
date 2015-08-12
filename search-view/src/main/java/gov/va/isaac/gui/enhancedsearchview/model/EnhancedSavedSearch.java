@@ -1,5 +1,18 @@
 package gov.va.isaac.gui.enhancedsearchview.model;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.Search;
@@ -12,22 +25,10 @@ import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.SearchType;
 import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
 import gov.va.isaac.gui.enhancedsearchview.resulthandler.SaveSearchPrompt;
 import gov.va.isaac.util.ComponentDescriptionHelper;
+import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -39,15 +40,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.ListCell;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 
 public class EnhancedSavedSearch {
 	public TextField getSearchSaveNameTextField() {
@@ -386,13 +382,13 @@ public class EnhancedSavedSearch {
 			}
 		}
 
-		Collection<? extends RefexDynamicVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
-		for (RefexDynamicVersionBI<?> refex : refexes) {
-			RefexDynamicUsageDescription dud = null;
+		Collection<? extends DynamicSememeVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
+		for (DynamicSememeVersionBI<?> refex : refexes) {
+			DynamicSememeUsageDescription dud = null;
 			try {
-				dud = refex.getRefexDynamicUsageDescription();
+				dud = refex.getDynamicSememeUsageDescription();
 			} catch (IOException | ContradictionException e) {
-				LOG.error("Failed performing getRefexDynamicUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				LOG.error("Failed performing getDynamicSememeUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 
 				return null;
 			}
@@ -459,13 +455,13 @@ public class EnhancedSavedSearch {
 		return componentSearchTypeCache.get(conNid);
 	}
 	private static ComponentSearchType getComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
-		Collection<? extends RefexDynamicVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
-		for (RefexDynamicVersionBI<?> refex : refexes) {
-			RefexDynamicUsageDescription dud = null;
+		Collection<? extends DynamicSememeVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
+		for (DynamicSememeVersionBI<?> refex : refexes) {
+			DynamicSememeUsageDescription dud = null;
 			try {
-				dud = refex.getRefexDynamicUsageDescription();
+				dud = refex.getDynamicSememeUsageDescription();
 			} catch (IOException | ContradictionException e) {
-				LOG.error("Failed performing getRefexDynamicUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+				LOG.error("Failed performing getDynamicSememeUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 
 				return null;
 			}

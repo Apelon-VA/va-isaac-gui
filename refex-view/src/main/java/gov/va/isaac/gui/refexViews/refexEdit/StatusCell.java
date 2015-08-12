@@ -33,14 +33,14 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
+public class StatusCell extends TreeTableCell<DynamicSememeGUI, DynamicSememeGUI>
 {
 	private static Logger logger_ = LoggerFactory.getLogger(StatusCell.class);
 	/**
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicGUI item, boolean empty)
+	protected void updateItem(DynamicSememeGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		

@@ -18,14 +18,33 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
+import java.beans.PropertyVetoException;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeBooleanBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeDoubleBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeFloatBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeIntegerBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeLongBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeStringBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUIDBI;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeBoolean;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeByteArray;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDouble;
@@ -35,13 +54,6 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLong;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-import gov.va.isaac.util.OTFUtility;
-
-import java.beans.PropertyVetoException;
-import java.io.File;
-import java.nio.file.Files;
-import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -58,21 +70,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
-
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicBooleanBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicDoubleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicFloatBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicIntegerBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicLongBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link RefexDataTypeFXNodeBuilder}
@@ -99,9 +96,9 @@ public class RefexDataTypeFXNodeBuilder
 	 * @param validatorData - if not null (and validatorType is not null) data entered into the field will be validated against the validator.
 	 * 
 	 */
-	public static RefexDataTypeNodeDetails buildNodeForType(RefexDynamicDataType dt, RefexDynamicDataBI defaultValue, RefexDynamicDataBI currentValue, 
-			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueTooltip, ReadOnlyObjectProperty<RefexDynamicDataType> polymorphicSelection, 
-			UpdateableBooleanBinding allValid, ObjectProperty<RefexDynamicValidatorType> validatorType, ObjectProperty<RefexDynamicDataBI> validatorData)
+	public static RefexDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
+			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueTooltip, ReadOnlyObjectProperty<DynamicSememeDataType> polymorphicSelection, 
+			UpdateableBooleanBinding allValid, ObjectProperty<DynamicSememeValidatorType> validatorType, ObjectProperty<DynamicSememeDataBI> validatorData)
 	{
 		return buildNodeForType(dt, defaultValue, currentValue, valueIsRequired, defaultValueTooltip, polymorphicSelection, allValid, validatorType, validatorData, true);
 	}
@@ -110,9 +107,9 @@ public class RefexDataTypeFXNodeBuilder
 	 * when valueIsRequired is null, it is understood to be optional.  If it is not null, need to tie it in to the listeners on the field - setting
 	 * an appropriate message if the field is empty.
 	 */
-	private static RefexDataTypeNodeDetails buildNodeForType(RefexDynamicDataType dt, RefexDynamicDataBI defaultValue, RefexDynamicDataBI currentValue, 
-			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueAndValidatorTooltip, ReadOnlyObjectProperty<RefexDynamicDataType> polymorphicSelection, 
-			UpdateableBooleanBinding allValid, ObjectProperty<RefexDynamicValidatorType> validatorType, ObjectProperty<RefexDynamicDataBI> validatorData,
+	private static RefexDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
+			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueAndValidatorTooltip, ReadOnlyObjectProperty<DynamicSememeDataType> polymorphicSelection, 
+			UpdateableBooleanBinding allValid, ObjectProperty<DynamicSememeValidatorType> validatorType, ObjectProperty<DynamicSememeDataBI> validatorData,
 			boolean isFirstLevel)
 	{
 		if (validatorType != null && validatorData == null)
@@ -121,7 +118,7 @@ public class RefexDataTypeFXNodeBuilder
 		}
 		
 		RefexDataTypeNodeDetails returnValue = new RefexDataTypeNodeDetails();;
-		if (RefexDynamicDataType.BOOLEAN == dt)
+		if (DynamicSememeDataType.BOOLEAN == dt)
 		{
 			ChoiceBox<String> cb = new ChoiceBox<>();
 			cb.getItems().add("No Value");
@@ -147,7 +144,7 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				if (defaultValue != null)
 				{
-					if (((RefexDynamicBooleanBI)defaultValue).getDataBoolean())
+					if (((DynamicSememeBooleanBI)defaultValue).getDataBoolean())
 					{
 						cb.getSelectionModel().select(1);
 					}
@@ -163,7 +160,7 @@ public class RefexDataTypeFXNodeBuilder
 			}
 			else
 			{
-				if (((RefexDynamicBooleanBI)currentValue).getDataBoolean())
+				if (((DynamicSememeBooleanBI)currentValue).getDataBoolean())
 				{
 					cb.getSelectionModel().select(1);
 				}
@@ -175,14 +172,14 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				defaultValueAndValidatorTooltip.set("The default value for this field is '" + defaultValue.getDataObject().toString() + "'");
 			}
-			if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+			if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 			{
 				throw new RuntimeException("It doesn't makse sense to assign a validator to a boolean");
 			}
 			returnValue.dataField = cb;
 			returnValue.nodeForDisplay = cb;
 		}
-		else if (RefexDynamicDataType.BYTEARRAY == dt)
+		else if (DynamicSememeDataType.BYTEARRAY == dt)
 		{
 			HBox hbox = new HBox();
 			hbox.setMaxWidth(Double.MAX_VALUE);
@@ -281,13 +278,13 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				defaultValueAndValidatorTooltip.set("If no file is selected, the default value of " + ((DynamicSememeByteArray)defaultValue).getData().length +  " bytes will be used");
 			}
-			if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+			if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 			{
 				throw new RuntimeException("There are currently no supported cases for a validator on a byte array");
 			}
 		}
-		else if (RefexDynamicDataType.DOUBLE == dt || RefexDynamicDataType.FLOAT == dt || RefexDynamicDataType.INTEGER == dt || RefexDynamicDataType.LONG == dt
-				|| RefexDynamicDataType.STRING == dt || RefexDynamicDataType.UUID == dt)
+		else if (DynamicSememeDataType.DOUBLE == dt || DynamicSememeDataType.FLOAT == dt || DynamicSememeDataType.INTEGER == dt || DynamicSememeDataType.LONG == dt
+				|| DynamicSememeDataType.STRING == dt || DynamicSememeDataType.UUID == dt)
 		{
 			TextField tf = new TextField();
 			returnValue.dataField = tf;
@@ -314,7 +311,7 @@ public class RefexDataTypeFXNodeBuilder
 							valueIsRequired.set("You must specify a value for this field");
 						}
 					}
-					else if (RefexDynamicDataType.DOUBLE == dt)
+					else if (DynamicSememeDataType.DOUBLE == dt)
 					{
 						try
 						{
@@ -323,7 +320,7 @@ public class RefexDataTypeFXNodeBuilder
 								valueIsRequired.set("");
 							}
 							DynamicSememeDouble data = new DynamicSememeDouble(Double.parseDouble(tf.getText()));
-							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
 							}
@@ -338,7 +335,7 @@ public class RefexDataTypeFXNodeBuilder
 						}
 
 					}
-					else if (RefexDynamicDataType.FLOAT == dt)
+					else if (DynamicSememeDataType.FLOAT == dt)
 					{
 						try
 						{
@@ -347,7 +344,7 @@ public class RefexDataTypeFXNodeBuilder
 								valueIsRequired.set("");
 							}
 							DynamicSememeFloat data = new DynamicSememeFloat(Float.parseFloat(tf.getText()));
-							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
 							}
@@ -361,7 +358,7 @@ public class RefexDataTypeFXNodeBuilder
 							valueInvalidReason.set("The value (if present) must be a float");
 						}
 					}
-					else if (RefexDynamicDataType.INTEGER == dt)
+					else if (DynamicSememeDataType.INTEGER == dt)
 					{
 						try
 						{
@@ -370,7 +367,7 @@ public class RefexDataTypeFXNodeBuilder
 								valueIsRequired.set("");
 							}
 							DynamicSememeInteger data = new DynamicSememeInteger(Integer.parseInt(tf.getText()));
-							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
 							}
@@ -384,7 +381,7 @@ public class RefexDataTypeFXNodeBuilder
 							valueInvalidReason.set("The value (if present) must be an integer");
 						}
 					}
-					else if (RefexDynamicDataType.LONG == dt)
+					else if (DynamicSememeDataType.LONG == dt)
 					{
 						try
 						{
@@ -393,7 +390,7 @@ public class RefexDataTypeFXNodeBuilder
 								valueIsRequired.set("");
 							}
 							DynamicSememeLong data = new DynamicSememeLong(Long.parseLong(tf.getText()));
-							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
 								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
 							}
@@ -407,13 +404,13 @@ public class RefexDataTypeFXNodeBuilder
 							valueInvalidReason.set("The value (if present) must be a long");
 						}
 					}
-					else if (RefexDynamicDataType.STRING == dt)
+					else if (DynamicSememeDataType.STRING == dt)
 					{
 						if (valueIsRequired != null)
 						{
 							valueIsRequired.set("");
 						}
-						if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+						if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 						{
 							try
 							{
@@ -430,7 +427,7 @@ public class RefexDataTypeFXNodeBuilder
 							valueInvalidReason.set("");
 						}
 					}
-					else if (RefexDynamicDataType.UUID == dt)
+					else if (DynamicSememeDataType.UUID == dt)
 					{
 						if (valueIsRequired != null)
 						{
@@ -438,7 +435,7 @@ public class RefexDataTypeFXNodeBuilder
 						}
 						if (Utility.isUUID(tf.getText()))
 						{
-							if (validatorType != null && validatorType.get() != null && validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
 								try
 								{
@@ -491,7 +488,7 @@ public class RefexDataTypeFXNodeBuilder
 			returnValue.nodeForDisplay = n;
 			setupInfoTooltip(defaultValue, defaultValueAndValidatorTooltip, validatorType, validatorData);
 		}
-		else if (RefexDynamicDataType.NID == dt)
+		else if (DynamicSememeDataType.NID == dt)
 		{
 			ConceptNode cn = new ConceptNode(null, false);
 			returnValue.dataField = cn;
@@ -501,7 +498,7 @@ public class RefexDataTypeFXNodeBuilder
 			if (currentValue != null)
 			{
 				//TODO (artf231429) this doesn't work, if the nid isn't a concept nid.  We need a NidNode, rather than a ConceptNode
-				cn.set(OTFUtility.getConceptVersion(((RefexDynamicNidBI)currentValue).getDataNid()));
+				cn.set(OTFUtility.getConceptVersion(((DynamicSememeNidBI)currentValue).getDataNid()));
 			}
 			
 			if (valueIsRequired != null && defaultValue == null)
@@ -525,7 +522,7 @@ public class RefexDataTypeFXNodeBuilder
 						valueIsRequired.setValue("");
 					}
 					if (validatorType != null && validatorType.get() != null && cn.isValid().get() && cn.getConceptProperty().get() != null &&
-							validatorType.get() != RefexDynamicValidatorType.UNKNOWN)
+							validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 					{
 						try
 						{
@@ -563,7 +560,7 @@ public class RefexDataTypeFXNodeBuilder
 			returnValue.nodeForDisplay = cn.getNode();
 			setupInfoTooltip(defaultValue, defaultValueAndValidatorTooltip, validatorType, validatorData);
 		}
-		else if (RefexDynamicDataType.POLYMORPHIC == dt)
+		else if (DynamicSememeDataType.POLYMORPHIC == dt)
 		{
 			//a slick little bit of recursion... but a bit tricky to keep the validators aligned properly...
 			HBox hBox = new HBox();
@@ -617,11 +614,11 @@ public class RefexDataTypeFXNodeBuilder
 		return returnValue;
 	}
 	
-	public static RefexDynamicDataBI getDataForType(Object data, RefexDynamicColumnInfo ci) throws PropertyVetoException
+	public static DynamicSememeDataBI getDataForType(Object data, DynamicSememeColumnInfo ci) throws PropertyVetoException
 	{
 		//TODO the way this is currently set up - if there is a default value, and the value is not required - it is impossible to leave the row blank.
 		//not sure if that is a necessary use case, or not.
-		if (RefexDynamicDataType.BOOLEAN == ci.getColumnDataType())
+		if (DynamicSememeDataType.BOOLEAN == ci.getColumnDataType())
 		{
 			@SuppressWarnings("unchecked")
 			ChoiceBox<String> cb = (ChoiceBox<String>) data;
@@ -637,11 +634,11 @@ public class RefexDataTypeFXNodeBuilder
 			}
 			else if (ci.getDefaultColumnValue() != null)
 			{
-				value =  ((RefexDynamicBooleanBI) ci.getDefaultColumnValue()).getDataBoolean();
+				value =  ((DynamicSememeBooleanBI) ci.getDefaultColumnValue()).getDataBoolean();
 			}
 			return (value == null ? null : new DynamicSememeBoolean(value));
 		}
-		else if (RefexDynamicDataType.BYTEARRAY == ci.getColumnDataType())
+		else if (DynamicSememeDataType.BYTEARRAY == ci.getColumnDataType())
 		{
 			if (data == null && ci.getDefaultColumnValue() == null)
 			{
@@ -654,9 +651,9 @@ public class RefexDataTypeFXNodeBuilder
 			}
 			return new DynamicSememeByteArray(holder.data);
 		}
-		else if (RefexDynamicDataType.DOUBLE == ci.getColumnDataType() || RefexDynamicDataType.FLOAT == ci.getColumnDataType()
-				|| RefexDynamicDataType.INTEGER == ci.getColumnDataType() || RefexDynamicDataType.LONG == ci.getColumnDataType()
-				|| RefexDynamicDataType.STRING == ci.getColumnDataType() || RefexDynamicDataType.UUID == ci.getColumnDataType())
+		else if (DynamicSememeDataType.DOUBLE == ci.getColumnDataType() || DynamicSememeDataType.FLOAT == ci.getColumnDataType()
+				|| DynamicSememeDataType.INTEGER == ci.getColumnDataType() || DynamicSememeDataType.LONG == ci.getColumnDataType()
+				|| DynamicSememeDataType.STRING == ci.getColumnDataType() || DynamicSememeDataType.UUID == ci.getColumnDataType())
 		{
 			TextField tf = (TextField) data;
 			String text = tf.getText();
@@ -664,36 +661,36 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				return null;
 			}
-			if (RefexDynamicDataType.DOUBLE == ci.getColumnDataType())
+			if (DynamicSememeDataType.DOUBLE == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new DynamicSememeDouble(Double.parseDouble(text)) : (RefexDynamicDoubleBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeDouble(Double.parseDouble(text)) : (DynamicSememeDoubleBI)ci.getDefaultColumnValue());
 			}
-			else if (RefexDynamicDataType.FLOAT == ci.getColumnDataType())
+			else if (DynamicSememeDataType.FLOAT == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new DynamicSememeFloat(Float.parseFloat(text)) : (RefexDynamicFloatBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeFloat(Float.parseFloat(text)) : (DynamicSememeFloatBI)ci.getDefaultColumnValue());
 			}
-			else if (RefexDynamicDataType.INTEGER == ci.getColumnDataType())
+			else if (DynamicSememeDataType.INTEGER == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new DynamicSememeInteger(Integer.parseInt(text)) : (RefexDynamicIntegerBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeInteger(Integer.parseInt(text)) : (DynamicSememeIntegerBI)ci.getDefaultColumnValue());
 			}
-			else if (RefexDynamicDataType.LONG == ci.getColumnDataType())
+			else if (DynamicSememeDataType.LONG == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new DynamicSememeLong(Long.parseLong(text)) : (RefexDynamicLongBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeLong(Long.parseLong(text)) : (DynamicSememeLongBI)ci.getDefaultColumnValue());
 			}
-			else if (RefexDynamicDataType.STRING == ci.getColumnDataType())
+			else if (DynamicSememeDataType.STRING == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new DynamicSememeString(text) : (RefexDynamicStringBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeString(text) : (DynamicSememeStringBI)ci.getDefaultColumnValue());
 			}
-			else if (RefexDynamicDataType.UUID == ci.getColumnDataType())
+			else if (DynamicSememeDataType.UUID == ci.getColumnDataType())
 			{
-				return (text.length() > 0 ? new DynamicSememeUUID(UUID.fromString(text)) : (RefexDynamicUUIDBI)ci.getDefaultColumnValue());
+				return (text.length() > 0 ? new DynamicSememeUUID(UUID.fromString(text)) : (DynamicSememeUUIDBI)ci.getDefaultColumnValue());
 			}
 			else
 			{
 				throw new RuntimeException("oops");
 			}
 		}
-		else if (RefexDynamicDataType.NID == ci.getColumnDataType())
+		else if (DynamicSememeDataType.NID == ci.getColumnDataType())
 		{
 			ConceptNode cn = (ConceptNode)data;
 			if (cn.getConcept() == null)
@@ -702,11 +699,11 @@ public class RefexDataTypeFXNodeBuilder
 			}
 			return new DynamicSememeNid(cn.getConcept().getNid());
 		}
-		else if (RefexDynamicDataType.POLYMORPHIC == ci.getColumnDataType())
+		else if (DynamicSememeDataType.POLYMORPHIC == ci.getColumnDataType())
 		{
 			NestedPolymorphicData nestedData = (NestedPolymorphicData)data;
 			// only need the data type field... (default value isn't allowed for polymorphic)
-			RefexDynamicColumnInfo nestedCI = new RefexDynamicColumnInfo();
+			DynamicSememeColumnInfo nestedCI = new DynamicSememeColumnInfo();
 			nestedCI.setColumnDataType(nestedData.dataType);
 			return getDataForType(nestedData.nestedNode.dataField, nestedCI);
 		}
@@ -716,8 +713,8 @@ public class RefexDataTypeFXNodeBuilder
 		}
 	}
 	
-	private static void setupInfoTooltip(RefexDynamicDataBI defaultValue, SimpleStringProperty defaultValueAndValidatorTooltip, 
-			ObjectProperty<RefexDynamicValidatorType> validatorType, ObjectProperty<RefexDynamicDataBI> validatorData)
+	private static void setupInfoTooltip(DynamicSememeDataBI defaultValue, SimpleStringProperty defaultValueAndValidatorTooltip, 
+			ObjectProperty<DynamicSememeValidatorType> validatorType, ObjectProperty<DynamicSememeDataBI> validatorData)
 	{
 		if ((defaultValue != null || (validatorType != null && validatorType.get() != null)) && defaultValueAndValidatorTooltip != null)
 		{
@@ -726,11 +723,11 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				
 				String temp = null;
-				if (defaultValue.getRefexDataType() == RefexDynamicDataType.NID)
+				if (defaultValue.getRefexDataType() == DynamicSememeDataType.NID)
 				{
 					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) defaultValue).getDataNid());
 				}
-				else if (defaultValue.getRefexDataType() == RefexDynamicDataType.UUID)
+				else if (defaultValue.getRefexDataType() == DynamicSememeDataType.UUID)
 				{
 					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) defaultValue).getDataUUID());
 				}
@@ -748,21 +745,21 @@ public class RefexDataTypeFXNodeBuilder
 					tip = tip + "\n";
 				}
 				tip += "The validator type for this field is '" + 
-						(validatorType.get() == RefexDynamicValidatorType.EXTERNAL ? "Drools" : validatorType.get().getDisplayName()) + "'";
+						(validatorType.get() == DynamicSememeValidatorType.EXTERNAL ? "Drools" : validatorType.get().getDisplayName()) + "'";
 				if (validatorData != null && validatorData.get() != null)
 				{
 					String temp = null;
-					if (validatorData.get().getRefexDataType() == RefexDynamicDataType.NID)
+					if (validatorData.get().getRefexDataType() == DynamicSememeDataType.NID)
 					{
 						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) validatorData.get()).getDataNid());
 					}
-					else if (validatorData.get().getRefexDataType() == RefexDynamicDataType.UUID)
+					else if (validatorData.get().getRefexDataType() == DynamicSememeDataType.UUID)
 					{
 						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) validatorData.get()).getDataUUID());
 					}
 					if (temp == null)
 					{
-						if (validatorType.get() == RefexDynamicValidatorType.EXTERNAL)
+						if (validatorType.get() == DynamicSememeValidatorType.EXTERNAL)
 						{
 							RefexDroolsValidatorImplInfo rdvii = RefexDroolsValidator.readFromData(validatorData.get());
 							if (rdvii != null)

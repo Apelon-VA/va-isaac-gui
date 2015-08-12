@@ -18,12 +18,12 @@
  */
 package gov.va.isaac.util;
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
+import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeValidatorType;
 
 /**
  * {@link Interval}
  * 
- * The interval parsing code was basically copied from {@link RefexDynamicValidatorType}
+ * The interval parsing code was basically copied from {@link DynamicSememeValidatorType}
  * 
  * Maybe find a better place to share this code, rather than copy/paste inheritance...
  *

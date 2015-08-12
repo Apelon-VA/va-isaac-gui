@@ -18,18 +18,6 @@
  */
 package gov.va.isaac.drools.refexUtils;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.drools.helper.ResultsCollector;
-import gov.va.isaac.drools.helper.ResultsItem;
-import gov.va.isaac.drools.helper.TerminologyHelperDrools;
-import gov.va.isaac.drools.manager.DroolsExecutor;
-import gov.va.isaac.drools.manager.DroolsExecutorsManager;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.RefexDynamicArray;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,14 +26,25 @@ import java.util.UUID;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicArrayBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.drools.helper.ResultsCollector;
+import gov.va.isaac.drools.helper.ResultsItem;
+import gov.va.isaac.drools.helper.TerminologyHelperDrools;
+import gov.va.isaac.drools.manager.DroolsExecutor;
+import gov.va.isaac.drools.manager.DroolsExecutorsManager;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArrayBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeStringBI;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeArray;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 /**
  * {@link RefexDroolsValidator}
@@ -68,7 +67,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	 * @return true if valid. Exception otherwise.
 	 * @throws RuntimeException - if the validation fails. User-friendly message will be in the error.
 	 */
-	public static boolean validate(String droolsValidatorName, RefexDynamicDataBI dataToValidate)
+	public static boolean validate(String droolsValidatorName, DynamicSememeDataBI dataToValidate)
 	{
 		try
 		{
@@ -83,10 +82,10 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 
 			ArrayList<Object> facts = new ArrayList<>();
 
-			if (dataToValidate.getRefexDataType() == RefexDynamicDataType.NID)
+			if (dataToValidate.getRefexDataType() == DynamicSememeDataType.NID)
 			{
 				//switch it to a UUID, for drools purposes.
-				UUID temp = ExtendedAppContext.getDataStore().getUuidsForNid(((RefexDynamicNidBI)dataToValidate).getDataNid()).get(0);
+				UUID temp = ExtendedAppContext.getDataStore().getUuidsForNid(((DynamicSememeNidBI)dataToValidate).getDataNid()).get(0);
 				facts.add(new DynamicSememeUUID(temp));
 			}
 			else
@@ -139,11 +138,11 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 		return true;
 	}
 
-	public static RefexDynamicArray<DynamicSememeString> createValidatorDefinitionData(RefexDroolsValidatorImplInfo rdvii)
+	public static DynamicSememeArray<DynamicSememeString> createValidatorDefinitionData(RefexDroolsValidatorImplInfo rdvii)
 	{
 		try
 		{
-			return new RefexDynamicArray<DynamicSememeString>(
+			return new DynamicSememeArray<DynamicSememeString>(
 					new DynamicSememeString[]{new DynamicSememeString("RefexDroolsValidator"), new DynamicSememeString(rdvii.name())});
 		}
 		catch (PropertyVetoException e)
@@ -163,7 +162,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	 * @throws RuntimeException if the input data can't be parsed as expected.
 	 * @return - null, if input is null, or no drools impl is mapped to the 2nd part of the data. 
 	 */
-	public static RefexDroolsValidatorImplInfo readFromData(RefexDynamicDataBI validatorDefinitionData) throws RuntimeException
+	public static RefexDroolsValidatorImplInfo readFromData(DynamicSememeDataBI validatorDefinitionData) throws RuntimeException
 	{
 		try
 		{
@@ -172,7 +171,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 				return null;
 			}
 			@SuppressWarnings("unchecked")
-			RefexDynamicStringBI[] validatorInfo = ((RefexDynamicArrayBI<RefexDynamicStringBI>)validatorDefinitionData).getDataArray();
+			DynamicSememeStringBI[] validatorInfo = ((DynamicSememeArrayBI<DynamicSememeStringBI>)validatorDefinitionData).getDataArray();
 			if (validatorInfo[0].getDataString().equals("RefexDroolsValidator"))
 			{
 				return RefexDroolsValidatorImplInfo.valueOf(validatorInfo[1].getDataString());
@@ -193,11 +192,11 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	}
 
 	/**
-	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI#validate(org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI,
-	 * org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI, org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate)
+	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI#validate(org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataBI,
+	 * org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.DynamicSememeStringBI, org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate)
 	 */
 	@Override
-	public boolean validate(RefexDynamicDataBI userData, RefexDynamicArrayBI<RefexDynamicStringBI> validatorDefinitionData, ViewCoordinate vc) throws RuntimeException
+	public boolean validate(DynamicSememeDataBI userData, DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, ViewCoordinate vc) throws RuntimeException
 	{
 		RefexDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
 		if (rdvi == null)
@@ -205,7 +204,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 			throw new RuntimeException("The specified validator is not mapped - cannot validate");
 		}
 
-		for (RefexDynamicDataType rddt : rdvi.getApplicableDataTypes())
+		for (DynamicSememeDataType rddt : rdvi.getApplicableDataTypes())
 		{
 			if (userData.getRefexDataType() == rddt)
 			{
@@ -217,10 +216,10 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	}
 
 	/**
-	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI#validatorSupportsType(org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI, org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType)
+	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeExternalValidatorBI#validatorSupportsType(org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.DynamicSememeStringBI, org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataType)
 	 */
 	@Override
-	public boolean validatorSupportsType(RefexDynamicArrayBI<RefexDynamicStringBI> validatorDefinitionData, RefexDynamicDataType dataType)
+	public boolean validatorSupportsType(DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, DynamicSememeDataType dataType)
 	{
 		RefexDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
 		if (rdvi == null)
@@ -228,7 +227,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 			throw new RuntimeException("The specified validator is not mapped - cannot validate");
 		}
 
-		for (RefexDynamicDataType rddt : rdvi.getApplicableDataTypes())
+		for (DynamicSememeDataType rddt : rdvi.getApplicableDataTypes())
 		{
 			if (rddt == dataType)
 			{

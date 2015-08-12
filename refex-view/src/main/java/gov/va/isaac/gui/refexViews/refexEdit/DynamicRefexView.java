@@ -18,6 +18,37 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.inject.Named;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.glassfish.hk2.api.PerLookup;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
+import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
+import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
+import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableMapWrapper;
+import com.sun.javafx.tk.Toolkit;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
@@ -35,20 +66,9 @@ import gov.va.isaac.refexDynamic.RefexAnnotationSearcher;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -82,32 +102,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javax.inject.Named;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.glassfish.hk2.api.PerLookup;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-
-import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
-import gov.vha.isaac.ochre.api.index.SearchResult;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableMapWrapper;
-import com.sun.javafx.tk.Toolkit;
 
 
 /**
@@ -123,15 +117,15 @@ import com.sun.javafx.tk.Toolkit;
 public class DynamicRefexView implements RefexViewI
 {
 	private VBox rootNode_ = null;
-	private TreeTableView<RefexDynamicGUI> ttv_;
-	private TreeItem<RefexDynamicGUI> treeRoot_;
+	private TreeTableView<DynamicSememeGUI> ttv_;
+	private TreeItem<DynamicSememeGUI> treeRoot_;
 	private Button retireButton_, addButton_, commitButton_, cancelButton_, editButton_, viewUsageButton_;
 	private Label summary_ = new Label("");
 	private ToggleButton stampButton_, activeOnlyButton_, historyButton_;
 	private Button displayFSNButton_;
 	private UpdateableBooleanBinding currentRowSelected_, selectedRowIsActive_;
 	private UpdateableBooleanBinding showStampColumns_, showActiveOnly_, showFullHistory_, showViewUsageButton_;
-	private TreeTableColumn<RefexDynamicGUI, String> stampColumn_;
+	private TreeTableColumn<DynamicSememeGUI, String> stampColumn_;
 	private BooleanProperty hasUncommitted_ = new SimpleBooleanProperty(false);
 
 	private Text placeholderText = new Text("No Dynamic Sememes were found associated with the component");
@@ -297,17 +291,17 @@ public class DynamicRefexView implements RefexViewI
 					DialogResponse dr = dialog.showYesNoDialog("Retire?", "Do you want to retire the selected sememe entries?");
 					if (DialogResponse.YES == dr)
 					{
-						ObservableList<TreeItem<RefexDynamicGUI>> selected = ttv_.getSelectionModel().getSelectedItems();
+						ObservableList<TreeItem<DynamicSememeGUI>> selected = ttv_.getSelectionModel().getSelectedItems();
 						if (selected != null && selected.size() > 0)
 						{
-							for (TreeItem<RefexDynamicGUI> refexTreeItem : selected)
+							for (TreeItem<DynamicSememeGUI> refexTreeItem : selected)
 							{
-								RefexDynamicGUI refex = refexTreeItem.getValue();
+								DynamicSememeGUI refex = refexTreeItem.getValue();
 								if (!refex.getRefex().isActive())
 								{
 									continue;
 								}
-								RefexDynamicCAB rcab =  refex.getRefex().makeBlueprint(OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.INCLUDE);
+								DynamicSememeCAB rcab =  refex.getRefex().makeBlueprint(OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.INCLUDE);
 								rcab.setStatus(Status.INACTIVE);
 								OTFUtility.getBuilder().construct(rcab);
 								
@@ -398,7 +392,7 @@ public class DynamicRefexView implements RefexViewI
 						//Need to find out if this component has a the dynamic refex definition annotation on it.
 						try
 						{
-							RefexDynamicUsageDescription.readDynamicSememeUsageDescription(setFromType_.getComponentNid());
+							DynamicSememeUsageDescription.readDynamicSememeUsageDescription(setFromType_.getComponentNid());
 							show = true;
 						}
 						catch (Exception e)
@@ -442,7 +436,7 @@ public class DynamicRefexView implements RefexViewI
 					if (stampColumn_ != null)
 					{
 						stampColumn_.setVisible(visible);
-						for (TreeTableColumn<RefexDynamicGUI, ?> nested : stampColumn_.getColumns())
+						for (TreeTableColumn<DynamicSememeGUI, ?> nested : stampColumn_.getColumns())
 						{
 							nested.setVisible(visible);
 						}
@@ -790,18 +784,18 @@ public class DynamicRefexView implements RefexViewI
 			{
 				removeFilterCacheListeners();
 				
-				final ArrayList<TreeTableColumn<RefexDynamicGUI, ?>> treeColumns = new ArrayList<>();
+				final ArrayList<TreeTableColumn<DynamicSememeGUI, ?>> treeColumns = new ArrayList<>();
 				Map<String, List<String>> toolTipStore = new HashMap<>();
 				
-				TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> ttStatusCol = new TreeTableColumn<>(DynamicRefexColumnType.STATUS_CONDENSED.toString());
+				TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI> ttStatusCol = new TreeTableColumn<>(DynamicRefexColumnType.STATUS_CONDENSED.toString());
 				storeTooltip(toolTipStore, ttStatusCol.getText(), "Status Markers - for active / inactive and current / historical and uncommitted");
 
 				ttStatusCol.setSortable(true);
 				ttStatusCol.setResizable(true);
-				ttStatusCol.setComparator(new Comparator<RefexDynamicGUI>()
+				ttStatusCol.setComparator(new Comparator<DynamicSememeGUI>()
 				{
 					@Override
-					public int compare(RefexDynamicGUI o1, RefexDynamicGUI o2)
+					public int compare(DynamicSememeGUI o1, DynamicSememeGUI o2)
 					{
 						return o1.compareTo(DynamicRefexColumnType.STATUS_CONDENSED, null, o2);
 					}
@@ -812,7 +806,7 @@ public class DynamicRefexView implements RefexViewI
 				});
 				ttStatusCol.setCellValueFactory((callback) ->
 				{
-					return new ReadOnlyObjectWrapper<RefexDynamicGUI>(callback.getValue().getValue());
+					return new ReadOnlyObjectWrapper<DynamicSememeGUI>(callback.getValue().getValue());
 				});
 				treeColumns.add(ttStatusCol);
 				
@@ -820,7 +814,7 @@ public class DynamicRefexView implements RefexViewI
 				if (setFromType_.getComponentNid() == null)
 				{
 					//If the component is null, the assemblage is always the same - don't show.
-					TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>  ttCol = buildComponentCellColumn(DynamicRefexColumnType.COMPONENT);
+					TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI>  ttCol = buildComponentCellColumn(DynamicRefexColumnType.COMPONENT);
 					storeTooltip(toolTipStore, ttCol.getText(), "The Referenced component of this Sememe");
 					HeaderNode<String> headerNode = new HeaderNode<>(
 							filterCache_,
@@ -829,7 +823,7 @@ public class DynamicRefexView implements RefexViewI
 							rootNode_.getScene(),
 							new HeaderNode.DataProvider<String>() {
 						@Override
-						public String getData(RefexDynamicGUI source) {
+						public String getData(DynamicSememeGUI source) {
 							return source.getDisplayStrings(DynamicRefexColumnType.COMPONENT, null).getKey();
 						}
 					});
@@ -840,7 +834,7 @@ public class DynamicRefexView implements RefexViewI
 				else
 				{
 					//if the assemblage is null, the component is always the same - don't show.
-					TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>  ttCol = buildComponentCellColumn(DynamicRefexColumnType.ASSEMBLAGE);
+					TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI>  ttCol = buildComponentCellColumn(DynamicRefexColumnType.ASSEMBLAGE);
 					storeTooltip(toolTipStore, ttCol.getText(), "The Assemblage concept that defines this Sememe");
 					HeaderNode<String> headerNode = new HeaderNode<>(
 							filterCache_,
@@ -849,7 +843,7 @@ public class DynamicRefexView implements RefexViewI
 							rootNode_.getScene(),
 							new HeaderNode.DataProvider<String>() {
 						@Override
-						public String getData(RefexDynamicGUI source) {
+						public String getData(DynamicSememeGUI source) {
 							return source.getDisplayStrings(DynamicRefexColumnType.ASSEMBLAGE, null).getKey();
 						}
 					});
@@ -858,7 +852,7 @@ public class DynamicRefexView implements RefexViewI
 					treeColumns.add(ttCol);
 				}
 				
-				TreeTableColumn<RefexDynamicGUI, String> ttStringCol = new TreeTableColumn<>();
+				TreeTableColumn<DynamicSememeGUI, String> ttStringCol = new TreeTableColumn<>();
 				ttStringCol = new TreeTableColumn<>();
 				ttStringCol.setText(DynamicRefexColumnType.ATTACHED_DATA.toString());
 				storeTooltip(toolTipStore, ttStringCol.getText(), "The various data fields attached to this Sememe instance");
@@ -872,7 +866,7 @@ public class DynamicRefexView implements RefexViewI
 				 * will be the same.  The List in the third level is for cases where a single assemblage concept re-uses the same column description 
 				 * details multiple times.
 				*/
-				Hashtable<UUID, Hashtable<UUID, List<RefexDynamicColumnInfo>>> uniqueColumns;
+				Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> uniqueColumns;
 				
 				if (setFromType_.getComponentNid() != null)
 				{
@@ -901,10 +895,10 @@ public class DynamicRefexView implements RefexViewI
 					//want to rework it at this point... might come back and cleanup this mess later.
 					uniqueColumns = new Hashtable<>();
 					
-					RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(setFromType_.getAssemblyNid());
-					for (RefexDynamicColumnInfo col : rdud.getColumnInfo())
+					DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(setFromType_.getAssemblyNid());
+					for (DynamicSememeColumnInfo col : rdud.getColumnInfo())
 					{
-						Hashtable<UUID, List<RefexDynamicColumnInfo>> nested = uniqueColumns.get(col.getColumnDescriptionConcept());
+						Hashtable<UUID, List<DynamicSememeColumnInfo>> nested = uniqueColumns.get(col.getColumnDescriptionConcept());
 						if (nested == null)
 						{
 							nested = new Hashtable<>();
@@ -912,7 +906,7 @@ public class DynamicRefexView implements RefexViewI
 						}
 						
 						UUID assemblyUUID = ExtendedAppContext.getDataStore().getUuidPrimordialForNid(rdud.getRefexUsageDescriptorNid());
-						List<RefexDynamicColumnInfo> doubleNested = nested.get(assemblyUUID);
+						List<DynamicSememeColumnInfo> doubleNested = nested.get(assemblyUUID);
 						if (doubleNested == null)
 						{
 							doubleNested = new ArrayList<>();
@@ -922,22 +916,22 @@ public class DynamicRefexView implements RefexViewI
 					}
 				}
 				
-				ArrayList<Hashtable<UUID, List<RefexDynamicColumnInfo>>> sortedUniqueColumns = new ArrayList<>();
+				ArrayList<Hashtable<UUID, List<DynamicSememeColumnInfo>>> sortedUniqueColumns = new ArrayList<>();
 				sortedUniqueColumns.addAll(uniqueColumns.values());
-				Collections.sort(sortedUniqueColumns, new Comparator<Hashtable<UUID, List<RefexDynamicColumnInfo>>>()
+				Collections.sort(sortedUniqueColumns, new Comparator<Hashtable<UUID, List<DynamicSememeColumnInfo>>>()
 					{
 						@Override
-						public int compare(Hashtable<UUID, List<RefexDynamicColumnInfo>> o1, Hashtable<UUID, List<RefexDynamicColumnInfo>> o2)
+						public int compare(Hashtable<UUID, List<DynamicSememeColumnInfo>> o1, Hashtable<UUID, List<DynamicSememeColumnInfo>> o2)
 						{
 							return Integer.compare(o1.values().iterator().next().get(0).getColumnOrder(),o2.values().iterator().next().get(0).getColumnOrder()); 
 						}
 					});
 				
 				//Create columns for every different type of data column we see in use
-				for (Hashtable<UUID, List<RefexDynamicColumnInfo>> col : sortedUniqueColumns)
+				for (Hashtable<UUID, List<DynamicSememeColumnInfo>> col : sortedUniqueColumns)
 				{
 					int max = 0;
-					for (List<RefexDynamicColumnInfo> item : col.values())
+					for (List<DynamicSememeColumnInfo> item : col.values())
 					{
 						if (item.size() > max)
 						{
@@ -948,7 +942,7 @@ public class DynamicRefexView implements RefexViewI
 					for (int i = 0; i < max; i++)
 					{
 						final String name = col.values().iterator().next().get(0).getColumnName(); //all the same, just pick the first
-						TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> nestedCol = new TreeTableColumn<>(name);
+						TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI> nestedCol = new TreeTableColumn<>(name);
 						storeTooltip(toolTipStore, nestedCol.getText(), col.values().iterator().next().get(0).getColumnDescription());
 						
 						// FILTER ID
@@ -962,7 +956,7 @@ public class DynamicRefexView implements RefexViewI
 								rootNode_.getScene(),
 								new HeaderNode.DataProvider<String>() {
 							@Override
-							public String getData(RefexDynamicGUI source) {
+							public String getData(DynamicSememeGUI source) {
 								if (source == null) {
 									return null;
 								}
@@ -975,7 +969,7 @@ public class DynamicRefexView implements RefexViewI
 										
 										if (ExtendedAppContext.getDataStore().getNidForUuids(uuid) == source.getRefex().getAssemblageNid())
 										{
-											List<RefexDynamicColumnInfo> colInfo =  col.get(uuid);
+											List<DynamicSememeColumnInfo> colInfo =  col.get(uuid);
 											Integer refexColumnOrder = (colInfo.size() > listItem ? 
 													(source.getRefex().getData().length <= colInfo.get(listItem).getColumnOrder() ? null 
 														: colInfo.get(listItem).getColumnOrder()): null);
@@ -998,10 +992,10 @@ public class DynamicRefexView implements RefexViewI
 						
 						nestedCol.setSortable(true);
 						nestedCol.setResizable(true);
-						nestedCol.setComparator(new Comparator<RefexDynamicGUI>()
+						nestedCol.setComparator(new Comparator<DynamicSememeGUI>()
 						{
 							@Override
-							public int compare(RefexDynamicGUI o1, RefexDynamicGUI o2)
+							public int compare(DynamicSememeGUI o1, DynamicSememeGUI o2)
 							{
 								try
 								{
@@ -1012,7 +1006,7 @@ public class DynamicRefexView implements RefexViewI
 										
 										if (ExtendedAppContext.getDataStore().getNidForUuids(uuid) == o1.getRefex().getAssemblageNid())
 										{
-											List<RefexDynamicColumnInfo> colInfo =  col.get(uuid);
+											List<DynamicSememeColumnInfo> colInfo =  col.get(uuid);
 											Integer refexColumnOrder = (colInfo.size() > listItem ? 
 													(o1.getRefex().getData().length <= colInfo.get(listItem).getColumnOrder() ? null 
 														: colInfo.get(listItem).getColumnOrder()): null);
@@ -1059,7 +1053,7 @@ public class DynamicRefexView implements RefexViewI
 				stampColumn_ = ttStringCol;
 				treeColumns.add(ttStringCol);
 				
-				TreeTableColumn<RefexDynamicGUI, String> nestedCol = new TreeTableColumn<>();
+				TreeTableColumn<DynamicSememeGUI, String> nestedCol = new TreeTableColumn<>();
 				nestedCol.setText(DynamicRefexColumnType.STATUS_STRING.toString());
 				storeTooltip(toolTipStore, nestedCol.getText(), "The status of the instance");
 				HeaderNode<String> nestedColHeaderNode = new HeaderNode<>(
@@ -1069,7 +1063,7 @@ public class DynamicRefexView implements RefexViewI
 						rootNode_.getScene(),
 						new HeaderNode.DataProvider<String>() {
 							@Override
-							public String getData(RefexDynamicGUI source) {
+							public String getData(DynamicSememeGUI source) {
 								return source.getDisplayStrings(DynamicRefexColumnType.STATUS_STRING, null).getKey();
 							}
 						});
@@ -1093,7 +1087,7 @@ public class DynamicRefexView implements RefexViewI
 						rootNode_.getScene(),
 						new HeaderNode.DataProvider<String>() {
 							@Override
-							public String getData(RefexDynamicGUI source) {
+							public String getData(DynamicSememeGUI source) {
 								return source.getDisplayStrings(DynamicRefexColumnType.TIME, null).getKey();
 							}
 						});
@@ -1106,7 +1100,7 @@ public class DynamicRefexView implements RefexViewI
 				});
 				ttStringCol.getColumns().add(nestedCol);
 				
-				TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> nestedIntCol = buildComponentCellColumn(DynamicRefexColumnType.AUTHOR); 
+				TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI> nestedIntCol = buildComponentCellColumn(DynamicRefexColumnType.AUTHOR); 
 				storeTooltip(toolTipStore, nestedIntCol.getText(), "The author of the instance");
 				ttStringCol.getColumns().add(nestedIntCol);
 				
@@ -1120,7 +1114,7 @@ public class DynamicRefexView implements RefexViewI
 
 				Platform.runLater(() ->
 				{
-					for (TreeTableColumn<RefexDynamicGUI, ?> tc : treeColumns)
+					for (TreeTableColumn<DynamicSememeGUI, ?> tc : treeColumns)
 					{
 						ttv_.getColumns().add(tc);
 					}
@@ -1128,9 +1122,9 @@ public class DynamicRefexView implements RefexViewI
 					//Horrible hack to set a reasonable default size on the columns.
 					//Min width to the width of the header column.
 					Font f = new Font("System Bold", 13.0);
-					for (final TreeTableColumn<RefexDynamicGUI, ?> col : ttv_.getColumns())
+					for (final TreeTableColumn<DynamicSememeGUI, ?> col : ttv_.getColumns())
 					{
-						for (TreeTableColumn<RefexDynamicGUI, ?> nCol : col.getColumns())
+						for (TreeTableColumn<DynamicSememeGUI, ?> nCol : col.getColumns())
 						{
 							String text = (nCol.getGraphic() != null 
 									&& (nCol.getGraphic() instanceof Label || nCol.getGraphic() instanceof HBox) 
@@ -1145,7 +1139,7 @@ public class DynamicRefexView implements RefexViewI
 							FloatBinding binding = new FloatBinding()
 							{
 								{
-									for (TreeTableColumn<RefexDynamicGUI, ?> nCol : col.getColumns())
+									for (TreeTableColumn<DynamicSememeGUI, ?> nCol : col.getColumns())
 									{
 										bind(nCol.widthProperty());
 										bind(nCol.visibleProperty());
@@ -1155,7 +1149,7 @@ public class DynamicRefexView implements RefexViewI
 								protected float computeValue()
 								{
 									float temp = 0;
-									for (TreeTableColumn<RefexDynamicGUI, ?> nCol : col.getColumns())
+									for (TreeTableColumn<DynamicSememeGUI, ?> nCol : col.getColumns())
 									{
 										if (nCol.isVisible())
 										{
@@ -1241,7 +1235,7 @@ public class DynamicRefexView implements RefexViewI
 		}
 
 		//Now add the data
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData;
+		ArrayList<TreeItem<DynamicSememeGUI>> rowData;
 		if (setFromType_.getComponentNid() != null)
 		{
 			rowData = getDataRows(setFromType_.getComponentBI(), null);
@@ -1271,9 +1265,9 @@ public class DynamicRefexView implements RefexViewI
 		addFilterCacheListeners();
 	}
 	
-	private TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> buildComponentCellColumn(DynamicRefexColumnType type)
+	private TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI> buildComponentCellColumn(DynamicRefexColumnType type)
 	{
-		TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> ttCol = new TreeTableColumn<>(type.toString());
+		TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI> ttCol = new TreeTableColumn<>(type.toString());
 		HeaderNode<String> headerNode = new HeaderNode<>(
 				filterCache_,
 				ttCol,
@@ -1281,7 +1275,7 @@ public class DynamicRefexView implements RefexViewI
 				rootNode_.getScene(),
 				new HeaderNode.DataProvider<String>() {
 					@Override
-					public String getData(RefexDynamicGUI source) {
+					public String getData(DynamicSememeGUI source) {
 						return source.getDisplayStrings(type, null).getKey();
 					}
 				});
@@ -1289,21 +1283,21 @@ public class DynamicRefexView implements RefexViewI
 		
 		ttCol.setSortable(true);
 		ttCol.setResizable(true);
-		ttCol.setComparator(new Comparator<RefexDynamicGUI>()
+		ttCol.setComparator(new Comparator<DynamicSememeGUI>()
 		{
 			@Override
-			public int compare(RefexDynamicGUI o1, RefexDynamicGUI o2)
+			public int compare(DynamicSememeGUI o1, DynamicSememeGUI o2)
 			{
 				return o1.compareTo(type, null, o2);
 			}
 		});
 		ttCol.setCellFactory((colInfo) -> {return new ComponentDataCell(type);});
-		ttCol.setCellValueFactory((callback) -> {return new ReadOnlyObjectWrapper<RefexDynamicGUI>(callback.getValue().getValue());});
+		ttCol.setCellValueFactory((callback) -> {return new ReadOnlyObjectWrapper<DynamicSememeGUI>(callback.getValue().getValue());});
 		return ttCol;
 	}
 
 	
-	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(ComponentChronicleBI<?> component, TreeItem<RefexDynamicGUI> nestUnder) 
+	private ArrayList<TreeItem<DynamicSememeGUI>> getDataRows(ComponentChronicleBI<?> component, TreeItem<DynamicSememeGUI> nestUnder) 
 			throws IOException, ContradictionException
 	{
 		if (component instanceof ConceptChronicleBI)
@@ -1316,7 +1310,7 @@ public class DynamicRefexView implements RefexViewI
 			return (nestUnder == null ? new ArrayList<>() : null);
 		}
 
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(component.getRefexesDynamic());
+		ArrayList<TreeItem<DynamicSememeGUI>> rowData = createFilteredRowData(component.getRefexesDynamic());
 		
 		if (nestUnder != null)
 		{
@@ -1329,20 +1323,20 @@ public class DynamicRefexView implements RefexViewI
 		}
 	}
 	
-	private ArrayList<TreeItem<RefexDynamicGUI>> createFilteredRowData(Collection<? extends RefexDynamicChronicleBI<?>> refexChronicles) throws IOException, 
+	private ArrayList<TreeItem<DynamicSememeGUI>> createFilteredRowData(Collection<? extends DynamicSememeChronicleBI<?>> refexChronicles) throws IOException, 
 		ContradictionException
 	{
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = new ArrayList<>();
-		ArrayList<RefexDynamicVersionBI<?>> allVersions = new ArrayList<>();
+		ArrayList<TreeItem<DynamicSememeGUI>> rowData = new ArrayList<>();
+		ArrayList<DynamicSememeVersionBI<?>> allVersions = new ArrayList<>();
 		
 		//Since the WB API is horribly undocumented, we have no idea what the behavior of these methods are.  Are chonicles ordered?
 		//Are they guaranteed to remain in order?  What order?  Same question with versions.  Is the order maintained?  What order is it?
-		for (RefexDynamicChronicleBI<?> refexChronicle: refexChronicles)
+		for (DynamicSememeChronicleBI<?> refexChronicle: refexChronicles)
 		{
 			//null check in case the lucene search returned a ref to something that didn't exist (which is an error I've seen before)
 			if (refexChronicle != null)
 			{
-				for (RefexDynamicVersionBI<?> refexVersion : refexChronicle.getVersions())
+				for (DynamicSememeVersionBI<?> refexVersion : refexChronicle.getVersions())
 				{
 					allVersions.add(refexVersion);
 				}
@@ -1350,10 +1344,10 @@ public class DynamicRefexView implements RefexViewI
 		}
 		
 		//Sort the newest to the top.
-		Collections.sort(allVersions, new Comparator<RefexDynamicVersionBI<?>>()
+		Collections.sort(allVersions, new Comparator<DynamicSememeVersionBI<?>>()
 		{
 			@Override
-			public int compare(RefexDynamicVersionBI<?> o1, RefexDynamicVersionBI<?> o2)
+			public int compare(DynamicSememeVersionBI<?> o1, DynamicSememeVersionBI<?> o2)
 			{
 				if (o1.getPrimordialUuid().equals(o2.getPrimordialUuid()))
 				{
@@ -1368,7 +1362,7 @@ public class DynamicRefexView implements RefexViewI
 		
 		UUID lastSeenRefex = null;
 		
-		for (RefexDynamicVersionBI<?> r : allVersions)
+		for (DynamicSememeVersionBI<?> r : allVersions)
 		{
 			if (!showFullHistory_.get() && r.getPrimordialUuid().equals(lastSeenRefex))
 			{
@@ -1376,13 +1370,13 @@ public class DynamicRefexView implements RefexViewI
 			}
 			if (showActiveOnly_.get() == false || r.isActive())
 			{
-				RefexDynamicGUI newRefexDynamicGUI = new RefexDynamicGUI(r, !r.getPrimordialUuid().equals(lastSeenRefex));  //first one we see with a new UUID is current, others are historical
+				DynamicSememeGUI newDynamicSememeGUI = new DynamicSememeGUI(r, !r.getPrimordialUuid().equals(lastSeenRefex));  //first one we see with a new UUID is current, others are historical
 				
 				// HeaderNode FILTERING DONE HERE
 				boolean filterOut = false;
 				for (HeaderNode.Filter<?> filter : filterCache_.values()) {
 					if (filter.getFilterValues().size() > 0) {
-						if (! filter.accept(newRefexDynamicGUI)) {
+						if (! filter.accept(newDynamicSememeGUI)) {
 							filterOut = true;
 							break;
 						}
@@ -1390,9 +1384,9 @@ public class DynamicRefexView implements RefexViewI
 				}
 				
 				if (! filterOut) {
-					TreeItem<RefexDynamicGUI> ti = new TreeItem<>();
+					TreeItem<DynamicSememeGUI> ti = new TreeItem<>();
 
-					ti.setValue(newRefexDynamicGUI);
+					ti.setValue(newDynamicSememeGUI);
 					//recurse
 					getDataRows(r, ti);  
 					rowData.add(ti);
@@ -1410,9 +1404,9 @@ public class DynamicRefexView implements RefexViewI
 	 * will be the same.  The List in the third level is for cases where a single assemblage concept re-uses the same column description 
 	 * details multiple times.
 	 */
-	private Hashtable<UUID, Hashtable<UUID, List<RefexDynamicColumnInfo>>> getUniqueColumns(ComponentChronicleBI<?> component) throws IOException, ContradictionException
+	private Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> getUniqueColumns(ComponentChronicleBI<?> component) throws IOException, ContradictionException
 	{
-		Hashtable<UUID, Hashtable<UUID, List<RefexDynamicColumnInfo>>> columns = new Hashtable<>();
+		Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> columns = new Hashtable<>();
 
 		if (component instanceof ConceptChronicleBI)
 		{
@@ -1424,18 +1418,18 @@ public class DynamicRefexView implements RefexViewI
 			return columns;
 		}
 
-		for (RefexDynamicChronicleBI<?> refex : component.getRefexesDynamic())
+		for (DynamicSememeChronicleBI<?> refex : component.getRefexesDynamic())
 		{
 			boolean assemblageWasNull = false;
-			for (RefexDynamicColumnInfo column : refex.getRefexDynamicUsageDescription().getColumnInfo())
+			for (DynamicSememeColumnInfo column : refex.getDynamicSememeUsageDescription().getColumnInfo())
 			{
-				Hashtable<UUID, List<RefexDynamicColumnInfo>> inner = columns.get(column.getColumnDescriptionConcept());
+				Hashtable<UUID, List<DynamicSememeColumnInfo>> inner = columns.get(column.getColumnDescriptionConcept());
 				if (inner == null)
 				{
 					inner = new Hashtable<>();
 					columns.put(column.getColumnDescriptionConcept(), inner);
 				}
-				List<RefexDynamicColumnInfo> innerValues = inner.get(column.getAssemblageConcept());
+				List<DynamicSememeColumnInfo> innerValues = inner.get(column.getAssemblageConcept());
 				if (innerValues == null)
 				{
 					assemblageWasNull = true;
@@ -1448,11 +1442,11 @@ public class DynamicRefexView implements RefexViewI
 				}
 			}
 			
-			for (RefexDynamicChronicleBI<?> refexNested: refex.getRefexesDynamic())
+			for (DynamicSememeChronicleBI<?> refexNested: refex.getRefexesDynamic())
 			{
 				//recurse
-				Hashtable<UUID, Hashtable<UUID, List<RefexDynamicColumnInfo>>> nested = getUniqueColumns(refexNested);
-				for (Entry<UUID, Hashtable<UUID, List<RefexDynamicColumnInfo>>> nestedItem : nested.entrySet())
+				Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nested = getUniqueColumns(refexNested);
+				for (Entry<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nestedItem : nested.entrySet())
 				{
 					if (columns.get(nestedItem.getKey()) == null)
 					{
@@ -1460,8 +1454,8 @@ public class DynamicRefexView implements RefexViewI
 					}
 					else
 					{
-						Hashtable<UUID, List<RefexDynamicColumnInfo>> mergeInto = columns.get(nestedItem.getKey());
-						for (Entry<UUID, List<RefexDynamicColumnInfo>> toMergeItem : nestedItem.getValue().entrySet())
+						Hashtable<UUID, List<DynamicSememeColumnInfo>> mergeInto = columns.get(nestedItem.getKey());
+						for (Entry<UUID, List<DynamicSememeColumnInfo>> toMergeItem : nestedItem.getValue().entrySet())
 						{
 							if (mergeInto.get(toMergeItem.getKey()) == null)
 							{
@@ -1479,7 +1473,7 @@ public class DynamicRefexView implements RefexViewI
 		return columns;
 	}
 	
-	private void checkForUncommittedRefexes(List<TreeItem<RefexDynamicGUI>> items)
+	private void checkForUncommittedRefexes(List<TreeItem<DynamicSememeGUI>> items)
 	{
 		if (hasUncommitted_.get())
 		{
@@ -1489,7 +1483,7 @@ public class DynamicRefexView implements RefexViewI
 		{
 			return;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<DynamicSememeGUI> item : items)
 		{
 			if (item.getValue() != null && item.getValue().getRefex().isUncommitted())
 			{
@@ -1504,18 +1498,18 @@ public class DynamicRefexView implements RefexViewI
 		}
 	}
 	
-	private HashSet<Integer> getAllAssemblageNids(List<TreeItem<RefexDynamicGUI>> items)
+	private HashSet<Integer> getAllAssemblageNids(List<TreeItem<DynamicSememeGUI>> items)
 	{
 		HashSet<Integer> results = new HashSet<Integer>();
 		if (items == null)
 		{
 			return results;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<DynamicSememeGUI> item : items)
 		{
 			if (item.getValue() != null)
 			{
-				RefexDynamicVersionBI<? extends RefexDynamicVersionBI<?>> refex = item.getValue().getRefex();
+				DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex = item.getValue().getRefex();
 				results.add(refex.getAssemblageNid());
 			}
 			results.addAll(getAllAssemblageNids(item.getChildren()));
@@ -1523,18 +1517,18 @@ public class DynamicRefexView implements RefexViewI
 		return results;
 	}
 	
-	private void forgetAllUncommitted(List<TreeItem<RefexDynamicGUI>> items) throws IOException
+	private void forgetAllUncommitted(List<TreeItem<DynamicSememeGUI>> items) throws IOException
 	{
 		
 		if (items == null)
 		{
 			return;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<DynamicSememeGUI> item : items)
 		{
 			if (item.getValue() != null)
 			{
-				RefexDynamicVersionBI<? extends RefexDynamicVersionBI<?>> refex = item.getValue().getRefex();
+				DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex = item.getValue().getRefex();
 				if (refex.isUncommitted())
 				{
 					ExtendedAppContext.getDataStore().forget(refex);
@@ -1552,18 +1546,18 @@ public class DynamicRefexView implements RefexViewI
 		}
 	}
 	
-	private HashSet<Integer> getAllComponentNids(List<TreeItem<RefexDynamicGUI>> items)
+	private HashSet<Integer> getAllComponentNids(List<TreeItem<DynamicSememeGUI>> items)
 	{
 		HashSet<Integer> results = new HashSet<Integer>();
 		if (items == null)
 		{
 			return results;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<DynamicSememeGUI> item : items)
 		{
 			if (item.getValue() != null)
 			{
-				RefexDynamicVersionBI<? extends RefexDynamicVersionBI<?>> refex = item.getValue().getRefex();
+				DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex = item.getValue().getRefex();
 				results.add(refex.getReferencedComponentNid());
 			}
 			results.addAll(getAllComponentNids(item.getChildren()));
@@ -1573,23 +1567,23 @@ public class DynamicRefexView implements RefexViewI
 	
 
 	@SuppressWarnings("unchecked")
-	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int assemblageNid) 
+	private ArrayList<TreeItem<DynamicSememeGUI>> getDataRows(int assemblageNid) 
 			throws IOException, ContradictionException, InterruptedException, NumberFormatException, ParseException
 	{
-		Collection<RefexDynamicChronicleBI<?>> refexMembers;
+		Collection<DynamicSememeChronicleBI<?>> refexMembers;
 		
 		dr_ = null;
 		
 		ConceptVersionBI assemblageConceptFull = OTFUtility.getConceptVersion(assemblageNid);
 		if (!assemblageConceptFull.isAnnotationStyleRefex())
 		{
-			refexMembers = (Collection<RefexDynamicChronicleBI<?>>)assemblageConceptFull.getRefsetDynamicMembers();
+			refexMembers = (Collection<DynamicSememeChronicleBI<?>>)assemblageConceptFull.getRefsetDynamicMembers();
 		}
 		else
 		{
 			refexMembers = new ArrayList<>();
 			
-			if (LuceneDynamicRefexIndexerConfiguration.isAssemblageIndexed(assemblageConceptFull.getNid()))
+			if (DynamicSememeIndexerConfiguration.isAssemblageIndexed(assemblageConceptFull.getNid()))
 			{
 				Platform.runLater(() ->
 				{
@@ -1597,7 +1591,7 @@ public class DynamicRefexView implements RefexViewI
 					ttv_.setPlaceholder(progressBar_);
 				});
 				
-				LuceneDynamicRefexIndexer ldri = AppContext.getService(LuceneDynamicRefexIndexer.class);
+				DynamicSememeIndexer ldri = AppContext.getService(DynamicSememeIndexer.class);
 				
 				long waitForLatch = Long.MAX_VALUE;
 				if (newComponentIndexGen_ != null)
@@ -1618,7 +1612,7 @@ public class DynamicRefexView implements RefexViewI
 				List<SearchResult> results = ldri.queryAssemblageUsage(assemblageConceptFull.getNid(), Integer.MAX_VALUE, waitForLatch);
 				for (SearchResult sr : results)
 				{
-					refexMembers.add((RefexDynamicChronicleBI<?>)ExtendedAppContext.getDataStore().getComponent(sr.getNid()));
+					refexMembers.add((DynamicSememeChronicleBI<?>)ExtendedAppContext.getDataStore().getComponent(sr.getNid()));
 				}
 			}
 			else
@@ -1699,9 +1693,9 @@ public class DynamicRefexView implements RefexViewI
 						ConceptChronicleBI c = ExtendedAppContext.getDataStore().getConcept(newComponentHint_);
 						if (c != null)
 						{
-							Collection<RefexDynamicChronicleBI<?>> dynamicAnnotations = (Collection<RefexDynamicChronicleBI<?>>)c.getRefexDynamicAnnotations();
+							Collection<DynamicSememeChronicleBI<?>> dynamicAnnotations = (Collection<DynamicSememeChronicleBI<?>>)c.getDynamicSememeAnnotations();
 							
-							for (RefexDynamicChronicleBI<?> r : dynamicAnnotations)
+							for (DynamicSememeChronicleBI<?> r : dynamicAnnotations)
 							{
 								if (r.getAssemblageNid() == assemblageNid)
 								{
@@ -1714,7 +1708,7 @@ public class DynamicRefexView implements RefexViewI
 			}
 		}
 		
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(refexMembers);
+		ArrayList<TreeItem<DynamicSememeGUI>> rowData = createFilteredRowData(refexMembers);
 
 		if (rowData.size() == 0)
 		{

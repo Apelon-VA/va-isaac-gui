@@ -18,6 +18,22 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.UUID;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.hk2.api.PerLookup;
+import org.glassfish.hk2.runlevel.RunLevelException;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
+import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
+import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
+import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableListWrapper;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
@@ -31,22 +47,23 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescriptionBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeData;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.UUID;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -80,28 +97,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.StringConverter;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.hk2.api.PerLookup;
-import org.glassfish.hk2.runlevel.RunLevelException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicData;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * 
@@ -116,7 +111,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 {
 	private DynamicRefexView callingView_;
 	private InputType createRefexFocus_;
-	private RefexDynamicGUI editRefex_;
+	private DynamicSememeGUI editRefex_;
 	private Label unselectableComponentLabel_;;
 	private ScrollPane sp_;
 	//TODO (artf231426) improve 'ConceptNode' - this mess of Conceptnode or TextField will work for now, if they set a component type restriction
@@ -127,7 +122,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 	private ValidBooleanBinding selectableComponentNodeValid_;
 	private TextField selectableComponent_;
 	private boolean conceptNodeIsConceptType_ = false;
-	private RefexDynamicUsageDescription assemblageInfo_;
+	private DynamicSememeUsageDescriptionBI assemblageInfo_;
 	private SimpleBooleanProperty assemblageIsValid_ = new SimpleBooleanProperty(false);
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	private UpdateableBooleanBinding allValid_;
@@ -203,11 +198,11 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						//Its a valid concept, but is it a valid assemblage concept?
 						try
 						{
-							assemblageInfo_ = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(selectableConcept_.getConceptNoWait().getNid());
+							assemblageInfo_ = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(selectableConcept_.getConceptNoWait().getNid());
 							assemblageIsValid_.set(true);
 							if (assemblageInfo_.getReferencedComponentTypeRestriction() != null)
 							{
-								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(createRefexFocus_.getComponentNid()), 
+								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(createRefexFocus_.getComponentNid()), 
 										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
@@ -258,7 +253,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						{
 							if (Utility.isUUID(value))
 							{
-								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(value)), 
+								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(value)), 
 										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
@@ -269,7 +264,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							}
 							else if (Utility.isInt(value))
 							{
-								String result = RefexDynamicValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(Integer.parseInt(value)), 
+								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(Integer.parseInt(value)), 
 										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
@@ -403,7 +398,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		setScene(scene);
 	}
 	
-	public void finishInit(RefexDynamicGUI refexToEdit, DynamicRefexView viewToRefresh)
+	public void finishInit(DynamicSememeGUI refexToEdit, DynamicRefexView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = null;
@@ -424,7 +419,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		refexDropDownOptions.clear();
 		try
 		{
-			assemblageInfo_ = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(editRefex_.getRefex().getAssemblageNid());
+			assemblageInfo_ = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(editRefex_.getRefex().getAssemblageNid());
 			assemblageIsValid_.set(true);
 			buildDataFields(true, editRefex_.getRefex().getData());
 		}
@@ -455,7 +450,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		{
 			try
 			{
-				assemblageInfo_ = RefexDynamicUsageDescriptionBuilder.readRefexDynamicUsageDescriptionConcept(createRefexFocus_.getAssemblyNid());
+				assemblageInfo_ = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(createRefexFocus_.getAssemblyNid());
 				gp_.add(unselectableComponentLabel_, 1, 1);
 				unselectableComponentLabel_.setText(OTFUtility.getDescription(createRefexFocus_.getAssemblyNid()));
 				if (assemblageInfo_.getReferencedComponentTypeRestriction() != null 
@@ -486,7 +481,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		}
 	}
 	
-	private void buildDataFields(boolean assemblageValid, RefexDynamicDataBI[] currentValues)
+	private void buildDataFields(boolean assemblageValid, DynamicSememeDataBI[] currentValues)
 	{
 		if (assemblageValid)
 		{
@@ -507,11 +502,11 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			gp.setStyle("-fx-padding: 5;");
 			int row = 0;
 			boolean extraInfoColumnIsRequired = false;
-			for (RefexDynamicColumnInfo ci : assemblageInfo_.getColumnInfo())
+			for (DynamicSememeColumnInfo ci : assemblageInfo_.getColumnInfo())
 			{
 				SimpleStringProperty valueIsRequired = (ci.isColumnRequired() ? new SimpleStringProperty("") : null);
 				SimpleStringProperty defaultValueTooltip = ((ci.getDefaultColumnValue() == null && ci.getValidator() == null) ? null : new SimpleStringProperty());
-				ComboBox<RefexDynamicDataType> polymorphicType = null;
+				ComboBox<DynamicSememeDataType> polymorphicType = null;
 				
 				Label l = new Label(ci.getColumnName());
 				l.getStyleClass().add("boldLabel");
@@ -520,28 +515,28 @@ public class AddRefexPopup extends Stage implements PopupViewI
 				int col = 0;
 				gp.add(l, col++, row);
 				
-				if (ci.getColumnDataType() == RefexDynamicDataType.POLYMORPHIC)
+				if (ci.getColumnDataType() == DynamicSememeDataType.POLYMORPHIC)
 				{
 					polymorphicType = new ComboBox<>();
 					polymorphicType.setEditable(false);
-					polymorphicType.setConverter(new StringConverter<RefexDynamicDataType>()
+					polymorphicType.setConverter(new StringConverter<DynamicSememeDataType>()
 					{
 						
 						@Override
-						public String toString(RefexDynamicDataType object)
+						public String toString(DynamicSememeDataType object)
 						{
 							return object.getDisplayName();
 						}
 						
 						@Override
-						public RefexDynamicDataType fromString(String string)
+						public DynamicSememeDataType fromString(String string)
 						{
 							throw new RuntimeException("unecessary");
 						}
 					});
-					for (RefexDynamicDataType type : RefexDynamicDataType.values())
+					for (DynamicSememeDataType type : DynamicSememeDataType.values())
 					{
-						if (type == RefexDynamicDataType.POLYMORPHIC || type == RefexDynamicDataType.UNKNOWN)
+						if (type == DynamicSememeDataType.POLYMORPHIC || type == DynamicSememeDataType.UNKNOWN)
 						{
 							continue;
 						}
@@ -550,8 +545,8 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							polymorphicType.getItems().add(type);
 						}
 					}
-					polymorphicType.getSelectionModel().select((currentValues == null ? RefexDynamicDataType.STRING :
-						(currentValues[row] == null ? RefexDynamicDataType.STRING : currentValues[row].getRefexDataType())));
+					polymorphicType.getSelectionModel().select((currentValues == null ? DynamicSememeDataType.STRING :
+						(currentValues[row] == null ? DynamicSememeDataType.STRING : currentValues[row].getRefexDataType())));
 				}
 				
 				RefexDataTypeNodeDetails nd = RefexDataTypeFXNodeBuilder.buildNodeForType(ci.getColumnDataType(), ci.getDefaultColumnValue(), 
@@ -560,7 +555,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						new SimpleObjectProperty<>(ci.getValidator()), new SimpleObjectProperty<>(ci.getValidatorData()));
 				
 				currentDataFieldWarnings_.addAll(nd.getBoundToAllValid());
-				if (ci.getColumnDataType() == RefexDynamicDataType.POLYMORPHIC)
+				if (ci.getColumnDataType() == DynamicSememeDataType.POLYMORPHIC)
 				{
 					nd.addUpdateParentListListener(currentDataFieldWarnings_);
 				}
@@ -652,16 +647,16 @@ public class AddRefexPopup extends Stage implements PopupViewI
 	{
 		try
 		{
-			RefexDynamicDataBI[] data = new RefexDynamicData[assemblageInfo_.getColumnInfo().length];
+			DynamicSememeDataBI[] data = new DynamicSememeData[assemblageInfo_.getColumnInfo().length];
 			int i = 0;
-			for (RefexDynamicColumnInfo ci : assemblageInfo_.getColumnInfo())
+			for (DynamicSememeColumnInfo ci : assemblageInfo_.getColumnInfo())
 			{
 				data[i] = RefexDataTypeFXNodeBuilder.getDataForType(currentDataFields_.get(i++).getDataField(), ci);
 			}
 			
 			int componentNid;
 			int assemblageNid;
-			RefexDynamicCAB cab;
+			DynamicSememeCAB cab;
 			if (createRefexFocus_ != null)
 			{
 				if (createRefexFocus_.getComponentNid() == null)
@@ -690,7 +685,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 					componentNid = createRefexFocus_.getComponentNid();
 					assemblageNid =  selectableConcept_.getConcept().getNid();
 				}
-				cab = new RefexDynamicCAB(componentNid, assemblageNid);
+				cab = new DynamicSememeCAB(componentNid, assemblageNid);
 			}
 			else
 			{
@@ -703,7 +698,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			
 			cab.setData(data, OTFUtility.getViewCoordinate());
 			TerminologyBuilderBI builder = ExtendedAppContext.getDataStore().getTerminologyBuilder(OTFUtility.getEditCoordinate(), OTFUtility.getViewCoordinate());
-			RefexDynamicChronicleBI<?> rdc = builder.construct(cab);
+			DynamicSememeChronicleBI<?> rdc = builder.construct(cab);
 			
 			boolean isAnnotationStyle = OTFUtility.getConceptVersion(assemblageNid).isAnnotationStyleRefex();
 			IndexedGenerationCallable indexGen = null;
@@ -711,7 +706,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			//In order to make sure we can wait for the index to have this entry, we need a latch...
 			if (isAnnotationStyle)
 			{
-				indexGen = AppContext.getService(LuceneDynamicRefexIndexer.class).getIndexedGenerationCallable(rdc.getNid());
+				indexGen = AppContext.getService(DynamicSememeIndexer.class).getIndexedGenerationCallable(rdc.getNid());
 			}
 			
 			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(componentNid));
@@ -763,7 +758,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		ObservableList<SimpleDisplayConcept> assemblageConcepts = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 		try
 		{
-			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), false, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(DynamicSememe.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), false, false);
 
 			for (Integer col : colCons) {
 				assemblageConcepts.add(new SimpleDisplayConcept(col));

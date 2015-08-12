@@ -32,7 +32,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 /**
  * 
@@ -43,13 +43,13 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 public class RefexAnnotationSearcher implements ProcessUnfetchedConceptDataBI
 {
 	private volatile boolean continue_ = true;
-	private Set<RefexDynamicChronicleBI<?>> refexResults_ = new ConcurrentSkipListSet<>();
-	private Function<RefexDynamicChronicleBI<?>, Boolean> matchFunction_;
+	private Set<DynamicSememeChronicleBI<?>> refexResults_ = new ConcurrentSkipListSet<>();
+	private Function<DynamicSememeChronicleBI<?>, Boolean> matchFunction_;
 	private int totalToProcess_;
 	private AtomicInteger totalProcessed_ = new AtomicInteger();
 	private ProgressIndicator progressIndicator_;
 
-	public RefexAnnotationSearcher(Function<RefexDynamicChronicleBI<?>, Boolean> matchFunction, ProgressIndicator indicatorToUpdate) throws IOException
+	public RefexAnnotationSearcher(Function<DynamicSememeChronicleBI<?>, Boolean> matchFunction, ProgressIndicator indicatorToUpdate) throws IOException
 	{
 		matchFunction_ = matchFunction;
 		totalToProcess_ = ExtendedAppContext.getDataStore().getConceptCount();
@@ -88,33 +88,33 @@ public class RefexAnnotationSearcher implements ProcessUnfetchedConceptDataBI
 			}
 		}
 		ConceptChronicleBI cc = fetcher.fetch();
-		for (RefexDynamicChronicleBI<?> annot : cc.getRefexDynamicAnnotations())
+		for (DynamicSememeChronicleBI<?> annot : cc.getDynamicSememeAnnotations())
 		{
 			process(annot);
 		}
 		for (DescriptionChronicleBI desc : cc.getDescriptions())
 		{
-			for (RefexDynamicChronicleBI<?> annot : desc.getRefexDynamicAnnotations())
+			for (DynamicSememeChronicleBI<?> annot : desc.getDynamicSememeAnnotations())
 			{
 				process(annot);
 			}
 		}
 		for (RelationshipChronicleBI rels : cc.getRelationshipsOutgoing())
 		{
-			for (RefexDynamicChronicleBI<?> annot : rels.getRefexDynamicAnnotations())
+			for (DynamicSememeChronicleBI<?> annot : rels.getDynamicSememeAnnotations())
 			{
 				process(annot);
 			}
 		}
 	}
 	
-	private void process(RefexDynamicChronicleBI<?> refex) throws IOException
+	private void process(DynamicSememeChronicleBI<?> refex) throws IOException
 	{
 		if (matchFunction_.apply(refex))
 		{
 			refexResults_.add(refex);
 		}
-		for (RefexDynamicChronicleBI<?> nested : refex.getRefexDynamicAnnotations())
+		for (DynamicSememeChronicleBI<?> nested : refex.getDynamicSememeAnnotations())
 		{
 			process(nested);
 		}
@@ -136,7 +136,7 @@ public class RefexAnnotationSearcher implements ProcessUnfetchedConceptDataBI
 	 * Return the results.  Will not return null
 	 * @return
 	 */
-	public Set<RefexDynamicChronicleBI<?>> getResults()
+	public Set<DynamicSememeChronicleBI<?>> getResults()
 	{
 		return refexResults_;
 	}

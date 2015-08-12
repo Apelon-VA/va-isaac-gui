@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
+import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataType;
 
 /**
  * Just a helper class for {@link RefexDataTypeFXNodeBuilder}.  Ignore.
@@ -28,6 +28,6 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
  */
 class NestedPolymorphicData
 {
-	RefexDynamicDataType dataType;
+	DynamicSememeDataType dataType;
 	RefexDataTypeNodeDetails nestedNode;
 }

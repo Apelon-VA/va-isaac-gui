@@ -18,6 +18,16 @@
  */
 package gov.va.isaac.util;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
@@ -38,15 +48,6 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.BooleanSupplier;
-
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -58,11 +59,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CommonMenus}
@@ -1001,8 +997,8 @@ public class CommonMenus
 		LOG.debug("Using OTF API to get parent concept nid for component {} (nid={})", Get.conceptDescriptionText(nid), nid);
 		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
 		if (cc != null) {
-			if (cc instanceof RefexDynamicChronicleBI) {
-				RefexDynamicChronicleBI<?> refexChron = (RefexDynamicChronicleBI<?>)cc;
+			if (cc instanceof DynamicSememeChronicleBI) {
+				DynamicSememeChronicleBI<?> refexChron = (DynamicSememeChronicleBI<?>)cc;
 				
 				try {
 					if (OTFUtility.getConceptVersion(refexChron.getAssemblageNid()).isAnnotationStyleRefex()) {
@@ -1011,7 +1007,7 @@ public class CommonMenus
 						return refexChron.getReferencedComponentNid();
 					}
 				} catch (IOException e) {
-					LOG.error("Unexpected - couldn't get RefexDynamicChronicleBI information for nid{}", nid);
+					LOG.error("Unexpected - couldn't get DynamicSememeChronicleBI information for nid{}", nid);
 					return nid;
 				}
 			} else 	{

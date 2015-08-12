@@ -30,7 +30,7 @@ import gov.va.isaac.models.hed.HeDXmlUtils;
 import gov.va.isaac.models.util.ImporterBase;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescriptionBuilder;
 
 import java.beans.PropertyVetoException;
 import java.io.File;
@@ -72,7 +72,7 @@ import org.hl7.knowledgeartifact.r1.SupportingEvidence;
 import org.hl7.knowledgeartifact.r1.ValueSet;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
+import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeColumnInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -348,8 +348,8 @@ public class HeDImporter extends ImporterBase implements ImportHandler {
 						try {
 							// Create Enumeration
 							AppContext.getRuntimeGlobals().disableAllCommitListeners();
-							RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(value, value, enumerationDesc.toString(), 
-																											 new RefexDynamicColumnInfo[] {},
+							DynamicSememeUsageDescriptionBuilder.createNewDynamicSememeUsageDescriptionConcept(value, value, enumerationDesc.toString(), 
+																											 new DynamicSememeColumnInfo[] {},
 																											 InformationModels.HED_ENUMERATIONS.getUuids()[0], 
 																											 false, null, ViewCoordinates.getMetadataViewCoordinate());
 						} catch (IOException | ContradictionException | InvalidCAB

@@ -18,17 +18,20 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
+import java.beans.PropertyVetoException;
+import java.io.IOException;
+import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
 import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
-import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescriptionBuilder;
-
-import java.beans.PropertyVetoException;
-import java.io.IOException;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -38,12 +41,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**
  * 
  * {@link SummaryController}
@@ -58,7 +55,7 @@ public class SummaryController implements PanelControllersI {
 	@FXML private Label actualRefexType;
 	@FXML private Label actualComponentTypeRestriction;
 	@FXML private BorderPane summaryPane;
-	@FXML private ListView<RefexDynamicColumnInfo> detailsListView;
+	@FXML private ListView<DynamicSememeColumnInfo> detailsListView;
 	@FXML private Button cancelButton;
 	@FXML private Button startOverButton;
 	@FXML private Button commitButton;
@@ -104,10 +101,10 @@ public class SummaryController implements PanelControllersI {
 		startOverButton.setOnAction(e -> processController_.showFirstScreen());
 		backButton.setOnAction(e -> processController_.showPreviousScreen());
 		
-		detailsListView.setCellFactory(new Callback<ListView<RefexDynamicColumnInfo>, ListCell<RefexDynamicColumnInfo>>()
+		detailsListView.setCellFactory(new Callback<ListView<DynamicSememeColumnInfo>, ListCell<DynamicSememeColumnInfo>>()
 		{
 			@Override
-			public ListCell<RefexDynamicColumnInfo> call(ListView<RefexDynamicColumnInfo> param)
+			public ListCell<DynamicSememeColumnInfo> call(ListView<DynamicSememeColumnInfo> param)
 			{
 				return new DynamicRefexDataColumnListCell();
 			}
@@ -134,8 +131,8 @@ public class SummaryController implements PanelControllersI {
 	public void storeValues() {
 		try {
 			RefexData refexData = processController_.getWizardData();
-			RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(refexData.getRefexName(),
-					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new RefexDynamicColumnInfo[0]), 
+			DynamicSememeUsageDescriptionBuilder.createNewDynamicSememeUsageDescriptionConcept(refexData.getRefexName(),
+					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new DynamicSememeColumnInfo[0]), 
 					refexData.getParentConcept().getPrimordialUuid(), 
 					refexData.isAnnotatedStyle(),
 					refexData.getComponentRestrictionType(), 

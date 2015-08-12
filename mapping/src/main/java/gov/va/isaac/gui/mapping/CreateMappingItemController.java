@@ -13,7 +13,7 @@ import gov.va.isaac.gui.mapping.data.MappingUtils;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.refexDynamic.RefexDynamicUtil;
+import gov.va.isaac.refexDynamic.DynamicSememeUtil;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.util.CommonMenus;
@@ -291,7 +291,7 @@ public class CreateMappingItemController {
 				List<SimpleDisplayConcept> codeSystems = MappingUtils.getCodeSystems();
 				codeSystems.add(0, new SimpleDisplayConcept("No Restriction", Integer.MIN_VALUE));
 
-				List<SimpleDisplayConcept> refsetRestrictions = RefexDynamicUtil.getAllRefexDefinitions(); 
+				List<SimpleDisplayConcept> refsetRestrictions = DynamicSememeUtil.getAllRefexDefinitions(); 
 				refsetRestrictions.add(0, new SimpleDisplayConcept("No Restriction", Integer.MIN_VALUE));
 				
 				Platform.runLater(() ->

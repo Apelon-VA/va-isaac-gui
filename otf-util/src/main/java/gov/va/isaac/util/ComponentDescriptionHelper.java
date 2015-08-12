@@ -34,7 +34,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 
 /**
@@ -100,7 +100,7 @@ public class ComponentDescriptionHelper {
 
 		case SEMEME_DYNAMIC:
 			//The refex Dynamic member with Referenced Component UUID: <REF_COMP_UUID> in Refex: <REFEX_UUID> having with UUID: <Refex MEMEBER UUID>
-			RefexDynamicVersionBI<?> refexDynamicVersion = (RefexDynamicVersionBI<?>)component;
+			DynamicSememeVersionBI<?> refexDynamicVersion = (DynamicSememeVersionBI<?>)component;
 			UUID dynamicReferencedComponent = OTFUtility.getComponentVersion(refexDynamicVersion.getReferencedComponentNid()).getPrimordialUuid();
 			int assemblageDynamicNid = refexDynamicVersion.getAssemblageNid();
 			ConceptVersionBI assemblageDynamicComponentVersion = OTFUtility.getConceptVersion(assemblageDynamicNid);

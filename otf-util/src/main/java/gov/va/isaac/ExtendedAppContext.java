@@ -39,11 +39,6 @@ public class ExtendedAppContext extends AppContext
 	//I tweak this with reflection....
 	private static Class<UserProfileManager> userProfileManagerClass = UserProfileManager.class;
 	
-	public static TerminologyStoreDI getDataStore()
-	{
-		return getService(TerminologyStoreDI.class);
-	}
-	
 	/**
 	 * @see UserProfileManager#getCurrentlyLoggedInUserProfile()
 	 */

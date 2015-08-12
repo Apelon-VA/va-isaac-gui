@@ -22,7 +22,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.gui.RenameableDisplayConcept;
 import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.refexDynamic.RefexDynamicUtil;
+import gov.va.isaac.refexDynamic.DynamicSememeUtil;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
@@ -47,7 +47,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,7 +151,7 @@ public class MappingUtils
 						ArrayList<CompositeSearchResult> keep = new ArrayList<>();
 						HashSet<Integer> refsetMembers = new HashSet<>();
 
-						for(RefexDynamicChronicleBI<?> member : RefexDynamicUtil.readMembers(memberOfRefsetNid, true, null))
+						for(DynamicSememeChronicleBI<?> member : DynamicSememeUtil.readMembers(memberOfRefsetNid, true, null))
 						{
 							refsetMembers.add(member.getReferencedComponentNid());
 						}

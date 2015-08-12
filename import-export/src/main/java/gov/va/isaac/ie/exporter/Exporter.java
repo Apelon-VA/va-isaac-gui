@@ -11,8 +11,8 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 
@@ -87,9 +87,9 @@ public interface Exporter extends ProgressReporter {
 	}
 	
 	try {
-		for (RefexDynamicChronicleBI<?> rc : cv.getRefexDynamicAnnotations()) {
+		for (DynamicSememeChronicleBI<?> rc : cv.getDynamicSememeAnnotations()) {
 			if(rc != null) {
-				RefexDynamicVersionBI<?> rv = rc.getVersion(vc).get();
+				DynamicSememeVersionBI<?> rv = rc.getVersion(vc).get();
 				if(rv != null) {
 //					System.out.println(rc.getVersion(vc));
 					if (rv.getPathNid() == pathNid)  {

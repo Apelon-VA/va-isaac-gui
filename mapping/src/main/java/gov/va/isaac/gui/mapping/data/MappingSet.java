@@ -18,29 +18,24 @@
  */
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.constants.ISAAC;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-
-import javafx.beans.property.SimpleStringProperty;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.constants.ISAAC;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import javafx.beans.property.SimpleStringProperty;
 
 /**
  * {@link MappingSet}
@@ -65,10 +60,10 @@ public class MappingSet extends MappingObject
 	 * 
 	 * Read an existing mapping set from the database
 	 * 
-	 * @param refex RefexDynamicChronicleBI<?>
+	 * @param refex DynamicSememeChronicleBI<?>
 	 * @throws IOException
 	 */
-	protected MappingSet(RefexDynamicVersionBI<?> refex) throws IOException
+	protected MappingSet(DynamicSememeVersionBI<?> refex) throws IOException
 	{
 		this.readFromRefex(refex); //Sets Name, inverseName and Description, etc
 	}
@@ -184,7 +179,7 @@ public class MappingSet extends MappingObject
 		return MappingItemCommentDAO.getComments(getPrimordialUUID(), false);
 	}
 
-	private void readFromRefex(RefexDynamicVersionBI<?> refex) throws IOException
+	private void readFromRefex(DynamicSememeVersionBI<?> refex) throws IOException
 	{
 		try
 		{
@@ -211,7 +206,7 @@ public class MappingSet extends MappingObject
 						else
 						//see if it is the inverse name
 						{
-							for (RefexDynamicChronicleBI<?> annotation : desc.getRefexDynamicAnnotations())
+							for (DynamicSememeChronicleBI<?> annotation : desc.getDynamicSememeAnnotations())
 							{
 								if (annotation.getAssemblageNid() == ISAAC.ASSOCIATION_INVERSE_NAME.getNid())
 								{

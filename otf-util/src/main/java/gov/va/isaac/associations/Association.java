@@ -18,12 +18,6 @@
  */
 package gov.va.isaac.associations;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.ISAAC;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-
 import java.io.IOException;
 import java.util.Optional;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
@@ -32,9 +26,13 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.constants.ISAAC;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 /**
  * {@link Association}
@@ -43,11 +41,11 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
  */
 public class Association
 {
-	private RefexDynamicVersionBI<?> refex_;
+	private DynamicSememeVersionBI<?> refex_;
 
 	//TODO Write the code that checks the index states on startup
 
-	public Association(RefexDynamicVersionBI<?> data)
+	public Association(DynamicSememeVersionBI<?> data)
 	{
 		refex_ = data;
 	}
@@ -63,14 +61,14 @@ public class Association
 		if (targetColIndex >= 0)
 		{
 		
-			RefexDynamicDataBI[] data = refex_.getData();
+			DynamicSememeDataBI[] data = refex_.getData();
 			if (data != null && data.length > targetColIndex)
 			{
-				if (data[targetColIndex].getRefexDataType() == RefexDynamicDataType.UUID)
+				if (data[targetColIndex].getRefexDataType() == DynamicSememeDataType.UUID)
 				{
 					return ExtendedAppContext.getDataStore().getComponent(((DynamicSememeUUID) data[targetColIndex]).getDataUUID());
 				}
-				else if (data[targetColIndex].getRefexDataType() == RefexDynamicDataType.NID)
+				else if (data[targetColIndex].getRefexDataType() == DynamicSememeDataType.NID)
 				{
 					return ExtendedAppContext.getDataStore().getComponent(((DynamicSememeNid) data[targetColIndex]).getDataNid());
 				}
@@ -122,7 +120,7 @@ public class Association
 		
 		for (DescriptionVersionBI<?> desc : cc.get().getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
 		{
-			for (RefexDynamicVersionBI<?> descNestedType : desc.getRefexesDynamicActive(OTFUtility.getViewCoordinate()))
+			for (DynamicSememeVersionBI<?> descNestedType : desc.getRefexesDynamicActive(OTFUtility.getViewCoordinate()))
 			{
 				if (descNestedType.getAssemblageNid() == ISAAC.ASSOCIATION_INVERSE_NAME.getNid())
 				{
@@ -133,7 +131,7 @@ public class Association
 		return null;
 	}
 
-	public RefexDynamicVersionBI<?> getData()
+	public DynamicSememeVersionBI<?> getData()
 	{
 		return refex_;
 	}

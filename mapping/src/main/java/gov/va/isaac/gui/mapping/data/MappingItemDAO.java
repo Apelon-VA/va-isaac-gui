@@ -1,13 +1,5 @@
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.MappingConstants;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.index.SearchResult;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
-import gov.vha.isaac.ochre.util.UuidT5Generator;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,13 +9,18 @@ import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.constants.MappingConstants;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.util.UuidT5Generator;
 
 public class MappingItemDAO extends MappingDAO
 {
@@ -40,8 +37,8 @@ public class MappingItemDAO extends MappingDAO
 	{
 		try
 		{
-			RefexDynamicCAB mappingAnnotation = new RefexDynamicCAB(sourceConcept.getPrimordialUuid(), mappingSetID);
-			mappingAnnotation.setData(new RefexDynamicDataBI[] {
+			DynamicSememeCAB mappingAnnotation = new DynamicSememeCAB(sourceConcept.getPrimordialUuid(), mappingSetID);
+			mappingAnnotation.setData(new DynamicSememeDataBI[] {
 					(targetConcept == null ? null : new DynamicSememeUUID(targetConcept.getPrimordialUuid())),
 					(qualifierID == null ? null : new DynamicSememeUUID(qualifierID)),
 					(editorStatusID == null ? null : new DynamicSememeUUID(editorStatusID))}, OTFUtility.getViewCoordinateAllowInactive());
@@ -66,7 +63,7 @@ public class MappingItemDAO extends MappingDAO
 			//ExtendedAppContext.getDataStore().addUncommitted(sourceConcept);  //need builder API
 			ExtendedAppContext.getDataStore().commit(/*sourceConcept*/);  //TODO OCHRE
 			
-			return new MappingItem((RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));
+			return new MappingItem((DynamicSememeVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));
 		}
 		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
 		{
@@ -94,7 +91,7 @@ public class MappingItemDAO extends MappingDAO
 			boolean hadError = false;
 			for (SearchResult sr : search(mappingSetID))
 			{
-				Optional<RefexDynamicVersionBI<?>> rc = (Optional<RefexDynamicVersionBI<?>>) ExtendedAppContext.getDataStore()
+				Optional<DynamicSememeVersionBI<?>> rc = (Optional<DynamicSememeVersionBI<?>>) ExtendedAppContext.getDataStore()
 						.getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
 				try
 				{
@@ -173,11 +170,11 @@ public class MappingItemDAO extends MappingDAO
 	{
 		try
 		{
-			RefexDynamicVersionBI<?> rdv = readCurrentRefex(mappingItem.getPrimordialUUID());
-			RefexDynamicCAB mappingItemCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
+			DynamicSememeVersionBI<?> rdv = readCurrentRefex(mappingItem.getPrimordialUUID());
+			DynamicSememeCAB mappingItemCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 			mappingItemCab.getData()[2] = (mappingItem.getEditorStatusConcept() != null ? new DynamicSememeUUID(mappingItem.getEditorStatusConcept()) : null);
 			mappingItemCab.validate(OTFUtility.getViewCoordinateAllowInactive());
-			RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingItemCab);
+			DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingItemCab);
 
 			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();

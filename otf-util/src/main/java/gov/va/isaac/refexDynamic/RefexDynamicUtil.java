@@ -29,36 +29,36 @@ import java.util.Collections;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.scene.control.ProgressIndicator;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
+import org.ihtsdo.otf.tcc.api.metadata.binding.DynamicSememe;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link RefexDynamicUtil}
+ * {@link DynamicSememeUtil}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class RefexDynamicUtil
+public class DynamicSememeUtil
 {
-	private static Logger logger_ = LoggerFactory.getLogger(RefexDynamicUtil.class);
+	private static Logger logger_ = LoggerFactory.getLogger(DynamicSememeUtil.class);
 	
 	@SuppressWarnings("unchecked")
-	public static Collection<RefexDynamicChronicleBI<?>> readMembers(int dynamicRefexConceptNid, boolean allowUnindexedScan, ProgressIndicator progress) 
+	public static Collection<DynamicSememeChronicleBI<?>> readMembers(int dynamicRefexConceptNid, boolean allowUnindexedScan, ProgressIndicator progress) 
 			throws Exception
 	{
-		Collection<RefexDynamicChronicleBI<?>> refexMembers;
+		Collection<DynamicSememeChronicleBI<?>> refexMembers;
 		
 		ConceptVersionBI assemblageConceptFull = OTFUtility.getConceptVersion(dynamicRefexConceptNid);
 		if (assemblageConceptFull.isAnnotationStyleRefex())
 		{
 			refexMembers = new ArrayList<>();
 			
-			if (LuceneDynamicRefexIndexerConfiguration.isAssemblageIndexed(assemblageConceptFull.getNid()))
+			if (DynamicSememeIndexerConfiguration.isAssemblageIndexed(assemblageConceptFull.getNid()))
 			{
 				logger_.debug("Using index to read annotation style refex members");
 				if (progress != null)
@@ -69,12 +69,12 @@ public class RefexDynamicUtil
 					});
 				}
 				
-				LuceneDynamicRefexIndexer ldri = AppContext.getService(LuceneDynamicRefexIndexer.class);
+				DynamicSememeIndexer ldri = AppContext.getService(DynamicSememeIndexer.class);
 				
 				List<SearchResult> results = ldri.queryAssemblageUsage(assemblageConceptFull.getNid(), Integer.MAX_VALUE, Long.MIN_VALUE);
 				for (SearchResult sr : results)
 				{
-					refexMembers.add((RefexDynamicChronicleBI<?>)ExtendedAppContext.getDataStore().getComponent(sr.getNid()));
+					refexMembers.add((DynamicSememeChronicleBI<?>)ExtendedAppContext.getDataStore().getComponent(sr.getNid()));
 				}
 			}
 			else
@@ -103,7 +103,7 @@ public class RefexDynamicUtil
 		else
 		{
 			logger_.debug("Reading member style refex members");
-			refexMembers = (Collection<RefexDynamicChronicleBI<?>>)assemblageConceptFull.getRefsetDynamicMembers();
+			refexMembers = (Collection<DynamicSememeChronicleBI<?>>)assemblageConceptFull.getRefsetDynamicMembers();
 		}
 		return refexMembers;
 	}
@@ -112,10 +112,10 @@ public class RefexDynamicUtil
 		List<SimpleDisplayConcept> allRefexDefinitions = new ArrayList<>();
 
 		try {
-			LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-			List<SearchResult> refexes = indexer.queryAssemblageUsage(RefexDynamic.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getNid(), 1000, Long.MAX_VALUE);
+			DynamicSememeIndexer indexer = AppContext.getService(DynamicSememeIndexer.class);
+			List<SearchResult> refexes = indexer.queryAssemblageUsage(DynamicSememe.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getNid(), 1000, Long.MAX_VALUE);
 			for (SearchResult sr : refexes) {
-				RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
+				DynamicSememeChronicleBI<?> rc = (DynamicSememeChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
 				if (rc == null) {
 					logger_.info("Out of date index?  Search result for refexes contained a NID that can't be resolved: {}" + sr.getNid());
 					continue;

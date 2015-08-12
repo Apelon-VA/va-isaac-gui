@@ -18,16 +18,17 @@
  */
 package gov.va.isaac.gui;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.interfaces.gui.views.PopupViewI;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.impl.sememe.RefexDynamicUsageDescription;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -45,10 +46,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link ConfigureDynamicRefexIndexingView}
@@ -94,8 +91,8 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 			vbox.setPadding(new Insets(10));
 			vbox.setSpacing(5.0);
 			
-			RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.readDynamicSememeUsageDescription(assemblageConcept.getNid());
-			Integer[] currentIndexConfig = LuceneDynamicRefexIndexerConfiguration.readIndexInfo(assemblageConcept.getNid());
+			DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(assemblageConcept.getNid());
+			Integer[] currentIndexConfig = DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConcept.getNid());
 			
 			if (rdud.isAnnotationStyle())
 			{
@@ -113,13 +110,13 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 				vbox.getChildren().add(new Label("Member-style Sememes without columns are not indexable"));
 			}
 			
-			for (RefexDynamicColumnInfo col : rdud.getColumnInfo())
+			for (DynamicSememeColumnInfo col : rdud.getColumnInfo())
 			{
 				CheckBox cb = new CheckBox("Index Attribute: " + col.getColumnName());
 				cb.setTooltip(new Tooltip("Attribute Type: " + col.getColumnDataType().getDisplayName() + "\nAttribute Description: " + col.getColumnDescription()));
 				
 				
-				if (!LuceneDynamicRefexIndexerConfiguration.isColumnTypeIndexable(col.getColumnDataType()))
+				if (!DynamicSememeIndexerConfiguration.isColumnTypeIndexable(col.getColumnDataType()))
 				{
 					//disabled check boxes don't show tooltips...
 					StackPane silly = new StackPane();
@@ -184,7 +181,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 							if (colsChecked.size() > 0 || (indexMember_ != null && indexMember_.isSelected()))
 							{
 								Integer[] toIndex = colsChecked.toArray(new Integer[colsChecked.size()]);
-								if (Arrays.deepEquals(toIndex, LuceneDynamicRefexIndexerConfiguration.readIndexInfo(assemblageConcept_.getNid())))
+								if (Arrays.deepEquals(toIndex, DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConcept_.getNid())))
 								{
 									logger_.info("Skipping reindex - no change detected.");
 								}
@@ -193,7 +190,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 									AppContext.getRuntimeGlobals().disableAllCommitListeners();
 									try
 									{
-										LuceneDynamicRefexIndexerConfiguration.configureColumnsToIndex(assemblageConcept_.getNid(), toIndex, false);
+										DynamicSememeIndexerConfiguration.configureColumnsToIndex(assemblageConcept_.getNid(), toIndex, false);
 									}
 									finally
 									{
@@ -206,7 +203,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 								AppContext.getRuntimeGlobals().disableAllCommitListeners();
 								try
 								{
-									LuceneDynamicRefexIndexerConfiguration.disableIndex(assemblageConcept_.getNid());
+									DynamicSememeIndexerConfiguration.disableIndex(assemblageConcept_.getNid());
 								}
 								finally
 								{

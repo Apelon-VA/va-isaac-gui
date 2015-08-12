@@ -18,6 +18,16 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
+import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
+import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
@@ -32,30 +42,19 @@ import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
 import javafx.concurrent.Task;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.text.Text;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link ComponentDataCell}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
+public class ComponentDataCell extends TreeTableCell<DynamicSememeGUI, DynamicSememeGUI>
 {
 	private static Logger logger_ = LoggerFactory.getLogger(ComponentDataCell.class);
 	
@@ -70,7 +69,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicGUI item, boolean empty)
+	protected void updateItem(DynamicSememeGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		
@@ -85,7 +84,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 		}
 	}
 	
-	private void conceptLookup(RefexDynamicGUI item)
+	private void conceptLookup(DynamicSememeGUI item)
 	{
 		ProgressBar pb = new ProgressBar();
 		pb.setMaxWidth(Double.MAX_VALUE);
@@ -147,9 +146,9 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 									}
 								});
 							}
-							else if (cv.get() instanceof RefexDynamicVersionBI<?>)
+							else if (cv.get() instanceof DynamicSememeVersionBI<?>)
 							{
-								RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv.get();
+								DynamicSememeVersionBI<?> rdv = (DynamicSememeVersionBI<?>) cv.get();
 								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
 								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
 								

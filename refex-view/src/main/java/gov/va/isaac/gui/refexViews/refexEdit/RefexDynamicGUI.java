@@ -18,10 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.AlphanumComparator;
-import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.OTFUtility;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -34,24 +30,27 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.media.MediaVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicArrayBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicByteArrayBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicDoubleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicFloatBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicIntegerBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicLongBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.util.AlphanumComparator;
+import gov.va.isaac.util.NumberUtilities;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArrayBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeByteArrayBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeDoubleBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeFloatBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeIntegerBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeLongBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUIDBI;
 
 /**
- * {@link RefexDynamicGUI}
+ * {@link DynamicSememeGUI}
  * 
- * A Wrapper for a RefexDynamicVersionBI - because the versioned refex provides no information
+ * A Wrapper for a DynamicSememeVersionBI - because the versioned refex provides no information
  * about whether or not it is an old version, or if it is the latest version.  Add a flag for 
  * is latest.
  * 
@@ -60,12 +59,12 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class RefexDynamicGUI
+public class DynamicSememeGUI
 {
-	private static Logger logger_ = LoggerFactory.getLogger(RefexDynamicGUI.class);
+	private static Logger logger_ = LoggerFactory.getLogger(DynamicSememeGUI.class);
 	
 	//These variables are used when we are working with a refex that already exists
-	private RefexDynamicVersionBI<? extends RefexDynamicVersionBI<?>> refex_;
+	private DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex_;
 	private boolean isCurrent_;
 	private HashMap<String, AbstractMap.SimpleImmutableEntry<String, String>> stringCache_ = new HashMap<>();
 	
@@ -73,13 +72,13 @@ public class RefexDynamicGUI
 	private Integer buildFromReferenceNid_;
 	private boolean referenceIsAssemblyNid_;
 	
-	protected RefexDynamicGUI(RefexDynamicVersionBI<? extends RefexDynamicVersionBI<?>> refex, boolean isCurrent)
+	protected DynamicSememeGUI(DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex, boolean isCurrent)
 	{
 		refex_ = refex;
 		isCurrent_ = isCurrent;
 	}
 	
-	protected RefexDynamicGUI(int buildFromReferenceNid, boolean referenceIsAssemblyNid)
+	protected DynamicSememeGUI(int buildFromReferenceNid, boolean referenceIsAssemblyNid)
 	{
 		refex_ = null;
 		isCurrent_ = false;
@@ -90,7 +89,7 @@ public class RefexDynamicGUI
 	/**
 	 * Contains the refex reference when this object was constructed based on an existing refex
 	 */
-	public RefexDynamicVersionBI<? extends RefexDynamicVersionBI<?>> getRefex()
+	public DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> getRefex()
 	{
 		return refex_;
 	}
@@ -126,7 +125,7 @@ public class RefexDynamicGUI
 	 * For cases when it was built from an existing refex only
 	 * @param attachedDataColumn - optional - ignored (can be null) except applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
 	 */
-	public int compareTo(DynamicRefexColumnType columnTypeToCompare, Integer attachedDataColumn, RefexDynamicGUI other)
+	public int compareTo(DynamicRefexColumnType columnTypeToCompare, Integer attachedDataColumn, DynamicSememeGUI other)
 	{
 		try
 		{
@@ -190,8 +189,8 @@ public class RefexDynamicGUI
 					{
 						throw new RuntimeException("API misuse");
 					}
-					RefexDynamicDataBI myData = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
-					RefexDynamicDataBI otherData = other.refex_.getData().length > attachedDataColumn ? other.refex_.getData()[attachedDataColumn] : null;
+					DynamicSememeDataBI myData = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
+					DynamicSememeDataBI otherData = other.refex_.getData().length > attachedDataColumn ? other.refex_.getData()[attachedDataColumn] : null;
 					
 					if (myData == null && otherData != null)
 					{
@@ -205,21 +204,21 @@ public class RefexDynamicGUI
 					{
 						return 0;
 					}
-					else if (myData instanceof RefexDynamicFloatBI && otherData instanceof RefexDynamicFloatBI)
+					else if (myData instanceof DynamicSememeFloatBI && otherData instanceof DynamicSememeFloatBI)
 					{
-						return NumberUtilities.compare(((RefexDynamicFloatBI) myData).getDataFloat(), ((RefexDynamicFloatBI) otherData).getDataFloat());
+						return NumberUtilities.compare(((DynamicSememeFloatBI) myData).getDataFloat(), ((DynamicSememeFloatBI) otherData).getDataFloat());
 					}
-					else if (myData instanceof RefexDynamicDoubleBI && otherData instanceof RefexDynamicDoubleBI) 
+					else if (myData instanceof DynamicSememeDoubleBI && otherData instanceof DynamicSememeDoubleBI) 
 					{
-						return NumberUtilities.compare(((RefexDynamicDoubleBI) myData).getDataDouble(), ((RefexDynamicDoubleBI) otherData).getDataDouble());
+						return NumberUtilities.compare(((DynamicSememeDoubleBI) myData).getDataDouble(), ((DynamicSememeDoubleBI) otherData).getDataDouble());
 					}
-					else if (myData instanceof RefexDynamicIntegerBI && otherData instanceof RefexDynamicIntegerBI) 
+					else if (myData instanceof DynamicSememeIntegerBI && otherData instanceof DynamicSememeIntegerBI) 
 					{
-						return NumberUtilities.compare(((RefexDynamicIntegerBI) myData).getDataInteger(), ((RefexDynamicIntegerBI) otherData).getDataInteger());
+						return NumberUtilities.compare(((DynamicSememeIntegerBI) myData).getDataInteger(), ((DynamicSememeIntegerBI) otherData).getDataInteger());
 					}
-					else if (myData instanceof RefexDynamicLongBI && otherData instanceof RefexDynamicLongBI)
+					else if (myData instanceof DynamicSememeLongBI && otherData instanceof DynamicSememeLongBI)
 					{
-						return NumberUtilities.compare(((RefexDynamicLongBI) myData).getDataLong(), ((RefexDynamicLongBI) otherData).getDataLong());
+						return NumberUtilities.compare(((DynamicSememeLongBI) myData).getDataLong(), ((DynamicSememeLongBI) otherData).getDataLong());
 					}
 					else
 					{
@@ -286,34 +285,34 @@ public class RefexDynamicGUI
 				{
 					throw new RuntimeException("API misuse");
 				}
-				RefexDynamicDataBI data = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
+				DynamicSememeDataBI data = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
 				if (data != null)
 				{
-					if (data instanceof RefexDynamicByteArrayBI)
+					if (data instanceof DynamicSememeByteArrayBI)
 					{
 						returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[Binary]", null);
 					}
-					else if (data instanceof RefexDynamicNidBI)
+					else if (data instanceof DynamicSememeNidBI)
 					{
-						String desc = getComponentText(((RefexDynamicNidBI)data).getDataNid());
+						String desc = getComponentText(((DynamicSememeNidBI)data).getDataNid());
 						returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(desc, data.getDataObject().toString());
 					}
-					else if (data instanceof RefexDynamicUUIDBI)
+					else if (data instanceof DynamicSememeUUIDBI)
 					{
 						String desc;
-						if (ExtendedAppContext.getDataStore().hasUuid(((RefexDynamicUUIDBI)data).getDataUUID()))
+						if (ExtendedAppContext.getDataStore().hasUuid(((DynamicSememeUUIDBI)data).getDataUUID()))
 						{
-							desc = getComponentText(ExtendedAppContext.getDataStore().getNidForUuids(((RefexDynamicUUIDBI)data).getDataUUID()));
+							desc = getComponentText(ExtendedAppContext.getDataStore().getNidForUuids(((DynamicSememeUUIDBI)data).getDataUUID()));
 						}
 						else
 						{
-							desc = ((RefexDynamicUUIDBI)data).getDataUUID() + "";
+							desc = ((DynamicSememeUUIDBI)data).getDataUUID() + "";
 						}
 						returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(desc, data.getDataObject().toString());
 					}
-					else if (data instanceof RefexDynamicArrayBI<?>)
+					else if (data instanceof DynamicSememeArrayBI<?>)
 					{
-						RefexDynamicArrayBI<?> instanceData = (RefexDynamicArrayBI<?>)data;
+						DynamicSememeArrayBI<?> instanceData = (DynamicSememeArrayBI<?>)data;
 						switch (instanceData.getArrayDataType())
 						{
 							case ARRAY:
@@ -326,7 +325,7 @@ public class RefexDynamicGUI
 								//NID and UUID could be turned into strings... but, unusual use case... leave like this for now.
 								StringBuilder sb = new StringBuilder();
 								sb.append("[");
-								for (RefexDynamicDataBI d : instanceData.getDataArray())
+								for (DynamicSememeDataBI d : instanceData.getDataArray())
 								{
 									sb.append(d.getDataObject().toString());
 									sb.append(", ");
@@ -378,7 +377,7 @@ public class RefexDynamicGUI
 		
 	}
 	
-	private String getComponentText(ToIntFunction<RefexDynamicVersionBI<?>> nidFetcher)
+	private String getComponentText(ToIntFunction<DynamicSememeVersionBI<?>> nidFetcher)
 	{
 		return getComponentText(nidFetcher.applyAsInt(this.refex_));
 	}
@@ -411,9 +410,9 @@ public class RefexDynamicGUI
 							+ OTFUtility.getDescription(rv.getTypeNid()) + "->"
 							+ OTFUtility.getDescription(rv.getDestinationNid());
 				}
-				else if (cv.get() instanceof RefexDynamicVersionBI<?>)
+				else if (cv.get() instanceof DynamicSememeVersionBI<?>)
 				{
-					RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv.get();
+					DynamicSememeVersionBI<?> rdv = (DynamicSememeVersionBI<?>) cv.get();
 					text = "Nested Sememe Dynamic: using assemblage " + OTFUtility.getDescription(rdv.getAssemblageNid());
 				}
 				else if (cv.get() instanceof RefexVersionBI<?>)
@@ -451,7 +450,7 @@ public class RefexDynamicGUI
 	 * @param attachedDataColumn null for most types - applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
 	 * @return
 	 */
-	public ToIntFunction<RefexDynamicVersionBI<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
+	public ToIntFunction<DynamicSememeVersionBI<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
 	{
 		switch (desiredColumn)
 		{
@@ -461,10 +460,10 @@ public class RefexDynamicGUI
 			}
 			case COMPONENT:
 			{
-				return new ToIntFunction<RefexDynamicVersionBI<?>>()
+				return new ToIntFunction<DynamicSememeVersionBI<?>>()
 				{
 					@Override
-					public int applyAsInt(RefexDynamicVersionBI<?> value)
+					public int applyAsInt(DynamicSememeVersionBI<?> value)
 					{
 						return refex_.getReferencedComponentNid();
 					}
@@ -472,10 +471,10 @@ public class RefexDynamicGUI
 			}
 			case ASSEMBLAGE:
 			{
-				return new ToIntFunction<RefexDynamicVersionBI<?>>()
+				return new ToIntFunction<DynamicSememeVersionBI<?>>()
 				{
 					@Override
-					public int applyAsInt(RefexDynamicVersionBI<?> value)
+					public int applyAsInt(DynamicSememeVersionBI<?> value)
 					{
 						return refex_.getAssemblageNid();
 					}
@@ -483,10 +482,10 @@ public class RefexDynamicGUI
 			}
 			case AUTHOR:
 			{
-				return new ToIntFunction<RefexDynamicVersionBI<?>>()
+				return new ToIntFunction<DynamicSememeVersionBI<?>>()
 				{
 					@Override
-					public int applyAsInt(RefexDynamicVersionBI<?> value)
+					public int applyAsInt(DynamicSememeVersionBI<?> value)
 					{
 						return refex_.getAuthorNid();
 					}
@@ -494,10 +493,10 @@ public class RefexDynamicGUI
 			}
 			case MODULE:
 			{
-				return new ToIntFunction<RefexDynamicVersionBI<?>>()
+				return new ToIntFunction<DynamicSememeVersionBI<?>>()
 				{
 					@Override
-					public int applyAsInt(RefexDynamicVersionBI<?> value)
+					public int applyAsInt(DynamicSememeVersionBI<?> value)
 					{
 						return refex_.getModuleNid();
 					}
@@ -505,10 +504,10 @@ public class RefexDynamicGUI
 			}
 			case PATH:
 			{
-				return new ToIntFunction<RefexDynamicVersionBI<?>>()
+				return new ToIntFunction<DynamicSememeVersionBI<?>>()
 				{
 					@Override
-					public int applyAsInt(RefexDynamicVersionBI<?> value)
+					public int applyAsInt(DynamicSememeVersionBI<?> value)
 					{
 						return refex_.getPathNid();
 					}
@@ -521,23 +520,23 @@ public class RefexDynamicGUI
 				{
 					throw new RuntimeException("API misuse");
 				}
-				return new ToIntFunction<RefexDynamicVersionBI<?>>()
+				return new ToIntFunction<DynamicSememeVersionBI<?>>()
 				{
 					@Override
-					public int applyAsInt(RefexDynamicVersionBI<?> value)
+					public int applyAsInt(DynamicSememeVersionBI<?> value)
 					{
-						RefexDynamicDataBI data = refex_.getData().length > attachedDataColumn ? refex_.getData()[attachedDataColumn] : null;
+						DynamicSememeDataBI data = refex_.getData().length > attachedDataColumn ? refex_.getData()[attachedDataColumn] : null;
 						if (data != null)
 						{
-							if (data instanceof RefexDynamicNidBI)
+							if (data instanceof DynamicSememeNidBI)
 							{
-								return ((RefexDynamicNidBI)data).getDataNid();
+								return ((DynamicSememeNidBI)data).getDataNid();
 							}
-							else if (data instanceof RefexDynamicUUIDBI)
+							else if (data instanceof DynamicSememeUUIDBI)
 							{
-								if (ExtendedAppContext.getDataStore().hasUuid(((RefexDynamicUUIDBI)data).getDataUUID()))
+								if (ExtendedAppContext.getDataStore().hasUuid(((DynamicSememeUUIDBI)data).getDataUUID()))
 								{
-									return ExtendedAppContext.getDataStore().getNidForUuids(((RefexDynamicUUIDBI)data).getDataUUID());
+									return ExtendedAppContext.getDataStore().getNidForUuids(((DynamicSememeUUIDBI)data).getDataUUID());
 								}
 							}
 						}

@@ -20,8 +20,7 @@ package gov.va.isaac.util;
 
 import java.beans.PropertyVetoException;
 import java.math.BigDecimal;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDouble;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeFloat;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
@@ -37,7 +36,7 @@ public class NumberUtilities
 	/**
 	 * Return the wrapped number, or throw an exception if not parseable as an integer, long, float or double
 	 */
-	public static RefexDynamicDataBI wrapIntoRefexHolder(Number value) throws NumberFormatException
+	public static DynamicSememeDataBI wrapIntoRefexHolder(Number value) throws NumberFormatException
 	{
 		if (value == null)
 		{

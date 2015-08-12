@@ -45,14 +45,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
+import org.ihtsdo.otf.query.lucene.DynamicSememeIndexer;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
@@ -256,7 +256,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 			}
 			else
 			{
-				LuceneDynamicRefexIndexer refexIndexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+				DynamicSememeIndexer refexIndexer = AppContext.getService(DynamicSememeIndexer.class);
 				
 				if (refexIndexer == null)
 				{
@@ -309,7 +309,7 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	
 	private boolean attributeIs(UUID attributeType, String orderValue, ConceptChronicleBI cc) throws IOException
 	{
-		for (RefexDynamicVersionBI<?> rv : cc.getRefexesDynamicActive(vc_))
+		for (DynamicSememeVersionBI<?> rv : cc.getRefexesDynamicActive(vc_))
 		{
 			if (rv.getAssemblageNid() == getNid(attributeType))
 			{
