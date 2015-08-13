@@ -1,6 +1,8 @@
 package gov.va.isaac.gui.treegraph;
 
+import gov.va.isaac.gui.treegraph.TreeNode.Coordinates;
 import javafx.scene.control.Label;
+import javafx.scene.shape.Line;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -20,11 +22,20 @@ public class GraphExample extends Application {
 		node2.addChildTreeNodeBelow(node4);
 		TreeNode node5 = new TreeNode(node2, new Label("Node 5"));
 		node2.addChildTreeNodeBelow(node5);
-		TreeNode node6 = new TreeNode(node2, new Label("Node 6"));
-		node2.addChildTreeNodeBelow(node6);
+		
+		TreeNode node6 = new TreeNode(node1, new Label("Node 6"));
+		node1.addChildTreeNodeBelow(node6);
 
 		TreeNode node3 = new TreeNode(node1, new Label("Node 3"));
-		node1.addChildTreeNodeBelow(node3);
+		node1.setChildToRight(node3);		
+//		Coordinates startCoordinates = node1.getRightConnectionPortCoordinates();
+//		Coordinates endCoordinates = node3.getLeftConnectionPortCoordinates();
+//		Line line = new Line(startCoordinates.getX(), startCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
+//		graph.getChildren().add(line);
+		
+
+		TreeNode node7 = new TreeNode(node4, new Label("Node 7"));
+		node4.setChildToRight(node7);
 		
 		graph.addTreeNode(node1);
 		
