@@ -1,0 +1,41 @@
+package gov.va.isaac.gui.treegraph;
+
+import javafx.scene.control.Label;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+public class GraphExample extends Application {
+	
+	protected void init(Stage primaryStage) {
+		TreeGraph graph = new TreeGraph();
+		
+		TreeNode node1 = new TreeNode(null, new Label("Node 1"));
+
+		TreeNode node2 = new TreeNode(node1, new Label("Node 2"));
+		node1.addChildTreeNodeBelow(node2);
+		
+		
+		TreeNode node4 = new TreeNode(node2, new Label("Node 4"));
+		node2.addChildTreeNodeBelow(node4);
+		TreeNode node5 = new TreeNode(node2, new Label("Node 5"));
+		node2.addChildTreeNodeBelow(node5);
+		TreeNode node6 = new TreeNode(node2, new Label("Node 6"));
+		node2.addChildTreeNodeBelow(node6);
+
+		TreeNode node3 = new TreeNode(node1, new Label("Node 3"));
+		node1.addChildTreeNodeBelow(node3);
+		
+		graph.addTreeNode(node1);
+		
+		primaryStage.setScene(new Scene(graph, 500, 500));
+	}
+	
+	public static void main(String[] args) { launch(args); }
+	
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+        init(primaryStage);
+        primaryStage.show();
+    }
+}
