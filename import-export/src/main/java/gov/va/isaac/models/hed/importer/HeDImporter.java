@@ -18,20 +18,6 @@
  */
 package gov.va.isaac.models.hed.importer;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.InformationModels;
-import gov.va.isaac.ie.ImportHandler;
-import gov.va.isaac.model.InformationModelType;
-import gov.va.isaac.models.InformationModel;
-import gov.va.isaac.models.api.InformationModelService;
-import gov.va.isaac.models.hed.HeDInformationModel;
-import gov.va.isaac.models.hed.HeDXmlUtils;
-import gov.va.isaac.models.util.ImporterBase;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescriptionBuilder;
-
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -72,10 +58,23 @@ import org.hl7.knowledgeartifact.r1.SupportingEvidence;
 import org.hl7.knowledgeartifact.r1.ValueSet;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeColumnInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ie.ImportHandler;
+import gov.va.isaac.model.InformationModelType;
+import gov.va.isaac.models.InformationModel;
+import gov.va.isaac.models.api.InformationModelService;
+import gov.va.isaac.models.hed.HeDInformationModel;
+import gov.va.isaac.models.hed.HeDXmlUtils;
+import gov.va.isaac.models.util.ImporterBase;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
+import gov.vha.isaac.ochre.model.constants.InformationModelsConstants;
 
 /**
  * An {@link ImportHandler} for importing a HeD model from an XML file.
@@ -334,7 +333,7 @@ public class HeDImporter extends ImporterBase implements ImportHandler {
 					String value = auth + "'s " + id + " " + " v" + vers + " HeD Referenced Enumeration";
 			
 					// Only create if doesn't already exist
-					if (!ExtendedAppContext.getDataStore().hasUuid(OTFUtility.getUuidForFsn(value, value))) {
+					if (!Get.identifierService().hasUuid(OTFUtility.getUuidForFsn(value, value))) {
 						// Create Refex's Description
 						StringBuilder enumerationDesc = new StringBuilder();
 						enumerationDesc.append("Enumeration Sememe for " + auth + "'s " + id);
@@ -348,9 +347,9 @@ public class HeDImporter extends ImporterBase implements ImportHandler {
 						try {
 							// Create Enumeration
 							AppContext.getRuntimeGlobals().disableAllCommitListeners();
-							DynamicSememeUsageDescriptionBuilder.createNewDynamicSememeUsageDescriptionConcept(value, value, enumerationDesc.toString(), 
+							DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(value, value, enumerationDesc.toString(), 
 																											 new DynamicSememeColumnInfo[] {},
-																											 InformationModels.HED_ENUMERATIONS.getUuids()[0], 
+																											 InformationModelsConstants.HED_ENUMERATIONS.getUuids()[0], 
 																											 false, null, ViewCoordinates.getMetadataViewCoordinate());
 						} catch (IOException | ContradictionException | InvalidCAB
 								| PropertyVetoException e) {

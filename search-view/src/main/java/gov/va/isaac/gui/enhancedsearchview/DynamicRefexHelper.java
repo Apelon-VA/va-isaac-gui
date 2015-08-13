@@ -24,18 +24,20 @@
  */
 package gov.va.isaac.gui.enhancedsearchview;
 
-import java.io.IOException;
-import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.ExtendedAppContext;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescriptionBI;
 
 /**
  * DynamicRefexHelper
@@ -51,44 +53,43 @@ public class DynamicRefexHelper {
 	 */
 	private DynamicRefexHelper() {}
 	
-	public static void displayDynamicRefexes(ConceptChronicleBI conceptContainingRefexes) {
-		OTFUtility.getConceptVersion(conceptContainingRefexes.getConceptNid());
-	}
-	public static void displayDynamicRefexes(ConceptVersionBI conceptContainingRefexes) {
-		String desc = null;
-		try {
-			desc = OTFUtility.getDescription(conceptContainingRefexes);
-			for (DynamicSememeVersionBI<?> refex : conceptContainingRefexes.getRefexesDynamicActive(OTFUtility.getViewCoordinate())) {
-				DynamicRefexHelper.displayDynamicRefex(refex);
+	public static void displayDynamicRefexes(int componentNid) {
+		Get.sememeService().getSememesForComponent(componentNid).forEach(sememeC ->
+		{
+			if (sememeC.getSememeType() == SememeType.DYNAMIC)
+			{
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe>> latest = ((SememeChronology)sememeC)
+						.getLatestVersion(DynamicSememe.class, ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+			
+				if (latest.isPresent())
+				{
+					DynamicRefexHelper.displayDynamicRefex(latest.get().value());
+				}
 			}
-		} catch (IOException e) {
-			LOG.warn("Failed diplaying sememes in concept " + (desc != null ? desc : "") + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"");
-			e.printStackTrace();
-		}
+		});
 	}
-	public static void displayDynamicRefex(DynamicSememeVersionBI<?> refex) {
-		displayDynamicRefex(refex, 0);
+	public static void displayDynamicRefex(DynamicSememe<?> refex) {
+		displayDynamicSememe(refex, 0);
 	}
-	public static void displayDynamicRefex(DynamicSememeVersionBI<?> refex, int depth) {
+	public static void displayDynamicSememe(DynamicSememe<?> refex, int depth) {
 		String indent = "";
 		
 		for (int i = 0; i < depth; ++i) {
 			indent += "\t";
 		}
 		
-		DynamicSememeUsageDescription dud = null;
+		DynamicSememeUsageDescriptionBI dud = null;
 		try {
 			dud = refex.getDynamicSememeUsageDescription();
-		} catch (IOException | ContradictionException e) {
-			LOG.error("Failed executing getDynamicSememeUsageDescription().  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
-			e.printStackTrace();
-			
+		} catch (RuntimeException e) {
+			LOG.error("Failed executing getDynamicSememeUsageDescription().  Caught " + e.getClass().getName(), e);
 			return;
 		}
 		DynamicSememeColumnInfo[] colInfo = dud.getColumnInfo();
 		DynamicSememeDataBI[] data = refex.getData();
 		LOG.debug(indent + "dynamic sememe nid=" + refex.getNid() + ", uuid=" + refex.getPrimordialUuid());
-		LOG.debug(indent + "dynamic sememe name=\"" + dud.getRefexName() + "\": " + refex.toUserString() + " with " + colInfo.length + " columns:");
+		LOG.debug(indent + "dynamic sememe name=\"" + dud.getDyanmicSememeName() + "\": " + refex.toUserString() + " with " + colInfo.length + " columns:");
 		for (int colIndex = 0; colIndex < colInfo.length; ++colIndex) {
 			DynamicSememeColumnInfo currentCol = colInfo[colIndex];
 			String name = currentCol.getColumnName();
@@ -99,16 +100,6 @@ public class DynamicRefexHelper {
 			LOG.debug(indent + "\t" + "dynamic sememe: " + refex.toUserString() + " col #" + colIndex + " (uuid=" + colUuid + ", type=" + type.getDisplayName() + "): " + name + "=" + (colData != null ? colData.getDataObject() : null));
 		}
 		
-		Collection<? extends DynamicSememeVersionBI<?>> embeddedRefexes = null;
-		try {
-			embeddedRefexes = refex.getRefexesDynamicActive(OTFUtility.getViewCoordinate());
-
-			for (DynamicSememeVersionBI<?> embeddedRefex : embeddedRefexes) {
-				displayDynamicRefex(embeddedRefex, depth + 1);
-			}
-		} catch (IOException e) {
-			LOG.error("Failed executing getRefexesDynamicActive(OTFUtility.getViewCoordinate()).  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
-			e.printStackTrace();
-		}
+		displayDynamicRefexes(refex.getNid());
 	}
 }

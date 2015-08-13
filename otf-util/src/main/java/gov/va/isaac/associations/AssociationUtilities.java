@@ -20,7 +20,7 @@ package gov.va.isaac.associations;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.ISAAC;
+import gov.vha.isaac.ochre.api.constants.ISAAC;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;

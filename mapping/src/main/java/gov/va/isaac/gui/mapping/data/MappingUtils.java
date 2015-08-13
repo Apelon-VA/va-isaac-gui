@@ -19,7 +19,6 @@
 package gov.va.isaac.gui.mapping.data;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.gui.RenameableDisplayConcept;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.refexDynamic.DynamicSememeUtil;
@@ -33,6 +32,7 @@ import gov.va.isaac.util.SearchStringProcessor;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.constants.MappingConstants;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;

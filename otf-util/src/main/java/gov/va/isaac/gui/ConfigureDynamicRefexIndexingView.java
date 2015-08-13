@@ -92,7 +92,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 			vbox.setSpacing(5.0);
 			
 			DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(assemblageConcept.getNid());
-			Integer[] currentIndexConfig = DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConcept.getNid());
+			Integer[] currentIndexConfig = DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConcept.getConceptSequence());
 			
 			if (rdud.isAnnotationStyle())
 			{

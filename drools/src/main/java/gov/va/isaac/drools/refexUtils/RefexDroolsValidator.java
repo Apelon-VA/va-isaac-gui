@@ -18,19 +18,17 @@
  */
 package gov.va.isaac.drools.refexUtils;
 
-import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.drools.helper.ResultsCollector;
 import gov.va.isaac.drools.helper.ResultsItem;
 import gov.va.isaac.drools.helper.TerminologyHelperDrools;
@@ -42,6 +40,8 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArrayBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeStringBI;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeArray;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
@@ -85,7 +85,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 			if (dataToValidate.getRefexDataType() == DynamicSememeDataType.NID)
 			{
 				//switch it to a UUID, for drools purposes.
-				UUID temp = ExtendedAppContext.getDataStore().getUuidsForNid(((DynamicSememeNidBI)dataToValidate).getDataNid()).get(0);
+				UUID temp = Ts.get().getUuidsForNid(((DynamicSememeNidBI)dataToValidate).getDataNid()).get(0);
 				facts.add(new DynamicSememeUUID(temp));
 			}
 			else
@@ -140,17 +140,8 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 
 	public static DynamicSememeArray<DynamicSememeString> createValidatorDefinitionData(RefexDroolsValidatorImplInfo rdvii)
 	{
-		try
-		{
-			return new DynamicSememeArray<DynamicSememeString>(
-					new DynamicSememeString[]{new DynamicSememeString("RefexDroolsValidator"), new DynamicSememeString(rdvii.name())});
-		}
-		catch (PropertyVetoException e)
-		{
-			//not possible
-			logger.error("oops");
-			throw new RuntimeException(e);
-		}
+		return new DynamicSememeArray<DynamicSememeString>(
+				new DynamicSememeString[]{new DynamicSememeString("RefexDroolsValidator"), new DynamicSememeString(rdvii.name())});
 	}
 
 	/**
@@ -196,7 +187,8 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	 * org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.DynamicSememeStringBI, org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate)
 	 */
 	@Override
-	public boolean validate(DynamicSememeDataBI userData, DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, ViewCoordinate vc) throws RuntimeException
+	public boolean validate(DynamicSememeDataBI userData, DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, StampCoordinate<?> sc, 
+			TaxonomyCoordinate<?> tc) throws RuntimeException
 	{
 		RefexDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
 		if (rdvi == null)

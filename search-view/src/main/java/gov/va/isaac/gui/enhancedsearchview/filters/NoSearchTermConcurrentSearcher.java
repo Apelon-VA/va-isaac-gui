@@ -1,22 +1,19 @@
 package gov.va.isaac.gui.enhancedsearchview.filters;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.collections.NidSet;
-
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javafx.application.Platform;
-import javafx.scene.control.ProgressIndicator;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologySnapshotDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.collections.NidSet;
+import javafx.application.Platform;
+import javafx.scene.control.ProgressIndicator;
 
 public class NoSearchTermConcurrentSearcher implements ProcessUnfetchedConceptDataBI
 	{
@@ -32,7 +29,7 @@ public class NoSearchTermConcurrentSearcher implements ProcessUnfetchedConceptDa
 		{
 			this.parentNid = parentNid;
 			totalToProcess_ = initialNids.getSetValues().length;
-			snapshot = ExtendedAppContext.getDataStore().getSnapshot(OTFUtility.getViewCoordinate());
+			snapshot = Ts.get().getSnapshot(OTFUtility.getViewCoordinate());
 		}
 		
 		/**

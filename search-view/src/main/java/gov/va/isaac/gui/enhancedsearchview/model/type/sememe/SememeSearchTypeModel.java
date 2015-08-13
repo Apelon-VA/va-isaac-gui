@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,14 +25,15 @@ import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.util.Interval;
 import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -56,7 +56,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 	private HBox searchInRefexHBox = new HBox();
 	private FlowPane searchInColumnsHolder = new FlowPane();
 	private ConceptNode searchInRefex;
-	private Integer currentlyEnteredAssemblageNid = null;
+	private Integer currentlyEnteredAssemblageSequence = null;
 	private TextField searchText;
 	private Tooltip tooltip = new Tooltip();
 	private SearchHandle ssh = null;
@@ -90,9 +90,9 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				searchInColumnsHolder.getChildren().clear();
 				try
 				{
-					DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(newValue.getNid());
-					currentlyEnteredAssemblageNid = rdud.getRefexUsageDescriptorNid();
-					Integer[] indexedColumns = DynamicSememeIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageNid);
+					DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(newValue.getNid());
+					currentlyEnteredAssemblageSequence = rdud.getDynamicSememeUsageDescriptorSequence();
+					Integer[] indexedColumns = DynamicSememeIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageSequence);
 					if (indexedColumns == null || indexedColumns.length == 0)
 					{
 						searchInRefex.isValid().setInvalid("Sememe searches can only be performed on indexed columns in the sememe.  The selected "
@@ -142,14 +142,14 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				{
 					searchInRefex.isValid().setInvalid("Sememe searches can only be limited to valid Dynamic Sememe Assemblage concept types."
 							+ "  The current value is not a Dynamic Sememe Assemblage concept.");
-					currentlyEnteredAssemblageNid = null;
+					currentlyEnteredAssemblageSequence = null;
 					optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 					searchInColumnsHolder.getChildren().clear();
 				}
 			}
 			else
 			{
-				currentlyEnteredAssemblageNid = null;
+				currentlyEnteredAssemblageSequence = null;
 				optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 				searchInColumnsHolder.getChildren().clear();
 			}
@@ -204,13 +204,13 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 		searchText.setTooltip(tooltip);
 	}
 
-	public Integer getCurrentlyEnteredAssemblageNid() {
-		return currentlyEnteredAssemblageNid;
+	public Integer getCurrentlyEnteredAssemblageSequence() {
+		return currentlyEnteredAssemblageSequence;
 	}
 
-	public void setCurrentlyEnteredAssemblageNid(
-			Integer currentlyEnteredAssemblageNid) {
-		this.currentlyEnteredAssemblageNid = currentlyEnteredAssemblageNid;
+	public void setCurrentlyEnteredAssemblageSequence(
+			Integer currentlyEnteredAssemblageSequence) {
+		this.currentlyEnteredAssemblageSequence = currentlyEnteredAssemblageSequence;
 	}
 
 	public ConceptNode getSearchInRefex() {
@@ -269,7 +269,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				{
 					try
 					{
-						return indexer.query(data, currentlyEnteredAssemblageNid, false, getSearchColumns(), Integer.parseInt(modelMaxResults), null);
+						return indexer.query(data, currentlyEnteredAssemblageSequence, false, getSearchColumns(), Integer.parseInt(modelMaxResults), null);
 					}
 					catch (Exception e)
 					{
@@ -290,7 +290,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 						{
 							return indexer.queryNumericRange(NumberUtilities.wrapIntoRefexHolder(interval.getLeft()), interval.isLeftInclusive(), 
 									NumberUtilities.wrapIntoRefexHolder(interval.getRight()), interval.isRightInclusive(), 
-									currentlyEnteredAssemblageNid, getSearchColumns(), Integer.parseInt(modelMaxResults), null);
+									currentlyEnteredAssemblageSequence, getSearchColumns(), Integer.parseInt(modelMaxResults), null);
 						}
 						catch (Exception e1)
 						{
@@ -306,7 +306,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 					{
 						try
 						{
-							return indexer.query(new DynamicSememeString(searchText.getText()), currentlyEnteredAssemblageNid, false, 
+							return indexer.query(new DynamicSememeString(searchText.getText()), currentlyEnteredAssemblageSequence, false, 
 									getSearchColumns(), Integer.parseInt(modelMaxResults), null);
 						}
 						catch (Exception e2)
@@ -375,10 +375,9 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			
 			for (IdentifiedObjectLocal c : refConResult.getMatchingComponents())
 			{
-				if (c instanceof DynamicSememeVersionBI<?>)
+				if (c instanceof DynamicSememe<?>)
 				{
-					DynamicSememeVersionBI<?> rv = (DynamicSememeVersionBI<?>)c;
-					ConceptVersionBI assembCon = OTFUtility.getConceptVersion(rv.getAssemblageNid());	
+					DynamicSememe<?> rv = (DynamicSememe<?>)c;
 					
 					try
 					{
@@ -399,7 +398,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 								attachedData = ci[i].getColumnName() + " - " + data.getDataObject().toString();
 							}	
 
-							SememeSearchResult result = new SememeSearchResult(refCon.get(), assembCon, attachedData);
+							SememeSearchResult result = new SememeSearchResult(refCon.get(), rv.getAssemblageSequence(), attachedData);
 							retList.add(result);
 							i++;
 						}

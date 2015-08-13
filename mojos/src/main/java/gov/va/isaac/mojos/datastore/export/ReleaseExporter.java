@@ -49,6 +49,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -332,7 +333,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		TerminologyStoreDI dataStore;
 		Stream<? extends ConceptChronicleBI> conceptStream = null;
 		try {
-			dataStore = ExtendedAppContext.getDataStore();
+			dataStore = Ts.get();
 			conceptStream = dataStore.getConceptStream();
 		} catch(Exception e) {
 			getLog().error("USCRS Export Mojo Error - problem loading datastore and Concept-Stream", e);

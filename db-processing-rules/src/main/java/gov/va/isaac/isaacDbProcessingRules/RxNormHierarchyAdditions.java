@@ -19,13 +19,20 @@
 package gov.va.isaac.isaacDbProcessingRules;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.mojo.termstore.transforms.TransformArbitraryI;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
@@ -36,8 +43,6 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.jvnet.hk2.annotations.Service;
@@ -133,18 +138,21 @@ public class RxNormHierarchyAdditions implements TransformArbitraryI
 						continue;
 					}
 					
-					for (DynamicSememeChronicleBI<?> refex : currentDescription.getRefexesDynamic())
+					
+					isRxNormIN = Get.sememeService().getSememesForComponentFromAssemblage(currentDescription.getNid(), 
+							Get.identifierService().getConceptSequence(rxNormDescTypeAssemblageNid)).anyMatch(sememe ->
 					{
-						DynamicSememeVersionBI<?> currentRefex = OTFUtility.getLatestDynamicRefexVersion(refex.getVersionList());
-						if (currentRefex.getAssemblageNid() == rxNormDescTypeAssemblageNid)
+						if (sememe.getSememeType() == SememeType.DYNAMIC)
 						{
-							if (((DynamicSememeUUID)currentRefex.getData()[0]).getDataUUID().equals(termTypeIN))
+							@SuppressWarnings({ "unchecked", "rawtypes" })
+							Optional<LatestVersion<DynamicSememe>>  latest = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, StampCoordinates.getDevelopmentLatest());
+							if (latest.isPresent() && ((DynamicSememeUUID)latest.get().value().getData()[0]).getDataUUID().equals(termTypeIN))
 							{
-								isRxNormIN = true;
-								break;
+								return true;
 							}
 						}
-					}
+						return false;
+					});
 					
 					if (currentDescription.getText().toLowerCase().contains("penicillin"))
 					{

@@ -24,6 +24,7 @@ import gov.va.isaac.util.OTFUtility;
 import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -35,7 +36,7 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 public class CommonBase {
   // @Inject
   /**  The data store. */
-  private TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
+  private TerminologyStoreDI dataStore = Ts.get();
 
   /**
    * Instantiates an empty {@link CommonBase}.

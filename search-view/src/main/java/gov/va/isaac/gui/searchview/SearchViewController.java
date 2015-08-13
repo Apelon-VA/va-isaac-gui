@@ -63,12 +63,15 @@ import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
@@ -147,7 +150,7 @@ public class SearchViewController implements TaskCompleteCallback
 	private ConceptNode searchInRefex;
 	private ObservableList<SimpleDisplayConcept> dynamicRefexList_ = new ObservableListWrapper<>(new ArrayList<>());
 	private Tooltip tooltip = new Tooltip();
-	private Integer currentlyEnteredAssemblageNid = null;
+	private Integer currentlyEnteredAssemblageSequence = null;
 	private FlowPane searchInColumnsHolder = new FlowPane();
 	private enum SearchInOptions {Descriptions, Sememes};
 	private ArrayList<Consumer<IndexServiceBI>> changeNotificationConsumers_ = new ArrayList<>();
@@ -225,10 +228,10 @@ public class SearchViewController implements TaskCompleteCallback
 					searchInColumnsHolder.getChildren().clear();
 					try
 					{
-						DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(newValue.getNid());
+						DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(newValue.getNid());
 						displayIndexConfigMenu_.set(true);
-						currentlyEnteredAssemblageNid = rdud.getRefexUsageDescriptorNid();
-						Integer[] indexedColumns = DynamicSememeIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageNid);
+						currentlyEnteredAssemblageSequence = rdud.getDynamicSememeUsageDescriptorSequence();
+						Integer[] indexedColumns = DynamicSememeIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageSequence);
 						if (indexedColumns == null || indexedColumns.length == 0)
 						{
 							searchInRefex.isValid().setInvalid("Sememe searches can only be performed on indexed columns in the sememe.  The selected "
@@ -283,14 +286,14 @@ public class SearchViewController implements TaskCompleteCallback
 								+ "  The current value is not a Dynamic Sememe Assemblage concept.");
 						LOG.debug("Exception while checking is sememe concept field in search box was a dynamic sememe", e1);
 						displayIndexConfigMenu_.set(false);
-						currentlyEnteredAssemblageNid = null;
+						currentlyEnteredAssemblageSequence = null;
 						optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 						searchInColumnsHolder.getChildren().clear();
 					}
 				}
 				else
 				{
-					currentlyEnteredAssemblageNid = null;
+					currentlyEnteredAssemblageSequence = null;
 					optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 					searchInColumnsHolder.getChildren().clear();
 				}
@@ -378,7 +381,7 @@ public class SearchViewController implements TaskCompleteCallback
 							String preferredText = (wbConcept.isPresent() ? wbConcept.get().getConceptDescriptionText() : 
 								"Containing Concept for nid " + item.getMatchingDescriptionComponents().iterator().next().getNid() + " not on path!");
 						
-							if (item.getMatchingComponents().size() > 0 && item.getMatchingComponents().iterator().next() instanceof DynamicSememeVersionBI<?>)
+							if (item.getMatchingComponents().size() > 0 && item.getMatchingComponents().iterator().next() instanceof DynamicSememe<?>)
 							{
 								HBox hb = new HBox();
 								Label concept = new Label("Referenced Concept");
@@ -390,15 +393,15 @@ public class SearchViewController implements TaskCompleteCallback
 							
 								for (IdentifiedObjectLocal c : item.getMatchingComponents())
 								{
-									if (c instanceof DynamicSememeVersionBI<?>)
+									if (c instanceof DynamicSememe<?>)
 									{
-										DynamicSememeVersionBI<?> rv = (DynamicSememeVersionBI<?>)c;
+										DynamicSememe<?> rv = (DynamicSememe<?>)c;
 										HBox assemblageConBox = new HBox();
 										Label assemblageCon = new Label("Assemblage Concept");
 										assemblageCon.getStyleClass().add("boldLabel");
 										HBox.setMargin(assemblageCon, new Insets(0.0, 0.0, 0.0, 10.0));
 										assemblageConBox.getChildren().add(assemblageCon);
-										assemblageConBox.getChildren().add(new Label("  " + OTFUtility.getDescription(rv.getAssemblageNid())));
+										assemblageConBox.getChildren().add(new Label("  " + Get.conceptDescriptionText(rv.getAssemblageSequence())));
 										box.getChildren().add(assemblageConBox);
 
 										Label attachedData = new Label("Attached Data");
@@ -768,9 +771,18 @@ public class SearchViewController implements TaskCompleteCallback
 				else
 				{
 					LOG.debug("Doing a description search on the extended type {}", descriptionTypeSelection.getValue().getDescription());
-					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
-							ExtendedAppContext.getDataStore().getUuidPrimordialForNid(descriptionTypeSelection.getValue().getNid()), 
+					if (descriptionTypeSelection.getValue().getNid() < LuceneDescriptionType.values().length)
+					{
+						ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
+								LuceneDescriptionType.fromOrdinal(descriptionTypeSelection.getValue().getNid()), 
+								this, null, null, null, true, false);
+					}
+					else
+					{
+						ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
+							Get.identifierService().getUuidPrimordialForNid(descriptionTypeSelection.getValue().getNid()).get(), 
 							this, null, null, null, true, false);
+					}
 				}
 			}
 			else
@@ -784,7 +796,7 @@ public class SearchViewController implements TaskCompleteCallback
 					{
 						try
 						{
-							return indexer.query(data, currentlyEnteredAssemblageNid, false, getSearchColumns(), searchLimit.getValue(), null);
+							return indexer.query(data, currentlyEnteredAssemblageSequence, false, getSearchColumns(), searchLimit.getValue(), null);
 						}
 						catch (Exception e)
 						{
@@ -805,7 +817,7 @@ public class SearchViewController implements TaskCompleteCallback
 							{
 								return indexer.queryNumericRange(NumberUtilities.wrapIntoRefexHolder(interval.getLeft()), interval.isLeftInclusive(), 
 										NumberUtilities.wrapIntoRefexHolder(interval.getRight()), interval.isRightInclusive(), 
-										currentlyEnteredAssemblageNid, getSearchColumns(), searchLimit.getValue(), null);
+										currentlyEnteredAssemblageSequence, getSearchColumns(), searchLimit.getValue(), null);
 							}
 							catch (Exception e1)
 							{
@@ -821,7 +833,7 @@ public class SearchViewController implements TaskCompleteCallback
 						{
 							try
 							{
-								return indexer.query(new DynamicSememeString(searchText.getText()), currentlyEnteredAssemblageNid, false, 
+								return indexer.query(new DynamicSememeString(searchText.getText()), currentlyEnteredAssemblageSequence, false, 
 										getSearchColumns(), searchLimit.getValue(), null);
 							}
 							catch (Exception e2)

@@ -441,7 +441,7 @@ public class SearchResultsTable  {
 			try {
 				SememeSearchResult sememeParam = (SememeSearchResult)param.getValue();
 				
-				return new SimpleStringProperty(sememeParam.getAssembCon().getPreferredDescription().getText().trim());
+				return new SimpleStringProperty(Get.conceptDescriptionText(sememeParam.getAssembSequence()));
 			} catch (RuntimeException e) {
 				LOG.error("initializeAssembConColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 

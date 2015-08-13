@@ -1,21 +1,21 @@
 
 package gov.va.isaac.models.cem;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.InformationModels;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescriptionBuilder;
-
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeColumnInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
+import gov.vha.isaac.ochre.model.constants.InformationModelsConstants;
 
 /**
  * Represents a CEM constraint.
@@ -125,9 +125,9 @@ public class CEMConstraint {
 				try {
 					// Create Enumeration
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					DynamicSememeUsageDescriptionBuilder.createNewDynamicSememeUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, 
+					DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, 
 																									 new DynamicSememeColumnInfo[] {},
-																									 InformationModels.CEM_ENUMERATIONS.getUuids()[0], false, null,
+																									 InformationModelsConstants.CEM_ENUMERATIONS.getUuids()[0], false, null,
 																									 ViewCoordinates.getMetadataViewCoordinate());
 				} catch (IOException | ContradictionException | InvalidCAB
 						| PropertyVetoException e) {
@@ -146,6 +146,6 @@ public class CEMConstraint {
 			UUID uuid = OTFUtility.getUuidForFsn(value, value);
 //			UUID uuid = UuidT5Generator.get(UUID PATH_ID_FROM_FS_DESC, value);
 	
-			return ExtendedAppContext.getDataStore().hasUuid(uuid);
+			return Get.identifierService().hasUuid(uuid);
 	}
 }

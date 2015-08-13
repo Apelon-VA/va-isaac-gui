@@ -1,8 +1,7 @@
 package gov.va.isaac.ie.exporter;
 
-import gov.va.isaac.util.ProgressReporter;
-import gov.va.isaac.util.OTFUtility;
 import java.io.IOException;
+import java.util.Optional;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
@@ -11,10 +10,14 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.DynamicSememeVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.ProgressReporter;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 
 /**
  * Generically represents an Exporter.
@@ -87,17 +90,16 @@ public interface Exporter extends ProgressReporter {
 	}
 	
 	try {
-		for (DynamicSememeChronicleBI<?> rc : cv.getDynamicSememeAnnotations()) {
-			if(rc != null) {
-				DynamicSememeVersionBI<?> rv = rc.getVersion(vc).get();
-				if(rv != null) {
-//					System.out.println(rc.getVersion(vc));
-					if (rv.getPathNid() == pathNid)  {
-					  return true;
-					}
-				}
+		return Get.sememeService().getSememesForComponent(cv.getNid()).anyMatch(sememeC ->
+		{
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			Optional<LatestVersion<SememeVersion>> latest = ((SememeChronology)sememeC).getLatestVersion(SememeVersion.class, vc);
+			if (latest.isPresent() && Get.identifierService().getConceptNid(latest.get().value().getPathSequence()) == pathNid)
+			{
+				return true;
 			}
-		}
+			return false;
+		});
 	} catch (Exception e) {
 		e.printStackTrace();
 	}

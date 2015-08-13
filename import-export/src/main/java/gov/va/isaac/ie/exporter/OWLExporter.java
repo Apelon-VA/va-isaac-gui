@@ -1,13 +1,5 @@
 package gov.va.isaac.ie.exporter;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
-import gov.va.isaac.models.util.CommonBase;
-import gov.va.isaac.util.ProgressEvent;
-import gov.va.isaac.util.ProgressListener;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.collections.NidSet;
-
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -20,17 +12,16 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptFetcherBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Taxonomies;
-import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.RDFXMLOntologyFormat;
 import org.semanticweb.owlapi.model.AddOntologyAnnotation;
@@ -51,6 +42,12 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager;
 import org.semanticweb.owlapi.vocab.OWLRDFVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
+import gov.va.isaac.models.util.CommonBase;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.ProgressEvent;
+import gov.va.isaac.util.ProgressListener;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 /**
  * Handler for exporting SNOMED to Owl. NOTE: this only works presently for
@@ -68,8 +65,7 @@ public class OWLExporter extends CommonBase implements Exporter,
   private static final Logger LOG = LoggerFactory.getLogger(OWLExporter.class);
 
   /** The data store. */
-  private static TerminologyStoreDI dataStore = ExtendedAppContext
-      .getDataStore();
+  private static TerminologyStoreDI dataStore = Ts.get();
 
   /** The dos. */
   private DataOutputStream dos;
