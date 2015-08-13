@@ -1,9 +1,8 @@
 package gov.va.isaac.gui.treegraph;
 
-import gov.va.isaac.gui.treegraph.TreeNode.Coordinates;
 import javafx.scene.control.Label;
-import javafx.scene.shape.Line;
 import javafx.application.Application;
+import javafx.scene.shape.Circle;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -26,13 +25,10 @@ public class GraphExample extends Application {
 		TreeNode node6 = new TreeNode(node1, new Label("Node 6"));
 		node1.addChildTreeNodeBelow(node6);
 
-		TreeNode node3 = new TreeNode(node1, new Label("Node 3"));
-		node1.setChildToRight(node3);		
-//		Coordinates startCoordinates = node1.getRightConnectionPortCoordinates();
-//		Coordinates endCoordinates = node3.getLeftConnectionPortCoordinates();
-//		Line line = new Line(startCoordinates.getX(), startCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
-//		graph.getChildren().add(line);
-		
+		Label label3 = new Label("Node 3");
+		label3.setShape(new Circle(50));
+		TreeNode node3 = new TreeNode(node1, label3);
+		node1.setChildToRight(node3);	
 
 		TreeNode node7 = new TreeNode(node4, new Label("Node 7"));
 		node4.setChildToRight(node7);
