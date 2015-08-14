@@ -1,7 +1,17 @@
 package gov.va.isaac.gui.mapping;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
@@ -18,19 +28,12 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -51,11 +54,11 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
@@ -64,10 +67,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Controller class for the Create Mapping View.
@@ -120,7 +119,7 @@ public class CreateMappingItemController {
 		public UUID getAdvancedDescriptionTypeUUID() throws IOException { 
 			UUID uuid = null;
 			if (advancedDescriptionType != null) {
-				uuid = ExtendedAppContext.getDataStore().getUuidPrimordialForNid(advancedDescriptionType.getNid()); 
+				uuid = Get.identifierService().getUuidPrimordialForNid(advancedDescriptionType.getNid()).get(); 
 			}
 			return uuid; 
 		}
@@ -335,9 +334,9 @@ public class CreateMappingItemController {
 					AppContext.getCommonDialogs().showInformationDialog("Cannot Create Mapping Item", "Source Concept must be specified.");
 				} else {
 					UUID qualifierUUID = (qualifierCombo.getSelectionModel().getSelectedItem().getNid() == Integer.MIN_VALUE ? null : 
-						ExtendedAppContext.getDataStore().getUuidPrimordialForNid(qualifierCombo.getSelectionModel().getSelectedItem().getNid()));
+						Get.identifierService().getUuidPrimordialForNid(qualifierCombo.getSelectionModel().getSelectedItem().getNid()).get());
 					UUID statusUUID = (statusCombo.getSelectionModel().getSelectedItem().getNid() == Integer.MIN_VALUE ? null : 
-						ExtendedAppContext.getDataStore().getUuidPrimordialForNid(statusCombo.getSelectionModel().getSelectedItem().getNid()));
+						Get.identifierService().getUuidPrimordialForNid(statusCombo.getSelectionModel().getSelectedItem().getNid()).get());
 					
 					mi = MappingItemDAO.createMappingItem(sourceConcept, 
 														  mappingSet_.getPrimordialUUID(), 

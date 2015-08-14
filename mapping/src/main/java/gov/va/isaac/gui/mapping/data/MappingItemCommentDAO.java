@@ -1,25 +1,24 @@
 package gov.va.isaac.gui.mapping.data;
 
-import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
-import gov.vha.isaac.ochre.api.constants.ISAAC;
-import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import javafx.concurrent.Task;
 
 public class MappingItemCommentDAO extends MappingDAO 
 {
@@ -31,49 +30,46 @@ public class MappingItemCommentDAO extends MappingDAO
 	 * some comments - this field is indexed, so a search for comments could query this field.
 	 * @throws IOException
 	 */
-	public static MappingItemComment createMappingItemComment(UUID pMappingItemUUID, String pCommentText, String commentContext) throws IOException
+	public static MappingItemComment createMappingItemComment(UUID pMappingItemUUID, String pCommentText, String commentContext) throws RuntimeException
 	{
 		if (pMappingItemUUID == null)
 		{
-			throw new IOException("UUID of component to attach the comment to is required");
+			throw new RuntimeException("UUID of component to attach the comment to is required");
 		}
 		if (StringUtils.isBlank(pCommentText))
 		{
-			throw new IOException("The comment is required");
+			throw new RuntimeException("The comment is required");
 		}
 
 		try
 		{
-			DynamicSememeCAB commentAnnotation = new DynamicSememeCAB(pMappingItemUUID, ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid());
-			commentAnnotation.setData(new DynamicSememeDataBI[] { 
-					new DynamicSememeString(pCommentText),
-					(StringUtils.isBlank(commentContext) ? null : new DynamicSememeString(commentContext))}, null);
+			
+			SememeChronology<? extends DynamicSememe<?>> built =  Get.sememeBuilderService().getDyanmicSememeBuilder(
+					Get.identifierService().getNidForUuids(pMappingItemUUID),  
+					IsaacMetadataConstants.DYNAMIC_SEMEME_COMMENT_ATTRIBUTE.getSequence(), 
+					new DynamicSememeDataBI[] {new DynamicSememeString(pCommentText),
+							(StringUtils.isBlank(commentContext) ? null : new DynamicSememeString(commentContext))})
+				.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(),
+						ChangeCheckerMode.ACTIVE);
 
-			commentAnnotation.computeMemberUuid();
-
-			/*
-			 * Not so sure duplicate comments are a problem, especially since this does not distinguish retired comments
-			 * Commenting out - DT
-			 *
-			if (ExtendedAppContext.getDataStore().hasUuid(commentAnnotation.getComponentUuid()))
-			{
-				throw new IOException("A comment of that value already exists on that item.");
-			}
-			*/
-
-			DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentAnnotation);
-
-			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			ExtendedAppContext.getDataStore().addUncommitted(cc);
-			ExtendedAppContext.getDataStore().commit(/* cc */);
 
-			return new MappingItemComment((DynamicSememeVersionBI<?>) ExtendedAppContext.getDataStore()
-					.getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), rdc.getPrimordialUuid()).get());
-		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
-		{
-			throw new IOException("Unexpected error", e);
+			Task<Optional<CommitRecord>> task = Get.commitService().commit("Added comment");
+			
+			try
+			{
+				task.get();
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException();
+			}
+			
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)built).getLatestVersion(DynamicSememe.class, 
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+			
+			return new MappingItemComment(latest.get().value());
 		}
 		finally
 		{
@@ -86,36 +82,28 @@ public class MappingItemCommentDAO extends MappingDAO
 	 * @param mappingUUID - The UUID of a MappingSet or a MappingItem
 	 * @param activeOnly - when true, only return active comments
 	 * @return
-	 * @throws IOException
+	 * @throws RuntimeException
 	 */
-	public static List<MappingItemComment> getComments(UUID mappingUUID, boolean activeOnly) throws IOException {
+	public static List<MappingItemComment> getComments(UUID mappingUUID, boolean activeOnly) throws RuntimeException {
 		List<MappingItemComment> comments = new ArrayList<MappingItemComment>();
 		
-		try
-		{
-			int mappingNid = ExtendedAppContext.getDataStore().getNidForUuids(mappingUUID);
-			for (SearchResult sr : search(ISAAC.COMMENT_ATTRIBUTE.getPrimodialUuid()))
-			{
-				Optional<DynamicSememeVersionBI<?>> rc = (Optional<DynamicSememeVersionBI<?>>) ExtendedAppContext.getDataStore().
-						getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
-				if (rc.isPresent())
+		Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getNidForUuids(mappingUUID),
+				IsaacMetadataConstants.DYNAMIC_SEMEME_COMMENT_ATTRIBUTE.getSequence()).forEach(sememeC -> 
 				{
-					if (activeOnly && !rc.get().isActive())
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)sememeC).getLatestVersion(DynamicSememe.class, 
+							ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+					
+					if (!latest.isPresent() || (activeOnly && latest.get().value().getState() == State.INACTIVE))
 					{
-						continue;
+						//noop;
 					}
-					if (rc.get().getReferencedComponentNid() == mappingNid)
+					else
 					{
-						comments.add(new MappingItemComment(rc.get()));
+						comments.add(new MappingItemComment(latest.get().value()));
 					}
-				}
-			}
-		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected error reading comments", e);
-			throw new IOException("internal error reading comments");
-		}
+				});
+
 		return comments;
 	}
 	
@@ -125,7 +113,7 @@ public class MappingItemCommentDAO extends MappingDAO
 	 */
 	public static void unRetireComment(UUID commentPrimordialUUID) throws IOException 
 	{
-		setRefexStatus(commentPrimordialUUID, Status.ACTIVE);
+		setSememeStatus(commentPrimordialUUID, State.ACTIVE);
 	}
 	
 	/**
@@ -134,7 +122,7 @@ public class MappingItemCommentDAO extends MappingDAO
 	 */
 	public static void retireComment(UUID commentPrimordialUUID) throws IOException 
 	{
-		setRefexStatus(commentPrimordialUUID, Status.INACTIVE);
+		setSememeStatus(commentPrimordialUUID, State.INACTIVE);
 	}
 	
 	/**
@@ -146,22 +134,26 @@ public class MappingItemCommentDAO extends MappingDAO
 	{
 		try
 		{
-			DynamicSememeVersionBI<?> rdv = readCurrentRefex(comment.getPrimordialUUID());
-			DynamicSememeCAB commentCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-			commentCab.getData()[0] = new DynamicSememeString(comment.getCommentText());
-			commentCab.getData()[1] = (StringUtils.isNotBlank(comment.getCommentContext()) ? new DynamicSememeString(comment.getCommentContext()) : null);
-			commentCab.validate(null);
-			DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(commentCab);
+			DynamicSememe<?> rdv = readCurrentRefex(comment.getPrimordialUUID());
+			Get.sememeBuilderService().getDyanmicSememeBuilder(rdv.getReferencedComponentNid(),  
+					IsaacMetadataConstants.DYNAMIC_SEMEME_COMMENT_ATTRIBUTE.getSequence(), 
+					new DynamicSememeDataBI[] {new DynamicSememeString(comment.getCommentText()),
+							(StringUtils.isBlank(comment.getCommentContext()) ? null : new DynamicSememeString(comment.getCommentContext()))})
+				.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(),
+						ChangeCheckerMode.ACTIVE);
 
-			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			ExtendedAppContext.getDataStore().addUncommitted(cc);
-			ExtendedAppContext.getDataStore().commit(/* cc */);
-		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
-		{
-			LOG.error("Unexpected!", e);
-			throw new IOException("Internal error");
+
+			Task<Optional<CommitRecord>> task = Get.commitService().commit("Added comment");
+			
+			try
+			{
+				task.get();
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException();
+			}
 		}
 		finally
 		{

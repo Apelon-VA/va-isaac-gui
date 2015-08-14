@@ -1,6 +1,6 @@
 package gov.va.isaac.gui;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 
 /**
  * An extension of SimpleDisplayConcept that can be used when you need to change
@@ -9,6 +9,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
  * @author dtriglianos
  *
  */
+@Deprecated
 public class RenameableDisplayConcept extends SimpleDisplayConcept {
 
 	//TODO Dan question - the existence of this class makes me feel something has gone wrong.... when is this ever a use case?
@@ -20,7 +21,7 @@ public class RenameableDisplayConcept extends SimpleDisplayConcept {
 		super(description, nid, ignoreChange);
 	}
 
-	public RenameableDisplayConcept(ConceptVersionBI c) {
+	public RenameableDisplayConcept(ConceptSnapshot c) {
 		super(c);
 	}
 

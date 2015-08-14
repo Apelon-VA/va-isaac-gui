@@ -1,26 +1,26 @@
 package gov.va.isaac.gui.mapping.data;
 
-import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
-import gov.vha.isaac.ochre.api.constants.MappingConstants;
-import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.util.UuidT5Generator;
+import javafx.concurrent.Task;
 
 public class MappingItemDAO extends MappingDAO
 {
@@ -33,42 +33,52 @@ public class MappingItemDAO extends MappingDAO
 	 * @param editorStatusID - (optional) the primary ID of the status concept
 	 * @throws IOException
 	 */
-	public static MappingItem createMappingItem(ConceptSnapshot sourceConcept, UUID mappingSetID, ConceptSnapshot targetConcept, UUID qualifierID, UUID editorStatusID) throws IOException
+	public static MappingItem createMappingItem(ConceptSnapshot sourceConcept, UUID mappingSetID, ConceptSnapshot targetConcept, 
+			UUID qualifierID, UUID editorStatusID) throws RuntimeException
 	{
 		try
 		{
-			DynamicSememeCAB mappingAnnotation = new DynamicSememeCAB(sourceConcept.getPrimordialUuid(), mappingSetID);
-			mappingAnnotation.setData(new DynamicSememeDataBI[] {
-					(targetConcept == null ? null : new DynamicSememeUUID(targetConcept.getPrimordialUuid())),
-					(qualifierID == null ? null : new DynamicSememeUUID(qualifierID)),
-					(editorStatusID == null ? null : new DynamicSememeUUID(editorStatusID))}, OTFUtility.getViewCoordinateAllowInactive());
+			SememeBuilder<? extends SememeChronology<?>> sb =  Get.sememeBuilderService().getDyanmicSememeBuilder(
+					sourceConcept.getNid(),  
+					Get.identifierService().getConceptSequenceForUuids(mappingSetID), 
+					new DynamicSememeDataBI[] {
+							(targetConcept == null ? null : new DynamicSememeUUID(targetConcept.getPrimordialUuid())),
+							(qualifierID == null ? null : new DynamicSememeUUID(qualifierID)),
+							(editorStatusID == null ? null : new DynamicSememeUUID(editorStatusID))});
 			
-			
-			UUID mappingItemUUID = UuidT5Generator.get(MappingConstants.MAPPING_NAMESPACE.getPrimodialUuid(), 
+			UUID mappingItemUUID = UuidT5Generator.get(IsaacMappingConstants.MAPPING_NAMESPACE.getUUID(), 
 					sourceConcept.getPrimordialUuid().toString() + "|" 
 					+ mappingSetID.toString() + "|"
 					+ ((targetConcept == null)? "" : targetConcept.getPrimordialUuid().toString()) + "|" 
 					+ ((qualifierID == null)?   "" : qualifierID.toString()));
 			
-			if (ExtendedAppContext.getDataStore().hasUuid(mappingItemUUID))
+			if (Get.identifierService().hasUuid(mappingItemUUID))
 			{
-				throw new IOException("A mapping with the specified source, target and qualifier already exists in this set.  Please edit that mapping.");
+				throw new RuntimeException("A mapping with the specified source, target and qualifier already exists in this set.  Please edit that mapping.");
 			}
 			
-			mappingAnnotation.setComponentUuidNoRecompute(mappingItemUUID);
-			OTFUtility.getBuilder().construct(mappingAnnotation);
+			sb.setPrimordialUuid(mappingItemUUID);
+			@SuppressWarnings("rawtypes")
+			SememeChronology built = sb.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(),ChangeCheckerMode.ACTIVE);
 
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 
-			//ExtendedAppContext.getDataStore().addUncommitted(sourceConcept);  //need builder API
-			ExtendedAppContext.getDataStore().commit(/*sourceConcept*/);  //TODO OCHRE
+			Task<Optional<CommitRecord>> task = Get.commitService().commit("Added comment");
 			
-			return new MappingItem((DynamicSememeVersionBI<?>) ExtendedAppContext.getDataStore().getComponent(mappingItemUUID));
-		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
-		{
-			LOG.error("Unexpected", e);
-			throw new IOException("Invalid mapping. Check Source, Target, and Qualifier.", e);
+			try
+			{
+				task.get();
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException();
+			}
+			
+			@SuppressWarnings({ "unchecked" })
+			Optional<LatestVersion<DynamicSememe<?>>> latest = built.getLatestVersion(DynamicSememe.class, 
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+			
+			return new MappingItem(latest.get().value());
 		}
 		finally
 		{
@@ -85,42 +95,23 @@ public class MappingItemDAO extends MappingDAO
 	 */
 	public static List<MappingItem> getMappingItems(UUID mappingSetID, boolean activeOnly) throws IOException
 	{
-		try
-		{
-			ArrayList<MappingItem> result = new ArrayList<>();
-			boolean hadError = false;
-			for (SearchResult sr : search(mappingSetID))
+		ArrayList<MappingItem> result = new ArrayList<>();
+		Get.sememeService().getSememesFromAssemblage(Get.identifierService().getNidForUuids(mappingSetID)).forEach(sememeC -> 
 			{
-				Optional<DynamicSememeVersionBI<?>> rc = (Optional<DynamicSememeVersionBI<?>>) ExtendedAppContext.getDataStore()
-						.getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
-				try
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)sememeC).getLatestVersion(DynamicSememe.class, 
+						ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+				
+				if (!latest.isPresent() || (activeOnly && latest.get().value().getState() == State.INACTIVE))
 				{
-					if (rc.isPresent())
-					{
-						if (rc.get().isActive() || !activeOnly)
-						{
-							result.add(new MappingItem(rc.get()));
-						}
-					}
+					//noop;
 				}
-				catch (Exception e)
+				else
 				{
-					LOG.error("Unexpected error reading mapping " + rc, e);
-					hadError = true;
+					result.add(new MappingItem(latest.get().value()));
 				}
-			}
-			if (hadError)
-			{
-				AppContext.getCommonDialogs().showErrorDialog("Internal Error", "Internal Error", "There was an internal error reading all of the mappings.  See logs.");
-			}
-			
-			return result;
-		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected error reading comments", e);
-			throw new IOException("internal error reading comments");
-		}
+			});
+		return result;
 	}
 
 	/**
@@ -170,21 +161,26 @@ public class MappingItemDAO extends MappingDAO
 	{
 		try
 		{
-			DynamicSememeVersionBI<?> rdv = readCurrentRefex(mappingItem.getPrimordialUUID());
-			DynamicSememeCAB mappingItemCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-			mappingItemCab.getData()[2] = (mappingItem.getEditorStatusConcept() != null ? new DynamicSememeUUID(mappingItem.getEditorStatusConcept()) : null);
-			mappingItemCab.validate(OTFUtility.getViewCoordinateAllowInactive());
-			DynamicSememeChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingItemCab);
+			DynamicSememe<?> rdv = readCurrentRefex(mappingItem.getPrimordialUUID());
+			
+			DynamicSememeDataBI[] data = rdv.getData();
+			data[2] = (mappingItem.getEditorStatusConcept() != null ? new DynamicSememeUUID(mappingItem.getEditorStatusConcept()) : null);
+			
+			Get.sememeBuilderService().getDyanmicSememeBuilder(rdv.getReferencedComponentNid(),  
+					rdv.getAssemblageSequence(), data).build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
 
-			ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			ExtendedAppContext.getDataStore().addUncommitted(cc);
-			ExtendedAppContext.getDataStore().commit(/* cc */);
-		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
-		{
-			LOG.error("Unexpected!", e);
-			throw new IOException("Internal error");
+
+			Task<Optional<CommitRecord>> task = Get.commitService().commit("update mapping item");
+			
+			try
+			{
+				task.get();
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException();
+			}
 		}
 		finally
 		{
@@ -198,7 +194,7 @@ public class MappingItemDAO extends MappingDAO
 	 */
 	public static void retireMappingItem(UUID mappingItemPrimordial) throws IOException
 	{
-		setRefexStatus(mappingItemPrimordial, Status.INACTIVE);
+		setSememeStatus(mappingItemPrimordial, State.INACTIVE);
 	}
 
 	/**
@@ -207,6 +203,6 @@ public class MappingItemDAO extends MappingDAO
 	 */
 	public static void unRetireMappingItem(UUID mappingItemPrimordial) throws IOException
 	{
-		setRefexStatus(mappingItemPrimordial, Status.ACTIVE);
+		setSememeStatus(mappingItemPrimordial, State.ACTIVE);
 	}
 }

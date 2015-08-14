@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.legoEdit.model.schemaModel.Assertion;
 import gov.va.legoEdit.model.schemaModel.AssertionComponent;
 import gov.va.legoEdit.model.schemaModel.Concept;
@@ -36,6 +35,7 @@ import gov.va.legoEdit.model.schemaModel.Relation;
 import gov.va.legoEdit.model.schemaModel.RelationGroup;
 import gov.va.legoEdit.model.schemaModel.Type;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 
 /**
  * 
@@ -58,7 +58,7 @@ public class LegoWBUtility
 			c.setUuid(concept.getPrimordialUuid().toString());
 			try
 			{
-				Optional<Long> sctId = OchreUtility.getSctId(concept.getNid());
+				Optional<Long> sctId = Frills.getSctId(concept.getNid(), null);
 				if (sctId.isPresent())
 				{
 					c.setSctid(sctId.get());

@@ -1,5 +1,15 @@
 package gov.va.isaac.gui.enhancedsearchview.model;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerHelper;
@@ -19,14 +29,7 @@ import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -40,8 +43,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SearchResultsTable  {
 	private final TableView<CompositeSearchResult> results = new TableView<CompositeSearchResult>();
@@ -278,7 +279,7 @@ public class SearchResultsTable  {
 		preferredTermCol.setCellFactory(new MyTableCellCallback<String>());
 		preferredTermCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OchreUtility.getPreferredTermForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
+				return new SimpleStringProperty(Frills.getPreferredTermForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
 			} catch (RuntimeException e) {
 				LOG.error("initializePrefTermColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 
@@ -334,7 +335,7 @@ public class SearchResultsTable  {
 
 							List<DescriptionSememe<?>> matchingDescComponents = new ArrayList<DescriptionSememe<?>>();
 							
-							for (SememeChronology<DescriptionSememe> ds : result.getMatchingDescriptionComponents())
+							for (@SuppressWarnings("rawtypes") SememeChronology<DescriptionSememe> ds : result.getMatchingDescriptionComponents())
 							{
 								matchingDescComponents.add(ds.getLatestVersion(DescriptionSememe.class, 
 										AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get().value());

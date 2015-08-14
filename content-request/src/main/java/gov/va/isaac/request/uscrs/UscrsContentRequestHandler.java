@@ -66,9 +66,9 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Semantic_Tag;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
 import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.concurrent.Task;
 
 
@@ -748,7 +748,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 //				isTest = true;
 //			}
 //		}
-		Optional<? extends Long> sct = OchreUtility.getSctId(nid);
+		Optional<? extends Long> sct = Frills.getSctId(nid, null);
 		if(sct.isPresent() && !isTest) {
 			return sct.get();
 		} else if(isTest) {

@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import javafx.application.Platform;
@@ -49,21 +51,21 @@ public class MappingItem extends MappingObject
 	protected final SimpleStringProperty qualifierConceptProperty = new SimpleStringProperty();
 	protected final SimpleStringProperty commentsProperty		  = new SimpleStringProperty();
 	
-	protected MappingItem(DynamicSememeVersionBI<?> refex) throws IOException
+	protected MappingItem(DynamicSememe<?> sememe) throws RuntimeException
 	{
-		readDynamicSememeUsageDescription(refex);
+		read(sememe);
 	}
 	
-	private void read(DynamicSememeVersionBI<?> refex) throws IOException
+	private void read(DynamicSememe<?> sememe) throws RuntimeException
 	{
-		sourceConceptNid = refex.getReferencedComponentNid();
+		sourceConceptNid = sememe.getReferencedComponentNid();
 		
-		primordialUUID = refex.getPrimordialUuid();
-		setSourceConcept(dataStore.getUuidPrimordialForNid(sourceConceptNid));
-		mappingSetIDConcept = dataStore.getUuidPrimordialForNid(refex.getAssemblageNid());
-		readStampDetails(refex);
+		primordialUUID = sememe.getPrimordialUuid();
+		setSourceConcept(Get.identifierService().getUuidPrimordialForNid(sourceConceptNid).get());
+		mappingSetIDConcept = Get.identifierService().getUuidPrimordialForNid(sememe.getAssemblageSequence()).get();
+		readStampDetails(sememe);
 		
-		DynamicSememeDataBI[] data = refex.getData();
+		DynamicSememeDataBI[] data = sememe.getData();
 		setTargetConcept      (((data != null && data.length > 0 && data[0] != null) ? ((DynamicSememeUUID) data[0]).getDataUUID() : null));
 		setQualifierConcept   (((data != null && data.length > 1 && data[1] != null) ? ((DynamicSememeUUID) data[1]).getDataUUID() : null)); 
 		setEditorStatusConcept(((data != null && data.length > 2 && data[2] != null) ? ((DynamicSememeUUID) data[2]).getDataUUID() : null));

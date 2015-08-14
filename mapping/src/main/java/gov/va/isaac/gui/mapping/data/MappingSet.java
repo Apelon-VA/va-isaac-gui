@@ -22,17 +22,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.constants.ISAAC;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import javafx.beans.property.SimpleStringProperty;
@@ -63,7 +67,7 @@ public class MappingSet extends MappingObject
 	 * @param refex DynamicSememeChronicleBI<?>
 	 * @throws IOException
 	 */
-	protected MappingSet(DynamicSememeVersionBI<?> refex) throws IOException
+	protected MappingSet(DynamicSememe<?> refex) throws RuntimeException
 	{
 		this.readFromRefex(refex); //Sets Name, inverseName and Description, etc
 	}
@@ -172,76 +176,77 @@ public class MappingSet extends MappingObject
 
 	/**
 	 * @return Any comments attached to this mapping set.
-	 * @throws IOException
+	 * @throws RuntimeException
 	 */
-	public List<MappingItemComment> getComments() throws IOException
+	public List<MappingItemComment> getComments() throws RuntimeException
 	{
 		return MappingItemCommentDAO.getComments(getPrimordialUUID(), false);
 	}
 
-	private void readFromRefex(DynamicSememeVersionBI<?> refex) throws IOException
+	private void readFromRefex(DynamicSememe<?> refex) throws RuntimeException
 	{
-		try
+		ConceptSnapshot mappingConcept = MappingSetDAO.getMappingConcept(refex); 
+		if (mappingConcept != null)
 		{
-			//ConceptVersionBI mappingConcept = OTFUtility.getConceptVersion(refex.getReferencedComponentNid());
-			ConceptVersionBI mappingConcept = MappingSetDAO.getMappingConcept(refex); 
-			if (mappingConcept != null)
+			primordialUUID = mappingConcept.getPrimordialUuid();
+			readStampDetails(mappingConcept);
+			setEditorStatusConcept((refex.getData().length > 0 && refex.getData()[0] != null ? ((DynamicSememeUUID) refex.getData()[0]).getDataUUID() : null));
+			if (refex.getData().length > 1 && refex.getData()[1] != null)
 			{
-				primordialUUID = mappingConcept.getPrimordialUuid();
-				readStampDetails(mappingConcept);
-				setEditorStatusConcept((refex.getData().length > 0 && refex.getData()[0] != null ? ((DynamicSememeUUID) refex.getData()[0]).getDataUUID() : null));
-				if (refex.getData().length > 1 && refex.getData()[1] != null)
-				{
-					setPurpose(((DynamicSememeString) refex.getData()[1]).getDataString());
-				}
+				setPurpose(((DynamicSememeString) refex.getData()[1]).getDataString());
+			}
 
-				for (DescriptionVersionBI<?> desc : mappingConcept.getDescriptionsActive())
+			Get.sememeService().getSememesForComponentFromAssemblage(mappingConcept.getNid(), 
+					IsaacMetadataAuxiliaryBinding.DESCRIPTION_ASSEMBLAGE.getConceptSequence())
+				.forEach(descriptionC ->
 				{
-					if (desc.getTypeNid() == Snomed.SYNONYM_DESCRIPTION_TYPE.getNid())
+					if (getName() != null && getDescription() != null && getInverseName() != null)
 					{
-						if (OTFUtility.isPreferred(desc.getAnnotations()))
+						//noop... sigh... can't short-circuit in a forEach....
+					}
+					else
+					{
+						@SuppressWarnings({ "rawtypes", "unchecked" })
+						Optional<LatestVersion<DescriptionSememe<?>>> latest = ((SememeChronology)descriptionC).getLatestVersion(DescriptionSememe.class, 
+								ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+						if (latest.isPresent())
 						{
-							setName(desc.getText());
-						}
-						else
-						//see if it is the inverse name
-						{
-							for (DynamicSememeChronicleBI<?> annotation : desc.getDynamicSememeAnnotations())
+							DescriptionSememe<?> ds = latest.get().value();
+							if (ds.getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence())
 							{
-								if (annotation.getAssemblageNid() == ISAAC.ASSOCIATION_INVERSE_NAME.getNid())
+								if (Frills.isDescriptionPreferred(ds.getNid(), null))
 								{
-									setInverseName(desc.getText()); 
-									break;
+									setName(ds.getText());
+								}
+								else
+								//see if it is the inverse name
+								{
+									if (Get.sememeService().getSememesForComponentFromAssemblage(ds.getNid(), 
+											IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getSequence()).anyMatch(sememeC -> 
+											{
+												return sememeC.isLatestVersionActive(ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+											}))
+									{
+										setInverseName(ds.getText()); 
+									}
+								}
+							}
+							else if (ds.getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence())
+							{
+								if (Frills.isDescriptionPreferred(ds.getNid(), null))
+								{
+									setDescription(ds.getText());
 								}
 							}
 						}
 					}
-					else if (desc.getTypeNid() == Snomed.DEFINITION_DESCRIPTION_TYPE.getNid())
-					{
-						if (OTFUtility.isPreferred(desc.getAnnotations()))
-						{
-							setDescription(desc.getText());
-						}
-					}
-
-					if (getName() != null && getDescription() != null && getInverseName() != null)
-					{
-						//found everything we are looking for
-						break;
-					}
-				}
-			}
-			else
-			{
-				String error = "cannot read mapping concept!";
-				LOG.error(error);
-				throw new IOException(error);
-			}
+				});
 		}
-		catch (ContradictionException | ValidationException e)
+		else
 		{
-			LOG.error("Unexpected error", e);
-			throw new IOException("internal error");
+			String error = "cannot read mapping concept!";
+			LOG.error(error);
+			throw new RuntimeException(error);
 		}
 	}
 	

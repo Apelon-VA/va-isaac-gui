@@ -1,6 +1,5 @@
 package gov.va.isaac.gui.mapping.data;
 
-import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,33 +7,41 @@ import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
-import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
-import gov.vha.isaac.ochre.api.constants.ISAAC;
-import gov.vha.isaac.ochre.api.constants.MappingConstants;
-import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
+import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.constants.IsaacMappingConstants;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
+import javafx.concurrent.Task;
 
 /**
  * {@link MappingSet}
@@ -65,22 +72,23 @@ public class MappingSetDAO extends MappingDAO
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 
 			//We need to create a new concept - which itself is defining a dynamic refex - so set that up here.
-			DynamicSememeUsageDescription rdud = DynamicSememeUsageDescriptionBuilder
-					.createNewDynamicSememeUsageDescriptionConcept(mappingName, mappingName, description, 
+			DynamicSememeUsageDescription rdud = DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(
+					mappingName, mappingName, description, 
 					new DynamicSememeColumnInfo[] {
-						new DynamicSememeColumnInfo(0, ISAAC.REFEX_COLUMN_TARGET_COMPONENT.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, null, null),
-						new DynamicSememeColumnInfo(1, MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, 
-								DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_QUALIFIERS.getPrimodialUuid())),
-						new DynamicSememeColumnInfo(2, MappingConstants.MAPPING_STATUS.getPrimodialUuid(), DynamicSememeDataType.UUID, null, false, 
-								DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(MappingConstants.MAPPING_STATUS.getPrimodialUuid()))}, 
-					null, true, ComponentType.CONCEPT, ViewCoordinates.getMetadataViewCoordinate());
+						new DynamicSememeColumnInfo(0, IsaacMetadataConstants.DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getUUID(), 
+								DynamicSememeDataType.UUID, null, false),
+						new DynamicSememeColumnInfo(1, IsaacMappingConstants.MAPPING_QUALIFIERS.getUUID(), DynamicSememeDataType.UUID, null, false, 
+								DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(IsaacMappingConstants.MAPPING_QUALIFIERS.getUUID())),
+						new DynamicSememeColumnInfo(2, IsaacMappingConstants.MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
+								DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUID(IsaacMappingConstants.MAPPING_STATUS.getUUID()))}, 
+					null, ObjectChronologyType.CONCEPT, null);
 			
 			Utility.execute(() ->
 			{
 				try
 				{
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					DynamicSememeIndexerConfiguration.configureColumnsToIndex(rdud.getRefexUsageDescriptorNid(), new Integer[] {0, 1, 2}, true);
+					DynamicSememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1, 2}, true);
 				}
 				catch (Exception e)
 				{
@@ -92,38 +100,54 @@ public class MappingSetDAO extends MappingDAO
 				}
 			});
 			
-			//Then, annotate the concept created above as a member of the MappingSet dynamic refex, and add the inverse name, if present.
-			ConceptVersionBI createdConcept = OTFUtility.getConceptVersion(rdud.getRefexUsageDescriptorNid());
+			ConceptSnapshotService css = Get.conceptService().getSnapshot(
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(), 
+					ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get());
+			
+			//Then, annotate the concept created above as a member of the MappingSet dynamic sememe, and add the inverse name, if present.
+			ConceptSnapshot cs = css.getConceptSnapshot(rdud.getDynamicSememeUsageDescriptorSequence());
 			if (!StringUtils.isBlank(inverseName))
 			{
-				DescriptionCAB dCab = new DescriptionCAB(createdConcept.getNid(), Snomed.SYNONYM_DESCRIPTION_TYPE.getNid(), LanguageCode.EN, inverseName,
-						false, IdDirective.GENERATE_HASH);
-				dCab.addAnnotationBlueprint(new DynamicSememeCAB(dCab.getComponentUuid(), ISAAC.ASSOCIATION_INVERSE_NAME.getPrimodialUuid()));
-				OTFUtility.getBuilder().construct(dCab);
+				ObjectChronology<?> builtDesc = LookupService.get().getService(DescriptionBuilderService.class).getDescriptionBuilder(inverseName, cs.getConceptSequence(), 
+						IsaacMetadataAuxiliaryBinding.SYNONYM, IsaacMetadataAuxiliaryBinding.ENGLISH).build(
+								ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
+				
+				Get.sememeBuilderService().getDyanmicSememeBuilder(builtDesc.getNid(),IsaacMetadataConstants.DYNAMIC_SEMEME_ASSEMBLAGES.getSequence()).build(
+						ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
 			}
 			
-			DynamicSememeCAB mappingAnnotation = new DynamicSememeCAB(rdud.getRefexUsageDescriptorNid(), MappingConstants.MAPPING_SEMEME_TYPE.getNid());
-			mappingAnnotation.setData(new DynamicSememeDataBI[] {
-					(editorStatus == null ? null : new DynamicSememeUUID(editorStatus)),
-					(StringUtils.isBlank(purpose) ? null : new DynamicSememeString(purpose))}, OTFUtility.getViewCoordinateAllowInactive());
-			OTFUtility.getBuilder().construct(mappingAnnotation);
+			@SuppressWarnings("rawtypes")
+			SememeChronology mappingAnnotation = Get.sememeBuilderService().getDyanmicSememeBuilder(Get.identifierService().getConceptNid(rdud.getDynamicSememeUsageDescriptorSequence()),
+					IsaacMappingConstants.DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getSequence(), 
+					new DynamicSememeDataBI[] {
+							(editorStatus == null ? null : new DynamicSememeUUID(editorStatus)),
+							(StringUtils.isBlank(purpose) ? null : new DynamicSememeString(purpose))}).build(
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
+
 			
-			DynamicSememeCAB associationAnnotation = new DynamicSememeCAB(rdud.getRefexUsageDescriptorNid(), ISAAC.ASSOCIATION_SEMEME.getNid());
-			associationAnnotation.setData(new DynamicSememeDataBI[] {}, null);
-			OTFUtility.getBuilder().construct(associationAnnotation);
+			Get.sememeBuilderService().getDyanmicSememeBuilder(Get.identifierService().getConceptNid(rdud.getDynamicSememeUsageDescriptorSequence()),
+					IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).build(
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
 			
-			ExtendedAppContext.getDataStore().addUncommitted(createdConcept);
-			ExtendedAppContext.getDataStore().commit(/* createdConcept */);
+			Task<Optional<CommitRecord>> task = Get.commitService().commit("update mapping item");
+			
+			try
+			{
+				task.get();
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException();
+			}
+			
+			
+			@SuppressWarnings("unchecked")
+			Optional<LatestVersion<DynamicSememe<?>>> sememe = mappingAnnotation.getLatestVersion(DynamicSememe.class, 
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
 			
 			//Find the constructed dynamic refset
-			return new MappingSet((DynamicSememeVersionBI<?>)ExtendedAppContext.getDataStore().getComponent(mappingAnnotation.getMemberUUID())
-					.getVersion(OTFUtility.getViewCoordinateAllowInactive()).get());
+			return new MappingSet(sememe.get().value());
 		
-		}
-		catch (ContradictionException | InvalidCAB | PropertyVetoException e)
-		{
-			LOG.error("unexpected", e);
-			throw new IOException("Unexpected error creating mapping", e);
 		}
 		finally
 		{
@@ -136,80 +160,100 @@ public class MappingSetDAO extends MappingDAO
 	 * @param mappingSet - The mappingSet that carries the changes
 	 * @throws IOException
 	 */
-	public static void updateMappingSet(MappingSet mappingSet) throws IOException {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static void updateMappingSet(MappingSet mappingSet) throws RuntimeException 
+	{
 		try
 		{
-			ConceptVersionBI mappingConcept = ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinateAllowInactive(), mappingSet.getPrimordialUUID());
+			ConceptSnapshot mappingConcept = Get.conceptService().getSnapshot(
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE), 
+					ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get())
+						.getConceptSnapshot(Get.identifierService().getNidForUuids(mappingSet.getPrimordialUUID()));
 			
-			for (DescriptionVersionBI<?> desc : mappingConcept.getDescriptionsActive())
-			{
-				if (desc.getTypeNid() == Snomed.SYNONYM_DESCRIPTION_TYPE.getNid())
+			Get.sememeService().getSememesForComponentFromAssemblage(mappingConcept.getNid(), 
+					IsaacMetadataAuxiliaryBinding.DESCRIPTION_ASSEMBLAGE.getConceptSequence())
+				.forEach(descriptionC ->
 				{
-					if (OTFUtility.isPreferred(desc.getAnnotations()))
+					Optional<LatestVersion<DescriptionSememe<?>>> latest = ((SememeChronology)descriptionC).getLatestVersion(DescriptionSememe.class, 
+							ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+					if (latest.isPresent())
 					{
-						//Set the name
-						DescriptionCAB dCab = desc.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-						dCab.setText(mappingSet.getName());
-						OTFUtility.getBuilder().construct(dCab);
-					}
-					else
-					//see if it is the inverse name
-					{
-						for (DynamicSememeChronicleBI<?> annotation : desc.getDynamicSememeAnnotations())
+						DescriptionSememe<?> ds = latest.get().value();
+						if (ds.getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence())
 						{
-							if (annotation.getAssemblageNid() == ISAAC.ASSOCIATION_INVERSE_NAME.getNid())
+							if (Frills.isDescriptionPreferred(ds.getNid(), null))
 							{
-								//set the inverse name
-								DescriptionCAB dCab = desc.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-								dCab.setText(mappingSet.getInverseName());
-								OTFUtility.getBuilder().construct(dCab);
-								break;
+								if (!ds.getText().equals(mappingSet.getName()))
+								{
+									MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds)
+											.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
+									mutable.setText(mappingSet.getName());
+									Get.commitService().addUncommitted((SememeChronology<DescriptionSememe>)ds);
+								}
+							}
+							else
+							//see if it is the inverse name
+							{
+								if (Get.sememeService().getSememesForComponentFromAssemblage(ds.getNid(), 
+										IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getSequence()).anyMatch(sememeC -> 
+										{
+											return sememeC.isLatestVersionActive(ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+										}))
+								{
+									if (!ds.getText().equals(mappingSet.getInverseName()))
+									{
+										MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds)
+												.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
+										mutable.setText(mappingSet.getInverseName());
+										Get.commitService().addUncommitted((SememeChronology<DescriptionSememe>)ds);
+									}
+								}
+							}
+						}
+						else if (ds.getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence())
+						{
+							if (Frills.isDescriptionPreferred(ds.getNid(), null))
+							{
+								if (!mappingSet.getDescription().equals(ds.getText()))
+								{
+									MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds)
+											.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
+									mutable.setText(mappingSet.getDescription());
+									Get.commitService().addUncommitted((SememeChronology<DescriptionSememe>)ds);
+								}
 							}
 						}
 					}
-				}
-				else if (desc.getTypeNid() == Snomed.DEFINITION_DESCRIPTION_TYPE.getNid())
-				{
-					if (OTFUtility.isPreferred(desc.getAnnotations()))
-					{
-						//set the description
-						DescriptionCAB dCab = desc.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-						dCab.setText(mappingSet.getDescription());
-						OTFUtility.getBuilder().construct(dCab);
-					}
-				}
-			}
+				});
 			
-			Optional<? extends DynamicSememeVersionBI<?>> mappingRefex = null;
-			for (DynamicSememeChronicleBI<?> refex : mappingConcept.getDynamicSememeAnnotations())
-			{
-				if (refex.getAssemblageNid() == MappingConstants.MAPPING_SEMEME_TYPE.getNid())
-				{
-					mappingRefex = refex.getVersion(OTFUtility.getViewCoordinateAllowInactive());
-					break;
-				}
-			}
-			
-			if (!mappingRefex.isPresent())
+
+			Optional<SememeChronology<? extends SememeVersion<?>>> mappingSememe =  Get.sememeService().getSememesForComponentFromAssemblage(mappingConcept.getNid(), 
+					IsaacMappingConstants.DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getSequence()).findAny();
+						
+			if (!mappingSememe.isPresent())
 			{
 				LOG.error("Couldn't find mapping refex?");
-				throw new IOException("internal error");
+				throw new RuntimeException("internal error");
+			}
+			Optional<DynamicSememe<?>> latest = ((SememeChronology)mappingSememe.get()).getLatestVersion(DynamicSememe.class, 
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+			
+			if (latest.get().getData()[0] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.get().getData()[0] != null
+					|| (latest.get().getData()[0] != null && ((DynamicSememeUUID)latest.get().getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
+					|| latest.get().getData()[1] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.get().getData()[1] != null
+					|| (latest.get().getData()[1] != null && ((DynamicSememeString)latest.get().getData()[1]).getDataString().equals(mappingSet.getPurpose())))
+			{
+				DynamicSememeImpl mutable = (DynamicSememeImpl) ((SememeChronology)mappingSememe.get()).createMutableVersion(DynamicSememe.class, 
+						latest.get().getStampSequence());
+	
+				mutable.setData(new DynamicSememeDataBI[] {
+						(mappingSet.getEditorStatusConcept() == null ? null : new DynamicSememeUUID(mappingSet.getEditorStatusConcept())),
+						(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new DynamicSememeString(mappingSet.getPurpose()))});
+				Get.commitService().addUncommitted(latest.get().getChronology());
 			}
 			
-			DynamicSememeCAB mappingRefexCab = mappingRefex.get().makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-			mappingRefexCab.setData(new DynamicSememeDataBI[] {
-					(mappingSet.getEditorStatusConcept() == null ? null : new DynamicSememeUUID(mappingSet.getEditorStatusConcept())),
-					(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new DynamicSememeString(mappingSet.getPurpose()))}, OTFUtility.getViewCoordinateAllowInactive());
-			OTFUtility.getBuilder().construct(mappingRefexCab);
-
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			ExtendedAppContext.getDataStore().addUncommitted(mappingConcept);
-			ExtendedAppContext.getDataStore().commit(/* mappingConcept */);
-		}
-		catch (InvalidCAB | ContradictionException | PropertyVetoException e)
-		{
-			LOG.error("Unexpected!", e);
-			throw new IOException("Internal error");
+			Get.commitService().commit("Update mapping");
 		}
 		finally
 		{
@@ -219,43 +263,37 @@ public class MappingSetDAO extends MappingDAO
 	
 	public static List<MappingSet> getMappingSets(boolean activeOnly) throws IOException
 	{
-		try
-		{
-			ArrayList<MappingSet> result = new ArrayList<>();
-			for (SearchResult sr : search(MappingConstants.MAPPING_SEMEME_TYPE.getPrimodialUuid()))
+		ArrayList<MappingSet> result = new ArrayList<>();
+		
+		Get.sememeService().getSememesFromAssemblage(IsaacMappingConstants.DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getSequence()).forEach(sememeC -> 
 			{
-				Optional<DynamicSememeVersionBI<?>> rc = (Optional<DynamicSememeVersionBI<?>>) ExtendedAppContext.getDataStore().
-						getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), sr.getNid());
-				if (rc.isPresent())
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)sememeC).getLatestVersion(DynamicSememe.class, 
+						ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+				
+				if (latest.isPresent() && (!activeOnly || latest.get().value().getState() == State.ACTIVE))
 				{
-					MappingSet mappingSet = new MappingSet(rc.get());
-					if (mappingSet.isActive() || !activeOnly)
-					{
-						result.add(mappingSet);
-					}
+					result.add(new MappingSet(latest.get().value()));
 				}
-			}
-			
-			return result;
-		}
-		catch (ContradictionException e)
-		{
-			LOG.error("Unexpected error reading mappings", e);
-			throw new IOException("Error reading mappings", e);
-		}
+			});
+
+		return result;
 	}
 	
 	public static void retireMappingSet(UUID mappingSetPrimordialUUID) throws IOException
 	{
-		setConceptStatus(mappingSetPrimordialUUID, Status.INACTIVE);
+		setConceptStatus(mappingSetPrimordialUUID, State.INACTIVE);
 	}
 	
 	public static void unRetireMappingSet(UUID mappingSetPrimordialUUID) throws IOException
 	{
-		setConceptStatus(mappingSetPrimordialUUID, Status.ACTIVE);
+		setConceptStatus(mappingSetPrimordialUUID, State.ACTIVE);
 	}
 	
-	public static ConceptVersionBI getMappingConcept(DynamicSememeVersionBI<?> refex) throws IOException {
-		return ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinateAllowInactive(), refex.getReferencedComponentNid());
+	public static ConceptSnapshot getMappingConcept(DynamicSememe<?> sememe) throws RuntimeException {
+		return Get.conceptService().getSnapshot(
+				ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE), 
+				ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get())
+					.getConceptSnapshot(sememe.getReferencedComponentNid());
 	}
 }
