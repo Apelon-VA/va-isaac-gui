@@ -61,6 +61,7 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
@@ -107,7 +108,7 @@ public class OTFUtility {
 	private static Integer langTypeNid = null;
 	private static Integer snomedAssemblageNid = null;
 	
-	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
+	private static TerminologyStoreDI dataStore = Ts.get();
 
 	private static final Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
 
@@ -870,8 +871,8 @@ public class OTFUtility {
 
 		ConceptChronicleBI newCon = getBuilder().construct(newConCB);
 
-		ExtendedAppContext.getDataStore().addUncommitted(newCon);
-		ExtendedAppContext.getDataStore().commit();
+		Ts.get().addUncommitted(newCon);
+		Ts.get().commit();
 
 		return newCon;
 	}
@@ -1069,14 +1070,11 @@ public class OTFUtility {
 				} else if (type == ComponentType.SEMEME) {
 					RefexCAB cab = (RefexCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 					cbi = builder.construct(cab);
-				} else if (type == ComponentType.SEMEME_DYNAMIC) {
-					DynamicSememeCAB cab = (DynamicSememeCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-					cbi = builder.construct(cab);
-				}
+				} 
 			}	
 		}
 		
-		ExtendedAppContext.getDataStore().commit(/* conceptWithComp.getVersion(getViewCoordinate()) */);
+		Ts.get().commit(/* conceptWithComp.getVersion(getViewCoordinate()) */);
 	}
 	
 	
@@ -1096,10 +1094,6 @@ public class OTFUtility {
 
 		for(RefexChronicleBI<?> refsetMember : conceptWithComp.getRefsetMembers()) {
 			refsetMember.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rm) -> retSet.add(rm));
-		}
-
-		for(DynamicSememeChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
-			dynRef.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rdv) -> retSet.add(rdv));
 		}
 
 		return retSet;
@@ -1140,21 +1134,6 @@ public class OTFUtility {
 		RefexVersionBI<?> newest = null;;
 		long newestTime = Long.MIN_VALUE;
 		for (RefexVersionBI<?> x : collection)
-		{
-			if (x.getTime() > newestTime)
-			{
-				newest = x;
-				newestTime = x.getTime();
-			}
-		}
-		return newest;
-	}
-	
-	public static DynamicSememeVersionBI<?> getLatestDynamicRefexVersion(@SuppressWarnings("rawtypes") Collection<? extends DynamicSememeVersionBI> collection)
-	{
-		DynamicSememeVersionBI<?> newest = null;;
-		long newestTime = Long.MIN_VALUE;
-		for (DynamicSememeVersionBI<?> x : collection)
 		{
 			if (x.getTime() > newestTime)
 			{

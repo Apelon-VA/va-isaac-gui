@@ -42,10 +42,11 @@ import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import javafx.application.Platform;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -378,13 +379,14 @@ public class ColumnController implements PanelControllersI {
 			
 			if (validatorType.getValue() !=  DynamicSememeValidatorType.UNKNOWN)
 			{
-				if (processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidator() != validatorType.getValue())
+				if (processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidator() == null ||
+						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidator()[0] != validatorType.getValue())
 				{
 					//If the validator type has changed, clear the stored value.
 					processController_.getWizardData().getColumnInfo().get(columnNumber_).setValidatorData(null);
 				}
 				validatorTypeNode.update(RefexValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
-						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidatorData(),
+						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidatorData()[0],
 						typeOption.valueProperty(), allValid_));
 				validatorDataHolder.getChildren().add(validatorTypeNode.getNodeForDisplay());
 				HBox.setHgrow(validatorTypeNode.getNodeForDisplay(), Priority.ALWAYS);
@@ -453,7 +455,7 @@ public class ColumnController implements PanelControllersI {
 
 	private void initializeColumnConcepts() {
 		try {
-			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(DynamicSememe.DYNAMIC_SEMEME_COLUMNS.getConceptSequence(), false, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(IsaacMetadataConstants.DYNAMIC_SEMEME_COLUMNS.getSequence(), false, false);
 
 			for (Integer col : colCons) {
 				columnNameChoices.add(new SimpleDisplayConcept(col, colNameReader_));
@@ -505,9 +507,10 @@ public class ColumnController implements PanelControllersI {
 			}
 		}
 		isMandatory.setSelected(rdci.isColumnRequired());
-		if (rdci.getValidator() != null)
+		if (rdci.getValidator() != null && rdci.getValidator().length > 0)
 		{
-			validatorType.getSelectionModel().select(rdci.getValidator());
+			//TODO change the GUI to support multiple validators
+			validatorType.getSelectionModel().select(rdci.getValidator()[0]);
 		}
 		else
 		{
@@ -517,7 +520,7 @@ public class ColumnController implements PanelControllersI {
 		if (validatorType.getSelectionModel().getSelectedItem() != DynamicSememeValidatorType.UNKNOWN)
 		{
 			validatorTypeNode.update(RefexValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
-					rdci.getValidatorData(), 
+					rdci.getValidatorData()[0], 
 					typeOption.valueProperty(), allValid_));
 			validatorDataHolder.getChildren().add(validatorTypeNode.getNodeForDisplay());
 			HBox.setHgrow(validatorTypeNode.getNodeForDisplay(), Priority.ALWAYS);
@@ -535,14 +538,15 @@ public class ColumnController implements PanelControllersI {
 			rdci.setColumnDefaultData(RefexDataTypeFXNodeBuilder.getDataForType(currentDefaultNodeDetails_.getDataField(), rdci));
 		}
 		rdci.setColumnRequired(isMandatory.isSelected());
-		rdci.setValidatorType((validatorType.getValue() == DynamicSememeValidatorType.UNKNOWN ? null : validatorType.getSelectionModel().getSelectedItem()));
+		rdci.setValidatorType((validatorType.getValue() == DynamicSememeValidatorType.UNKNOWN ? null : new DynamicSememeValidatorType[] 
+				{validatorType.getSelectionModel().getSelectedItem()}));
 		if (rdci.getValidator() == null)
 		{
 			rdci.setValidatorData(null);
 		}
 		else
 		{
-			rdci.setValidatorData(validatorTypeNode.getValidatorDataProperty().get());
+			rdci.setValidatorData(new DynamicSememeDataBI[] {validatorTypeNode.getValidatorDataProperty().get()});
 		}
 	}
 

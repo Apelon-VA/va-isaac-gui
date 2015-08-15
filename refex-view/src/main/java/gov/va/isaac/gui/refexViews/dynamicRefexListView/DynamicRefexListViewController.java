@@ -36,10 +36,10 @@ import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
 import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
 import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.refexDynamic.DynamicSememeUtil;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
@@ -49,7 +49,6 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -77,8 +76,6 @@ public class DynamicRefexListViewController
 	@FXML private ResourceBundle resources;
 	@FXML private URL location;
 	@FXML private ListView<SimpleDisplayConcept> refexList;
-	@FXML private ChoiceBox<String> refexStyleFilter;
-	@FXML private Label refexStyleLabel;
 	@FXML private Label referencedComponentTypeLabel;
 	@FXML private AnchorPane rootPane;
 	@FXML private Button clearFilterButton;
@@ -105,7 +102,7 @@ public class DynamicRefexListViewController
 	private volatile PendingRead readStatusTracker = PendingRead.IDLE;
 	private Object readStatusLock = new Object();
 	private int currentlyRenderedRefexNid = 0;
-	private ContextMenu refexDefinitionsContextMenu_;
+	private ContextMenu sememeDefinitionsContextMenu_;
 
 	private HashSet<SimpleDisplayConcept> allRefexDefinitions;
 
@@ -124,8 +121,6 @@ public class DynamicRefexListViewController
 	void initialize()
 	{
 		assert refexList != null : "fx:id=\"refexList\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
-		assert refexStyleFilter != null : "fx:id=\"refexStyleFilter\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
-		assert refexStyleLabel != null : "fx:id=\"refexStyleLabel\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
 		assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
 		assert clearFilterButton != null : "fx:id=\"clearFilterButton\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
 		assert descriptionMatchesFilter != null : "fx:id=\"descriptionMatchesFilter\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
@@ -137,14 +132,6 @@ public class DynamicRefexListViewController
 		assert selectedRefexNameLabel != null : "fx:id=\"selectedRefexNameLabel\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
 		assert conceptNodeFilterPlaceholder != null : "fx:id=\"conceptNodeFilterPlaceholder\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
 		assert readingRefexProgress != null : "fx:id=\"readingRefexProgress\" was not injected: check your FXML file 'DynamicRefexListView.fxml'.";
-
-		refexStyleFilter.getItems().add("All");
-		refexStyleFilter.getItems().add("Annotations");
-		refexStyleFilter.getItems().add("Member Refset");
-		refexStyleFilter.getSelectionModel().select(0);
-		refexStyleFilter.valueProperty().addListener((change) -> {
-			rebuildList(false);
-		});
 
 		descriptionMatchesFilter.textProperty().addListener((change) -> {
 			rebuildList(false);
@@ -158,7 +145,7 @@ public class DynamicRefexListViewController
 				//see if it is a valid Dynamic Refex Assemblage
 				try
 				{
-					DynamicSememeUsageDescription.readDynamicSememeUsageDescription(cv.getNid());
+					DynamicSememeUsageDescription.read(cv.getNid());
 				}
 				catch (Exception e)
 				{
@@ -174,7 +161,6 @@ public class DynamicRefexListViewController
 
 		clearFilterButton.setOnAction((event) -> {
 			disableRead = true;
-			refexStyleFilter.getSelectionModel().select(0);
 			descriptionMatchesFilter.setText("");
 			conceptNode.set((ConceptVersionBI) null);
 			disableRead = false;
@@ -183,11 +169,11 @@ public class DynamicRefexListViewController
 
 		refexList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 		refexList.getSelectionModel().selectedItemProperty().addListener((change) -> {
-			showRefexDetails(refexList.getSelectionModel().getSelectedItem());
+			showSememeDetails(refexList.getSelectionModel().getSelectedItem());
 		});
 		
-		refexDefinitionsContextMenu_ = new ContextMenu();
-		refexDefinitionsContextMenu_.setAutoHide(true);
+		sememeDefinitionsContextMenu_ = new ContextMenu();
+		sememeDefinitionsContextMenu_.setAutoHide(true);
 		
 		MenuItem mi = new MenuItem("View Usage");
 		mi.setOnAction((action) ->
@@ -200,7 +186,7 @@ public class DynamicRefexListViewController
 			}
 		});
 		mi.setGraphic(Images.SEARCH.createImageView());
-		refexDefinitionsContextMenu_.getItems().add(mi);
+		sememeDefinitionsContextMenu_.getItems().add(mi);
 		
 		mi = new MenuItem("Configure Sememe Indexing");
 		mi.setOnAction((action) ->
@@ -212,9 +198,9 @@ public class DynamicRefexListViewController
 			}
 		});
 		mi.setGraphic(Images.CONFIGURE.createImageView());
-		refexDefinitionsContextMenu_.getItems().add(mi);
+		sememeDefinitionsContextMenu_.getItems().add(mi);
 		
-		CommonMenus.addCommonMenus(refexDefinitionsContextMenu_, new CommonMenusNIdProvider()
+		CommonMenus.addCommonMenus(sememeDefinitionsContextMenu_, new CommonMenusNIdProvider()
 		{
 			@Override
 			public Collection<Integer> getNIds()
@@ -228,13 +214,13 @@ public class DynamicRefexListViewController
 		{
 			if (mouseEvent.getButton().equals(MouseButton.SECONDARY) && refexList.getSelectionModel().getSelectedItem() != null)
 			{
-				refexDefinitionsContextMenu_.show(refexList, mouseEvent.getScreenX(), mouseEvent.getScreenY());
+				sememeDefinitionsContextMenu_.show(refexList, mouseEvent.getScreenX(), mouseEvent.getScreenY());
 			}
 			if (mouseEvent.getButton().equals(MouseButton.PRIMARY))
 			{
-				if (refexDefinitionsContextMenu_.isShowing())
+				if (sememeDefinitionsContextMenu_.isShowing())
 				{
-					refexDefinitionsContextMenu_.hide();
+					sememeDefinitionsContextMenu_.hide();
 				}
 			}
 		});
@@ -309,7 +295,7 @@ public class DynamicRefexListViewController
 				if (allRefexDefinitions == null)
 				{
 					allRefexDefinitions = new HashSet<>();
-					allRefexDefinitions.addAll(DynamicSememeUtil.getAllRefexDefinitions());
+					allRefexDefinitions.addAll(OchreUtility.getAllDynamicSememeAssemblageConcepts());
 				}
 				
 				//This code for adding the concept from the concept filter panel can be removed, if we fix the above code to actually
@@ -372,7 +358,7 @@ public class DynamicRefexListViewController
 				{
 					refexList.getSelectionModel().select(selectedBefore);
 				}
-				showRefexDetails(refexList.getSelectionModel().getSelectedItem());
+				showSememeDetails(refexList.getSelectionModel().getSelectedItem());
 				statusLabel.setText("Showing " + filteredList.size() + " of " + allRefexDefinitions.size() + " Sememes");
 				readingRefexProgress.setVisible(false);
 				synchronized (readStatusLock)
@@ -412,19 +398,10 @@ public class DynamicRefexListViewController
 				return false;
 			}
 		}
-		else if (refexStyleFilter.getSelectionModel().getSelectedIndex() != 0)
-		{
-			ConceptVersionBI c = OTFUtility.getConceptVersion(sdc.getNid());
-			if ((c.isAnnotationStyleRefex() && refexStyleFilter.getSelectionModel().getSelectedIndex() == 2)
-					|| (!c.isAnnotationStyleRefex() && refexStyleFilter.getSelectionModel().getSelectedIndex() == 1))
-			{
-				return false;
-			}
-		}
 		return true;
 	}
 
-	private void showRefexDetails(SimpleDisplayConcept sdn)
+	private void showSememeDetails(SimpleDisplayConcept sdn)
 	{
 		if (sdn != null && sdn.getNid() == currentlyRenderedRefexNid)
 		{
@@ -436,7 +413,6 @@ public class DynamicRefexListViewController
 		}
 		selectedRefexNameLabel.setText("");
 		selectedRefexDescriptionLabel.setText("");
-		refexStyleLabel.setText("");
 		referencedComponentTypeLabel.setText("");
 		extensionFields.getItems().clear();
 		
@@ -459,13 +435,12 @@ public class DynamicRefexListViewController
 			@Override
 			protected Void call() throws Exception
 			{
-				DynamicSememeUsageDescription rdud = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(sdn.getNid());
+				DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(sdn.getNid());
 				//fill in the header stuff
 				Platform.runLater(() -> 
 				{
-					selectedRefexNameLabel.setText(rdud.getRefexName());
-					selectedRefexDescriptionLabel.setText(rdud.getRefexUsageDescription());
-					refexStyleLabel.setText(rdud.isAnnotationStyle() ? "Annotation" : "Embedded");
+					selectedRefexNameLabel.setText(rdud.getDyanmicSememeName());
+					selectedRefexDescriptionLabel.setText(rdud.getDynamicSememeUsageDescription());
 					referencedComponentTypeLabel.setText(rdud.getReferencedComponentTypeRestriction() == null ? "No restriction" : 
 						"Must be " + rdud.getReferencedComponentTypeRestriction().toString());
 				});

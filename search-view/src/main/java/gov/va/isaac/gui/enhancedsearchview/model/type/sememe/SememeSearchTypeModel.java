@@ -19,12 +19,11 @@ import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.ResultsType;
 import gov.va.isaac.gui.enhancedsearchview.filters.SememeContentSearchTypeFilter;
 import gov.va.isaac.gui.enhancedsearchview.model.SearchModel;
 import gov.va.isaac.gui.enhancedsearchview.model.SearchTypeModel;
-import gov.va.isaac.refexDynamic.DynamicSememeUtil;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
-import gov.va.isaac.util.Interval;
 import gov.va.isaac.util.NumberUtilities;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
@@ -35,6 +34,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.util.Interval;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -263,7 +263,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			String searchString = searchText.getText().trim();
 			try
 			{
-				DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseNumber(searchString));
+				DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseUnknown(searchString));
 				LOG.debug("Doing a sememe search with a numeric value");
 				ssh = SearchHandler.dynamicRefexSearch((indexer) ->
 				{
@@ -438,7 +438,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			protected Void call() throws Exception
 			{
 				dynamicRefexAssemblages = new HashSet<>();
-				dynamicRefexAssemblages.addAll(DynamicSememeUtil.getAllRefexDefinitions());
+				dynamicRefexAssemblages.addAll(OchreUtility.getAllDynamicSememeAssemblageConcepts());
 				return null;
 			}
 

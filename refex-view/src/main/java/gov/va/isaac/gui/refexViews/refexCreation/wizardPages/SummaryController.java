@@ -31,7 +31,9 @@ import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -52,7 +54,6 @@ public class SummaryController implements PanelControllersI {
 	@FXML private Label actualRefexName;
 	@FXML private Label actualRefexDescription;
 	@FXML private Label actualParentConcept;
-	@FXML private Label actualRefexType;
 	@FXML private Label actualComponentTypeRestriction;
 	@FXML private BorderPane summaryPane;
 	@FXML private ListView<DynamicSememeColumnInfo> detailsListView;
@@ -74,7 +75,6 @@ public class SummaryController implements PanelControllersI {
 		assert startOverButton != null : "fx:id=\"startOverButton\" was not injected: check your FXML file 'summary.fxml'.";
 		assert commitButton != null : "fx:id=\"commitButton\" was not injected: check your FXML file 'summary.fxml'.";
 		assert backButton != null : "fx:id=\"commitButton\" was not injected: check your FXML file 'summary.fxml'.";
-		assert actualRefexType != null : "fx:id=\"actualRefexType\" was not injected: check your FXML file 'summary.fxml'.";
 		assert summaryPane != null : "fx:id=\"summaryPane\" was not injected: check your FXML file 'summary.fxml'.";
 		assert actualParentConcept != null : "fx:id=\"actualParentConcept\" was not injected: check your FXML file 'summary.fxml'.";
 		assert detailsListView != null : "fx:id=\"detailsListView\" was not injected: check your FXML file 'summary.fxml'.";
@@ -115,13 +115,8 @@ public class SummaryController implements PanelControllersI {
 		actualRefexName.setText(refexData.getRefexName());
 		actualRefexDescription.setText(refexData.getRefexDescription());
 		actualParentConcept.setText(refexData.getParentConcept().getConceptDescriptionText());
-		actualComponentTypeRestriction.setText(refexData.getComponentRestrictionType() == ComponentType.UNKNOWN ? "No Restriction" 
-				: refexData.getComponentRestrictionType().toString());
-		if (refexData.isAnnotatedStyle()) {
-			actualRefexType.setText("Annotated");
-		} else {
-			actualRefexType.setText("Refset");
-		}
+		actualComponentTypeRestriction.setText(refexData.getComponentRestrictionType() == ObjectChronologyType.UNKNOWN_NID ? "No Restriction" 
+				: refexData.getComponentRestrictionType().toString());  //TODO handle sub-restriction type
 		
 		detailsListView.getItems().clear();
 		detailsListView.getItems().addAll(refexData.getColumnInfo());
@@ -131,10 +126,9 @@ public class SummaryController implements PanelControllersI {
 	public void storeValues() {
 		try {
 			RefexData refexData = processController_.getWizardData();
-			DynamicSememeUsageDescriptionBuilder.createNewDynamicSememeUsageDescriptionConcept(refexData.getRefexName(),
+			DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(refexData.getRefexName(),
 					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new DynamicSememeColumnInfo[0]), 
 					refexData.getParentConcept().getPrimordialUuid(), 
-					refexData.isAnnotatedStyle(),
 					refexData.getComponentRestrictionType(), 
 					ViewCoordinates.getMetadataViewCoordinate());
 		} catch (IOException | ContradictionException | InvalidCAB | PropertyVetoException e) {

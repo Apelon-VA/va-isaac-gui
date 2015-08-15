@@ -18,7 +18,7 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 
 /**
  * Just a helper class for {@link RefexDataTypeFXNodeBuilder}.  Ignore.

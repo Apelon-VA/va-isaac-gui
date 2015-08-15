@@ -21,8 +21,9 @@ package gov.va.isaac.gui.refexViews.refexCreation;
 import java.util.ArrayList;
 import java.util.List;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
@@ -39,19 +40,19 @@ public class RefexData
 {
 	private String refexName_;
 	private String refexDescription_;
-	private boolean isAnnotatedStyle_;
 	private ConceptSnapshot parentConcept_;
-	private ComponentType componentTypeRestriction_;
+	private ObjectChronologyType componentTypeRestriction_;
+	private SememeType componentTypeSubRestriction_;
 	private ArrayList<DynamicSememeColumnInfo> columnInfo_ = new ArrayList<>();
 
-	public RefexData(String name, String description, ConceptSnapshot parentConcept, int extendedFieldsCount, boolean isAnnotatedStyle, 
-			ComponentType componentTypeRestriction)
+	public RefexData(String name, String description, ConceptSnapshot parentConcept, int extendedFieldsCount, ObjectChronologyType componentTypeRestriction,
+			SememeType componentTypeSubRestriction)
 	{
 		this.refexName_ = name;
 		this.refexDescription_ = description;
 		this.parentConcept_ = parentConcept;
-		this.isAnnotatedStyle_ = isAnnotatedStyle;
 		this.componentTypeRestriction_ = componentTypeRestriction;
+		this.componentTypeSubRestriction_ = componentTypeSubRestriction;
 		for (int i = 0; i < extendedFieldsCount; i++)
 		{
 			DynamicSememeColumnInfo rdci = new DynamicSememeColumnInfo();
@@ -69,8 +70,8 @@ public class RefexData
 		rdci.setColumnDataType(type);
 		rdci.setColumnDefaultData(defaultValueObject);
 		rdci.setColumnRequired(isMandatory);
-		rdci.setValidatorType(validatorType);
-		rdci.setValidatorData(validatorData);
+		rdci.setValidatorType(new DynamicSememeValidatorType[] {validatorType});  //TODO support multiple validators
+		rdci.setValidatorData(new DynamicSememeDataBI[] {validatorData});
 	}
 	
 	public void adjustColumnCount(int col)
@@ -118,29 +119,29 @@ public class RefexData
 		parentConcept_ = parentConcept;
 	}
 
-	public boolean isAnnotatedStyle()
-	{
-		return isAnnotatedStyle_;
-	}
-	
-	public void setIsAnnotatedStyle(boolean annotatedStyle)
-	{
-		isAnnotatedStyle_ = annotatedStyle;
-	}
-
 	public int getExtendedFieldsCount()
 	{
 		return columnInfo_.size();
 	}
 	
-	public void setComponentRestrictionType(ComponentType ct)
+	public void setComponentRestrictionType(ObjectChronologyType ct)
 	{
 		this.componentTypeRestriction_ = ct;
 	}
 	
-	public ComponentType getComponentRestrictionType()
+	public ObjectChronologyType getComponentRestrictionType()
 	{
 		return componentTypeRestriction_;
+	}
+	
+	public void setComponentSubRestrictionType(SememeType st)
+	{
+		this.componentTypeSubRestriction_ = st;
+	}
+	
+	public SememeType getComponentSubRestrictionType()
+	{
+		return componentTypeSubRestriction_;
 	}
 
 	public List<DynamicSememeColumnInfo> getColumnInfo()

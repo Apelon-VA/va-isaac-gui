@@ -52,6 +52,7 @@ import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
@@ -60,6 +61,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescriptionBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeData;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
@@ -110,8 +112,9 @@ import javafx.util.StringConverter;
 public class AddRefexPopup extends Stage implements PopupViewI
 {
 	private DynamicRefexView callingView_;
-	private InputType createRefexFocus_;
-	private DynamicSememeGUI editRefex_;
+	private ViewFocus createRefexFocus_;
+	private int focusSequence_;
+	private RefexDynamicGUI editRefex_;
 	private Label unselectableComponentLabel_;;
 	private ScrollPane sp_;
 	//TODO (artf231426) improve 'ConceptNode' - this mess of Conceptnode or TextField will work for now, if they set a component type restriction
@@ -175,7 +178,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			}
 			else
 			{
-				return editRefex_.getRefex().getAssemblageNid() + "";
+				return Get.identifierService().getConceptNid(editRefex_.getRefex().getAssemblageSequence()) + "";
 			}
 		});
 		//delay adding till we know which row
@@ -198,12 +201,12 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						//Its a valid concept, but is it a valid assemblage concept?
 						try
 						{
-							assemblageInfo_ = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(selectableConcept_.getConceptNoWait().getNid());
+							assemblageInfo_ = DynamicSememeUsageDescription.read(selectableConcept_.getConceptNoWait().getNid());
 							assemblageIsValid_.set(true);
 							if (assemblageInfo_.getReferencedComponentTypeRestriction() != null)
 							{
 								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(createRefexFocus_.getComponentNid()), 
-										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null, null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
 									selectableConcept_.isValid().setInvalid("The selected assemblage requires the component type to be " 
@@ -254,7 +257,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							if (Utility.isUUID(value))
 							{
 								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(value)), 
-										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null, null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
 									setInvalidReason(result);
@@ -265,7 +268,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							else if (Utility.isInt(value))
 							{
 								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(Integer.parseInt(value)), 
-										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null);  //component type validator doesn't use vc, so null is ok
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null, null);  //component type validator doesn't use vc, so null is ok
 								if (result.length() > 0)
 								{
 									setInvalidReason(result);
@@ -398,7 +401,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		setScene(scene);
 	}
 	
-	public void finishInit(DynamicSememeGUI refexToEdit, DynamicRefexView viewToRefresh)
+	public void finishInit(RefexDynamicGUI refexToEdit, DynamicRefexView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = null;
@@ -407,7 +410,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		title_.setText("Edit existing sememe instance");
 		
 		gp_.add(unselectableComponentLabel_, 1, 1);
-		unselectableComponentLabel_.setText(OTFUtility.getDescription(editRefex_.getRefex().getAssemblageNid()));
+		unselectableComponentLabel_.setText(OTFUtility.getDescription(editRefex_.getRefex().getAssemblageSequence()));
 		
 		//don't actually put this in the view
 		selectableConcept_.set(OTFUtility.getConceptVersion(editRefex_.getRefex().getReferencedComponentNid()));
@@ -419,7 +422,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		refexDropDownOptions.clear();
 		try
 		{
-			assemblageInfo_ = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(editRefex_.getRefex().getAssemblageNid());
+			assemblageInfo_ = DynamicSememeUsageDescription.read(editRefex_.getRefex().getAssemblageSequence());
 			assemblageIsValid_.set(true);
 			buildDataFields(true, editRefex_.getRefex().getData());
 		}
@@ -430,10 +433,10 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		}
 	}
 
-	public void finishInit(InputType setFromType, DynamicRefexView viewToRefresh)
+	public void finishInit(ViewFocus viewFocus, int focusNid, DynamicRefexView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
-		createRefexFocus_ = setFromType;
+		createRefexFocus_ = viewFocus;
 		editRefex_ = null;
 		
 		title_.setText("Create new sememe instance");
@@ -450,7 +453,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		{
 			try
 			{
-				assemblageInfo_ = DynamicSememeUsageDescriptionBuilder.readDynamicSememeUsageDescriptionConcept(createRefexFocus_.getAssemblyNid());
+				assemblageInfo_ = DynamicSememeUsageDescription.read(createRefexFocus_.getAssemblyNid());
 				gp_.add(unselectableComponentLabel_, 1, 1);
 				unselectableComponentLabel_.setText(OTFUtility.getDescription(createRefexFocus_.getAssemblyNid()));
 				if (assemblageInfo_.getReferencedComponentTypeRestriction() != null 

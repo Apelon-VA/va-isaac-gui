@@ -31,6 +31,7 @@ import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeChronicleBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -129,7 +130,7 @@ public class ConceptModelingPopup extends ModelingPopup
 		try
 		{
 			if (attr.isUncommitted()) {
-				ExtendedAppContext.getDataStore().forget(attr);
+				Ts.get().forget(attr);
 			}
 			boolean isDefined = (cb.getSelectionModel().getSelectedIndex() == 0); 
 			ConceptAttributeAB cab = new ConceptAttributeAB(attr.getEnclosingConceptNid(), isDefined, RefexDirective.EXCLUDE);
@@ -137,7 +138,7 @@ public class ConceptModelingPopup extends ModelingPopup
 			
 			ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 			
-			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getEnclosingConceptNid()));
+			Ts.get().addUncommitted(Ts.get().getConceptForNid(cabi.getEnclosingConceptNid()));
 		}
 		catch (Exception e)
 		{

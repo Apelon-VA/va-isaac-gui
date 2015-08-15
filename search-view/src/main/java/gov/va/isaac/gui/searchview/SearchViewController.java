@@ -38,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableListWrapper;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
 import gov.va.isaac.gui.IndexStatusListener;
@@ -47,7 +46,6 @@ import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.enhancedsearchview.model.SearchTypeModel;
 import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.refexDynamic.DynamicSememeUtil;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.search.SearchHandler;
@@ -55,9 +53,7 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.Interval;
 import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.TaskCompleteCallback;
 import gov.va.isaac.util.Utility;
@@ -73,6 +69,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.util.Interval;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
@@ -307,7 +304,7 @@ public class SearchViewController implements TaskCompleteCallback
 			ConceptSnapshot c = searchInRefex.getConceptProperty().get();
 			if (c != null)
 			{
-				new ConfigureDynamicRefexIndexingView(c).showView(null);
+				new ConfigureDynamicRefexIndexingView(c.getNid()).showView(null);
 			}
 		});
 		configureIndex.setGraphic(Images.CONFIGURE.createImageView());
@@ -790,7 +787,7 @@ public class SearchViewController implements TaskCompleteCallback
 				String searchString = searchText.getText().trim();
 				try
 				{
-					DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseNumber(searchString));
+					DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseUnknown(searchString));
 					LOG.debug("Doing a sememe search with a numeric value");
 					ssh = SearchHandler.dynamicRefexSearch((indexer) ->
 					{
@@ -864,7 +861,7 @@ public class SearchViewController implements TaskCompleteCallback
 			protected Void call() throws Exception
 			{
 				dynamicRefexAssemblages = new HashSet<>();
-				dynamicRefexAssemblages.addAll(DynamicSememeUtil.getAllRefexDefinitions());
+				dynamicRefexAssemblages.addAll(OchreUtility.getAllDynamicSememeAssemblageConcepts());
 				return null;
 			}
 

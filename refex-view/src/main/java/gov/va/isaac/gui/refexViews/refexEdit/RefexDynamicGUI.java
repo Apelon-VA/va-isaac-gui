@@ -18,7 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Date;
@@ -31,12 +30,15 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.media.MediaVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.AlphanumComparator;
 import gov.va.isaac.util.NumberUtilities;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArrayBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeByteArrayBI;
@@ -59,12 +61,12 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class DynamicSememeGUI
+public class RefexDynamicGUI
 {
-	private static Logger logger_ = LoggerFactory.getLogger(DynamicSememeGUI.class);
+	private static Logger logger_ = LoggerFactory.getLogger(RefexDynamicGUI.class);
 	
 	//These variables are used when we are working with a refex that already exists
-	private DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex_;
+	private DynamicSememe<?> refex_;
 	private boolean isCurrent_;
 	private HashMap<String, AbstractMap.SimpleImmutableEntry<String, String>> stringCache_ = new HashMap<>();
 	
@@ -72,13 +74,13 @@ public class DynamicSememeGUI
 	private Integer buildFromReferenceNid_;
 	private boolean referenceIsAssemblyNid_;
 	
-	protected DynamicSememeGUI(DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> refex, boolean isCurrent)
+	protected RefexDynamicGUI(DynamicSememe<?> refex, boolean isCurrent)
 	{
 		refex_ = refex;
 		isCurrent_ = isCurrent;
 	}
 	
-	protected DynamicSememeGUI(int buildFromReferenceNid, boolean referenceIsAssemblyNid)
+	protected RefexDynamicGUI(int buildFromReferenceNid, boolean referenceIsAssemblyNid)
 	{
 		refex_ = null;
 		isCurrent_ = false;
@@ -89,7 +91,7 @@ public class DynamicSememeGUI
 	/**
 	 * Contains the refex reference when this object was constructed based on an existing refex
 	 */
-	public DynamicSememeVersionBI<? extends DynamicSememeVersionBI<?>> getRefex()
+	public DynamicSememe<?> getRefex()
 	{
 		return refex_;
 	}
@@ -125,117 +127,109 @@ public class DynamicSememeGUI
 	 * For cases when it was built from an existing refex only
 	 * @param attachedDataColumn - optional - ignored (can be null) except applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
 	 */
-	public int compareTo(DynamicRefexColumnType columnTypeToCompare, Integer attachedDataColumn, DynamicSememeGUI other)
+	public int compareTo(DynamicRefexColumnType columnTypeToCompare, Integer attachedDataColumn, RefexDynamicGUI other)
 	{
-		try
+		switch (columnTypeToCompare)
 		{
-			switch (columnTypeToCompare)
+			case STATUS_CONDENSED:
 			{
-				case STATUS_CONDENSED:
+				//sort by uncommitted first, then current / historical, then active / inactive
+				if (this.getRefex().getTime() == Long.MAX_VALUE)
 				{
-					//sort by uncommitted first, then current / historical, then active / inactive
-					if (this.getRefex().getTime() == Long.MAX_VALUE)
-					{
-						return -1;
-					}
-					else if (other.getRefex().getTime() == Long.MAX_VALUE)
-					{
-						return 1;
-					}
-					
-					if (this.isCurrent() && !other.isCurrent())
-					{
-						return -1;
-					}
-					else if (!this.isCurrent() && other.isCurrent())
-					{
-						return 1;
-					}
-					
-					if (this.getRefex().isActive() && !other.getRefex().isActive())
-					{
-						return -1;
-					}
-					else if (!this.getRefex().isActive() && other.getRefex().isActive())
-					{
-						return 1;
-					}
+					return -1;
+				}
+				else if (other.getRefex().getTime() == Long.MAX_VALUE)
+				{
+					return 1;
+				}
+				
+				if (this.isCurrent() && !other.isCurrent())
+				{
+					return -1;
+				}
+				else if (!this.isCurrent() && other.isCurrent())
+				{
+					return 1;
+				}
+				
+				if (this.getRefex().getState() == State.ACTIVE && other.getRefex().getState() == State.INACTIVE)
+				{
+					return -1;
+				}
+				else if (this.getRefex().getState() == State.INACTIVE && other.getRefex().getState() == State.ACTIVE)
+				{
+					return 1;
+				}
+				return 0;
+			}
+			case TIME:
+			{
+				if (this.getRefex().getTime() < other.getRefex().getTime())
+				{
+					return -1;
+				}
+				else if (this.getRefex().getTime() > other.getRefex().getTime())
+				{
+					return -1;
+				}
+				else
+				{
 					return 0;
 				}
-				case TIME:
+			}
+			case COMPONENT: case ASSEMBLAGE: case STATUS_STRING: case AUTHOR: case MODULE: case PATH:
+			{
+				String myString = this.getDisplayStrings(columnTypeToCompare, null).getKey();
+				String otherString = other.getDisplayStrings(columnTypeToCompare, null).getKey();
+				return AlphanumComparator.compare(myString, otherString, true);
+			}
+			case ATTACHED_DATA:
+			{
+				if (attachedDataColumn == null)
 				{
-					if (this.getRefex().getTime() < other.getRefex().getTime())
-					{
-						return -1;
-					}
-					else if (this.getRefex().getTime() > other.getRefex().getTime())
-					{
-						return -1;
-					}
-					else
-					{
-						return 0;
-					}
+					throw new RuntimeException("API misuse");
 				}
-				case COMPONENT: case ASSEMBLAGE: case STATUS_STRING: case AUTHOR: case MODULE: case PATH:
+				DynamicSememeDataBI myData = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
+				DynamicSememeDataBI otherData = other.refex_.getData().length > attachedDataColumn ? other.refex_.getData()[attachedDataColumn] : null;
+				
+				if (myData == null && otherData != null)
 				{
-					String myString = this.getDisplayStrings(columnTypeToCompare, null).getKey();
-					String otherString = other.getDisplayStrings(columnTypeToCompare, null).getKey();
+					return -1;
+				}
+				else if (myData != null && otherData == null)
+				{
+					return 1;
+				}
+				else if (myData == null && otherData == null)
+				{
+					return 0;
+				}
+				else if (myData instanceof DynamicSememeFloatBI && otherData instanceof DynamicSememeFloatBI)
+				{
+					return NumberUtilities.compare(((DynamicSememeFloatBI) myData).getDataFloat(), ((DynamicSememeFloatBI) otherData).getDataFloat());
+				}
+				else if (myData instanceof DynamicSememeDoubleBI && otherData instanceof DynamicSememeDoubleBI) 
+				{
+					return NumberUtilities.compare(((DynamicSememeDoubleBI) myData).getDataDouble(), ((DynamicSememeDoubleBI) otherData).getDataDouble());
+				}
+				else if (myData instanceof DynamicSememeIntegerBI && otherData instanceof DynamicSememeIntegerBI) 
+				{
+					return NumberUtilities.compare(((DynamicSememeIntegerBI) myData).getDataInteger(), ((DynamicSememeIntegerBI) otherData).getDataInteger());
+				}
+				else if (myData instanceof DynamicSememeLongBI && otherData instanceof DynamicSememeLongBI)
+				{
+					return NumberUtilities.compare(((DynamicSememeLongBI) myData).getDataLong(), ((DynamicSememeLongBI) otherData).getDataLong());
+				}
+				else
+				{
+					String myString = this.getDisplayStrings(columnTypeToCompare, attachedDataColumn).getKey();
+					String otherString = other.getDisplayStrings(columnTypeToCompare, attachedDataColumn).getKey();
 					return AlphanumComparator.compare(myString, otherString, true);
 				}
-				case ATTACHED_DATA:
-				{
-					if (attachedDataColumn == null)
-					{
-						throw new RuntimeException("API misuse");
-					}
-					DynamicSememeDataBI myData = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
-					DynamicSememeDataBI otherData = other.refex_.getData().length > attachedDataColumn ? other.refex_.getData()[attachedDataColumn] : null;
-					
-					if (myData == null && otherData != null)
-					{
-						return -1;
-					}
-					else if (myData != null && otherData == null)
-					{
-						return 1;
-					}
-					else if (myData == null && otherData == null)
-					{
-						return 0;
-					}
-					else if (myData instanceof DynamicSememeFloatBI && otherData instanceof DynamicSememeFloatBI)
-					{
-						return NumberUtilities.compare(((DynamicSememeFloatBI) myData).getDataFloat(), ((DynamicSememeFloatBI) otherData).getDataFloat());
-					}
-					else if (myData instanceof DynamicSememeDoubleBI && otherData instanceof DynamicSememeDoubleBI) 
-					{
-						return NumberUtilities.compare(((DynamicSememeDoubleBI) myData).getDataDouble(), ((DynamicSememeDoubleBI) otherData).getDataDouble());
-					}
-					else if (myData instanceof DynamicSememeIntegerBI && otherData instanceof DynamicSememeIntegerBI) 
-					{
-						return NumberUtilities.compare(((DynamicSememeIntegerBI) myData).getDataInteger(), ((DynamicSememeIntegerBI) otherData).getDataInteger());
-					}
-					else if (myData instanceof DynamicSememeLongBI && otherData instanceof DynamicSememeLongBI)
-					{
-						return NumberUtilities.compare(((DynamicSememeLongBI) myData).getDataLong(), ((DynamicSememeLongBI) otherData).getDataLong());
-					}
-					else
-					{
-						String myString = this.getDisplayStrings(columnTypeToCompare, attachedDataColumn).getKey();
-						String otherString = other.getDisplayStrings(columnTypeToCompare, attachedDataColumn).getKey();
-						return AlphanumComparator.compare(myString, otherString, true);
-					}
-				}
-
-				default:
-					throw new RuntimeException("Missing implementation: " + columnTypeToCompare);
 			}
-		}
-		catch (IOException e)
-		{
-			//TODO (artf231428) how to handle?
-			throw new RuntimeException("Sort error", e);
+
+			default:
+				throw new RuntimeException("Missing implementation: " + columnTypeToCompare);
 		}
 	}
 	
@@ -254,7 +248,6 @@ public class DynamicSememeGUI
 			return returnValue;
 		}
 		
-		
 		switch (desiredColumn)
 		{
 			case STATUS_CONDENSED:
@@ -270,7 +263,7 @@ public class DynamicSememeGUI
 			}
 			case STATUS_STRING:
 			{
-				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(refex_.getStatus().toString(), null);
+				returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(refex_.getState().toString(), null);
 				break;
 			}
 			case TIME:
@@ -300,9 +293,9 @@ public class DynamicSememeGUI
 					else if (data instanceof DynamicSememeUUIDBI)
 					{
 						String desc;
-						if (ExtendedAppContext.getDataStore().hasUuid(((DynamicSememeUUIDBI)data).getDataUUID()))
+						if (Get.identifierService().hasUuid(((DynamicSememeUUIDBI)data).getDataUUID()))
 						{
-							desc = getComponentText(ExtendedAppContext.getDataStore().getNidForUuids(((DynamicSememeUUIDBI)data).getDataUUID()));
+							desc = getComponentText(Get.identifierService().getNidForUuids(((DynamicSememeUUIDBI)data).getDataUUID()));
 						}
 						else
 						{
@@ -377,7 +370,7 @@ public class DynamicSememeGUI
 		
 	}
 	
-	private String getComponentText(ToIntFunction<DynamicSememeVersionBI<?>> nidFetcher)
+	private String getComponentText(ToIntFunction<DynamicSememe<?>> nidFetcher)
 	{
 		return getComponentText(nidFetcher.applyAsInt(this.refex_));
 	}
@@ -392,7 +385,7 @@ public class DynamicSememeGUI
 			if (c == null) 
 			{
 				//This may be a different component - like a description, or another refex... need to handle.
-				Optional<? extends ComponentVersionBI> cv = ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
+				Optional<? extends ComponentVersionBI> cv = Ts.get().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
 				if (!cv.isPresent())
 				{
 					text = "[NID] " + nid + " not on path";
@@ -410,10 +403,10 @@ public class DynamicSememeGUI
 							+ OTFUtility.getDescription(rv.getTypeNid()) + "->"
 							+ OTFUtility.getDescription(rv.getDestinationNid());
 				}
-				else if (cv.get() instanceof DynamicSememeVersionBI<?>)
+				else if (cv.get() instanceof DynamicSememe<?>)
 				{
-					DynamicSememeVersionBI<?> rdv = (DynamicSememeVersionBI<?>) cv.get();
-					text = "Nested Sememe Dynamic: using assemblage " + OTFUtility.getDescription(rdv.getAssemblageNid());
+					DynamicSememe<?> rdv = (DynamicSememe<?>) cv.get();
+					text = "Nested Sememe Dynamic: using assemblage " + OTFUtility.getDescription(rdv.getAssemblageSequence());
 				}
 				else if (cv.get() instanceof RefexVersionBI<?>)
 				{
@@ -450,7 +443,7 @@ public class DynamicSememeGUI
 	 * @param attachedDataColumn null for most types - applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
 	 * @return
 	 */
-	public ToIntFunction<DynamicSememeVersionBI<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
+	public ToIntFunction<DynamicSememe<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
 	{
 		switch (desiredColumn)
 		{
@@ -460,10 +453,10 @@ public class DynamicSememeGUI
 			}
 			case COMPONENT:
 			{
-				return new ToIntFunction<DynamicSememeVersionBI<?>>()
+				return new ToIntFunction<DynamicSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememeVersionBI<?> value)
+					public int applyAsInt(DynamicSememe<?> value)
 					{
 						return refex_.getReferencedComponentNid();
 					}
@@ -471,45 +464,45 @@ public class DynamicSememeGUI
 			}
 			case ASSEMBLAGE:
 			{
-				return new ToIntFunction<DynamicSememeVersionBI<?>>()
+				return new ToIntFunction<DynamicSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememeVersionBI<?> value)
+					public int applyAsInt(DynamicSememe<?> value)
 					{
-						return refex_.getAssemblageNid();
+						return Get.identifierService().getConceptNid(refex_.getAssemblageSequence());
 					}
 				};
 			}
 			case AUTHOR:
 			{
-				return new ToIntFunction<DynamicSememeVersionBI<?>>()
+				return new ToIntFunction<DynamicSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememeVersionBI<?> value)
+					public int applyAsInt(DynamicSememe<?> value)
 					{
-						return refex_.getAuthorNid();
+						return Get.identifierService().getConceptNid(refex_.getAuthorSequence());
 					}
 				};
 			}
 			case MODULE:
 			{
-				return new ToIntFunction<DynamicSememeVersionBI<?>>()
+				return new ToIntFunction<DynamicSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememeVersionBI<?> value)
+					public int applyAsInt(DynamicSememe<?> value)
 					{
-						return refex_.getModuleNid();
+						return Get.identifierService().getConceptNid(refex_.getModuleSequence());
 					}
 				};
 			}
 			case PATH:
 			{
-				return new ToIntFunction<DynamicSememeVersionBI<?>>()
+				return new ToIntFunction<DynamicSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememeVersionBI<?> value)
+					public int applyAsInt(DynamicSememe<?> value)
 					{
-						return refex_.getPathNid();
+						return Get.identifierService().getConceptNid(refex_.getPathSequence());
 					}
 				};
 			}
@@ -520,10 +513,10 @@ public class DynamicSememeGUI
 				{
 					throw new RuntimeException("API misuse");
 				}
-				return new ToIntFunction<DynamicSememeVersionBI<?>>()
+				return new ToIntFunction<DynamicSememe<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememeVersionBI<?> value)
+					public int applyAsInt(DynamicSememe<?> value)
 					{
 						DynamicSememeDataBI data = refex_.getData().length > attachedDataColumn ? refex_.getData()[attachedDataColumn] : null;
 						if (data != null)
@@ -534,9 +527,9 @@ public class DynamicSememeGUI
 							}
 							else if (data instanceof DynamicSememeUUIDBI)
 							{
-								if (ExtendedAppContext.getDataStore().hasUuid(((DynamicSememeUUIDBI)data).getDataUUID()))
+								if (Get.identifierService().hasUuid(((DynamicSememeUUIDBI)data).getDataUUID()))
 								{
-									return ExtendedAppContext.getDataStore().getNidForUuids(((DynamicSememeUUIDBI)data).getDataUUID());
+									return Get.identifierService().getNidForUuids(((DynamicSememeUUIDBI)data).getDataUUID());
 								}
 							}
 						}

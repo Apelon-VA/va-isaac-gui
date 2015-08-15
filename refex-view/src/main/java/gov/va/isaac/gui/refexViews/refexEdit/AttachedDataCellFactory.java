@@ -31,7 +31,7 @@ import javafx.util.Callback;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class AttachedDataCellFactory implements Callback <TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI>, TreeTableCell<DynamicSememeGUI,DynamicSememeGUI>>
+public class AttachedDataCellFactory implements Callback <TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>, TreeTableCell<RefexDynamicGUI,RefexDynamicGUI>>
 {
 	private Hashtable<UUID, List<DynamicSememeColumnInfo>> colInfo_;
 	private int listPosition_;
@@ -46,7 +46,7 @@ public class AttachedDataCellFactory implements Callback <TreeTableColumn<Dynami
 	 * @see javafx.util.Callback#call(java.lang.Object)
 	 */
 	@Override
-	public TreeTableCell<DynamicSememeGUI, DynamicSememeGUI> call(TreeTableColumn<DynamicSememeGUI, DynamicSememeGUI> param)
+	public TreeTableCell<RefexDynamicGUI, RefexDynamicGUI> call(TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> param)
 	{
 		return new AttachedDataCell(colInfo_, listPosition_);
 	}

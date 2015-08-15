@@ -18,23 +18,7 @@
  */
 package gov.va.isaac.gui.conceptViews.modeling;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.util.Optional;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.VBox;
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
@@ -45,9 +29,25 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 
 /**
  * 
@@ -406,7 +406,7 @@ public class RelationshipModelingPopup extends ModelingPopup
 				RelationshipCAB dcab;
 
 				if (rel.isUncommitted()) {
-					ExtendedAppContext.getDataStore().forget(rel);
+					Ts.get().forget(rel);
 				}
 			
 				if (!isDestination) {
@@ -422,9 +422,9 @@ public class RelationshipModelingPopup extends ModelingPopup
 				OTFUtility.getBuilder().constructIfNotCurrent(dcab);
 				
 				if (!isDestination) {
-					ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rel.getOriginNid()));
+					Ts.get().addUncommitted(Ts.get().getConceptForNid(rel.getOriginNid()));
 				} else {
-					ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(otherEndConNid));
+					Ts.get().addUncommitted(Ts.get().getConceptForNid(otherEndConNid));
 				}
 			}
 		}

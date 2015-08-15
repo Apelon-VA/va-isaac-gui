@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import javafx.beans.binding.BooleanBinding;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -92,7 +92,7 @@ public class NewColumnDialogController implements Initializable
 				try
 				{
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					newColumnConcept = DynamicSememeColumnInfo.createNewDynamicSememeColumnInfoConcept(newColName.getText().trim(), newColDesc.getText().trim(), 
+					newColumnConcept = DynamicSememeUtility.createNewDynamicSememeColumnInfoConcept(newColName.getText().trim(), newColDesc.getText().trim(), 
 							ViewCoordinates.getMetadataViewCoordinate());
 				} catch (InvalidCAB e) {
 					AppContext.getCommonDialogs().showInformationDialog("Concept Creation Error", e.getMessage(), rootPane.getScene().getWindow());

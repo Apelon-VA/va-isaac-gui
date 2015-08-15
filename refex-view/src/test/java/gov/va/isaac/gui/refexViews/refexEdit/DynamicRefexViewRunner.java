@@ -18,21 +18,15 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.io.File;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
 import gov.vha.isaac.ochre.api.LookupService;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.metadata.binding.DynamicSememe;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
 /**
  * {@link DynamicRefexViewRunner}
@@ -51,7 +45,7 @@ public class DynamicRefexViewRunner extends Application
 		primaryStage.setTitle("Sememe View");
 
 		DynamicRefexView refexView = AppContext.getService(DynamicRefexView.class);
-		refexView.setComponent(DynamicSememe.DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), null, null, null, true);
+		refexView.setComponent(IsaacMetadataConstants.DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), null, null, null, true);
 
 		primaryStage.setScene(new Scene(refexView.getView(), 800, 600));
 
@@ -66,8 +60,8 @@ public class DynamicRefexViewRunner extends Application
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
 			System.exit(-1);
 		}
-		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		LookupService.startupIsaac();
+		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		launch(args);
 	}
 

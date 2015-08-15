@@ -44,9 +44,6 @@ import java.util.function.Supplier;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.query.lucene.indexers.DescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.model.cc.refex.RefexService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +102,8 @@ public class SearchHandler
 				{
 					try
 					{
-						return index.query(queryString, prefixSearch, ComponentProperty.DESCRIPTION_TEXT, resultLimit, Long.MIN_VALUE);
+						return index.query(queryString, prefixSearch, IsaacMetadataAuxiliaryBinding.DESCRIPTION_ACCEPTABILITY.getConceptSequence(), 
+								resultLimit, Long.MIN_VALUE);
 					}
 					catch (Exception e)
 					{
@@ -487,26 +485,6 @@ public class SearchHandler
 								// Get the match object.
 								Optional<? extends ObjectChronology<? extends StampedVersion>> io = Get.identifiedObjectService()
 										.getIdentifiedObjectChronology(searchResult.getNid());
-								if (!io.isPresent())
-								{
-									//TODO OCHRE this code should be unecessary - the getComponent call above 
-									//currently isn't working correctly.  Wait for fix from Keith...
-									ComponentChronicleBI<? extends StampedVersion> cc =  AppContext.getService(RefexService.class).getRefex(searchResult.getNid());
-									if (cc == null)
-									{
-										cc = AppContext.getService(RefexService.class).getDynamicSememe(searchResult.getNid());
-									}
-									
-									if (cc != null)
-									{
-										io = Optional.of(cc);
-									}
-									else
-									{
-										io = Optional.empty();
-									}
-								}
-								
 								// normalize the scores between 0 and 1
 								float normScore = (searchResult.getScore() / maxScore);
 								CompositeSearchResult csr = (io.isPresent() ? new CompositeSearchResult(io.get(), normScore) :

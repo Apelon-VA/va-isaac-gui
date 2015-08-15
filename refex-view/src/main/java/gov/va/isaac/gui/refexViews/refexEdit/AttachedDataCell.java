@@ -18,7 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +27,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.CustomClipboard;
@@ -36,6 +34,7 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
@@ -53,7 +52,7 @@ import javafx.scene.text.Text;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class AttachedDataCell extends TreeTableCell<DynamicSememeGUI, DynamicSememeGUI>
+public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 {
 	private Hashtable<UUID, List<DynamicSememeColumnInfo>> columnInfo_;
 	private int listItem_;
@@ -70,7 +69,7 @@ public class AttachedDataCell extends TreeTableCell<DynamicSememeGUI, DynamicSem
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(DynamicSememeGUI item, boolean empty)
+	protected void updateItem(RefexDynamicGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		
@@ -85,7 +84,7 @@ public class AttachedDataCell extends TreeTableCell<DynamicSememeGUI, DynamicSem
 			{
 				for (UUID uuid : columnInfo_.keySet())
 				{
-					if (UUIDToNid(uuid) == item.getRefex().getAssemblageNid())
+					if (Get.identifierService().getConceptSequenceForUuids(uuid) == item.getRefex().getAssemblageSequence())
 					{
 						List<DynamicSememeColumnInfo> colInfo =  columnInfo_.get(uuid);
 						Integer refexColumnOrder = (colInfo.size() > listItem_ ? 
@@ -156,7 +155,7 @@ public class AttachedDataCell extends TreeTableCell<DynamicSememeGUI, DynamicSem
 		}
 	}
 	
-	private void conceptLookup(final DynamicSememeGUI item, final Integer refexColumnOrder)
+	private void conceptLookup(final RefexDynamicGUI item, final Integer refexColumnOrder)
 	{
 		setGraphic(new ProgressBar());
 		setText(null);
@@ -211,10 +210,5 @@ public class AttachedDataCell extends TreeTableCell<DynamicSememeGUI, DynamicSem
 				setText(null);
 			});
 		});
-	}
-
-	private int UUIDToNid(UUID uuid) throws IOException
-	{
-		return ExtendedAppContext.getDataStore().getNidForUuids(uuid);
 	}
 }

@@ -1,6 +1,7 @@
 package gov.va.isaac.gui.mapping;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -23,7 +24,6 @@ import gov.va.isaac.gui.mapping.data.MappingUtils;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.refexDynamic.DynamicSememeUtil;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.util.CommonMenus;
@@ -290,7 +290,9 @@ public class CreateMappingItemController {
 				List<SimpleDisplayConcept> codeSystems = MappingUtils.getCodeSystems();
 				codeSystems.add(0, new SimpleDisplayConcept("No Restriction", Integer.MIN_VALUE));
 
-				List<SimpleDisplayConcept> refsetRestrictions = DynamicSememeUtil.getAllRefexDefinitions(); 
+				ArrayList<SimpleDisplayConcept> refsetRestrictions = new ArrayList<>();
+				Get.sememeService().getAssemblageTypes().forEach(assemblageSeq -> refsetRestrictions.add(new SimpleDisplayConcept(assemblageSeq)));
+
 				refsetRestrictions.add(0, new SimpleDisplayConcept("No Restriction", Integer.MIN_VALUE));
 				
 				Platform.runLater(() ->

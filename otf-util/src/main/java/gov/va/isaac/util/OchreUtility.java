@@ -22,6 +22,7 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
+import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
@@ -35,6 +36,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
@@ -44,6 +46,7 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.util.UuidFactory;
 
 /**
@@ -613,6 +616,21 @@ public final class OchreUtility {
 			}
 		};
 		Utility.execute(r);
+	}
+	
+	public static List<SimpleDisplayConcept> getAllDynamicSememeAssemblageConcepts()
+	{
+		List<SimpleDisplayConcept> allDynamicSememeDefConcepts = new ArrayList<>();
+
+		Get.sememeService().getSememesFromAssemblage(IsaacMetadataConstants.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence()).forEach(sememeC ->
+		{
+			//This will be a nid of a description - need to get the referenced component of that description
+			int annotatedDescriptionNid = sememeC.getReferencedComponentNid();
+			allDynamicSememeDefConcepts.add(new SimpleDisplayConcept(Get.sememeService().getSememe(annotatedDescriptionNid).getReferencedComponentNid()));
+		});
+
+		Collections.sort(allDynamicSememeDefConcepts);
+		return allDynamicSememeDefConcepts;
 	}
 	
 	public static String toString(Object obj) {

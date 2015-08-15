@@ -27,8 +27,10 @@ import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -54,17 +56,16 @@ import javafx.stage.Window;
  */
 public class ConfigureDynamicRefexIndexingView implements PopupViewI
 {
-	ConceptSnapshot assemblageConcept_;
+	int assemblageConceptNid_;
 	private BorderPane root_;
-	private CheckBox indexMember_;
 	private List<CheckBox> indexColumns_;
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 
-	public ConfigureDynamicRefexIndexingView(ConceptSnapshot assemblageConcept)
+	public ConfigureDynamicRefexIndexingView(int assemblageConceptNid)
 	{
 		try
 		{
-			assemblageConcept_ = assemblageConcept;
+			assemblageConceptNid_ = assemblageConceptNid;
 			root_ = new BorderPane();
 			root_.setPrefWidth(450);
 			
@@ -76,7 +77,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 			title.setMaxWidth(Double.MAX_VALUE);
 			titleBox.getChildren().add(title);
 			
-			title = new Label(assemblageConcept.getConceptDescriptionText());
+			title = new Label(Get.conceptDescriptionText(assemblageConceptNid));
 			title.setAlignment(Pos.CENTER);
 			title.setMaxWidth(Double.MAX_VALUE);
 			titleBox.getChildren().add(title);
@@ -91,23 +92,12 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 			vbox.setPadding(new Insets(10));
 			vbox.setSpacing(5.0);
 			
-			DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.readDynamicSememeUsageDescription(assemblageConcept.getNid());
-			Integer[] currentIndexConfig = DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConcept.getConceptSequence());
+			DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(assemblageConceptNid);
+			Integer[] currentIndexConfig = DynamicSememeIndexerConfiguration.readIndexInfo(Get.identifierService().getConceptSequence(assemblageConceptNid));
 			
-			if (rdud.isAnnotationStyle())
+			if (rdud.getColumnInfo().length == 0)
 			{
-				indexMember_ = new CheckBox("Index sememe members");
-				indexMember_.setTooltip(new Tooltip("Allows queries to find all components that have an instance of this sememe.\n"
-						+ "Only applicable to Annotation-style sememes"));
-				if (currentIndexConfig != null)
-				{
-					indexMember_.setSelected(true);
-				}
-				vbox.getChildren().add(indexMember_);
-			}
-			else if (rdud.getColumnInfo().length == 0)
-			{
-				vbox.getChildren().add(new Label("Member-style Sememes without columns are not indexable"));
+				vbox.getChildren().add(new Label("Sememes without columns are not indexable"));
 			}
 			
 			for (DynamicSememeColumnInfo col : rdud.getColumnInfo())
@@ -178,10 +168,10 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 						@Override
 						protected Void call() throws Exception
 						{
-							if (colsChecked.size() > 0 || (indexMember_ != null && indexMember_.isSelected()))
+							if (colsChecked.size() > 0)
 							{
 								Integer[] toIndex = colsChecked.toArray(new Integer[colsChecked.size()]);
-								if (Arrays.deepEquals(toIndex, DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConcept_.getNid())))
+								if (Arrays.deepEquals(toIndex, DynamicSememeIndexerConfiguration.readIndexInfo(assemblageConceptNid)))
 								{
 									logger_.info("Skipping reindex - no change detected.");
 								}
@@ -190,7 +180,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 									AppContext.getRuntimeGlobals().disableAllCommitListeners();
 									try
 									{
-										DynamicSememeIndexerConfiguration.configureColumnsToIndex(assemblageConcept_.getNid(), toIndex, false);
+										DynamicSememeIndexerConfiguration.configureColumnsToIndex(assemblageConceptNid, toIndex, false);
 									}
 									finally
 									{
@@ -203,7 +193,7 @@ public class ConfigureDynamicRefexIndexingView implements PopupViewI
 								AppContext.getRuntimeGlobals().disableAllCommitListeners();
 								try
 								{
-									DynamicSememeIndexerConfiguration.disableIndex(assemblageConcept_.getNid());
+									DynamicSememeIndexerConfiguration.disableIndex(assemblageConceptNid);
 								}
 								finally
 								{

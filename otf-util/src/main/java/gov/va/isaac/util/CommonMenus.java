@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
@@ -48,6 +47,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -869,7 +869,7 @@ public class CommonMenus
 				{
 					ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
 					if (conceptSnapshot != null) {
-						Optional<Long> conceptSct = OchreUtility.getSctId(conceptSnapshot.getNid());
+						Optional<Long> conceptSct = Frills.getSctId(conceptSnapshot.getNid(), null);
 						if(conceptSct.isPresent()) {
 							sctIds.add(conceptSct.get());
 						}
@@ -968,7 +968,7 @@ public class CommonMenus
 			case STRING:
 				break;
 			case DYNAMIC:
-				break;
+				return Get.identifierService().getConceptNid(sememeC.getAssemblageSequence());
 			case DESCRIPTION:
 				break;
 			case RELATIONSHIP_ADAPTOR:
@@ -978,10 +978,6 @@ public class CommonMenus
 			}
 			
 			return sememeC.getNid();
-		case REFEX:
-			LOG.debug("NID {} passed is for REFEX {}", nid, Get.conceptDescriptionText(nid));
-
-			break;
 		case OTHER:
 			LOG.debug("NID {} passed is for OTHER {}", nid, Get.conceptDescriptionText(nid));
 
@@ -994,30 +990,7 @@ public class CommonMenus
 				throw new RuntimeException("Unsupported ObjectChronologyType " + nidType.name());
 		}
 		
-		LOG.debug("Using OTF API to get parent concept nid for component {} (nid={})", Get.conceptDescriptionText(nid), nid);
-		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
-		if (cc != null) {
-			if (cc instanceof DynamicSememeChronicleBI) {
-				DynamicSememeChronicleBI<?> refexChron = (DynamicSememeChronicleBI<?>)cc;
-				
-				try {
-					if (OTFUtility.getConceptVersion(refexChron.getAssemblageNid()).isAnnotationStyleRefex()) {
-						return refexChron.getAssemblageNid();
-					} else {
-						return refexChron.getReferencedComponentNid();
-					}
-				} catch (IOException e) {
-					LOG.error("Unexpected - couldn't get DynamicSememeChronicleBI information for nid{}", nid);
-					return nid;
-				}
-			} else 	{
-				return cc.getEnclosingConceptNid();
-			}
-		}
-		else
-		{
-			LOG.error("Unexpected - couldn't find component for nid {}", nid);
-			return nid;
-		}
+		LOG.error("Unexpected - couldn't find component for nid {}", nid);
+		return nid;
 	}
 }
