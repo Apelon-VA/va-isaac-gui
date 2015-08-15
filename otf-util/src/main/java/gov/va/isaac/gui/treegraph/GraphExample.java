@@ -4,6 +4,8 @@ import javafx.scene.control.Label;
 import javafx.application.Application;
 import javafx.scene.shape.Circle;
 import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.stage.Stage;
 
 public class GraphExample extends Application {
@@ -33,9 +35,12 @@ public class GraphExample extends Application {
 		TreeNode node7 = new TreeNode(node4, new Label("Node 7"));
 		node4.setChildToRight(node7);
 		
-		graph.addTreeNode(node1);
-		
-		primaryStage.setScene(new Scene(graph, 500, 500));
+		graph.setRootNode(node1);
+		ScrollPane scrollPane = new ScrollPane();
+		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+		scrollPane.setHbarPolicy(ScrollBarPolicy.ALWAYS);
+		scrollPane.setContent(graph);
+		primaryStage.setScene(new Scene(scrollPane, 500, 500));
 	}
 	
 	public static void main(String[] args) { launch(args); }

@@ -27,10 +27,10 @@ public class TreeNode extends Group {
 		public String toString() { return "(" + x + ", " + y + ")"; }
 	}
 
-	private final static double preferredWidth = 100;
-	private final static double preferredHeight = 50;
+	private final static double preferredWidth = 200;
+	private final static double preferredHeight = 100;
 	
-	private final static double vertSpaceBetweenChildNodes = 10;
+	private final static double vertSpaceBetweenChildNodes = 5;
 	private final static double horizontalSpaceBetweenParentAndChildNodes = 20;
 	
 	private final TreeNode parentTreeNode;
@@ -61,6 +61,10 @@ public class TreeNode extends Group {
 		this.fxNode = fxNode;
 	}
 	
+	public TreeNode getRoot() {
+		return this.parentTreeNode == null ? this : this.parentTreeNode.getRoot();
+	}
+	
 	public Region getFxNode() {
 		return fxNode;
 	}
@@ -86,12 +90,16 @@ public class TreeNode extends Group {
 	}
 	
 	public double getHeight() {
-		double height = fxNode.getMaxHeight();
+		double heightOfFxNode = fxNode.getMaxHeight();
 		
+		double heightWithChildrenBelow = heightOfFxNode;
 		for (TreeNode treeNode : childTreeNodes) {
-			height = height + vertSpaceBetweenChildNodes + treeNode.getHeight();
+			heightWithChildrenBelow += vertSpaceBetweenChildNodes + treeNode.getHeight();
 		}
-		return height;
+		
+		double heightOfChildToRight = childToRight != null ? childToRight.getHeight() : 0;
+		
+		return Math.max(heightOfChildToRight, Math.max(heightOfFxNode, heightWithChildrenBelow));
 	}
 
 	public double getWidth() {
