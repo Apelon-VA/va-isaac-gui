@@ -18,12 +18,10 @@
  */
 package gov.va.isaac;
 
-import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.treegraph.TreeGraph;
 import gov.va.isaac.gui.treegraph.TreeNode;
 import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.util.CommonMenus;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.DataSource;
 import gov.vha.isaac.ochre.api.Get;
@@ -33,21 +31,14 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.logic.Node;
 import gov.vha.isaac.ochre.model.logic.LogicalExpressionOchreImpl;
-import gov.vha.isaac.ochre.model.logic.node.RootNode;
 import gov.vha.isaac.ochre.model.logic.node.external.ConceptNodeWithUuids;
-import gov.vha.isaac.ochre.model.logic.node.external.TypedNodeWithUuids;
 import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.FeatureNodeWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeAllWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
-import gov.vha.isaac.ochre.model.logic.node.internal.TypedNodeWithSequences;
 import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -57,17 +48,13 @@ import javafx.scene.control.Label;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * {@link LogicGraphTreeViewTestCodeRunner}
  * 
- * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 public class LogicGraphTreeViewTestCodeRunner extends Application
 {
@@ -76,15 +63,14 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	interface LogicGraphSememeHandler {
 		void handle(LogicGraphSememeImpl lgs, int id);
 	};
-	
-	private TreeGraph graph = new TreeGraph();
-	
-	protected void init(Stage primaryStage) {
 
-		
+	private TreeGraph graph = new TreeGraph();
+
+	protected void init(Stage primaryStage) {
 		primaryStage.setScene(new Scene(graph, 500, 500));
 	}
 
+	// for testing graph population and panel display only
 	private void populateTestGraph() {
 		TreeNode node1 = new TreeNode(null, new Label("Node 1"));
 
@@ -95,7 +81,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		node2.addChildTreeNodeBelow(node4);
 		TreeNode node5 = new TreeNode(node2, new Label("Node 5"));
 		node2.addChildTreeNodeBelow(node5);
-		
+
 		TreeNode node6 = new TreeNode(node1, new Label("Node 6"));
 		node1.addChildTreeNodeBelow(node6);
 
@@ -106,7 +92,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 		TreeNode node7 = new TreeNode(node4, new Label("Node 7"));
 		node4.setChildToRight(node7);
-		
+
 		graph.setRootNode(node1);
 	}
 	/**
@@ -116,48 +102,40 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	public void start(Stage primaryStage) throws Exception
 	{
 		init(primaryStage);
-        primaryStage.show();
+		primaryStage.show();
 
 		String uuidString = getParameters().getRaw().size() > 0 ? getParameters().getRaw().get(0) : "89ce6b87-545b-3138-82c7-aafa76f8f9a0";
 		UUID uuid = UUID.fromString(uuidString);
-		
+
 		LogicGraphSememeHandler handler = new LogicGraphSememeHandler() {
 			public void handle(LogicGraphSememeImpl lgs, int id) {
 				System.out.println("STATED LogicGraph for " + Get.conceptDescriptionText(id) + ":\n" + lgs.toString());
-	
+
 				LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(lgs.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(lgs.getReferencedComponentNid()));
 
 				processLogicalExpression(lg);			
 			}
 		};
-//		handler = new LogicGraphSememeHandler() {
-//			public void handle(LogicGraphSememeImpl lgs, int id) {
-//				System.out.println("STATED LogicGraph for " + Get.conceptDescriptionText(id) + ":\n" + lgs.toString());
-//			}
-//		};
+		//		handler = new LogicGraphSememeHandler() {
+		//			public void handle(LogicGraphSememeImpl lgs, int id) {
+		//				System.out.println("STATED LogicGraph for " + Get.conceptDescriptionText(id) + ":\n" + lgs.toString());
+		//			}
+		//		};
 
 		processUuid(uuid, handler);
-        
-		//populateTestGraph();
-        
-		// Open new panel here
-//		primaryStage.setTitle("Sememe View");
 
-//		DynamicRefexView refexView = AppContext.getService(DynamicRefexView.class);
-//		refexView.setComponent(RefexDynamic.DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), null, null, null, true);
-//		primaryStage.setScene(new Scene(refexView.getView(), 800, 600));
-//		primaryStage.show();
+		//populateTestGraph();
 	}
 
 	public void processUuid(UUID uuid, LogicGraphSememeHandler handler) {
 		int nid = Get.identifierService().getNidForUuids(uuid);
-		
+
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
 
 		SememeChronology rawDefChronology = defChronologyOptional.get();
 		Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, StampCoordinates.getDevelopmentLatest());
 		LogicGraphSememeImpl latestStatedGraph = latestGraphLatestVersionOptional.get().value();
-		
+
 		handler.handle(latestStatedGraph, nid);
 	}
 
@@ -172,14 +150,15 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		LookupService.startupIsaac();
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		launch(args);
-		
+
+		// TODO: get data needed and shut down immediately, rather than after panel closed
 		LookupService.shutdownIsaac();
 	}
-	
+
 	public void processLogicalExpression(LogicalExpressionOchreImpl le) {
 		System.out.println("Processing LogicalExpression for concept " + Get.conceptDescriptionText(le.getConceptSequence()));
 		System.out.println("Root is " + le.getRoot().getNodeSemantic().name());
-		
+
 		if (le.getNodeCount() > 0) {
 			processLogicalNode(null, null, le.getNode(0));
 		}
@@ -195,18 +174,20 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 			currentTreeNode = new TreeNode(null, createLabelFromLogicalNode(logicalNode));
 			graph.setRootNode(currentTreeNode);
 		} else {
-//			if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
-//				parentTreeNode.setChildToRight(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-//			} 
-//			else {
-				parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-//			}
+			// TODO: Properly handle nodes that are to right rather than below
+			//			if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
+			//				parentTreeNode.setChildToRight(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+			//			} 
+			//			else {
+			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+			//			}
 		}
 		for (Node child : logicalNode.getChildren()) {
 			processLogicalNode(currentTreeNode, logicalNode, child);
 		}
 	}
-	
+
+	// TODO: properly populate all labels
 	public static Label createLabelFromLogicalNode(Node logicalNode) {
 		if (logicalNode instanceof ConceptNodeWithSequences) {
 			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(((ConceptNodeWithSequences)logicalNode).getConceptSequence()));
