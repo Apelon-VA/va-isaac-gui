@@ -45,6 +45,7 @@ import java.util.UUID;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
@@ -189,19 +190,24 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 	// TODO: properly populate all labels
 	public static Label createLabelFromLogicalNode(Node logicalNode) {
+		Label label = null;
 		if (logicalNode instanceof ConceptNodeWithSequences) {
-			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(((ConceptNodeWithSequences)logicalNode).getConceptSequence()));
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(((ConceptNodeWithSequences)logicalNode).getConceptSequence()));
 		} else if (logicalNode instanceof ConceptNodeWithUuids) {
-			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(((ConceptNodeWithUuids)logicalNode).getConceptUuid())));
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(((ConceptNodeWithUuids)logicalNode).getConceptUuid())));
 		} else if (logicalNode instanceof FeatureNodeWithSequences) {
-			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((FeatureNodeWithSequences)logicalNode).getTypeConceptSequence()) + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name());
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((FeatureNodeWithSequences)logicalNode).getTypeConceptSequence()) + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name());
 		} else if (logicalNode instanceof RoleNodeAllWithSequences) {
-			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()));
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()));
 		} else if (logicalNode instanceof RoleNodeSomeWithSequences) {
-			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()));
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()));
 		}
 		else {
-			return new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
 		}
+		
+		label.setTooltip(new Tooltip(label.getText()));
+
+		return label;
 	}
 }
