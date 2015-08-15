@@ -31,11 +31,15 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.logic.Node;
 import gov.vha.isaac.ochre.model.logic.LogicalExpressionOchreImpl;
+import gov.vha.isaac.ochre.model.logic.node.RootNode;
+import gov.vha.isaac.ochre.model.logic.node.SufficientSetNode;
 import gov.vha.isaac.ochre.model.logic.node.external.ConceptNodeWithUuids;
+import gov.vha.isaac.ochre.model.logic.node.external.TypedNodeWithUuids;
 import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.FeatureNodeWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeAllWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
+import gov.vha.isaac.ochre.model.logic.node.internal.TypedNodeWithSequences;
 import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 
 import java.io.File;
@@ -44,6 +48,7 @@ import java.util.UUID;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
@@ -68,13 +73,16 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	};
 
 	private TreeGraph graph = new TreeGraph();
+	private Label textGraph = new Label();
 
 	protected void init(Stage primaryStage) {
+		VBox vbox = new VBox();
+		vbox.getChildren().addAll(graph, textGraph);
 
 		ScrollPane scrollPane = new ScrollPane();
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.ALWAYS);
-		scrollPane.setContent(graph);
+		scrollPane.setContent(vbox);
 		primaryStage.setScene(new Scene(scrollPane, 500, 500));
 	}
 
@@ -121,7 +129,9 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 				LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(lgs.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(lgs.getReferencedComponentNid()));
 
-				processLogicalExpression(lg);			
+				processLogicalExpression(lg);
+				
+				textGraph.setText(lg.toString());
 			}
 		};
 		//		handler = new LogicGraphSememeHandler() {
@@ -183,12 +193,12 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 			graph.setRootNode(currentTreeNode);
 		} else {
 			// TODO: Properly handle nodes that are to right rather than below
-			//			if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
-			//				parentTreeNode.setChildToRight(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-			//			} 
-			//			else {
-			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-			//			}
+			if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
+				parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+			} 
+			else {
+				parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+			}
 		}
 		for (Node child : logicalNode.getChildren()) {
 			processLogicalNode(currentTreeNode, logicalNode, child);
@@ -208,6 +218,10 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()));
 		} else if (logicalNode instanceof RoleNodeSomeWithSequences) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()));
+		} else if (logicalNode instanceof RootNode) {
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
+		} else if (logicalNode instanceof SufficientSetNode) {
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
 		}
 		else {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));

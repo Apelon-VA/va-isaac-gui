@@ -5,7 +5,6 @@ import gov.va.isaac.util.UpdateableDoubleBinding;
 import java.util.ArrayList;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.DoubleProperty;
@@ -26,17 +25,6 @@ import javafx.scene.shape.Line;
 import com.sun.javafx.collections.ObservableListWrapper;
 
 public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTreeNodeImpl> {
-	private static class Coordinates {
-		final double x;
-		final double y;
-		
-		public Coordinates(double x, double y) { this.x = x; this.y = y; }
-		
-		public double getX() { return x; }
-		public double getY() { return y; }
-		
-		public String toString() { return "(" + x + ", " + y + ")"; }
-	}
 	abstract class RecomputingBinding extends UpdateableDoubleBinding {
 		{
 			super.setComputeOnInvalidate(true);
@@ -44,8 +32,8 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		
 	};
 	
-	private final static double preferredWidth = 200;
-	private final static double preferredHeight = 100;
+//	private final static double preferredWidth = 200;
+//	private final static double preferredHeight = 100;
 	
 	private final static double vertSpaceBetweenChildNodes = 5;
 	private final static double horizontalSpaceBetweenParentAndChildNodes = 20;
@@ -130,7 +118,6 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 			public void onChanged(
 					javafx.collections.ListChangeListener.Change<? extends ResizableTreeNodeImpl> c) {
 				while (c.next()) {
-					System.err.println("Change");
 					if (c.wasRemoved()) {
 						for (ResizableTreeNodeImpl node : c.getRemoved()) {
 							heightBinding.removeBinding(node.heightProperty);
@@ -212,7 +199,6 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 
 	public void addChildTreeNodeBelow(ResizableTreeNodeImpl childTreeNode) {
 		// position childTreeNode
-		//double childLayoutY = fxNode.getLayoutY() + getHeight() + vertSpaceBetweenChildNodes;
 		childTreeNode.getFxNode().layoutXProperty().bind(Bindings.add(fxNode.layoutXProperty(), Bindings.add(horizontalSpaceBetweenParentAndChildNodes, fxNode.widthProperty())));
 		childTreeNode.getFxNode().layoutYProperty().bind(Bindings.add(vertSpaceBetweenChildNodes, Bindings.add(fxNode.layoutYProperty(), heightProperty)));
 		
