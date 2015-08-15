@@ -45,7 +45,9 @@ import java.util.UUID;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
@@ -68,7 +70,12 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	private TreeGraph graph = new TreeGraph();
 
 	protected void init(Stage primaryStage) {
-		primaryStage.setScene(new Scene(graph, 500, 500));
+
+		ScrollPane scrollPane = new ScrollPane();
+		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+		scrollPane.setHbarPolicy(ScrollBarPolicy.ALWAYS);
+		scrollPane.setContent(graph);
+		primaryStage.setScene(new Scene(scrollPane, 500, 500));
 	}
 
 	// for testing graph population and panel display only
