@@ -79,8 +79,21 @@ public class TreeNodeImpl extends Group implements TreeNode<TreeNodeImpl> {
 		// Add connector
 		Coordinates startCoordinates = this.getRightConnectionPortCoordinates();
 		Coordinates endCoordinates = childToRight.getLeftConnectionPortCoordinates();
-		Line line = new Line(startCoordinates.getX(), startCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
-		childToRight.getChildren().add(line); // add connector line to FX Group
+		if (startCoordinates.getY() == endCoordinates.getY()) {
+			// Simple case, in which parent and child are same height
+			// Create connector of one Line instance
+			Line line = new Line(startCoordinates.getX(), startCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
+			childToRight.getChildren().add(line); // add connector line to FX Group
+		} else {
+			// Complex case, in which parent and child are different heights
+			// Create connector consisting of three separate Line instances
+			double midpoint = startCoordinates.getX() + (endCoordinates.getX() - startCoordinates.getX()) / 2;
+			Line leftHorizontal = new Line(startCoordinates.getX(), startCoordinates.getY(), midpoint, startCoordinates.getY());
+			Line vertical = new Line(midpoint, startCoordinates.getY(), midpoint, endCoordinates.getY());
+			Line rightHorizontal = new Line(midpoint, endCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
+			Group newCompoundLineGroup = new Group(leftHorizontal, vertical, rightHorizontal);
+			childToRight.getChildren().add(newCompoundLineGroup);
+		}
 	}
 	
 	/* (non-Javadoc)
