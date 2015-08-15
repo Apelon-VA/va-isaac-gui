@@ -11,6 +11,6 @@ public class TreeGraph extends Group {
 		if (getChildren().size() > 0) {
 			getChildren().clear();
 		}
-		getChildren().add(treeNode);
+		getChildren().add(treeNode.getGroup());
 	}
 }

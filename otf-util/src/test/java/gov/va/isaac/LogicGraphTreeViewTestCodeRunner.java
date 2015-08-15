@@ -20,7 +20,7 @@ package gov.va.isaac;
 
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.treegraph.TreeGraph;
-import gov.va.isaac.gui.treegraph.TreeNode;
+import gov.va.isaac.gui.treegraph.TreeNodeImpl;
 import gov.va.isaac.init.SystemInit;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.DataSource;
@@ -73,25 +73,25 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 	// for testing graph population and panel display only
 	private void populateTestGraph() {
-		TreeNode node1 = new TreeNode(null, new Label("Node 1"));
+		TreeNodeImpl node1 = new TreeNodeImpl(null, new Label("Node 1"));
 
-		TreeNode node2 = new TreeNode(node1, new Label("Node 2"));
+		TreeNodeImpl node2 = new TreeNodeImpl(node1, new Label("Node 2"));
 		node1.addChildTreeNodeBelow(node2);
 
-		TreeNode node4 = new TreeNode(node2, new Label("Node 4"));
+		TreeNodeImpl node4 = new TreeNodeImpl(node2, new Label("Node 4"));
 		node2.addChildTreeNodeBelow(node4);
-		TreeNode node5 = new TreeNode(node2, new Label("Node 5"));
+		TreeNodeImpl node5 = new TreeNodeImpl(node2, new Label("Node 5"));
 		node2.addChildTreeNodeBelow(node5);
 
-		TreeNode node6 = new TreeNode(node1, new Label("Node 6"));
+		TreeNodeImpl node6 = new TreeNodeImpl(node1, new Label("Node 6"));
 		node1.addChildTreeNodeBelow(node6);
 
 		Label label3 = new Label("Node 3");
 		label3.setShape(new Circle(50));
-		TreeNode node3 = new TreeNode(node1, label3);
+		TreeNodeImpl node3 = new TreeNodeImpl(node1, label3);
 		node1.setChildToRight(node3);	
 
-		TreeNode node7 = new TreeNode(node4, new Label("Node 7"));
+		TreeNodeImpl node7 = new TreeNodeImpl(node4, new Label("Node 7"));
 		node4.setChildToRight(node7);
 
 		graph.setRootNode(node1);
@@ -167,12 +167,12 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	private static String logicalNodeTypeToString(Node node) {
 		return node.getClass().getName().replaceAll(".*\\.", "");
 	}
-	public void processLogicalNode(TreeNode parentTreeNode, Node parentLogicalNode, Node logicalNode) {
+	public void processLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode) {
 		System.out.println("Processing " + logicalNode.getNodeSemantic().name() + " node");
 
-		TreeNode currentTreeNode = null;
+		TreeNodeImpl currentTreeNode = null;
 		if (parentTreeNode == null) {
-			currentTreeNode = new TreeNode(null, createLabelFromLogicalNode(logicalNode));
+			currentTreeNode = new TreeNodeImpl(null, createLabelFromLogicalNode(logicalNode));
 			graph.setRootNode(currentTreeNode);
 		} else {
 			// TODO: Properly handle nodes that are to right rather than below
@@ -180,7 +180,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 			//				parentTreeNode.setChildToRight(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
 			//			} 
 			//			else {
-			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNode(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
 			//			}
 		}
 		for (Node child : logicalNode.getChildren()) {
