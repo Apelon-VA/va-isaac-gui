@@ -45,6 +45,7 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import java.io.File;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -67,10 +68,6 @@ import org.slf4j.LoggerFactory;
 public class LogicGraphTreeViewTestCodeRunner extends Application
 {
 	private static final Logger LOG = LoggerFactory.getLogger(LogicGraphTreeViewTestCodeRunner.class);
-
-	interface LogicGraphSememeHandler {
-		void handle(LogicGraphSememeImpl lgs, int id);
-	};
 
 	private TreeGraph graph = new TreeGraph();
 	private Label textGraph = new Label();
@@ -123,8 +120,8 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		String uuidString = getParameters().getRaw().size() > 0 ? getParameters().getRaw().get(0) : "89ce6b87-545b-3138-82c7-aafa76f8f9a0";
 		UUID uuid = UUID.fromString(uuidString);
 
-		LogicGraphSememeHandler handler = new LogicGraphSememeHandler() {
-			public void handle(LogicGraphSememeImpl lgs, int id) {
+		BiConsumer<LogicGraphSememeImpl, Integer> handler = new BiConsumer<LogicGraphSememeImpl, Integer>() {
+			public void accept(LogicGraphSememeImpl lgs, Integer id) {
 				System.out.println("STATED LogicGraph for " + Get.conceptDescriptionText(id) + ":\n" + lgs.toString());
 
 				LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(lgs.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(lgs.getReferencedComponentNid()));
@@ -134,8 +131,8 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 				textGraph.setText(lg.toString());
 			}
 		};
-		//		handler = new LogicGraphSememeHandler() {
-		//			public void handle(LogicGraphSememeImpl lgs, int id) {
+		//		handler = new BiConsumer<LogicGraphSememeImpl, Integer>() {
+		//			public void accept(LogicGraphSememeImpl lgs, Integer id) {
 		//				System.out.println("STATED LogicGraph for " + Get.conceptDescriptionText(id) + ":\n" + lgs.toString());
 		//			}
 		//		};
@@ -145,7 +142,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		//populateTestGraph();
 	}
 
-	public void processUuid(UUID uuid, LogicGraphSememeHandler handler) {
+	public void processUuid(UUID uuid, BiConsumer<LogicGraphSememeImpl, Integer> consumer) {
 		int nid = Get.identifierService().getNidForUuids(uuid);
 
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
@@ -154,7 +151,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, StampCoordinates.getDevelopmentLatest());
 		LogicGraphSememeImpl latestStatedGraph = latestGraphLatestVersionOptional.get().value();
 
-		handler.handle(latestStatedGraph, nid);
+		consumer.accept(latestStatedGraph, nid);
 	}
 
 	public static void main(String[] args) throws Exception
