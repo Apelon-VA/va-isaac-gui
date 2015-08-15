@@ -21,6 +21,7 @@ package gov.va.isaac;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.treegraph.TreeGraph;
 import gov.va.isaac.gui.treegraph.TreeNodeImpl;
+import gov.va.isaac.gui.treegraph.TreeNodeUtils;
 import gov.va.isaac.init.SystemInit;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.DataSource;
@@ -31,6 +32,8 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.logic.Node;
 import gov.vha.isaac.ochre.model.logic.LogicalExpressionOchreImpl;
+import gov.vha.isaac.ochre.model.logic.node.AndNode;
+import gov.vha.isaac.ochre.model.logic.node.OrNode;
 import gov.vha.isaac.ochre.model.logic.node.RootNode;
 import gov.vha.isaac.ochre.model.logic.node.SufficientSetNode;
 import gov.vha.isaac.ochre.model.logic.node.external.ConceptNodeWithUuids;
@@ -69,8 +72,13 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 {
 	private static final Logger LOG = LoggerFactory.getLogger(LogicGraphTreeViewTestCodeRunner.class);
 
+	private static final int defaultWidth = 200;
+	private static final int defaultHeight = 100;
+	
 	private TreeGraph graph = new TreeGraph();
 	private Label textGraph = new Label();
+	
+	private boolean ignoreSingleChildConjunctions = true;
 
 	protected void init(Stage primaryStage) {
 		VBox vbox = new VBox();
@@ -189,6 +197,11 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 			currentTreeNode = new TreeNodeImpl(null, createLabelFromLogicalNode(logicalNode));
 			graph.setRootNode(currentTreeNode);
 		} else {
+			if (ignoreSingleChildConjunctions && (logicalNode instanceof AndNode || logicalNode instanceof OrNode) && logicalNode.getChildren().length == 1) {
+				// Add AndNode single child directly to parent
+				processLogicalNode(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0]);
+				return;
+			}
 			// TODO: Properly handle nodes that are to right rather than below
 			if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
 				parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
@@ -207,21 +220,34 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		Label label = null;
 		if (logicalNode instanceof ConceptNodeWithSequences) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(((ConceptNodeWithSequences)logicalNode).getConceptSequence()));
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		} else if (logicalNode instanceof ConceptNodeWithUuids) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(((ConceptNodeWithUuids)logicalNode).getConceptUuid())));
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		} else if (logicalNode instanceof FeatureNodeWithSequences) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((FeatureNodeWithSequences)logicalNode).getTypeConceptSequence()) + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name());
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		} else if (logicalNode instanceof RoleNodeAllWithSequences) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()));
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		} else if (logicalNode instanceof RoleNodeSomeWithSequences) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()));
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		} else if (logicalNode instanceof RootNode) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		} else if (logicalNode instanceof SufficientSetNode) {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
+			label.setShape(new Circle(50));
+			TreeNodeUtils.setFxNodeSizes(label, 100, 100);
+		} else if (logicalNode instanceof AndNode || logicalNode instanceof OrNode) {
+			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
+			label.setShape(new Circle(50));
+			TreeNodeUtils.setFxNodeSizes(label, 100, 100);
 		}
 		else {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
+			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
 		}
 		
 		label.setTooltip(new Tooltip(label.getText()));

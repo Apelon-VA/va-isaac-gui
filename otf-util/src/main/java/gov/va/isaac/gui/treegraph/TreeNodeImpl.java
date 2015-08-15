@@ -15,9 +15,6 @@ import javafx.scene.shape.Line;
 import com.sun.javafx.collections.ObservableListWrapper;
 
 public class TreeNodeImpl extends Group implements TreeNode<TreeNodeImpl> {
-	private final static double preferredWidth = 200;
-	private final static double preferredHeight = 100;
-	
 	private final static double vertSpaceBetweenChildNodes = 5;
 	private final static double horizontalSpaceBetweenParentAndChildNodes = 20;
 	
@@ -28,18 +25,11 @@ public class TreeNodeImpl extends Group implements TreeNode<TreeNodeImpl> {
 
 	private final ListProperty<TreeNodeImpl> childTreeNodes = new SimpleListProperty<>(new ObservableListWrapper<>(new ArrayList<>()));
 	private final ReadOnlyListWrapper<TreeNodeImpl> readOnlyChildTreeNodes = new ReadOnlyListWrapper<>(childTreeNodes);
-
+	
 	public TreeNodeImpl(TreeNodeImpl parentTreeNode, Region fxNode) {
 		super(fxNode);
 		
 		fxNode.setStyle("-fx-border-color: black;");
-		
-		fxNode.setMaxHeight(preferredHeight);
-		fxNode.setMaxWidth(preferredWidth);
-		fxNode.setPrefHeight(preferredHeight);
-		fxNode.setPrefWidth(preferredWidth);
-		fxNode.setMinHeight(preferredHeight);
-		fxNode.setMinWidth(preferredWidth);
 		
 		if (fxNode instanceof Labeled) {
 			((Labeled)fxNode).setAlignment(Pos.CENTER);

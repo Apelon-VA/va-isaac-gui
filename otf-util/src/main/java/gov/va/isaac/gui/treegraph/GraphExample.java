@@ -12,33 +12,44 @@ import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.stage.Stage;
 
 public class GraphExample extends Application {
-	private <T extends TreeNode<T>> void populateGraph(TreeGraph graph, BiFunction<T, Region, T> factory) {
+	private final static int defaultWidth = 200;
+	private final static int defaultHeight = 100;
+	
+	private void populateGraph(TreeGraph graph) {
 		Label label1 = new Label("Node 1");
-		T node1 = factory.apply(null, label1);
+		TreeNodeUtils.setFxNodeSizes(label1, defaultWidth, defaultHeight);
+		TreeNodeImpl node1 = new TreeNodeImpl(null, label1);
 
 		Label label2 = new Label("Node 2");
-		T node2 = factory.apply(node1, label2);
+		TreeNodeUtils.setFxNodeSizes(label2, 100, 50);
+		TreeNodeImpl node2 = new TreeNodeImpl(node1, label2);
 		node1.addChildTreeNodeBelow(node2);
 		
 		Label label4 = new Label("Node 4");
-		T node4 = factory.apply(node2, label4);
+		TreeNodeUtils.setFxNodeSizes(label4, 100, 50);
+		TreeNodeImpl node4 = new TreeNodeImpl(node2, label4);
 		node2.addChildTreeNodeBelow(node4);
+
+		Label label7 = new Label("Node 7");
+		TreeNodeUtils.setFxNodeSizes(label7, defaultWidth, defaultHeight);
+		TreeNodeImpl node7 = new TreeNodeImpl(node4, label7);
+		node4.setChildToRight(node7);
 		Label label5 = new Label("Node 5");
-		T node5 = factory.apply(node2, label5);
+		TreeNodeUtils.setFxNodeSizes(label5, defaultWidth, defaultHeight);
+		TreeNodeImpl node5 = new TreeNodeImpl(node2, label5);
 		node2.addChildTreeNodeBelow(node5);
 		
 		Label label6 = new Label("Node 6");
-		T node6 = factory.apply(node1, label6);
+		TreeNodeUtils.setFxNodeSizes(label6, defaultWidth, defaultHeight);
+		TreeNodeImpl node6 = new TreeNodeImpl(node1, label6);
 		node1.addChildTreeNodeBelow(node6);
 
 		Label label3 = new Label("Node 3");
 		label3.setShape(new Circle(50));
-		T node3 = factory.apply(node1, label3);
+		TreeNodeUtils.setFxNodeSizes(label3, 100, 100);
+		TreeNodeImpl node3 = new TreeNodeImpl(node1, label3);
 		node1.setChildToRight(node3);	
 
-		Label label7 = new Label("Node 7");
-		T node7 = factory.apply(node4, label7);
-		node4.setChildToRight(node7);
 		
 		graph.setRootNode(node1);
 	}
@@ -46,12 +57,7 @@ public class GraphExample extends Application {
 	protected void init(Stage primaryStage) {
 		TreeGraph graph = new TreeGraph();
 
-		populateGraph(graph, new BiFunction<TreeNodeImpl, Region, TreeNodeImpl>() {
-			@Override
-			public TreeNodeImpl apply(TreeNodeImpl parent, Region fxNode) {
-				return new TreeNodeImpl(parent, fxNode);
-			}
-		});
+		populateGraph(graph);
 //		populateGraph(graph, new BiFunction<TreeNodeImpl, Region, TreeNodeImpl>() {
 //			@Override
 //			public ResizableTreeNodeImpl apply(ResizableTreeNodeImpl parent, Region fxNode) {
