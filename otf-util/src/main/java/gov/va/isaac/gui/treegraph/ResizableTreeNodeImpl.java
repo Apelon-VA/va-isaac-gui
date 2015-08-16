@@ -4,6 +4,9 @@ import gov.va.isaac.util.UpdateableDoubleBinding;
 
 import java.util.ArrayList;
 
+import javafx.beans.Observable;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.binding.ObjectBinding;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -25,16 +28,12 @@ import javafx.scene.shape.Line;
 import com.sun.javafx.collections.ObservableListWrapper;
 
 public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTreeNodeImpl> {
-	abstract class RecomputingBinding extends UpdateableDoubleBinding {
+	abstract class RecomputingDoubleBinding extends UpdateableDoubleBinding {
 		{
 			super.setComputeOnInvalidate(true);
 		}
-		
 	};
-	
-//	private final static double preferredWidth = 200;
-//	private final static double preferredHeight = 100;
-	
+
 	private final static double vertSpaceBetweenChildNodes = 5;
 	private final static double horizontalSpaceBetweenParentAndChildNodes = 20;
 	
@@ -52,6 +51,18 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 	
 	private final ListProperty<ResizableTreeNodeImpl> childTreeNodes = new SimpleListProperty<>(new ObservableListWrapper<>(new ArrayList<>()));
 	private final ReadOnlyListWrapper<ResizableTreeNodeImpl> readOnlyChildTreeNodes = new ReadOnlyListWrapper<>(childTreeNodes);
+
+	// Left connection port
+	private final DoubleBinding leftConnectionPortXBinding;
+	private final DoubleBinding leftConnectionPortYBinding;
+
+	// Right connection port
+	private final DoubleBinding rightConnectionPortXBinding;
+	private final DoubleBinding rightConnectionPortYBinding;
+
+	// bottom connection port
+	private final DoubleBinding bottomConnectionPortXBinding;
+	private final DoubleBinding bottomConnectionPortYBinding;
 
 	public ResizableTreeNodeImpl(ResizableTreeNodeImpl parentTreeNode, Region fxNode) {
 		super(fxNode);
@@ -72,7 +83,7 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		this.parentTreeNode = parentTreeNode;
 		this.fxNode = fxNode;
 
-		widthBinding = new RecomputingBinding() {
+		widthBinding = new RecomputingDoubleBinding() {
 			@Override
 			protected double computeValue() {
 				return childToRightProperty.get() == null ? fxNode.getWidth() : fxNode.getWidth() + horizontalSpaceBetweenParentAndChildNodes + childToRightProperty.get().getWidth();
@@ -97,7 +108,7 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		});
 		widthProperty.bind(widthBinding);
 
-		heightBinding = new RecomputingBinding() {
+		heightBinding = new RecomputingDoubleBinding() {
 			@Override
 			protected double computeValue() {
 				double heightOfFxNode = fxNode.heightProperty().get();
@@ -148,6 +159,57 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 			}
 		});
 		heightProperty.bind(heightBinding);
+		
+		rightConnectionPortXBinding = new DoubleBinding() {
+			{ bind(fxNode.layoutXProperty(), fxNode.widthProperty()); }
+			@Override
+			protected double computeValue() {
+				return fxNode.getLayoutX() + fxNode.getWidth();
+			}
+		};
+		rightConnectionPortYBinding = new DoubleBinding() {
+			{ bind(fxNode.layoutYProperty(), fxNode.heightProperty()); }
+			@Override
+			protected double computeValue() {
+				return fxNode.getLayoutY() + fxNode.getHeight() / 2;
+			}
+		};
+		
+		leftConnectionPortXBinding = new DoubleBinding() {
+			{
+				bind(fxNode.layoutXProperty());
+			}
+			@Override
+			protected double computeValue() {
+				return fxNode.getLayoutX();
+			}
+		};
+		leftConnectionPortYBinding = new DoubleBinding() {
+			{
+				bind(fxNode.layoutXProperty(), fxNode.heightProperty());
+			}
+			@Override
+			protected double computeValue() {
+				return fxNode.getLayoutY() + fxNode.getHeight() / 2;
+			}
+		};
+		
+		bottomConnectionPortXBinding = new DoubleBinding() {
+			{ bind(fxNode.layoutXProperty(), fxNode.widthProperty()); }
+			@Override
+			protected double computeValue() {
+				return fxNode.getLayoutX() + fxNode.getWidth() / 2;
+			}
+		};
+		bottomConnectionPortYBinding = new DoubleBinding() {
+			{
+				bind(fxNode.layoutYProperty(), fxNode.heightProperty());
+			}
+			@Override
+			protected double computeValue() {
+				return fxNode.getLayoutY() + fxNode.getHeight();
+			}
+		};
 	}
 	
 	public ResizableTreeNodeImpl getRoot() {
@@ -171,10 +233,36 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		this.getChildren().add(childToRightProperty.get());
 		
 		// Add connector
-		Coordinates startCoordinates = this.getRightConnectionPortCoordinates();
-		Coordinates endCoordinates = childToRightProperty.get().getLeftConnectionPortCoordinates();
-		Line line = new Line(startCoordinates.getX(), startCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
-		childToRightProperty.get().getChildren().add(line); // add connector line to FX Group
+		// Create connector consisting of three separate Line instances
+		//double midpoint = startCoordinates.getX() + (endCoordinates.getX() - startCoordinates.getX()) / 2;
+		DoubleBinding midpointXBinding = new DoubleBinding() {
+			{ bind(rightConnectionPortXBinding, childToRightProperty.get().leftConnectionPortXBinding); }
+			@Override
+			protected double computeValue() {
+				return rightConnectionPortXBinding.get() + ((childToRightProperty.get().leftConnectionPortXBinding.get() - rightConnectionPortXBinding.get()) / 2);
+			}
+		};
+
+		Line leftHorizontal = new Line();
+		leftHorizontal.startXProperty().bind(rightConnectionPortXBinding);
+		leftHorizontal.startYProperty().bind(rightConnectionPortYBinding);
+		leftHorizontal.endXProperty().bind(midpointXBinding);
+		leftHorizontal.endYProperty().bind(rightConnectionPortYBinding);
+		
+		Line vertical = new Line();
+		vertical.startXProperty().bind(midpointXBinding);
+		vertical.startYProperty().bind(rightConnectionPortYBinding);
+		vertical.endXProperty().bind(midpointXBinding);
+		vertical.endYProperty().bind(childToRightProperty.get().leftConnectionPortYBinding);
+		
+		Line rightHorizontal = new Line();
+		rightHorizontal.startXProperty().bind(midpointXBinding);
+		rightHorizontal.startYProperty().bind(childToRightProperty.get().leftConnectionPortYBinding);
+		rightHorizontal.endXProperty().bind(childToRightProperty.get().leftConnectionPortXBinding);
+		rightHorizontal.endYProperty().bind(childToRightProperty.get().leftConnectionPortYBinding);
+		
+		Group newCompoundLineGroup = new Group(leftHorizontal, vertical, rightHorizontal);
+		childToRightProperty.get().getChildren().add(newCompoundLineGroup);
 	}
 	
 	public DoubleProperty heightProperty() {
@@ -203,12 +291,20 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		childTreeNode.getFxNode().layoutYProperty().bind(Bindings.add(vertSpaceBetweenChildNodes, Bindings.add(fxNode.layoutYProperty(), heightProperty)));
 		
 		// create connector
-		Coordinates startCoordinates = this.getBottomConnectionPortCoordinates();
-		Coordinates endCoordinates = childTreeNode.getLeftConnectionPortCoordinates();
 		// create vertical line segment
-		Line verticalLine = new Line(startCoordinates.getX(), startCoordinates.getY(), startCoordinates.getX(), endCoordinates.getY());
+		Line verticalLine = new Line();
+		verticalLine.startXProperty().bind(bottomConnectionPortXBinding);
+		verticalLine.startYProperty().bind(bottomConnectionPortYBinding);
+		verticalLine.endXProperty().bind(bottomConnectionPortXBinding);
+		verticalLine.endYProperty().bind(childTreeNode.leftConnectionPortYBinding);
+		
 		// create horizontal line segment
-		Line horizontalLine = new Line(startCoordinates.getX(), endCoordinates.getY(), endCoordinates.getX(), endCoordinates.getY());
+		Line horizontalLine = new Line();
+		horizontalLine.startXProperty().bind(bottomConnectionPortXBinding);
+		horizontalLine.startYProperty().bind(childTreeNode.leftConnectionPortYBinding);
+		horizontalLine.endXProperty().bind(childTreeNode.leftConnectionPortXBinding);
+		horizontalLine.endYProperty().bind(childTreeNode.leftConnectionPortYBinding);
+		
 		// add connector vertical and horizontal line segments to new FX Group
 		Group compositeLine = new Group(verticalLine, horizontalLine);
 		// add new connector FX Group to childTreeNode FX Group
@@ -216,16 +312,6 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		
 		this.getChildren().add(childTreeNode);
 		childTreeNodes.add(childTreeNode);
-	}
-
-	private Coordinates getRightConnectionPortCoordinates() {
-		return new Coordinates(fxNode.getLayoutX() + fxNode.getMaxWidth(), fxNode.getLayoutY() + fxNode.getMaxHeight() / 2);
-	}
-	private Coordinates getLeftConnectionPortCoordinates() {
-		return new Coordinates(fxNode.getLayoutX(), fxNode.getLayoutY() + fxNode.getMaxHeight() / 2);
-	}
-	private Coordinates getBottomConnectionPortCoordinates() {
-		return new Coordinates(fxNode.getLayoutX() + fxNode.getMaxWidth() / 2, fxNode.getLayoutY() + fxNode.getMaxHeight());
 	}
 
 	@Override
