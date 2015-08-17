@@ -4,30 +4,34 @@ import gov.va.isaac.util.UpdateableDoubleBinding;
 
 import java.util.ArrayList;
 
-import javafx.beans.Observable;
-import javafx.beans.binding.DoubleBinding;
-import javafx.beans.binding.ObjectBinding;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Pos;
-import javafx.scene.control.Labeled;
 import javafx.scene.Group;
+import javafx.scene.control.Labeled;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Line;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sun.javafx.collections.ObservableListWrapper;
 
 public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTreeNodeImpl> {
+	//private static final Logger LOG = LoggerFactory.getLogger(ResizableTreeNodeImpl.class);
+	
 	abstract class RecomputingDoubleBinding extends UpdateableDoubleBinding {
 		{
 			super.setComputeOnInvalidate(true);
@@ -86,10 +90,14 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		widthBinding = new RecomputingDoubleBinding() {
 			@Override
 			protected double computeValue() {
-				return childToRightProperty.get() == null ? fxNode.getWidth() : fxNode.getWidth() + horizontalSpaceBetweenParentAndChildNodes + childToRightProperty.get().getWidth();
+				double value = childToRightProperty.get() == null ? getWidthPropertyFromFxNode(fxNode).get() : getWidthPropertyFromFxNode(fxNode).get() + horizontalSpaceBetweenParentAndChildNodes + childToRightProperty.get().getWidth();
+
+				//String text = (fxNode instanceof Labeled) ? ((Labeled)fxNode).getText() : "node";
+				//System.out.println("Recomputing " + text + " width to " + value);
+				return value;
 			}
 		};
-		widthBinding.addBinding(fxNode.widthProperty(), childToRightProperty);
+		widthBinding.addBinding(getWidthPropertyFromFxNode(fxNode), childToRightProperty);
 		childToRightProperty.addListener(new ChangeListener<ResizableTreeNodeImpl>() {
 			@Override
 			public void changed(
@@ -111,19 +119,24 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		heightBinding = new RecomputingDoubleBinding() {
 			@Override
 			protected double computeValue() {
-				double heightOfFxNode = fxNode.heightProperty().get();
+				double heightOfFxNode = getHeightPropertyFromFxNode(fxNode).get();
 				
 				double heightWithChildrenBelow = heightOfFxNode;
-				for (ResizableTreeNodeImpl treeNode : childTreeNodes) {
-					heightWithChildrenBelow += vertSpaceBetweenChildNodes + treeNode.getHeight();
+				for (ResizableTreeNodeImpl childTreeNode : childTreeNodes) {
+					heightWithChildrenBelow += vertSpaceBetweenChildNodes + childTreeNode.getHeight();
 				}
 				
 				double heightOfChildToRight = childToRightProperty.get() != null ? childToRightProperty.get().getHeight() : 0;
 				
-				return Math.max(heightOfChildToRight, Math.max(heightOfFxNode, heightWithChildrenBelow));
+				double value = Math.max(heightOfChildToRight, Math.max(heightOfFxNode, heightWithChildrenBelow));
+
+//				String text = fxNode instanceof Labeled ? ((Labeled)fxNode).getText() : "node";
+//				System.out.println("Recomputing " + text + " TreeNode height to " + value);
+				
+				return value;
 			}
 		};
-		heightBinding.addBinding(fxNode.heightProperty(), childTreeNodes, childToRightProperty);
+		heightBinding.addBinding(getHeightPropertyFromFxNode(fxNode), childTreeNodes, childToRightProperty);
 		childTreeNodes.addListener(new ListChangeListener<ResizableTreeNodeImpl>() {
 			@Override
 			public void onChanged(
@@ -136,6 +149,9 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 					}
 					if (c.wasAdded()) {
 						for (ResizableTreeNodeImpl node : c.getAddedSubList()) {
+//							String parentText = fxNode instanceof Labeled ? ((Labeled)fxNode).getText() : "node";
+//							String childText = node.fxNode instanceof Labeled ? ((Labeled)node.fxNode).getText() : "node";
+//							System.out.println("Adding child (below) binding for " + childText + " of FX Node height " + getHeightPropertyFromFxNode(node.fxNode).get() + " to " + parentText + " of FX Node height " + getHeightPropertyFromFxNode(fxNode).get());
 							heightBinding.addBinding(node.heightProperty);
 						}
 					}
@@ -161,71 +177,95 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 		heightProperty.bind(heightBinding);
 		
 		rightConnectionPortXBinding = new DoubleBinding() {
-			{ bind(fxNode.layoutXProperty(), fxNode.widthProperty()); }
-			@Override
-			protected double computeValue() {
-				return fxNode.getLayoutX() + fxNode.getWidth();
-			}
+			{ bind(fxNode.layoutXProperty(), getWidthPropertyFromFxNode(fxNode)); }
+			@Override protected double computeValue() { return fxNode.getLayoutX() + getWidthPropertyFromFxNode(fxNode).get(); }
 		};
 		rightConnectionPortYBinding = new DoubleBinding() {
-			{ bind(fxNode.layoutYProperty(), fxNode.heightProperty()); }
-			@Override
-			protected double computeValue() {
-				return fxNode.getLayoutY() + fxNode.getHeight() / 2;
-			}
+			{ bind(fxNode.layoutYProperty(), getHeightPropertyFromFxNode(fxNode)); }
+			@Override protected double computeValue() { return fxNode.getLayoutY() + getHeightPropertyFromFxNode(fxNode).get() / 2; }
 		};
 		
 		leftConnectionPortXBinding = new DoubleBinding() {
-			{
-				bind(fxNode.layoutXProperty());
-			}
-			@Override
-			protected double computeValue() {
-				return fxNode.getLayoutX();
-			}
+			{ bind(fxNode.layoutXProperty()); }
+			@Override protected double computeValue() { return fxNode.getLayoutX(); }
 		};
 		leftConnectionPortYBinding = new DoubleBinding() {
-			{
-				bind(fxNode.layoutXProperty(), fxNode.heightProperty());
-			}
-			@Override
-			protected double computeValue() {
-				return fxNode.getLayoutY() + fxNode.getHeight() / 2;
-			}
+			{ bind(fxNode.layoutXProperty(), getHeightPropertyFromFxNode(fxNode)); }
+			@Override protected double computeValue() { return fxNode.getLayoutY() + getHeightPropertyFromFxNode(fxNode).get() / 2; }
 		};
 		
 		bottomConnectionPortXBinding = new DoubleBinding() {
-			{ bind(fxNode.layoutXProperty(), fxNode.widthProperty()); }
-			@Override
-			protected double computeValue() {
-				return fxNode.getLayoutX() + fxNode.getWidth() / 2;
-			}
+			{ bind(fxNode.layoutXProperty(), getWidthPropertyFromFxNode(fxNode)); }
+			@Override protected double computeValue() { return fxNode.getLayoutX() + getWidthPropertyFromFxNode(fxNode).get() / 2; }
 		};
 		bottomConnectionPortYBinding = new DoubleBinding() {
-			{
-				bind(fxNode.layoutYProperty(), fxNode.heightProperty());
-			}
-			@Override
-			protected double computeValue() {
-				return fxNode.getLayoutY() + fxNode.getHeight();
-			}
+			{ bind(fxNode.layoutYProperty(), getHeightPropertyFromFxNode(fxNode)); }
+			@Override protected double computeValue() { return fxNode.getLayoutY() + getHeightPropertyFromFxNode(fxNode).get(); }
 		};
+		
+		// The following listeners are for debug purposes only
+//		fxNode.layoutXProperty().addListener(new ChangeListener<Number>() {
+//			@Override
+//			public void changed(
+//					ObservableValue<? extends Number> observable,
+//					Number oldValue, Number newValue) {
+//				String text = (fxNode instanceof Labeled) ? ((Labeled)fxNode).getText() : "node";
+//				System.out.println("Changing " + text + " X coordinate from " + oldValue + " to " + newValue);
+//			}
+//		});
+//		fxNode.layoutYProperty().addListener(new ChangeListener<Number>() {
+//			@Override
+//			public void changed(
+//					ObservableValue<? extends Number> observable,
+//					Number oldValue, Number newValue) {
+//				String text = (fxNode instanceof Labeled) ? ((Labeled)fxNode).getText() : "node";
+//				System.out.println("Changing " + text + " Y coordinate from " + oldValue + " to " + newValue);
+//			}
+//		});
+//		
+//		getWidthPropertyFromFxNode(fxNode).addListener(new ChangeListener<Number>() {
+//			@Override
+//			public void changed(
+//					ObservableValue<? extends Number> observable,
+//					Number oldValue, Number newValue) {
+//				String text = (fxNode instanceof Labeled) ? ((Labeled)fxNode).getText() : "node";
+//				System.out.println("Changing " + text + " FX Node width from " + oldValue + " to " + newValue);
+//			}
+//		});
+//		getHeightPropertyFromFxNode(fxNode).addListener(new ChangeListener<Number>() {
+//			@Override
+//			public void changed(
+//					ObservableValue<? extends Number> observable,
+//					Number oldValue, Number newValue) {
+//				String text = (fxNode instanceof Labeled) ? ((Labeled)fxNode).getText() : "node";
+//				System.out.println("Changing " + text + " FX Node height from " + oldValue + " to " + newValue);
+//			}
+//		});
+	}
+
+	// This method is only here to allow replacing widthProperty() with maxWidthProperty() for testing
+	protected ReadOnlyDoubleProperty getWidthPropertyFromFxNode(Region fxNode) {
+		return fxNode.widthProperty();
+	}
+	// This method is only here to allow replacing heightProperty() with maxHeightProperty() for testing
+	protected ReadOnlyDoubleProperty getHeightPropertyFromFxNode(Region fxNode) {
+		return fxNode.heightProperty();
 	}
 	
 	public ResizableTreeNodeImpl getRoot() {
 		return this.parentTreeNode == null ? this : this.parentTreeNode.getRoot();
 	}
-	
+
 	public Region getFxNode() {
 		return fxNode;
 	}
-	
+
 	public ResizableTreeNodeImpl getChildToRight() {
 		return childToRightProperty.get();
 	}
 	public void setChildToRight(ResizableTreeNodeImpl treeNode) {
 		// Position childToRight
-		treeNode.getFxNode().layoutXProperty().bind(Bindings.add(fxNode.layoutXProperty(), Bindings.add(fxNode.widthProperty(), horizontalSpaceBetweenParentAndChildNodes)));
+		treeNode.getFxNode().layoutXProperty().bind(Bindings.add(fxNode.layoutXProperty(), Bindings.add(getWidthPropertyFromFxNode(fxNode), horizontalSpaceBetweenParentAndChildNodes)));
 		treeNode.getFxNode().layoutYProperty().bind(fxNode.layoutYProperty());
 		childToRightProperty.set(treeNode);
 		
@@ -287,7 +327,7 @@ public class ResizableTreeNodeImpl extends Group implements TreeNode<ResizableTr
 
 	public void addChildTreeNodeBelow(ResizableTreeNodeImpl childTreeNode) {
 		// position childTreeNode
-		childTreeNode.getFxNode().layoutXProperty().bind(Bindings.add(fxNode.layoutXProperty(), Bindings.add(horizontalSpaceBetweenParentAndChildNodes, fxNode.widthProperty())));
+		childTreeNode.getFxNode().layoutXProperty().bind(Bindings.add(fxNode.layoutXProperty(), Bindings.add(horizontalSpaceBetweenParentAndChildNodes, getWidthPropertyFromFxNode(fxNode))));
 		childTreeNode.getFxNode().layoutYProperty().bind(Bindings.add(vertSpaceBetweenChildNodes, Bindings.add(fxNode.layoutYProperty(), heightProperty)));
 		
 		// create connector
