@@ -16,8 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac;
+package gov.va.isaac.logic.treeview;
 
+import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.treegraph.TreeGraph;
 import gov.va.isaac.gui.treegraph.TreeNodeImpl;
