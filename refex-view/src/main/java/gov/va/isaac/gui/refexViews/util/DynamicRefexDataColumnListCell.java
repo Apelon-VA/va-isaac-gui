@@ -23,6 +23,7 @@ import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeByteArray;
@@ -137,42 +138,42 @@ public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumn
 
 			gp.add(wrapAndStyle(makeBoldLabel("Validator"), row), 0, row);
 			gp.add(wrapAndStyle(new Label(item.getValidator() == null ? "" : 
-				(item.getValidator() == DynamicSememeValidatorType.EXTERNAL ? "Drools" : item.getValidator().getDisplayName())),
+				(valUnwrap(item) == DynamicSememeValidatorType.EXTERNAL ? "Drools" : valUnwrap(item).getDisplayName())),
 				row), 1, row++);
 
 			if (item.getValidator() != null)
 			{
 				gp.add(wrapAndStyle(makeBoldLabel("Validator Data"), row), 0, row);
 				String validatorData = "";
-				if (item.getValidatorData() == null)
+				if (valDataUnwrap(item) == null)
 				{
 					validatorData = "[null]";
 					LoggerFactory.getLogger(this.getClass()).warn("Null validator data on " + item.getColumnName() + " - " + item.getColumnOrder());
 					//I saw this case once, but had a odd DB state at the time.  Leave warning, as it shouldn't happen in normal use.
 				}
-				else if (item.getValidatorData().getRefexDataType() == DynamicSememeDataType.BYTEARRAY)
+				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.BYTEARRAY)
 				{
-					validatorData = "Byte array of size " + ((DynamicSememeByteArray) item.getValidatorData()).getDataByteArray().length;
+					validatorData = "Byte array of size " + ((DynamicSememeByteArray) valDataUnwrap(item)).getDataByteArray().length;
 				}
-				else if (item.getValidatorData().getRefexDataType() == DynamicSememeDataType.NID)
+				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)item.getValidatorData()).getDataNid());
+					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)valDataUnwrap(item)).getDataNid());
 					if (validatorData == null)
 					{
-						validatorData = "NID: " + item.getValidatorData().getDataObject().toString();
+						validatorData = "NID: " + valDataUnwrap(item).getDataObject().toString();
 					}
 				}
-				else if (item.getValidatorData().getRefexDataType() == DynamicSememeDataType.UUID)
+				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)item.getValidatorData()).getDataUUID());
+					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)valDataUnwrap(item)).getDataUUID());
 					if (validatorData == null)
 					{
-						validatorData = "UUID: " + item.getValidatorData().getDataObject().toString();
+						validatorData = "UUID: " + valDataUnwrap(item).getDataObject().toString();
 					}
 				}
-				else if (item.getValidator() == DynamicSememeValidatorType.EXTERNAL)
+				else if (valUnwrap(item) == DynamicSememeValidatorType.EXTERNAL)
 				{
-					RefexDroolsValidatorImplInfo rdvi = RefexDroolsValidator.readFromData(item.getValidatorData());
+					RefexDroolsValidatorImplInfo rdvi = RefexDroolsValidator.readFromData(valDataUnwrap(item));
 					if (rdvi == null)
 					{
 						//this should be impossible....
@@ -186,7 +187,7 @@ public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumn
 						
 				else
 				{
-					validatorData = item.getValidatorData().getDataObject().toString();
+					validatorData = valDataUnwrap(item).getDataObject().toString();
 				}
 				Label valData = new Label(validatorData);
 				valData.setWrapText(true);
@@ -224,5 +225,25 @@ public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumn
 		Label l = new Label(labelText);
 		l.getStyleClass().add("boldLabel");
 		return l;
+	}
+	
+	
+	//TODO get rid of these next two methods when we properly support multiple validators
+	private DynamicSememeValidatorType valUnwrap(DynamicSememeColumnInfo info)
+	{
+		if (info.getValidator() == null || info.getValidator().length == 0)
+		{
+			return null;
+		}
+		return info.getValidator()[0];
+	}
+	
+	private DynamicSememeDataBI valDataUnwrap(DynamicSememeColumnInfo info)
+	{
+		if (info.getValidatorData() == null || info.getValidatorData().length == 0)
+		{
+			return null;
+		}
+		return info.getValidatorData()[0];
 	}
 }

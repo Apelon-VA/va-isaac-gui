@@ -68,15 +68,15 @@ public class Association
 			DynamicSememeDataBI[] data = sememe_.getData();
 			if (data != null && data.length > targetColIndex)
 			{
-				if (data[targetColIndex].getRefexDataType() == DynamicSememeDataType.UUID)
+				if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
 					return Get.conceptService().getConcept(((DynamicSememeUUID) data[targetColIndex]).getDataUUID());
 				}
-				else if (data[targetColIndex].getRefexDataType() == DynamicSememeDataType.NID)
+				else if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
 					return Get.conceptService().getConcept(((DynamicSememeNid) data[targetColIndex]).getDataNid());
 				}
-				else if (data[targetColIndex].getRefexDataType() == DynamicSememeDataType.SEQUENCE)
+				else if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.SEQUENCE)
 				{
 					return Get.conceptService().getConcept(((DynamicSememeSequence) data[targetColIndex]).getDataSequence());
 				}

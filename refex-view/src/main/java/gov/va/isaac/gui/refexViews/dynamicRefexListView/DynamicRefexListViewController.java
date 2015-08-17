@@ -194,7 +194,7 @@ public class DynamicRefexListViewController
 			SimpleDisplayConcept sdc = refexList.getSelectionModel().getSelectedItem();
 			if (sdc != null)
 			{
-				new ConfigureDynamicRefexIndexingView(OTFUtility.getConceptVersion(sdc.getNid())).showView(null);
+				new ConfigureDynamicRefexIndexingView(sdc.getNid()).showView(null);
 			}
 		});
 		mi.setGraphic(Images.CONFIGURE.createImageView());

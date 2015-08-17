@@ -18,19 +18,11 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
-import java.beans.PropertyVetoException;
-import java.io.IOException;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
 import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
@@ -43,6 +35,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * 
  * {@link SummaryController}
@@ -128,10 +122,10 @@ public class SummaryController implements PanelControllersI {
 			RefexData refexData = processController_.getWizardData();
 			DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(refexData.getRefexName(),
 					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new DynamicSememeColumnInfo[0]), 
-					refexData.getParentConcept().getPrimordialUuid(), 
+					refexData.getParentConcept().getNid(), 
 					refexData.getComponentRestrictionType(), 
-					ViewCoordinates.getMetadataViewCoordinate());
-		} catch (IOException | ContradictionException | InvalidCAB | PropertyVetoException e) {
+					null);
+		} catch (RuntimeException e) {
 			logger.error("Unable to create and/or commit refset concept and metadata", e);
 			AppContext.getCommonDialogs().showErrorDialog("Error Creating Sememe", "Unexpected error creating the Sememe", e.getMessage(), summaryPane.getScene().getWindow());
 		}

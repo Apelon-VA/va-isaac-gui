@@ -1,21 +1,15 @@
 
 package gov.va.isaac.models.cem;
 
-import java.beans.PropertyVetoException;
-import java.io.IOException;
-import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.model.constants.InformationModelsConstants;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a CEM constraint.
@@ -125,12 +119,9 @@ public class CEMConstraint {
 				try {
 					// Create Enumeration
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, 
-																									 new DynamicSememeColumnInfo[] {},
-																									 InformationModelsConstants.CEM_ENUMERATIONS.getUuids()[0], false, null,
-																									 ViewCoordinates.getMetadataViewCoordinate());
-				} catch (IOException | ContradictionException | InvalidCAB
-						| PropertyVetoException e) {
+					DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, new DynamicSememeColumnInfo[] {},
+							InformationModelsConstants.CEM_ENUMERATIONS.getNid(), null, null);
+				} catch (RuntimeException e) {
 					LOGGER.error("Unable to create CEM enumeration for " + value);
 				}
 				finally

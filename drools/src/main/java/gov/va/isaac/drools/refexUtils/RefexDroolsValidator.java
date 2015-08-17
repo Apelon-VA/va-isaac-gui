@@ -82,7 +82,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 
 			ArrayList<Object> facts = new ArrayList<>();
 
-			if (dataToValidate.getRefexDataType() == DynamicSememeDataType.NID)
+			if (dataToValidate.getDynamicSememeDataType() == DynamicSememeDataType.NID)
 			{
 				//switch it to a UUID, for drools purposes.
 				UUID temp = Ts.get().getUuidsForNid(((DynamicSememeNidBI)dataToValidate).getDataNid()).get(0);
@@ -198,13 +198,13 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 
 		for (DynamicSememeDataType rddt : rdvi.getApplicableDataTypes())
 		{
-			if (userData.getRefexDataType() == rddt)
+			if (userData.getDynamicSememeDataType() == rddt)
 			{
 				return RefexDroolsValidator.validate(rdvi.getDroolsPackageName(), userData);
 			}
 		}
 
-		throw new RuntimeException("The selected drools validator doesn't apply to the datatype '" + userData.getRefexDataType().getDisplayName() + "'");
+		throw new RuntimeException("The selected drools validator doesn't apply to the datatype '" + userData.getDynamicSememeDataType().getDisplayName() + "'");
 	}
 
 	/**

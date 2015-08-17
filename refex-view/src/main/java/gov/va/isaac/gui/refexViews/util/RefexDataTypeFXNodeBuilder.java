@@ -18,13 +18,8 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
-import java.beans.PropertyVetoException;
-import java.io.File;
-import java.nio.file.Files;
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
@@ -54,9 +49,14 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLong;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import java.beans.PropertyVetoException;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -70,6 +70,8 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link RefexDataTypeFXNodeBuilder}
@@ -101,6 +103,21 @@ public class RefexDataTypeFXNodeBuilder
 			UpdateableBooleanBinding allValid, ObjectProperty<DynamicSememeValidatorType> validatorType, ObjectProperty<DynamicSememeDataBI> validatorData)
 	{
 		return buildNodeForType(dt, defaultValue, currentValue, valueIsRequired, defaultValueTooltip, polymorphicSelection, allValid, validatorType, validatorData, true);
+	}
+	
+	public static RefexDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
+			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueTooltip, ReadOnlyObjectProperty<DynamicSememeDataType> polymorphicSelection, 
+			UpdateableBooleanBinding allValid, DynamicSememeValidatorType[] validatorType, DynamicSememeDataBI[] validatorData)
+	{
+		
+		//TODO get rid of this silly hack code when we update the GUI to support multiple validators
+		ObjectProperty<DynamicSememeValidatorType> dsvt = ((validatorType == null || validatorType.length == 0) ? null 
+				: new SimpleObjectProperty<>(validatorType[0])); 
+			
+		ObjectProperty<DynamicSememeDataBI> dsd = ((validatorData == null || validatorData.length == 0) ? null 
+				: new SimpleObjectProperty<>(validatorData[0]));
+		
+		return buildNodeForType(dt, defaultValue, currentValue, valueIsRequired, defaultValueTooltip, polymorphicSelection, allValid, dsvt, dsd, true);
 	}
 	
 	/**
@@ -322,7 +339,7 @@ public class RefexDataTypeFXNodeBuilder
 							DynamicSememeDouble data = new DynamicSememeDouble(Double.parseDouble(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
-								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
+								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), null, null));
 							}
 							else
 							{
@@ -346,7 +363,7 @@ public class RefexDataTypeFXNodeBuilder
 							DynamicSememeFloat data = new DynamicSememeFloat(Float.parseFloat(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
-								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
+								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), null, null));
 							}
 							else
 							{
@@ -369,7 +386,7 @@ public class RefexDataTypeFXNodeBuilder
 							DynamicSememeInteger data = new DynamicSememeInteger(Integer.parseInt(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
-								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
+								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), null, null));
 							}
 							else
 							{
@@ -392,7 +409,7 @@ public class RefexDataTypeFXNodeBuilder
 							DynamicSememeLong data = new DynamicSememeLong(Long.parseLong(tf.getText()));
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
-								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), OTFUtility.getViewCoordinate()));
+								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(data, validatorData.get(), null, null));
 							}
 							else
 							{
@@ -412,15 +429,8 @@ public class RefexDataTypeFXNodeBuilder
 						}
 						if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 						{
-							try
-							{
-								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new DynamicSememeString(tf.getText()), validatorData.get(), 
-										OTFUtility.getViewCoordinate()));
-							}
-							catch (PropertyVetoException e)
-							{
-								valueInvalidReason.set(e.getMessage());
-							}
+							valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new DynamicSememeString(tf.getText()), validatorData.get(), 
+									null, null));
 						}
 						else
 						{
@@ -437,15 +447,8 @@ public class RefexDataTypeFXNodeBuilder
 						{
 							if (validatorType != null && validatorType.get() != null && validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 							{
-								try
-								{
-									valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(tf.getText())), 
-										validatorData.get(), OTFUtility.getViewCoordinate()));
-								}
-								catch (PropertyVetoException e)
-								{
-									valueInvalidReason.set(e.getMessage());
-								}
+								valueInvalidReason.set(validatorType.get().passesValidatorStringReturn(new DynamicSememeUUID(UUID.fromString(tf.getText())), 
+									validatorData.get(), null ,null));
 							}
 							else
 							{
@@ -524,18 +527,13 @@ public class RefexDataTypeFXNodeBuilder
 					if (validatorType != null && validatorType.get() != null && cn.isValid().get() && cn.getConceptProperty().get() != null &&
 							validatorType.get() != DynamicSememeValidatorType.UNKNOWN)
 					{
-						try
+						String isInvalid = validatorType.get().passesValidatorStringReturn(new DynamicSememeNid(cn.getConceptProperty().get().getNid()), 
+								validatorData.get(), 
+								ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(), 
+								ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+						if (isInvalid.length() > 0)
 						{
-							String isInvalid = validatorType.get().passesValidatorStringReturn(new DynamicSememeNid(cn.getConceptProperty().get().getNid()), 
-									validatorData.get(), OTFUtility.getViewCoordinate());
-							if (isInvalid.length() > 0)
-							{
-								cn.isValid().setInvalid(isInvalid);
-							}
-						}
-						catch (PropertyVetoException e)
-						{
-							cn.isValid().setInvalid(e.getMessage());
+							cn.isValid().setInvalid(isInvalid);
 						}
 					}
 				}
@@ -723,11 +721,11 @@ public class RefexDataTypeFXNodeBuilder
 			{
 				
 				String temp = null;
-				if (defaultValue.getRefexDataType() == DynamicSememeDataType.NID)
+				if (defaultValue.getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
 					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) defaultValue).getDataNid());
 				}
-				else if (defaultValue.getRefexDataType() == DynamicSememeDataType.UUID)
+				else if (defaultValue.getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
 					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) defaultValue).getDataUUID());
 				}
@@ -749,11 +747,11 @@ public class RefexDataTypeFXNodeBuilder
 				if (validatorData != null && validatorData.get() != null)
 				{
 					String temp = null;
-					if (validatorData.get().getRefexDataType() == DynamicSememeDataType.NID)
+					if (validatorData.get().getDynamicSememeDataType() == DynamicSememeDataType.NID)
 					{
 						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) validatorData.get()).getDataNid());
 					}
-					else if (validatorData.get().getRefexDataType() == DynamicSememeDataType.UUID)
+					else if (validatorData.get().getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 					{
 						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) validatorData.get()).getDataUUID());
 					}

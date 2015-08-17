@@ -18,24 +18,7 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.UUID;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.hk2.api.PerLookup;
-import org.glassfish.hk2.runlevel.RunLevelException;
-import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableListWrapper;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
@@ -47,29 +30,35 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.metadata.coordinates.EditCoordinates;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescriptionBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
-import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeData;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.UUID;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -99,6 +88,13 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.StringConverter;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.hk2.api.PerLookup;
+import org.glassfish.hk2.runlevel.RunLevelException;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * 
@@ -113,7 +109,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 {
 	private DynamicRefexView callingView_;
 	private ViewFocus createRefexFocus_;
-	private int focusSequence_;
+	private int focusNid_;
 	private RefexDynamicGUI editRefex_;
 	private Label unselectableComponentLabel_;;
 	private ScrollPane sp_;
@@ -167,14 +163,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		{
 			if (editRefex_ == null)
 			{
-				if (createRefexFocus_.getComponentNid() != null)
-				{
-					return createRefexFocus_.getComponentNid() + "";
-				}
-				else
-				{
-					return createRefexFocus_.getAssemblyNid() + "";
-				}
+				return focusNid_ + "";
 			}
 			else
 			{
@@ -194,7 +183,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			@Override
 			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 			{
-				if (createRefexFocus_ != null && createRefexFocus_.getComponentNid() != null)
+				if (createRefexFocus_ != null && createRefexFocus_ == ViewFocus.REFERENCED_COMPONENT)
 				{
 					if (selectableConcept_.isValid().get())
 					{
@@ -205,8 +194,9 @@ public class AddRefexPopup extends Stage implements PopupViewI
 							assemblageIsValid_.set(true);
 							if (assemblageInfo_.getReferencedComponentTypeRestriction() != null)
 							{
-								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(new DynamicSememeNid(createRefexFocus_.getComponentNid()), 
-										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null, null);  //component type validator doesn't use vc, so null is ok
+								String result = DynamicSememeValidatorType.COMPONENT_TYPE.passesValidatorStringReturn(
+										new DynamicSememeNid(focusNid_), 
+										new DynamicSememeString(assemblageInfo_.getReferencedComponentTypeRestriction().name()), null, null);  //don't need coordinates for component type validator
 								if (result.length() > 0)
 								{
 									selectableConcept_.isValid().setInvalid("The selected assemblage requires the component type to be " 
@@ -246,7 +236,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			@Override
 			protected boolean computeValue()
 			{
-				if (createRefexFocus_ != null && createRefexFocus_.getAssemblyNid() != null && !conceptNodeIsConceptType_)
+				if (createRefexFocus_ != null && createRefexFocus_ == ViewFocus.ASSEMBLAGE && !conceptNodeIsConceptType_)
 				{
 					//If the assembly nid was what was set - the component node may vary - validate if we are using the text field 
 					String value = selectableComponent_.getText().trim();
@@ -410,12 +400,14 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		title_.setText("Edit existing sememe instance");
 		
 		gp_.add(unselectableComponentLabel_, 1, 1);
-		unselectableComponentLabel_.setText(OTFUtility.getDescription(editRefex_.getRefex().getAssemblageSequence()));
+		unselectableComponentLabel_.setText(Get.conceptDescriptionText(editRefex_.getRefex().getAssemblageSequence()));
+		
+		//TODO this assuming that the referenced component is a concept,  which I don't think is a safe assumption.
 		
 		//don't actually put this in the view
-		selectableConcept_.set(OTFUtility.getConceptVersion(editRefex_.getRefex().getReferencedComponentNid()));
+		selectableConcept_.set(new SimpleDisplayConcept(editRefex_.getRefex().getReferencedComponentNid()));
 		
-		Label refComp = new CopyableLabel(OTFUtility.getDescription(editRefex_.getRefex().getReferencedComponentNid()));
+		Label refComp = new CopyableLabel(Get.conceptDescriptionText(editRefex_.getRefex().getReferencedComponentNid()));
 		refComp.setWrapText(true);
 		AppContext.getService(DragRegistry.class).setupDragOnly(refComp, () -> {return editRefex_.getRefex().getReferencedComponentNid() + "";});
 		gp_.add(refComp, 1, 0);
@@ -437,14 +429,15 @@ public class AddRefexPopup extends Stage implements PopupViewI
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = viewFocus;
+		focusNid_ = focusNid;
 		editRefex_ = null;
 		
 		title_.setText("Create new sememe instance");
 
-		if (createRefexFocus_.getComponentNid() != null)
+		if (createRefexFocus_ == ViewFocus.REFERENCED_COMPONENT)
 		{
 			gp_.add(unselectableComponentLabel_, 1, 0);
-			unselectableComponentLabel_.setText(OTFUtility.getDescription(createRefexFocus_.getComponentNid()));
+			unselectableComponentLabel_.setText(Get.conceptDescriptionText(focusNid_));
 			gp_.add(selectableConcept_.getNode(), 1, 1);
 			refexDropDownOptions.clear();
 			refexDropDownOptions.addAll(buildAssemblageConceptList());
@@ -453,12 +446,11 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		{
 			try
 			{
-				assemblageInfo_ = DynamicSememeUsageDescription.read(createRefexFocus_.getAssemblyNid());
+				assemblageInfo_ = DynamicSememeUsageDescription.read(focusNid_);
 				gp_.add(unselectableComponentLabel_, 1, 1);
-				unselectableComponentLabel_.setText(OTFUtility.getDescription(createRefexFocus_.getAssemblyNid()));
+				unselectableComponentLabel_.setText(Get.conceptDescriptionText(focusNid_));
 				if (assemblageInfo_.getReferencedComponentTypeRestriction() != null 
-						&& ComponentType.CONCEPT != assemblageInfo_.getReferencedComponentTypeRestriction() 
-						&& ComponentType.CONCEPT_ATTRIBUTES != assemblageInfo_.getReferencedComponentTypeRestriction())
+						&& ObjectChronologyType.CONCEPT != assemblageInfo_.getReferencedComponentTypeRestriction())
 				{
 					conceptNodeIsConceptType_ = false;
 					gp_.add(selectableComponentNode_, 1, 0);
@@ -549,13 +541,13 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						}
 					}
 					polymorphicType.getSelectionModel().select((currentValues == null ? DynamicSememeDataType.STRING :
-						(currentValues[row] == null ? DynamicSememeDataType.STRING : currentValues[row].getRefexDataType())));
+						(currentValues[row] == null ? DynamicSememeDataType.STRING : currentValues[row].getDynamicSememeDataType())));
 				}
 				
 				RefexDataTypeNodeDetails nd = RefexDataTypeFXNodeBuilder.buildNodeForType(ci.getColumnDataType(), ci.getDefaultColumnValue(), 
 						(currentValues == null ? null : currentValues[row]),valueIsRequired, defaultValueTooltip, 
 						(polymorphicType == null ? null : polymorphicType.getSelectionModel().selectedItemProperty()), allValid_,
-						new SimpleObjectProperty<>(ci.getValidator()), new SimpleObjectProperty<>(ci.getValidatorData()));
+						ci.getValidator(), ci.getValidatorData());
 				
 				currentDataFieldWarnings_.addAll(nd.getBoundToAllValid());
 				if (ci.getColumnDataType() == DynamicSememeDataType.POLYMORPHIC)
@@ -646,6 +638,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private void doSave()
 	{
 		try
@@ -657,12 +650,13 @@ public class AddRefexPopup extends Stage implements PopupViewI
 				data[i] = RefexDataTypeFXNodeBuilder.getDataForType(currentDataFields_.get(i++).getDataField(), ci);
 			}
 			
-			int componentNid;
-			int assemblageNid;
-			DynamicSememeCAB cab;
+			
+			SememeChronology<? extends DynamicSememe<?>> sememe;
 			if (createRefexFocus_ != null)
 			{
-				if (createRefexFocus_.getComponentNid() == null)
+				int componentNid;
+				int assemblageSequence;
+				if (createRefexFocus_ == ViewFocus.ASSEMBLAGE)
 				{
 					if (conceptNodeIsConceptType_)
 					{
@@ -673,7 +667,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						String value = selectableComponent_.getText().trim();
 						if (Utility.isUUID(value))
 						{
-							componentNid = ExtendedAppContext.getDataStore().getNidForUuids(UUID.fromString(value));
+							componentNid = Get.identifierService().getNidForUuids(UUID.fromString(value));
 						}
 						else
 						{
@@ -681,45 +675,31 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						}
 					}
 					
-					assemblageNid = createRefexFocus_.getAssemblyNid();
+					assemblageSequence = focusNid_;
 				}
 				else
 				{
-					componentNid = createRefexFocus_.getComponentNid();
-					assemblageNid =  selectableConcept_.getConcept().getNid();
+					componentNid = focusNid_;
+					assemblageSequence =  selectableConcept_.getConcept().getConceptSequence();
 				}
-				cab = new DynamicSememeCAB(componentNid, assemblageNid);
+				sememe = Get.sememeBuilderService().getDyanmicSememeBuilder(componentNid, assemblageSequence, data)
+						.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
 			}
 			else
 			{
-				componentNid = editRefex_.getRefex().getReferencedComponentNid();
-				assemblageNid = editRefex_.getRefex().getAssemblageNid();
-				cab = editRefex_.getRefex().makeBlueprint(OTFUtility.getViewCoordinate(),IdDirective.PRESERVE, RefexDirective.INCLUDE);
-				//If they are editing, we assume that they want it back active, if it is retired.
-				cab.setStatus(Status.ACTIVE);
+				@SuppressWarnings("rawtypes")
+				DynamicSememeImpl ms = (DynamicSememeImpl) ((SememeChronology)editRefex_.getRefex()).createMutableVersion(DynamicSememeImpl.class, Get.commitService()
+						.getActivatedStampSequence(editRefex_.getRefex().getStampSequence()));
+				ms.setData(data);
+				sememe = (SememeChronology<? extends DynamicSememe<?>>) ms;
 			}
+
+			Get.commitService().addUncommitted(sememe);
+			Get.commitService().commit("Adding a new Dynamic Sememe Type").get();
 			
-			cab.setData(data, OTFUtility.getViewCoordinate());
-			TerminologyBuilderBI builder = ExtendedAppContext.getDataStore().getTerminologyBuilder(OTFUtility.getEditCoordinate(), OTFUtility.getViewCoordinate());
-			DynamicSememeChronicleBI<?> rdc = builder.construct(cab);
 			
-			boolean isAnnotationStyle = OTFUtility.getConceptVersion(assemblageNid).isAnnotationStyleRefex();
-			IndexedGenerationCallable indexGen = null;
-			
-			//In order to make sure we can wait for the index to have this entry, we need a latch...
-			if (isAnnotationStyle)
-			{
-				indexGen = AppContext.getService(DynamicSememeIndexer.class).getIndexedGenerationCallable(rdc.getNid());
-			}
-			
-			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(componentNid));
-			if (!isAnnotationStyle)
-			{
-				ExtendedAppContext.getDataStore().addUncommitted(OTFUtility.getConceptVersion(assemblageNid));
-			}
 			if (callingView_ != null)
 			{
-				callingView_.setNewComponentHint(componentNid, indexGen);
 				callingView_.refresh();
 			}
 			close();
@@ -761,7 +741,8 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		ObservableList<SimpleDisplayConcept> assemblageConcepts = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 		try
 		{
-			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(DynamicSememe.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), false, false);
+			//TODO Dan should we use sememe usage instead now?
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(IsaacMetadataConstants.DYNAMIC_SEMEME_ASSEMBLAGES.getSequence(), false, false);
 
 			for (Integer col : colCons) {
 				assemblageConcepts.add(new SimpleDisplayConcept(col));

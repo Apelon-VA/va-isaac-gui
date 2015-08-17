@@ -349,10 +349,9 @@ public class HeDImporter extends ImporterBase implements ImportHandler {
 							AppContext.getRuntimeGlobals().disableAllCommitListeners();
 							DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(value, value, enumerationDesc.toString(), 
 																											 new DynamicSememeColumnInfo[] {},
-																											 InformationModelsConstants.HED_ENUMERATIONS.getUuids()[0], 
-																											 false, null, ViewCoordinates.getMetadataViewCoordinate());
-						} catch (IOException | ContradictionException | InvalidCAB
-								| PropertyVetoException e) {
+																											 InformationModelsConstants.HED_ENUMERATIONS.getNid(), 
+																											 null, null);
+						} catch (RuntimeException e) {
 							LOG.error("Unable to create HED Enumeration for " + value);
 						}
 						finally

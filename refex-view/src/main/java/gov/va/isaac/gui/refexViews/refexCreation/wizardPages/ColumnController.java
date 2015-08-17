@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Function;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -41,7 +40,9 @@ import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeNodeDetails;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
@@ -439,7 +440,7 @@ public class ColumnController implements PanelControllersI {
 			NewColumnDialog dialog = new NewColumnDialog(processController_.getScene().getWindow());
 			dialog.showAndWait();
 
-			ConceptChronicleBI newCon = dialog.getNewColumnConcept();
+			ConceptChronology<? extends ConceptVersion<?>> newCon = dialog.getNewColumnConcept();
 			
 			if (newCon != null) {
 				

@@ -18,15 +18,12 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
+import gov.va.isaac.AppContext;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import java.net.URL;
 import java.util.ResourceBundle;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import gov.va.isaac.AppContext;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import javafx.beans.binding.BooleanBinding;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -36,6 +33,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -52,7 +51,7 @@ public class NewColumnDialogController implements Initializable
 	@FXML private Button commitButton;
 	@FXML private Button cancelButton;
 	
-	private ConceptChronicleBI newColumnConcept = null;
+	private ConceptChronology<? extends ConceptVersion<?>> newColumnConcept = null;
 	private BooleanBinding allValid_;
 
 	private static final Logger logger = LoggerFactory.getLogger(NewColumnDialogController.class);
@@ -92,9 +91,8 @@ public class NewColumnDialogController implements Initializable
 				try
 				{
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					newColumnConcept = DynamicSememeUtility.createNewDynamicSememeColumnInfoConcept(newColName.getText().trim(), newColDesc.getText().trim(), 
-							ViewCoordinates.getMetadataViewCoordinate());
-				} catch (InvalidCAB e) {
+					newColumnConcept = DynamicSememeUtility.createNewDynamicSememeColumnInfoConcept(newColName.getText().trim(), newColDesc.getText().trim());
+				} catch (RuntimeException e) {
 					AppContext.getCommonDialogs().showInformationDialog("Concept Creation Error", e.getMessage(), rootPane.getScene().getWindow());
 					newColumnConcept = null;
 				} catch (Exception e1) {
@@ -102,7 +100,7 @@ public class NewColumnDialogController implements Initializable
 				}
 				finally
 				{
-				    AppContext.getRuntimeGlobals().enableAllCommitListeners();
+					AppContext.getRuntimeGlobals().enableAllCommitListeners();
 				}
 			}
 		});
@@ -115,7 +113,7 @@ public class NewColumnDialogController implements Initializable
 		});
 	}
 	
-	public ConceptChronicleBI getNewColumnConcept() {
+	public ConceptChronology<? extends ConceptVersion<?>> getNewColumnConcept() {
 		return newColumnConcept;
 	}
 }

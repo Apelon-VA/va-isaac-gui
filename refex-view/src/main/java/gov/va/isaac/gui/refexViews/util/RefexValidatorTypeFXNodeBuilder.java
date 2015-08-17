@@ -86,7 +86,7 @@ public class RefexValidatorTypeFXNodeBuilder
 					{
 						try
 						{
-							returnValue.validatorData.set(NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseNumber(tf.getText().trim())));
+							returnValue.validatorData.set(NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseUnknown(tf.getText().trim())));
 							valueInvalidReason.set("");
 						}
 						catch (Exception e)
@@ -101,7 +101,7 @@ public class RefexValidatorTypeFXNodeBuilder
 						{
 							//Don't actually care if it passes the validator - just want to know if the validator can parse it.
 							DynamicSememeString s = new DynamicSememeString(tf.getText());
-							DynamicSememeValidatorType.INTERVAL.passesValidator(new DynamicSememeInteger(0), s, null);
+							DynamicSememeValidatorType.INTERVAL.passesValidator(new DynamicSememeInteger(0), s, null, null);
 							returnValue.validatorData.set(s);
 							valueInvalidReason.set("");
 						}
@@ -117,7 +117,7 @@ public class RefexValidatorTypeFXNodeBuilder
 						{
 							//Don't actually care if it passes the validator - just want to know if the validator can parse it.
 							DynamicSememeString s = new DynamicSememeString(tf.getText());
-							DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeString("a"), s, null);
+							DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeString("a"), s, null, null);
 							returnValue.validatorData.set(s);
 							valueInvalidReason.set("");
 						}

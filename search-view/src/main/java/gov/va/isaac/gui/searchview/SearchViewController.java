@@ -418,7 +418,7 @@ public class SearchViewController implements TaskCompleteCallback
 												{
 													continue;
 												}
-												if (DynamicSememeDataType.BYTEARRAY == data.getRefexDataType())
+												if (DynamicSememeDataType.BYTEARRAY == data.getDynamicSememeDataType())
 												{
 													l.setText(ci[i].getColumnName() +  " - [Binary]");
 												}

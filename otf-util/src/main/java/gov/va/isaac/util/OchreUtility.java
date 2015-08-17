@@ -36,7 +36,6 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
@@ -47,6 +46,7 @@ import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
+import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.util.UuidFactory;
 
 /**
@@ -94,27 +94,32 @@ public final class OchreUtility {
 	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 		
-		// Code for examining LogicGraphs only
-//		LogicGraphSememeImpl latestStatedGraph = null;
-//		LogicGraphSememeImpl latestInferredGraph = null;
-//
-//		if (premiseType == null || premiseType == PremiseType.STATED)
-//		{
-//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
-//
-//			SememeChronology rawDefChronology = defChronologyOptional.get();
-//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-//			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
-//		}	
-//		
-//		if (premiseType == null || premiseType == PremiseType.INFERRED)
-//		{
-//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(nid);
-//
-//			SememeChronology rawDefChronology = defChronologyOptional.get();
-//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-//			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
-//		}
+		// Code for examining STATED LogicGraph only
+		if (premiseType == null || premiseType == PremiseType.STATED)
+		{
+			LogicGraphSememeImpl latestStatedGraph = null;
+			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
+
+			SememeChronology rawDefChronology = defChronologyOptional.get();
+			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
+			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
+			
+			LOG.debug("STATED LogicGraph for {}:\n{}", Get.conceptDescriptionText(nid), latestStatedGraph.toString());
+		}	
+
+		// Code for examining INFERRED LogicGraph only
+		if (premiseType == null || premiseType == PremiseType.INFERRED)
+		{
+			LogicGraphSememeImpl latestInferredGraph = null;
+			
+			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(nid);
+
+			SememeChronology rawDefChronology = defChronologyOptional.get();
+			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
+			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
+			
+			LOG.debug("INFERRED LogicGraph for {}:\n{}", Get.conceptDescriptionText(nid), latestInferredGraph.toString());
+		}
 		
 		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(nid).getRelationshipListOriginatingFromConcept();
 		for (SememeChronology<? extends RelationshipVersionAdaptor<?>> chronicle : outgoingRelChronicles)

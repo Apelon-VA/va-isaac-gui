@@ -392,7 +392,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 							}
 
 							String attachedData;
-							if (DynamicSememeDataType.BYTEARRAY == data.getRefexDataType()) {
+							if (DynamicSememeDataType.BYTEARRAY == data.getDynamicSememeDataType()) {
 								attachedData = ci[i].getColumnName()+  " - [Binary]";
 							} else {
 								attachedData = ci[i].getColumnName() + " - " + data.getDataObject().toString();
