@@ -30,6 +30,7 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.Node;
 import gov.vha.isaac.ochre.model.logic.LogicalExpressionOchreImpl;
 import gov.vha.isaac.ochre.model.logic.node.AndNode;
@@ -134,7 +135,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 				LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(lgs.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(lgs.getReferencedComponentNid()));
 
-				processLogicalExpression(lg);
+				displayLogicalExpression(lg);
 				
 				textGraph.setText(lg.toString());
 			}
@@ -178,44 +179,60 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		LookupService.shutdownIsaac();
 	}
 
-	public void processLogicalExpression(LogicalExpressionOchreImpl le) {
+	public void displayLogicalExpression(LogicalExpression le) {
 		System.out.println("Processing LogicalExpression for concept " + Get.conceptDescriptionText(le.getConceptSequence()));
 		System.out.println("Root is " + le.getRoot().getNodeSemantic().name());
 
 		if (le.getNodeCount() > 0) {
-			processLogicalNode(null, null, le.getNode(0));
+			if (le.getNodeCount() > 1) {
+				LOG.warn("Passed LogicalExpression with {} > 1 nodes.  Displaying only the first", le.getNodeCount());
+			}
+			TreeNodeImpl rootTreeNode = new TreeNodeImpl(null, createLabelFromLogicalExpression(le));
+			graph.setRootNode(rootTreeNode);
+			for (Node child : le.getNode(0).getChildren()) {
+				displayLogicalExpression(rootTreeNode, le.getNode(0), child);
+			}
+		} else if (le.getNodeCount() == 0) {
+			LOG.warn("Passed LogicalExpression with no children");
 		}
 	}
 	private static String logicalNodeTypeToString(Node node) {
 		return node.getClass().getName().replaceAll(".*\\.", "");
 	}
-	public void processLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode) {
+	public void displayLogicalExpression(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode) {
 		System.out.println("Processing " + logicalNode.getNodeSemantic().name() + " node");
 
 		TreeNodeImpl currentTreeNode = null;
-		if (parentTreeNode == null) {
-			currentTreeNode = new TreeNodeImpl(null, createLabelFromLogicalNode(logicalNode));
-			graph.setRootNode(currentTreeNode);
-		} else {
-			if (ignoreSingleChildConjunctions && (logicalNode instanceof AndNode || logicalNode instanceof OrNode) && logicalNode.getChildren().length == 1) {
-				// Add AndNode single child directly to parent
-				processLogicalNode(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0]);
-				return;
-			}
-			// TODO: Properly handle nodes that are to right rather than below
-			if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
-				parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-			} 
-			else {
-				parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-			}
+
+		if (ignoreSingleChildConjunctions && (logicalNode instanceof AndNode || logicalNode instanceof OrNode) && logicalNode.getChildren().length == 1) {
+			// Add AndNode single child directly to parent
+			displayLogicalExpression(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0]);
+			return;
 		}
+		// TODO: Properly handle nodes that are to right rather than below
+		if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
+			parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+		} 
+		else {
+			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
+		}
+
 		for (Node child : logicalNode.getChildren()) {
-			processLogicalNode(currentTreeNode, logicalNode, child);
+			displayLogicalExpression(currentTreeNode, logicalNode, child);
 		}
 	}
 
 	// TODO: properly populate all labels
+	public static Label createLabelFromLogicalExpression(LogicalExpression logicalExpression) {
+		Node rootNode = logicalExpression.getNode(0);
+		
+		Label label = new Label(rootNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(rootNode) + "\n" + Get.conceptDescriptionText(logicalExpression.getConceptSequence()));
+		TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
+
+		label.setTooltip(new Tooltip(label.getText()));
+		
+		return label;
+	}
 	public static Label createLabelFromLogicalNode(Node logicalNode) {
 		Label label = null;
 		if (logicalNode instanceof ConceptNodeWithSequences) {
