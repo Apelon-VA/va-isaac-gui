@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.ihtsdo.otf.query.lucene.indexers.SememeIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
@@ -35,6 +36,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -42,9 +44,11 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.util.UuidFactory;
@@ -490,22 +494,20 @@ public final class OchreUtility {
 		
 		if (SctId.isValidSctId(localIdentifier))
 		{
-			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
-			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
-			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
-			Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cv = Get.conceptService().getOptionalConcept(alternateUUID);
-			if (cv.isPresent())
+			
+			SememeIndexer si = LookupService.get().getService(SememeIndexer.class);
+			if (si != null)
 			{
-				//sanity check:
-				if (Utility.isInt(localIdentifier))
+				List<SearchResult> result = si.query(Long.parseLong(localIdentifier), 
+						IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence(), 5, Long.MIN_VALUE);
+				if (result.size() > 0)
 				{
-					int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
-					if (nidFromSequence != 0)
-					{
-						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
-					}
+					return Get.conceptService().getOptionalConcept(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 				}
-				return cv;
+			}
+			else
+			{
+				LOG.warn("Sememe Index not available - can't lookup SCTID");
 			}
 		}
 		else if (Utility.isInt(localIdentifier))
