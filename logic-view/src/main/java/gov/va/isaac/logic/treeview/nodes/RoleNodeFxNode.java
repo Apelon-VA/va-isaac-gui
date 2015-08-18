@@ -37,7 +37,7 @@ public class RoleNodeFxNode extends Label {
 	}
 	
 	private RoleNodeFxNode(AbstractNode logicalNode, int typeSequence, Optional<Long> sctId) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(typeSequence) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
+		super(logicalNode.getNodeSemantic().name() + /* "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + */ "\n" + /* "type=" + */ Get.conceptDescriptionText(typeSequence) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
 		this.typeSequence = typeSequence;
 	}
 }

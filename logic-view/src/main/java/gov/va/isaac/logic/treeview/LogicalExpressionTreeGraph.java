@@ -51,7 +51,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		this(
 				false, 
 				false, 
-				200, 100);
+				200, 50);
 	}
 
 	public LogicalExpressionTreeGraph(

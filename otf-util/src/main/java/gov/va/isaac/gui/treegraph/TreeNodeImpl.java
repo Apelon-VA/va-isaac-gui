@@ -33,6 +33,7 @@ public class TreeNodeImpl extends Group implements TreeNode<TreeNodeImpl> {
 		
 		if (fxNode instanceof Labeled) {
 			((Labeled)fxNode).setAlignment(Pos.CENTER);
+			((Labeled)fxNode).setWrapText(true);
 		}
 		
 		this.parentTreeNode = parentTreeNode;

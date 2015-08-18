@@ -23,7 +23,6 @@ public class FeatureNodeFxNode extends Label {
 		this(logicalNode, Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(((FeatureNodeWithUuids)logicalNode).getTypeConceptUuid())), OchreUtility.getSctId(Get.identifierService().getConceptSequenceForUuids(((FeatureNodeWithUuids)logicalNode).getTypeConceptUuid())));
 	}
 	private FeatureNodeFxNode(AbstractNode logicalNode, String desc, Optional<Long> sctId) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + "\ntype=" + desc + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name() + (sctId.isPresent() ? "\n" + sctId.get() : ""));
+		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\ntype=" + desc + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name() + (sctId.isPresent() ? "\n" + sctId.get() : ""));
 	}
-
 }

@@ -21,6 +21,6 @@ public class ConceptNodeFxNode extends Label {
 		this(logicalNode, Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid())), OchreUtility.getSctId(Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid())));
 	}
 	private ConceptNodeFxNode(AbstractNode logicalNode, String desc, Optional<Long> sctId) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + "\n" + desc + (sctId.isPresent() ? "\n" + sctId.get() : ""));
+		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\n" + desc + (sctId.isPresent() ? "\n" + sctId.get() : ""));
 	}
 }

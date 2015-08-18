@@ -9,9 +9,9 @@ import javafx.scene.shape.Circle;
 
 public class SufficientSetNodeFxNode extends Label {
 	public SufficientSetNodeFxNode(SufficientSetNode logicalNode) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode));
+		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
 
 		setShape(new Circle(50));
-		TreeNodeUtils.setFxNodeSizes(this, 100, 100);
+		TreeNodeUtils.setFxNodeSizes(this, 125, 50);
 	}
 }

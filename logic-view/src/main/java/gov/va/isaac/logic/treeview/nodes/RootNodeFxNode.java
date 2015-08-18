@@ -9,6 +9,6 @@ import javafx.scene.control.Label;
 
 public class RootNodeFxNode extends Label {
 	public RootNodeFxNode(LogicalExpression logicalExpression, RootNode logicalNode) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(logicalExpression.getConceptSequence()));
+		super(logicalNode.getNodeSemantic().name() + /* "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + */ "\n" + Get.conceptDescriptionText(logicalExpression.getConceptSequence()));
 	}
 }
