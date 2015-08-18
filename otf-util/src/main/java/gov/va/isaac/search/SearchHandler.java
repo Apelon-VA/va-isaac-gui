@@ -102,7 +102,7 @@ public class SearchHandler
 				{
 					try
 					{
-						return index.query(queryString, prefixSearch, IsaacMetadataAuxiliaryBinding.DESCRIPTION_ACCEPTABILITY.getConceptSequence(), 
+						return index.query(queryString, prefixSearch, IsaacMetadataAuxiliaryBinding.DESCRIPTION_ASSEMBLAGE.getConceptSequence(), 
 								resultLimit, Long.MIN_VALUE);
 					}
 					catch (Exception e)
