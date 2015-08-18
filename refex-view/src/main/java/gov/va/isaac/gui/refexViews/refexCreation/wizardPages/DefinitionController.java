@@ -156,7 +156,7 @@ public class DefinitionController implements PanelControllersI {
 		componentType.getItems().add(ObjectChronologyType.UNKNOWN_NID);
 		for (ObjectChronologyType ct : ObjectChronologyType.values())
 		{
-			if (ct != ObjectChronologyType.UNKNOWN_NID && ct != ObjectChronologyType.OTHER)
+			if (ct != ObjectChronologyType.UNKNOWN_NID)
 			{
 				componentType.getItems().add(ct);
 			}

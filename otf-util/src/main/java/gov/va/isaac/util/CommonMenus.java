@@ -978,10 +978,6 @@ public class CommonMenus
 			}
 			
 			return sememeC.getNid();
-		case OTHER:
-			LOG.debug("NID {} passed is for OTHER {}", nid, Get.conceptDescriptionText(nid));
-
-			break;
 		case UNKNOWN_NID:
 			LOG.debug("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
 

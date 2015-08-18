@@ -250,10 +250,7 @@ public class OTFUtility {
 		}
 	}
 	public static String getDescription(int nid) {
-            if (Get.conceptModel() == ConceptModel.OTF_CONCEPT_MODEL) {
-		return getDescription(nid, getViewCoordinate());
-            }
-            return Get.conceptDescriptionText(nid);
+		return Get.conceptDescriptionText(nid);
 	}
 
 	/**
