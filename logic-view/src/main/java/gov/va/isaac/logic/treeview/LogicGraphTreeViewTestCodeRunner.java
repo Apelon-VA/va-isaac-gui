@@ -73,14 +73,12 @@ import org.slf4j.LoggerFactory;
 public class LogicGraphTreeViewTestCodeRunner extends Application
 {
 	private static final Logger LOG = LoggerFactory.getLogger(LogicGraphTreeViewTestCodeRunner.class);
-
-	private static final int defaultWidth = 200;
-	private static final int defaultHeight = 100;
 	
-	private TreeGraph graph = new TreeGraph();
+	private LogicalExpressionTreeGraph graph = new LogicalExpressionTreeGraph(
+			true, 
+			true, 
+			200, 100);
 	private Label textGraph = new Label();
-	
-	private boolean ignoreSingleChildConjunctions = true;
 
 	protected void init(Stage primaryStage) {
 		VBox vbox = new VBox();
@@ -127,7 +125,14 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 		init(primaryStage);
 		primaryStage.show();
 
-		String uuidString = getParameters().getRaw().size() > 0 ? getParameters().getRaw().get(0) : "89ce6b87-545b-3138-82c7-aafa76f8f9a0";
+		/*
+		 * Bleeding (finding) 89ce6b87-545b-3138-82c7-aafa76f8f9a0
+		 * Fracture of radius c50138b9-70ee-3af2-b567-af2f20359925
+		 * Entire skin (body structure) cbb0653c-bc87-37b0-aafb-6d020917e172
+		 * Hand pain 9549a066-7d57-371d-8958-82a6a0b5b175
+		 * Arthroscopy (procedure) 4bf05b37-076a-3a6a-ad53-b10bbf83cfc5
+		 */
+		String uuidString = getParameters().getRaw().size() > 0 ? getParameters().getRaw().get(0) : "4bf05b37-076a-3a6a-ad53-b10bbf83cfc5";
 		UUID uuid = UUID.fromString(uuidString);
 
 		BiConsumer<LogicGraphSememeImpl, Integer> handler = new BiConsumer<LogicGraphSememeImpl, Integer>() {
@@ -136,7 +141,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 				LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(lgs.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(lgs.getReferencedComponentNid()));
 
-				displayLogicalExpression(lg);
+				graph.displayLogicalExpression(lg);
 				
 				textGraph.setText(lg.toString());
 			}
@@ -178,98 +183,5 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 		// TODO: get data needed and shut down immediately, rather than after panel closed
 		LookupService.shutdownIsaac();
-	}
-
-	public void displayLogicalExpression(LogicalExpression le) {
-		System.out.println("Processing LogicalExpression for concept " + Get.conceptDescriptionText(le.getConceptSequence()));
-		System.out.println("Root is " + le.getRoot().getNodeSemantic().name());
-
-		if (le.getNodeCount() > 0) {
-			if (le.getNodeCount() > 1) {
-				LOG.warn("Passed LogicalExpression with {} > 1 nodes.  Displaying only the first", le.getNodeCount());
-			}
-			TreeNodeImpl rootTreeNode = new TreeNodeImpl(null, createLabelFromLogicalExpression(le));
-			graph.setRootNode(rootTreeNode);
-			for (Node child : le.getNode(0).getChildren()) {
-				displayLogicalExpression(rootTreeNode, le.getNode(0), child);
-			}
-		} else if (le.getNodeCount() == 0) {
-			LOG.warn("Passed LogicalExpression with no children");
-		}
-	}
-	private static String logicalNodeTypeToString(Node node) {
-		return node.getClass().getName().replaceAll(".*\\.", "");
-	}
-	public void displayLogicalExpression(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode) {
-		System.out.println("Processing " + logicalNode.getNodeSemantic().name() + " node");
-
-		TreeNodeImpl currentTreeNode = null;
-
-		if (ignoreSingleChildConjunctions && (logicalNode instanceof AndNode || logicalNode instanceof OrNode) && logicalNode.getChildren().length == 1) {
-			// Add AndNode single child directly to parent
-			displayLogicalExpression(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0]);
-			return;
-		}
-		// TODO: Properly handle nodes that are to right rather than below
-		if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
-			parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-		} 
-		else {
-			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createLabelFromLogicalNode(logicalNode)));
-		}
-
-		for (Node child : logicalNode.getChildren()) {
-			displayLogicalExpression(currentTreeNode, logicalNode, child);
-		}
-	}
-
-	// TODO: properly populate all labels
-	public static Label createLabelFromLogicalExpression(LogicalExpression logicalExpression) {
-		Node rootNode = logicalExpression.getNode(0);
-		
-		Label label = new Label(rootNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(rootNode) + "\n" + Get.conceptDescriptionText(logicalExpression.getConceptSequence()));
-		TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-
-		label.setTooltip(new Tooltip(label.getText()));
-		
-		return label;
-	}
-	public static Label createLabelFromLogicalNode(Node logicalNode) {
-		Label label = null;
-		if (logicalNode instanceof ConceptNodeWithSequences) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(((ConceptNodeWithSequences)logicalNode).getConceptSequence()));
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		} else if (logicalNode instanceof ConceptNodeWithUuids) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\n" + Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(((ConceptNodeWithUuids)logicalNode).getConceptUuid())));
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		} else if (logicalNode instanceof FeatureNodeWithSequences) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((FeatureNodeWithSequences)logicalNode).getTypeConceptSequence()) + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name());
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		} else if (logicalNode instanceof RoleNodeAllWithSequences) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()));
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		} else if (logicalNode instanceof RoleNodeSomeWithSequences) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode) + "\ntype=" + Get.conceptDescriptionText(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()));
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		} else if (logicalNode instanceof RootNode) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		} else if (logicalNode instanceof SufficientSetNode) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
-			label.setShape(new Circle(50));
-			TreeNodeUtils.setFxNodeSizes(label, 100, 100);
-		} else if (logicalNode instanceof AndNode || logicalNode instanceof OrNode) {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
-			label.setShape(new Circle(50));
-			TreeNodeUtils.setFxNodeSizes(label, 100, 100);
-		}
-		else {
-			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
-			TreeNodeUtils.setFxNodeSizes(label, defaultWidth, defaultHeight);
-		}
-		
-		label.setTooltip(new Tooltip(label.getText()));
-
-		return label;
 	}
 }
