@@ -23,20 +23,11 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphViewI;
 import gov.vha.isaac.ochre.api.LookupService;
-
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.UUID;
-
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
 /**
  * {@link LogicalExpressionTreeGraphViewRunner}
