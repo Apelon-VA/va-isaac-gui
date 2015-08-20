@@ -24,6 +24,7 @@ import gov.va.isaac.gui.treegraph.TreeGraph;
 import gov.va.isaac.gui.treegraph.TreeNodeImpl;
 import gov.va.isaac.gui.treegraph.TreeNodeUtils;
 import gov.va.isaac.init.SystemInit;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.DataSource;
 import gov.vha.isaac.ochre.api.Get;
@@ -76,7 +77,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	
 	private LogicalExpressionTreeGraph graph = new LogicalExpressionTreeGraph(
 			true, 
-			true, 
+			true,
 			200, 100);
 	private Label textGraph = new Label();
 
@@ -141,7 +142,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 
 				LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(lgs.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(lgs.getReferencedComponentNid()));
 
-				graph.displayLogicalExpression(lg);
+				graph.displayLogicalExpression(lg, StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
 				
 				textGraph.setText(lg.toString());
 			}

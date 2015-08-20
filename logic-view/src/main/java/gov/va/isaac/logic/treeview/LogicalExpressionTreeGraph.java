@@ -2,6 +2,7 @@ package gov.va.isaac.logic.treeview;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,15 +16,23 @@ import gov.va.isaac.gui.treegraph.TreeNodeUtils;
 import gov.va.isaac.logic.treeview.nodes.AndNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.ConceptNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.FeatureNodeFxNode;
+import gov.va.isaac.logic.treeview.nodes.NecessarySetNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.OrNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.RoleNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.RootNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.SufficientSetNodeFxNode;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.Node;
 import gov.vha.isaac.ochre.model.logic.node.AndNode;
+import gov.vha.isaac.ochre.model.logic.node.NecessarySetNode;
 import gov.vha.isaac.ochre.model.logic.node.OrNode;
 import gov.vha.isaac.ochre.model.logic.node.RootNode;
 import gov.vha.isaac.ochre.model.logic.node.SufficientSetNode;
@@ -47,10 +56,16 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	private final int defaultNodeWidth;
 	private final int defaultNodeHeight;
 
+//	public final static Function<Integer, String> DEFAULT_DESCRIPTION_EXCTRACTOR = (id) -> {
+//			Optional<LatestVersion<DescriptionSememe>> opt =  Get.conceptSnapshot().getDescriptionOptional(id);
+//			return opt.isPresent() ? opt.get().value().getText() : null;
+//		};
+//	private Function<Integer, String> descriptionExtractor = DEFAULT_DESCRIPTION_EXCTRACTOR;
+
 	public LogicalExpressionTreeGraph() {
 		this(
 				false, 
-				false, 
+				false,
 				200, 50);
 	}
 
@@ -71,8 +86,8 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	public boolean isIgnoreSingleChildRoleGroups() {
 		return ignoreSingleChildRoleGroups;
 	}
-	
-	public void displayLogicalExpression(LogicalExpression le) {
+
+	public void displayLogicalExpression(LogicalExpression le, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
 		System.out.println("Processing LogicalExpression for concept " + Get.conceptDescriptionText(le.getConceptSequence()));
 		System.out.println("Root is " + le.getRoot().getNodeSemantic().name());
 
@@ -80,10 +95,10 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 			if (le.getNodeCount() > 1) {
 				LOG.warn("Passed LogicalExpression with {} > 1 nodes.  Displaying only the first", le.getNodeCount());
 			}
-			TreeNodeImpl rootTreeNode = new TreeNodeImpl(null, createFxNodeFromLogicalExpression(le));
+			TreeNodeImpl rootTreeNode = new TreeNodeImpl(null, createFxNodeFromLogicalExpression(le, stampCoordinate, languageCoordinate));
 			setRootNode(rootTreeNode);
 			for (Node child : le.getNode(0).getChildren()) {
-				displayLogicalNode(rootTreeNode, le.getNode(0), child);
+				displayLogicalNode(rootTreeNode, le.getNode(0), child, stampCoordinate, languageCoordinate);
 			}
 		} else if (le.getNodeCount() == 0) {
 			LOG.warn("Passed LogicalExpression with no children");
@@ -92,14 +107,14 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	public static String logicalNodeTypeToString(Node node) {
 		return node.getClass().getName().replaceAll(".*\\.", "");
 	}
-	public void displayLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode) {
+	private void displayLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
 		System.out.println("Processing " + logicalNode.getNodeSemantic().name() + " node");
 
 		TreeNodeImpl currentTreeNode = null;
 		
 		// Add AndNode or OrNode single child directly to parent
 		if (isIgnoreSingleChildConjunctions() && (logicalNode instanceof AndNode || logicalNode instanceof OrNode) && logicalNode.getChildren().length == 1) {
-			displayLogicalNode(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0]);
+			displayLogicalNode(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0], stampCoordinate, languageCoordinate);
 			return;
 		}
 
@@ -127,26 +142,26 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 			}
 
 			if (typeUuid != null && typeUuid.equals(IsaacMetadataAuxiliaryBinding.ROLE_GROUP.getPrimodialUuid())) {
-				displayLogicalNode(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0]);
+				displayLogicalNode(parentTreeNode, parentLogicalNode, logicalNode.getChildren()[0], stampCoordinate, languageCoordinate);
 				return;
 			}
 		}
 
 		// TODO: Properly handle nodes that are to right rather than below
 		if (parentLogicalNode != null && (parentLogicalNode instanceof TypedNodeWithSequences || parentLogicalNode instanceof TypedNodeWithUuids)) {
-			parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createFxNodeFromLogicalNode(logicalNode)));
+			parentTreeNode.setChildToRight(currentTreeNode = new TreeNodeImpl(parentTreeNode, createFxNodeFromLogicalNode(logicalNode, stampCoordinate, languageCoordinate)));
 		} 
 		else {
-			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createFxNodeFromLogicalNode(logicalNode)));
+			parentTreeNode.addChildTreeNodeBelow(currentTreeNode = new TreeNodeImpl(parentTreeNode, createFxNodeFromLogicalNode(logicalNode, stampCoordinate, languageCoordinate)));
 		}
 
 		for (Node child : logicalNode.getChildren()) {
-			displayLogicalNode(currentTreeNode, logicalNode, child);
+			displayLogicalNode(currentTreeNode, logicalNode, child, stampCoordinate, languageCoordinate);
 		}
 	}
 
 	// TODO: properly populate all labels
-	public Label createFxNodeFromLogicalExpression(LogicalExpression logicalExpression) {
+	private Label createFxNodeFromLogicalExpression(LogicalExpression logicalExpression, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
 		RootNode rootNode = (RootNode)logicalExpression.getNode(0);
 		
 		RootNodeFxNode label = new RootNodeFxNode(logicalExpression, rootNode);
@@ -156,7 +171,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		
 		return label;
 	}
-	public Label createFxNodeFromLogicalNode(Node logicalNode) {
+	private Label createFxNodeFromLogicalNode(Node logicalNode, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Label label = null;
 		
 		if (logicalNode instanceof ConceptNodeWithSequences) {
@@ -183,6 +198,8 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		} else if (logicalNode instanceof RoleNodeSomeWithUuids) {
 			label = new RoleNodeFxNode((RoleNodeSomeWithUuids)logicalNode);
 			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+		} else if (logicalNode instanceof NecessarySetNode) {
+			label = new NecessarySetNodeFxNode((NecessarySetNode)logicalNode);
 		} else if (logicalNode instanceof SufficientSetNode) {
 			label = new SufficientSetNodeFxNode((SufficientSetNode)logicalNode);
 		} else if (logicalNode instanceof AndNode) {
