@@ -86,6 +86,7 @@ import gov.vha.isaac.ochre.api.relationship.RelationshipAdaptorChronicleKey;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.collections.StampSequenceSet;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
@@ -669,8 +670,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private String getRelType(int nid) {
 		try {
-			String relType = "";
-			Optional<String> rtPrefTerm = OchreUtility.getPreferredTermForConceptNid(nid, sc);
+			Optional<String> rtPrefTerm = Frills.getPreferredTermForConceptNid(nid, sc);
 			Optional<String> rtFsn = OchreUtility.getFSNForConceptNid(nid, sc); 
 			if(rtPrefTerm.isPresent()) {
 				return PICKLIST_Relationship_Type.find(rtPrefTerm.get()).toString();
@@ -861,7 +861,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	
 	
 	private long getSct(int nid) {
-		Optional<? extends Long> sct = OchreUtility.getSctId(nid);
+		Optional<? extends Long> sct = Frills.getSctId(nid, sc); // Possibly change Stamp Coordinate here
 		if(sct.isPresent()) {
 			return sct.get();
 		} else { 
@@ -889,8 +889,8 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	private static boolean isChildOfSCT(int conceptNid) throws IOException 
 	{
 		try {
-			return ExtendedAppContext.getDataStore().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), OTFUtility.getViewCoordinate());
-		} catch (ContradictionException e) {
+			return Get.taxonomyService().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), OTFUtility.getViewCoordinate());
+		} catch (Exception e) {
 			logger.error("USCRS Error retreiving isChildOfSct", e);
 		}
 		return false;
