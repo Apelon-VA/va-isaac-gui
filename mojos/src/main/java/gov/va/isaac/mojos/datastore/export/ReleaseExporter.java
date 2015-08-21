@@ -31,10 +31,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -42,14 +44,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,8 +65,23 @@ import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateFactory;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.ochre.api.ConceptProxy;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPath;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import javafx.concurrent.Task;
 
 
@@ -104,6 +114,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			this.extensionFormat = extensionFormat;
 		}
 	}
+
+	private static final Function ConceptChronology = null;
 	
 	private EConceptExporter eConExporter;
 	private DataOutputStream ecDos_;
@@ -116,9 +128,12 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	private int selectedPathNid;
 	private static UserProfile userProfileMain = null;
 	private int streamCount = 0;
+	private StampPositionImpl sp = null; 
+	private StampCoordinate sc = null;
+	private LanguageCoordinate lc = LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate();
 	
 	IntStream uscrsConcepts;
-	ArrayList<ConceptVersionBI> uscrsNids = new ArrayList<ConceptVersionBI>();
+	ArrayList<ConceptSnapshot> uscrsNids = new ArrayList<ConceptSnapshot>();
 	
 	//ProcessUnfetchedConceptDataBI
 	private boolean requestCancel = false;
@@ -131,7 +146,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	public ExportReleaseType[] exportType;
 	
 	@Parameter (name = "path", required = true)
-	public MojoConceptSpec path;
+	public ConceptProxy path;
 	
 	//OPTIONAL
 	@Parameter (name="namespace", defaultValue="0")
@@ -165,11 +180,11 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			//Initial Filename
 			String date = new SimpleDateFormat("MM-dd-yyyy HH-mm-ss").format(new Date());
 			uscrsFileName = "VA_USCRS_Submission_File_" + date;
-			econceptFileName = "SOLOR_Snapshot_" + path.getFsn();
+			econceptFileName = "SOLOR_Snapshot_" + path.getConceptDescriptionText();
 			
 			getLog().info("Executing Content Export" );
 			
-			getLog().debug("PATH Param Loaded: " + path.getFsn().toString() + " - " + path.getUuid().toString());
+			getLog().debug("PATH Param Loaded: " + path.getConceptDescriptionText() + " - " + path.getPrimodialUuid().toString());
 			
 			//Check if output folder exists, if not then create it
 			if(outputFolder != null) {
@@ -220,16 +235,16 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			
 			try
 			{
-				boolean isPathValid = validPath(path);
+				// boolean isPathValid = validPath(path); todo - enable the PATH Validity Check
 				
-				if(isPathValid && allPaths != null) {
-					pathNid = path.getConceptSpec().getNid();
+				if(allPaths != null) {
+					pathNid = path.getConceptSequence();
 					
 					if(exportFormat.equalsIgnoreCase(ExportMojoFormat.Uscrs.name()) || exportFormat.equalsIgnoreCase("all")) //USCRS EXPORT
 					{
 						getLog().info("Starting a USCRS Export");
 						
-						int componentsExported = exportUscrs(UUID.fromString(path.getUuid()));
+						int componentsExported = exportUscrs(path);
 						
 						if(componentsExported < 0) {
 							getLog().error("No Concepts exported");
@@ -245,8 +260,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 						exportEconcept();
 					} 
 				} else {
-					getLog().error("PATH " + path.getConceptSpec().getPrimodialUuid() + " is NOT valid, cannot export. Or OCHREUtil did not return any paths.");
-					throw new MojoExecutionException("PATH ERROR - Path is invalid: " + path.getUuid().toString()); 
+					getLog().error("PATH " + path.getPrimodialUuid() + " is NOT valid, cannot export. Or OCHREUtil did not return any paths.");
+					throw new MojoExecutionException("PATH ERROR - Path is invalid: " + path.getPrimodialUuid().toString()); 
 				}
 			}
 			catch (Exception e) 
@@ -318,61 +333,87 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	 * @return  
 	 * @throws IOException 
 	 */
-	public int exportUscrs(UUID path) throws IOException {
-		//Clean this VC stuff up and possibly not load from userProfile
-		Class<UserProfileManager> userProfileManagerClass = UserProfileManager.class;
-		userProfileMain = ExtendedAppContext.getService(userProfileManagerClass).getCurrentlyLoggedInUserProfile();
-		StatedInferredOptions relAssertionType = userProfileMain.getStatedInferredPolicy();
-		Set<Status> statuses = userProfileMain.getViewCoordinateStatuses();
-		long time = userProfileMain.getViewCoordinateTime();
-		Set<UUID> vcModules = userProfileMain.getViewCoordinateModules();
-		ViewCoordinate pathVc = ViewCoordinateFactory.getViewCoordinate(path, relAssertionType, statuses, time, vcModules);
-		//pathVc.getAllowedStatus().add(Status.INACTIVE);
-		//pathVc.getAllowedStatus().add(Status.ACTIVE);
+	public int exportUscrs(ConceptProxy path) throws IOException {
 		
-		TerminologyStoreDI dataStore;
-		Stream<? extends ConceptChronicleBI> conceptStream = null;
-		try {
-			dataStore = Ts.get();
-			conceptStream = dataStore.getConceptStream();
-		} catch(Exception e) {
-			getLog().error("USCRS Export Mojo Error - problem loading datastore and Concept-Stream", e);
-		} finally {
-			//TODO: Shutdown Issue: it hangs, need a shutdown script possibly
+		//Convert Module UUID HashSet to IntSTream for StampCoordinate Construction
+		IntStream moduleSequences = modules.stream()
+										   .filter( module -> {
+												Optional<ConceptSnapshot> sequence = OchreUtility.getConceptSnapshot(UUID.fromString(module), sc, lc);
+												if(sequence.isPresent()) {
+													return true;
+												} else {
+													return false;
+												}
+											}).mapToInt( module -> {
+												Optional<ConceptSnapshot> sequence = OchreUtility.getConceptSnapshot(UUID.fromString(module), sc, lc);
+												if(sequence.isPresent()) {
+													return sequence.get().getNid();
+												}
+												return namespace; 
+												} );
+		if(uscrsDateFilter != null) { 
+			sp = new StampPositionImpl(uscrsDateFilter.getTime(), path.getConceptSequence());
+			sc = new StampCoordinateImpl(StampPrecedence.PATH, sp, 
+					ConceptSequenceSet.of(moduleSequences), gov.vha.isaac.ochre.api.State.ANY_STATE_SET);
+		} else {
+			sp = new StampPositionImpl(System.currentTimeMillis(), path.getConceptSequence());
+			sc = new StampCoordinateImpl(StampPrecedence.PATH, sp, 
+					ConceptSequenceSet.of(moduleSequences), gov.vha.isaac.ochre.api.State.ACTIVE_ONLY_SET);
 		}
 		
-		IntStream nidStream =  conceptStream.filter( 
-													(ConceptChronicleBI concept) ->{ 
-														try { 
-															Optional<? extends ConceptVersionBI> cv = concept.getVersion(pathVc);
-															if(cv.isPresent()) { //Testing:  add this clause (&& streamCount <= 20)
-																ConceptVersionBI cvg = cv.get();
-																if(modules != null) {
-																	ConceptVersionBI cvmv = OTFUtility.getConceptVersion(cvg.getModuleNid());
-																	if(cvmv != null){
-																		//String thisModDesc = OTFUtility.getDescription(cvmv.getNid());
-																		String cvmvUuid = cvmv.getPrimordialUuid().toString();
-																		if(modules.contains(cvmvUuid)) {
-																			streamCount++;
-																			return true;
-																		} else {
-																			return false;
-																		}
-																	} else{
-																		return false;
-																	}
-																} else {
-																	streamCount++;
-																	return true;
-																}
-															} else {
-																return false;
-															}
-														} catch(ContradictionException e) { 
-															getLog().error("Error during stream filter", e);
-															return false;
-														} })
-											  .mapToInt(c -> c.getNid());
+		Stream<ConceptChronology<? extends ConceptVersion<?>>> stream = null;
+		try {
+			stream = Get.conceptService().getConceptChronologyStream();
+		} catch(Exception e) {
+			getLog().error("USCRS Export Mojo Error - problem loading GET Concept-Stream", e);
+		} 
+		
+		IntStream conceptStream = stream.filter( 
+										(ConceptChronology<? extends ConceptVersion<?>> cc) ->  {
+											int nid = ((ConceptChronology)cc).getConceptSequence();
+											Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, sc, lc); //Concept Snapshot
+											if(cs.isPresent()) {
+												return true;
+											}else {
+												return false;
+											}
+								}).mapToInt(
+										(ConceptChronology<? extends ConceptVersion<?>> cc) ->  { 
+											return cc.getConceptSequence(); 
+											} 
+								);
+		
+//		Stream<? extends ConceptSnapshot> conceptStream = 
+//											stream.map((ConceptChronology<? extends ConceptVersion<?>> cc) ->  { //CONCEPT SHNAPSHOT OR VERSION STREAM
+//												int nid = ((ConceptChronology)cc).getConceptSequence();
+//												Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, sc, lc); //Concept Snapshot
+//												
+//												//Optional<LatestVersion<ConceptVersion>> cv = ((ConceptChronology)cc).getLatestVersion(ConceptVersion.class, sc); //Concept Version
+//												
+//												if(cs.isPresent()) {
+//													return cs.get();
+//												}
+//											});
+//		.getLatestVersion(ConceptVersion.class, sc)
+//		ConceptStream conceptStream =  stream.filter((ConceptChronology cc) -> { //INITIAL STREAM
+//														try { 
+//															Optional<? extends ConceptVersion> cv = cc.getLatestVersion(ConceptVersion.class, sc);
+//															if(cv.isPresent()) {
+//																ConceptVersion cvG = cv.get();
+//																UUID modulePath = OchreUtility.getConceptSnapshot(cvG.getChronology().get, sc, lc);
+//																if(modules.contains(cvG.getModuleSequence())) {
+//																	return true;
+//																} else {
+//																	return false;
+//																}
+//															} else {
+//																return false;
+//															}
+//														} catch(Exception e) { 
+//															getLog().error("Error during stream filter", e);
+//															return false;
+//														} } )
+//											 .mapToInt(ConceptChronology cc -> { cc.getLatestVersion(ConceptVersion.class, sc).get().getNid(); } );
 		
 		
 		Path uscrsFileNamePath = Paths.get(outputFolder.getAbsolutePath() + "\\" + uscrsFileName  + ExportMojoFormat.Uscrs.extensionFormat);//TODO: Replace seperator with default FS Seperator
@@ -394,7 +435,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		Task<Integer> task = null;
 		try {
 			getLog().info("Preparing to write USCRS Content Request to: " + uscrsFileNamePath.toString());
-			task = uscrsExporter.createTask(nidStream, uscrsFileNamePath);
+			task = uscrsExporter.createTask(conceptStream, uscrsFileNamePath);
 		} catch (FileNotFoundException e) {
 			getLog().error("Error generating USCRS Export Task", e);
 		}
@@ -435,7 +476,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		} else {
 			getLog().error("Error getting paths for validation from - OTFUtility.getPathConcepts()");
 		}
-		return true; //todo - chamge this back to false once the OCHREUtility.getPathConcepts() issue is fixed
+		return false;
 	}
 
 	public static void main(String[] args) {
@@ -467,17 +508,19 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		export.outputFolder = new File("target/output"); //Channge to target/output
 		export.exportType = new ExportReleaseType[]{ExportReleaseType.SNAPSHOT};
 		export.skipExportAssembly = false;
-
-		MojoConceptSpec mojoConceptSpec = new MojoConceptSpec();
-		mojoConceptSpec.setFsn("ISAAC Development Path");
-		mojoConceptSpec.setUuid("32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7"); //32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7
 		
+		UUID[] pathUuids = new UUID[1];
+		pathUuids[0] = UUID.fromString("32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7");
+		ConceptProxy conceptProxy = new ConceptProxy();
+		conceptProxy.setUuids(pathUuids);
+		conceptProxy.setDescription("ISAAC Development Path");
+
 		HashSet<String> modules = new HashSet<String>();
 		modules.add(Snomed.US_EXTENSION_MODULE.getPrimodialUuid().toString());
-		//modules.add(Snomed.CORE_MODULE.getPrimodialUuid().toString());
+		modules.add(Snomed.CORE_MODULE.getPrimodialUuid().toString());
 		export.modules = modules;
 		
-		export.path = mojoConceptSpec;
+		export.path = conceptProxy;
 		
 		//export.exportFormat = ExportMojoFormat.Econcept.name.toString();
 		export.exportFormat = ExportMojoFormat.Uscrs.name.toString();
