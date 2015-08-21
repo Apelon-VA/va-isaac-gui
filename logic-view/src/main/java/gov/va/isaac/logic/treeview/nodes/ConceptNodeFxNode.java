@@ -8,19 +8,21 @@ import gov.vha.isaac.ochre.model.logic.node.external.ConceptNodeWithUuids;
 import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import javafx.scene.control.Label;
 
 // ConceptNodeWithSequences
 // ConceptNodeWithUuids
 public class ConceptNodeFxNode extends Label {
-	public ConceptNodeFxNode(ConceptNodeWithSequences logicalNode) {
-		this(logicalNode, Get.conceptDescriptionText(logicalNode.getConceptSequence()), OchreUtility.getSctId(logicalNode.getConceptSequence()));
+	
+	public ConceptNodeFxNode(ConceptNodeWithSequences logicalNode, Function<Integer, String> descriptionRenderer) {
+		this(logicalNode, logicalNode.getConceptSequence(), OchreUtility.getSctId(logicalNode.getConceptSequence()), descriptionRenderer);
 	}
-	public ConceptNodeFxNode(ConceptNodeWithUuids logicalNode) {
-		this(logicalNode, Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid())), OchreUtility.getSctId(Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid())));
+	public ConceptNodeFxNode(ConceptNodeWithUuids logicalNode, Function<Integer, String> descriptionRenderer) {
+		this(logicalNode, Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid()), OchreUtility.getSctId(Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid())), descriptionRenderer);
 	}
-	private ConceptNodeFxNode(AbstractNode logicalNode, String desc, Optional<Long> sctId) {
-		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\n" + desc + (sctId.isPresent() ? "\n" + sctId.get() : ""));
+	private ConceptNodeFxNode(AbstractNode logicalNode, int conceptId, Optional<Long> sctId, Function<Integer, String> descriptionRenderer) {
+		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\n" + descriptionRenderer.apply(conceptId) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
 	}
 }

@@ -2,7 +2,7 @@ package gov.va.isaac.logic.treeview;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.DataSource;
@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 @Service
 @Named (value="LogicalExpressionTreeGraphView")
 @PerLookup
-public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGraphViewI {
+public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGraphEmbeddableViewI {
 	private LogicalExpressionTreeGraph logicalExpressionTreeGraph;
 	private Label textGraph;
 	private Label title;
@@ -52,12 +52,12 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	private ScrollPane rootScrollPane;
 	private AtomicInteger noRefresh_ = new AtomicInteger(0);
 	
-	int conceptId;
+	Integer conceptId = null;
 
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	
 	final ObjectProperty<ObservableTaxonomyCoordinate> taxonomyCoordinate = new SimpleObjectProperty<>(new ObservableTaxonomyCoordinateImpl(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get()));
-	final UpdateableBooleanBinding refreshRequiredListenerHack = new UpdateableBooleanBinding()
+	final UpdateableBooleanBinding taxonomyCoordinateBinding = new UpdateableBooleanBinding()
     {
         private volatile boolean enabled = false;
         {
@@ -83,6 +83,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
             return false;
         }
     };
+
+    @Override
+    public Integer getConceptId() {
+    	return conceptId;
+    }
 
 	private LogicalExpressionTreeGraphView() {
 		//Created by HK2 - no op - delay till getView called

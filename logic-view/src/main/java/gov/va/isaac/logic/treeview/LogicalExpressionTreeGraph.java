@@ -21,6 +21,7 @@ import gov.va.isaac.logic.treeview.nodes.OrNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.RoleNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.RootNodeFxNode;
 import gov.va.isaac.logic.treeview.nodes.SufficientSetNodeFxNode;
+import gov.va.isaac.logic.treeview.nodes.TreeNodeFxNodeUtils;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
@@ -55,12 +56,6 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	
 	private final int defaultNodeWidth;
 	private final int defaultNodeHeight;
-
-//	public final static Function<Integer, String> DEFAULT_DESCRIPTION_EXCTRACTOR = (id) -> {
-//			Optional<LatestVersion<DescriptionSememe>> opt =  Get.conceptSnapshot().getDescriptionOptional(id);
-//			return opt.isPresent() ? opt.get().value().getText() : null;
-//		};
-//	private Function<Integer, String> descriptionExtractor = DEFAULT_DESCRIPTION_EXCTRACTOR;
 
 	public LogicalExpressionTreeGraph() {
 		this(
@@ -164,7 +159,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	private Label createFxNodeFromLogicalExpression(LogicalExpression logicalExpression, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
 		RootNode rootNode = (RootNode)logicalExpression.getNode(0);
 		
-		RootNodeFxNode label = new RootNodeFxNode(logicalExpression, rootNode);
+		RootNodeFxNode label = new RootNodeFxNode(logicalExpression, rootNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
 		TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
 
 		label.setTooltip(new Tooltip(label.getText()));
@@ -175,16 +170,16 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		Label label = null;
 		
 		if (logicalNode instanceof ConceptNodeWithSequences) {
-			label = new ConceptNodeFxNode((ConceptNodeWithSequences)logicalNode);
+			label = new ConceptNodeFxNode((ConceptNodeWithSequences)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
 			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
 		} else if (logicalNode instanceof ConceptNodeWithUuids) {
-			label = new ConceptNodeFxNode((ConceptNodeWithSequences)logicalNode);
+			label = new ConceptNodeFxNode((ConceptNodeWithSequences)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
 			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
 		} else if (logicalNode instanceof FeatureNodeWithSequences) {
-			label = new FeatureNodeFxNode((FeatureNodeWithSequences)logicalNode);
+			label = new FeatureNodeFxNode((FeatureNodeWithSequences)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
 			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
 		} else if (logicalNode instanceof FeatureNodeWithUuids) {
-			label = new FeatureNodeFxNode((FeatureNodeWithUuids)logicalNode);
+			label = new FeatureNodeFxNode((FeatureNodeWithUuids)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
 			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
 		} else if (logicalNode instanceof RoleNodeAllWithSequences) {
 			label = new RoleNodeFxNode((RoleNodeAllWithSequences)logicalNode);

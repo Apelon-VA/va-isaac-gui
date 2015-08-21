@@ -26,6 +26,9 @@ import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphViewBaseViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
@@ -87,6 +90,7 @@ public class CommonMenus
 		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
 		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
+		LOGIC_GRAPH_VIEW("Logic Graph View", Images.ROOT),
 		
 		SEND_TO("Send To"),
 			LIST_VIEW("List View", Images.LIST_VIEW),
@@ -132,6 +136,7 @@ public class CommonMenus
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LIST_VIEW, ListBatchViewI.class, SharedServiceNames.DOCKED);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, WorkflowInitiationViewI.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.RELEASE_WORKFLOW_TASK, ComponentWorkflowServiceI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LOGIC_GRAPH_VIEW, LogicalExpressionTreeGraphPopupViewI.class);
 	}
 
 	public static class ObjectContainer {
@@ -607,6 +612,40 @@ public class CommonMenus
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOINC_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
+		// Menu item to open a Logic Graph View content request
+		try {
+			if (CommonMenusServices.hasService(CommonMenuItem.LOGIC_GRAPH_VIEW)) {
+				MenuItem logicGraphViewMenuItem = createNewMenuItem(
+						CommonMenuItem.LOGIC_GRAPH_VIEW,
+						builder,
+						() -> {
+							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+						}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						// onHandlable
+						() -> {
+							LogicalExpressionTreeGraphPopupViewI handler = (LogicalExpressionTreeGraphPopupViewI)CommonMenusServices.getService(CommonMenuItem.LOGIC_GRAPH_VIEW);
+							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { 
+							int nid = commonMenusNIdProvider.getNIds().iterator().next();
+							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
+				if (logicGraphViewMenuItem != null)
+				{
+					menuItems.add(logicGraphViewMenuItem);
+				}
+			} else {
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOGIC_GRAPH_VIEW) returned false");
+			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOGIC_GRAPH_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+		}
+
+
+		
+		
 		try {
 			if (CommonMenusServices.hasService(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
 				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(

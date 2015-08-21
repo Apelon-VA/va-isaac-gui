@@ -21,7 +21,7 @@ package gov.va.isaac.logic.treeview;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.vha.isaac.ochre.api.LookupService;
 
 import java.io.File;
@@ -62,7 +62,7 @@ public class LogicalExpressionTreeGraphViewRunner extends Application
 		 * Arthroscopy (procedure) 4bf05b37-076a-3a6a-ad53-b10bbf83cfc5
 		 */
 
-		LogicalExpressionTreeGraphViewI view = AppContext.getService(LogicalExpressionTreeGraphViewI.class);
+		LogicalExpressionTreeGraphEmbeddableViewI view = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
 		view.setConcept(UUID.fromString("4bf05b37-076a-3a6a-ad53-b10bbf83cfc5"));
 
 		primaryStage.setScene(new Scene(view.getView(), 800, 600));

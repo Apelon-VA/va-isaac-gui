@@ -18,11 +18,7 @@
  */
 package gov.va.isaac.interfaces.gui.views.commonFunctionality;
 
-import java.util.UUID;
-
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
 import javafx.scene.layout.Region;
 
 import org.jvnet.hk2.annotations.Contract;
@@ -38,23 +34,6 @@ import org.jvnet.hk2.annotations.Contract;
  * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a> 
  */
 @Contract
-public interface LogicalExpressionTreeGraphViewI extends EmbeddableViewI
+public interface LogicalExpressionTreeGraphEmbeddableViewI extends EmbeddableViewI, LogicalExpressionTreeGraphViewBaseViewI
 {
-	/**
-	 * Tell this view to display the Logical Expression tree graph for a particular concept 
-	 * 
-	 * @param conceptId - the id of the concept to graph.
-	 */
-	public void setConcept(int componentNid);
-	public void setConcept(TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate, int componentNid);
-	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate, int componentNid);
-	
-	/**
-	 * Tell this view to display the Logical Expression tree graph for a particular concept 
-	 * 
-	 * @param conceptUuid - the UUID of the concept to graph.
-	 */
-	public void setConcept(UUID uuid);
-	public void setConcept(TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate, UUID uuid);
-	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate, UUID uuid);
 }
