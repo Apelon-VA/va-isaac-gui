@@ -18,8 +18,15 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
+import java.net.URL;
+import java.util.Arrays;
+import java.util.ResourceBundle;
+import java.util.UUID;
+import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
+import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
@@ -29,13 +36,9 @@ import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.interfaces.utility.DialogResponse;
-import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.Get;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
 import javafx.fxml.FXML;
@@ -53,13 +56,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -74,7 +70,6 @@ public class DefinitionController implements PanelControllersI {
 	@FXML private BorderPane refsetCreationPane;
 	@FXML private ToggleGroup refexType;
 	@FXML private RadioButton refexTypeRefset;
-	@FXML private RadioButton refexAnnotationType;
 	@FXML private TextField refexName;
 	@FXML private TextField extensionCount;
 	@FXML private TextArea refexDescription;
@@ -82,7 +77,7 @@ public class DefinitionController implements PanelControllersI {
 	@FXML private Button cancelCreation;
 	@FXML private HBox parentConceptHBox;
 	@FXML private GridPane gridPane;
-	@FXML private ChoiceBox<ComponentType> componentType;
+	@FXML private ChoiceBox<ObjectChronologyType> componentType;
 	
 	Region scene_;
 	ScreensController processController_;
@@ -102,7 +97,6 @@ public class DefinitionController implements PanelControllersI {
 		assert continueCreation != null : "fx:id=\"continueCreation\" was not injected: check your FXML file 'definition.fxml'.";
 		assert refexName != null : "fx:id=\"refexName\" was not injected: check your FXML file 'definition.fxml'.";
 		assert refexTypeRefset != null : "fx:id=\"refexTypeRefset\" was not injected: check your FXML file 'definition.fxml'.";
-		assert refexAnnotationType != null : "fx:id=\"refexAnnotationType\" was not injected: check your FXML file 'definition.fxml'.";
 		assert refexType != null : "fx:id=\"refexType\" was not injected: check your FXML file 'definition.fxml'.";
 		assert extensionCount != null : "fx:id=\"extensionCount\" was not injected: check your FXML file 'definition.fxml'.";
 		assert refexDescription != null : "fx:id=\"refexDescription\" was not injected: check your FXML file 'definition.fxml'.";
@@ -115,7 +109,7 @@ public class DefinitionController implements PanelControllersI {
 		
 		parentConcept = new ConceptNode(null, true);
 		//this will cause it to look it up in a background thread...
-		parentConcept.set(new SimpleDisplayConcept(RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getUuids()[0].toString()));
+		parentConcept.set(new SimpleDisplayConcept(IsaacMetadataConstants.DYNAMIC_SEMEME_ASSEMBLAGES.getUUID().toString()));
 		
 		parentConceptHBox.getChildren().add(parentConcept.getNode());
 		HBox.setHgrow(parentConcept.getNode(), Priority.ALWAYS);
@@ -134,12 +128,12 @@ public class DefinitionController implements PanelControllersI {
 		});
 		
 		
-		componentType.setConverter(new StringConverter<ComponentType>()
+		componentType.setConverter(new StringConverter<ObjectChronologyType>()
 		{
 			@Override
-			public String toString(ComponentType object)
+			public String toString(ObjectChronologyType object)
 			{
-				if (object == ComponentType.UNKNOWN)
+				if (object == ObjectChronologyType.UNKNOWN_NID)
 				{
 					return "No Component Type Restriction";
 				}
@@ -150,19 +144,19 @@ public class DefinitionController implements PanelControllersI {
 			}
 
 			@Override
-			public ComponentType fromString(String string)
+			public ObjectChronologyType fromString(String string)
 			{
 				// will never happen
-				return ComponentType.UNKNOWN;
+				return ObjectChronologyType.UNKNOWN_NID;
 			}
 			
 		});
 		
 		//unknown first
-		componentType.getItems().add(ComponentType.UNKNOWN);
-		for (ComponentType ct : ComponentType.values())
+		componentType.getItems().add(ObjectChronologyType.UNKNOWN_NID);
+		for (ObjectChronologyType ct : ObjectChronologyType.values())
 		{
-			if (ct != ComponentType.UNKNOWN && ct != ComponentType.SEMEME && ct != ComponentType.MEDIA && ct != ComponentType.CONCEPT_ATTRIBUTES)
+			if (ct != ObjectChronologyType.UNKNOWN_NID)
 			{
 				componentType.getItems().add(ct);
 			}
@@ -188,7 +182,7 @@ public class DefinitionController implements PanelControllersI {
 					//But it will detect the cases that will cause the blueprint construct to blowup
 					UUID uuidWeWouldGetUponCreate = ConceptCB.computeComponentUuid(IdDirective.GENERATE_HASH, Arrays.asList(new String[] {refexName.getText().trim()}), 
 							Arrays.asList(new String[] {refexName.getText().trim()}), null);
-					if (ExtendedAppContext.getDataStore().hasUuid(uuidWeWouldGetUponCreate))
+					if (Get.identifierService().hasUuid(uuidWeWouldGetUponCreate))
 					{
 						return "A concept already exists with this FSN";
 					}
@@ -289,7 +283,7 @@ public class DefinitionController implements PanelControllersI {
 		try 
 		{
 			;
-			if (!Get.taxonomyService().isKindOf(parentConcept.getConcept().getConceptSequence(), RefexDynamic.DYNAMIC_SEMEME_ASSEMBLAGES.getConceptSequence(), 
+			if (!Get.taxonomyService().isKindOf(parentConcept.getConcept().getConceptSequence(), IsaacMetadataConstants.DYNAMIC_SEMEME_ASSEMBLAGES.getSequence(), 
 					AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get())) 
 			{
 				YesNoDialog yn = new YesNoDialog(refsetCreationPane.getScene().getWindow());
@@ -315,8 +309,8 @@ public class DefinitionController implements PanelControllersI {
 	
 		if (wizardData == null)
 		{
-			wizardData = new RefexData(refexName.getText().trim(), refexDescription.getText().trim(), parentConcept.getConcept(), count, refexAnnotationType.isSelected(),
-					componentType.getValue());
+			wizardData = new RefexData(refexName.getText().trim(), refexDescription.getText().trim(), parentConcept.getConcept(), count, 
+					componentType.getValue(), null);
 		}
 		else
 		{
@@ -324,7 +318,6 @@ public class DefinitionController implements PanelControllersI {
 			wizardData.setRefexName(refexName.getText().trim());
 			wizardData.setRefexDescription(refexDescription.getText().trim());
 			wizardData.setParentConcept(parentConcept.getConcept());
-			wizardData.setIsAnnotatedStyle(refexAnnotationType.isSelected());
 			wizardData.setComponentRestrictionType(componentType.getValue());
 		}
 	}

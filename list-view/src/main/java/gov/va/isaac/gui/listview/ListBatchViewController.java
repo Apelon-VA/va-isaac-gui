@@ -18,29 +18,6 @@
  */
 package gov.va.isaac.gui.listview;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.listview.operations.CustomTask;
-import gov.va.isaac.gui.listview.operations.OperationResult;
-import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
-import gov.va.isaac.interfaces.utility.DialogResponse;
-import gov.va.isaac.util.CommonMenuBuilderI;
-import gov.va.isaac.util.CommonMenus;
-import gov.va.isaac.util.CommonMenusDataProvider;
-import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.va.isaac.util.UpdateableDoubleBinding;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -57,6 +34,34 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.controlsfx.dialog.Dialogs;
+import org.ihtsdo.otf.tcc.api.store.Ts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.gui.listview.operations.CustomTask;
+import gov.va.isaac.gui.listview.operations.OperationResult;
+import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.va.isaac.interfaces.utility.DialogResponse;
+import gov.va.isaac.util.CommonMenuBuilderI;
+import gov.va.isaac.util.CommonMenus;
+import gov.va.isaac.util.CommonMenusDataProvider;
+import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.va.isaac.util.UpdateableDoubleBinding;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -107,11 +112,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
-import org.controlsfx.dialog.Dialogs;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
 
 /**
  * {@link ListBatchViewController}
@@ -367,7 +367,7 @@ public class ListBatchViewController
 					{
 						try
 						{
-							ExtendedAppContext.getDataStore().commit(/* row.getItem().getNid() */);
+							Ts.get().commit(/* row.getItem().getNid() */);
 							updateTableItem(row.getItem(), false);
 						}
 						catch (IOException ex)
@@ -387,7 +387,7 @@ public class ListBatchViewController
 					{
 						//TODO this should be presented to the user... not silently logged
 						try {
-							ExtendedAppContext.getDataStore().forget(ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinate(), row.getItem().getNid()));
+							Ts.get().forget(Ts.get().getConceptVersion(OTFUtility.getViewCoordinate(), row.getItem().getNid()));
 							updateTableItem(row.getItem(), false);
 						} catch (IOException e) {
 							logger_.error("Unable to cancel comp: " + row.getItem().getNid(), e);
@@ -473,7 +473,7 @@ public class ListBatchViewController
 			{
 				try
 				{
-					ExtendedAppContext.getDataStore().commit();
+					Ts.get().commit();
 					uncommitAllTableItems();
 				}
 				catch (IOException ex)
@@ -1039,7 +1039,7 @@ public class ListBatchViewController
 			//TODO Jesse - this is broken, and I have no idea why it is being called here.  I don't know why the above code is doing things with 
 			//committed / uncommitted either... all very strange.
 //			try {
-//				ExtendedAppContext.getDataStore().forget(con);
+//				Ts.get().forget(con);
 //				newCon.setUncommitted(false);
 //
 //				if (!isUncommitted && oldCon.isUncommitted()) {

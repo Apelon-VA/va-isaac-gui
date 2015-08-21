@@ -19,8 +19,7 @@
 package gov.va.isaac.drools.refexUtils;
 
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
-
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 
 /**
  * {@link RefexDroolsValidatorImplInfo}
@@ -32,13 +31,13 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
  */
 public enum RefexDroolsValidatorImplInfo
 {
-	REFEX_STRING_RULES("builtin.refex-string-rules", "Drools Rules for String values", RefexDynamicDataType.STRING),
-	REFEX_CONCEPT_RULES("builtin.refex-concept-rules", "Drools Rules for Concept values", RefexDynamicDataType.UUID, RefexDynamicDataType.NID);
+	REFEX_STRING_RULES("builtin.refex-string-rules", "Drools Rules for String values", DynamicSememeDataType.STRING),
+	REFEX_CONCEPT_RULES("builtin.refex-concept-rules", "Drools Rules for Concept values", DynamicSememeDataType.UUID, DynamicSememeDataType.NID);
 	
 	private String droolsPackageName_, displayName_;
-	private RefexDynamicDataType[] applicableDataTypes_;
+	private DynamicSememeDataType[] applicableDataTypes_;
 	
-	private RefexDroolsValidatorImplInfo(String droolsPackageName, String displayName, RefexDynamicDataType ... applicableDataTypes)
+	private RefexDroolsValidatorImplInfo(String droolsPackageName, String displayName, DynamicSememeDataType ... applicableDataTypes)
 	{
 		displayName_ = displayName;
 		droolsPackageName_ = droolsPackageName;
@@ -76,7 +75,7 @@ public enum RefexDroolsValidatorImplInfo
 	/**
 	 * @return the applicableDataTypes - which data type will the drools package run on (drools packages ignore datatypes they don't know about)
 	 */
-	public RefexDynamicDataType[] getApplicableDataTypes()
+	public DynamicSememeDataType[] getApplicableDataTypes()
 	{
 		return applicableDataTypes_;
 	}

@@ -18,9 +18,39 @@
  */
 package gov.va.isaac.models.api;
 
+import java.beans.PropertyVetoException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import org.ihtsdo.otf.query.lucene.indexers.DescriptionIndexer;
+import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
+import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
+import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
+import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
+import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
+import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
+import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
+import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import org.ihtsdo.otf.tcc.api.spec.ValidationException;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.model.InformationModelType;
 import gov.va.isaac.models.DefaultInformationModelProperty;
 import gov.va.isaac.models.InformationModel;
@@ -29,44 +59,19 @@ import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import java.beans.PropertyVetoException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import org.ihtsdo.otf.query.lucene.LuceneDescriptionIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
-import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
-import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.ihtsdo.otf.tcc.api.spec.ValidationException;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.model.constants.InformationModelsConstants;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 /**
  * Represents a service for interacting with information models that uses an
@@ -168,17 +173,16 @@ public class BdbInformationModelService implements InformationModelService {
     }
     try {
       LOG.debug("  Lucene Search: '" + key + "'");
-      LuceneDescriptionIndexer descriptionIndexer =
-          AppContext.getService(LuceneDescriptionIndexer.class);
+      DescriptionIndexer descriptionIndexer =
+          AppContext.getService(DescriptionIndexer.class);
       if (descriptionIndexer == null) {
         throw new IOException("No description indexer found, aborting.");
       }
       // Look for description matches.
-      ComponentProperty field = ComponentProperty.DESCRIPTION_TEXT;
       int limit = 10;
       List<SearchResult> searchResults;
       searchResults =
-          descriptionIndexer.query(key, false, field, limit, Long.MIN_VALUE);
+          descriptionIndexer.query(key, false, IsaacMetadataAuxiliaryBinding.DESCRIPTION_ASSEMBLAGE.getConceptSequence(), limit, Long.MIN_VALUE);
 
       // Results are descriptions, need to look up concepts
       for (SearchResult result : searchResults) {
@@ -340,57 +344,54 @@ public class BdbInformationModelService implements InformationModelService {
 
     // Get property information from dynamic refset members
     // Create refex entries for properties
-    RefexDynamicUsageDescription propertyRefset =
-        RefexDynamicUsageDescriptionBuilder
-            .readRefexDynamicUsageDescriptionConcept(InformationModels.INFORMATION_MODEL_PROPERTIES
-                .getLenient().getNid());
-    LOG.debug("  property refset = " + propertyRefset.getRefexName());
-    for (RefexDynamicChronicleBI<?> refex : modelConcept
-        .getRefexDynamicAnnotations()) {
-      Optional<? extends RefexDynamicVersionBI> refexVersion =
-          refex.getVersion(OTFUtility.getViewCoordinate());
-      LOG.debug("  sememe = " + refex.toUserString());
-      // Look for matching refex id and "active" flag
-      if (refexVersion.isPresent()
-          && refex.getAssemblageNid() == propertyRefset
-              .getRefexUsageDescriptorNid() && refexVersion.get().isActive()) {
-        // Create properties for each annotation
-        InformationModelProperty property =
-            new DefaultInformationModelProperty();
-        RefexDynamicDataBI[] data = refexVersion.get().getData();
-        if (data[0] != null)
-          property.setLabel(((RefexDynamicString) data[0]).getDataString());
-        if (data[1] != null)
-          property.setType(((RefexDynamicString) data[1]).getDataString());
-        if (data[2] != null)
-          property.setName(((RefexDynamicString) data[2]).getDataString());
-        if (data[3] != null)
-          property.setDefaultValue(((RefexDynamicString) data[3])
-              .getDataString());
-        if (data[4] != null)
-          property.setValue(((RefexDynamicString) data[4]).getDataString());
-        if (data[5] != null)
-          property.setCardinalityMin(((RefexDynamicString) data[5])
-              .getDataString());
-        if (data[6] != null)
-          property.setCardinalityMax(((RefexDynamicString) data[6])
-              .getDataString());
-        if (data[7] != null)
-          property
-              .setVisibility(((RefexDynamicString) data[7]).getDataString());
-        LOG.debug("    property " + property.getLabel() + ", "
-            + property.getName());
-        model.addProperty(property);
-      }
-    }
+    DynamicSememeUsageDescription propertyRefset =
+        DynamicSememeUsageDescription.read(InformationModelsConstants.INFORMATION_MODEL_PROPERTIES.getNid());
+    LOG.debug("  property refset = " + propertyRefset.getDyanmicSememeName());
+    
+    Get.sememeService().getSememesForComponentFromAssemblage(modelConcept.getNid(), propertyRefset.getDynamicSememeUsageDescriptorSequence())
+    	.forEach(sememeC ->
+    	{
+    		LOG.debug("  sememe = " + sememeC.toUserString());
+    		if (sememeC.getSememeType() == SememeType.DYNAMIC)
+    		{
+    			@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)sememeC).getLatestVersion(DynamicSememe.class, 
+    					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+    			
+    			if (latest.isPresent())
+    			{
+    				// Create properties for each annotation
+    		        InformationModelProperty property = new DefaultInformationModelProperty();
+    		        DynamicSememeDataBI[] data = latest.get().value().getData();
+    		        if (data[0] != null)
+    		          property.setLabel(((DynamicSememeString) data[0]).getDataString());
+    		        if (data[1] != null)
+    		          property.setType(((DynamicSememeString) data[1]).getDataString());
+    		        if (data[2] != null)
+    		          property.setName(((DynamicSememeString) data[2]).getDataString());
+    		        if (data[3] != null)
+    		          property.setDefaultValue(((DynamicSememeString) data[3]).getDataString());
+    		        if (data[4] != null)
+    		          property.setValue(((DynamicSememeString) data[4]).getDataString());
+    		        if (data[5] != null)
+    		          property.setCardinalityMin(((DynamicSememeString) data[5]).getDataString());
+    		        if (data[6] != null)
+    		          property.setCardinalityMax(((DynamicSememeString) data[6]).getDataString());
+    		        if (data[7] != null)
+    		          property.setVisibility(((DynamicSememeString) data[7]).getDataString());
+    		        LOG.debug("    property " + property.getLabel() + ", " + property.getName());
+    		        model.addProperty(property);
+    			}
+    		}
+    	});
+
 
     // Build associated concept UUIDs from relationships
     for (RelationshipChronicleBI rel : modelConcept.getRelationshipsOutgoing()) {
       RelationshipVersionBI<?> relVersion =
           rel.getVersion(OTFUtility.getViewCoordinate()).get();
       // Look for matching typeId and "active" flag
-      if (relVersion.getTypeNid() == InformationModels.HAS_TERMINOLOGY_CONCEPT
-          .getLenient().getNid() && relVersion.isActive()) {
+      if (relVersion.getTypeNid() == InformationModelsConstants.HAS_TERMINOLOGY_CONCEPT.getNid() && relVersion.isActive()) {
         // Add the destination UUID
         model.addAssociatedConceptUuid(OTFUtility.getConceptVersion(
             relVersion.getDestinationNid()).getPrimordialUuid());
@@ -534,9 +535,9 @@ public class BdbInformationModelService implements InformationModelService {
     syncRefexes(modelConcept, model);
 
     LOG.debug("  add uncommitted");
-    ExtendedAppContext.getDataStore().addUncommitted(modelConcept);
+    Ts.get().addUncommitted(modelConcept);
     LOG.debug("  commit");
-    ExtendedAppContext.getDataStore().commit();
+    Ts.get().commit();
 
     return modelConcept;
   }
@@ -660,8 +661,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Retire any active relationships to UUIDs no longer in this set
     for (RelationshipCAB relCAB : modelConceptCB.getRelationshipCABs()) {
       // Look for matching typeId and "active" flag
-      if (relCAB.getTypeNid() == InformationModels.HAS_TERMINOLOGY_CONCEPT
-          .getLenient().getNid()) {
+      if (relCAB.getTypeNid() == InformationModelsConstants.HAS_TERMINOLOGY_CONCEPT.getNid()) {
         UUID uuid =
             OTFUtility.getConceptVersion(relCAB.getTargetNid())
                 .getPrimordialUuid();
@@ -686,8 +686,7 @@ public class BdbInformationModelService implements InformationModelService {
       LOG.debug("  Create relationship for "
           + modelConceptCB.getComponentUuid() + " => " + destinationUuid);
       UUID typeUid =
-          InformationModels.HAS_TERMINOLOGY_CONCEPT.getLenient()
-              .getPrimordialUuid();
+          InformationModelsConstants.HAS_TERMINOLOGY_CONCEPT.getUUID();
       RelationshipCAB relCAB =
           new RelationshipCAB(modelConceptCB.getComponentUuid(), typeUid,
               destinationUuid, 0, RelationshipType.STATED_ROLE,
@@ -708,15 +707,12 @@ public class BdbInformationModelService implements InformationModelService {
    * @throws InvalidCAB
    * @throws PropertyVetoException
    */
-  private void syncRefexes(ConceptChronicleBI modelConcept,
-    InformationModel model) throws ValidationException, IOException,
+  private void syncRefexes(ConceptChronicleBI modelConcept, InformationModel model) throws ValidationException, IOException,
     ContradictionException, InvalidCAB, PropertyVetoException {
     // Create refex entries for properties
-    RefexDynamicUsageDescription propertyRefset =
-        RefexDynamicUsageDescriptionBuilder
-            .readRefexDynamicUsageDescriptionConcept(InformationModels.INFORMATION_MODEL_PROPERTIES
-                .getLenient().getNid());
-    LOG.debug("  Found " + propertyRefset.getRefexName());
+    DynamicSememeUsageDescription propertyRefset =
+    		DynamicSememeUsageDescription.read(InformationModelsConstants.INFORMATION_MODEL_PROPERTIES.getSequence());
+    LOG.debug("  Found " + propertyRefset.getDyanmicSememeName());
     // Iterate through information model properties and add refexes
     LOG.debug("  Iterate through properties");
     // Create a dynamic refex CAB for each entry
@@ -724,54 +720,52 @@ public class BdbInformationModelService implements InformationModelService {
     Set<UUID> refexUuids = new HashSet<>();
     for (InformationModelProperty property : model.getProperties()) {
       LOG.debug("    " + property.getLabel() + ", " + property.getName());
-      // Need better understanding of what IdDirective to use here
-      RefexDynamicCAB refexBlueprint =
-          new RefexDynamicCAB(modelConcept.getNid(),
-              propertyRefset.getRefexUsageDescriptorNid());
-
+      
       // The order of these columns is tightly bound to the definition,
       // if the definition changes, this has to be updated as well.
       if (propertyRefset.getColumnInfo().length != 8) {
         throw new IOException(
             "Information model properties refset has unexpected number of columns");
       }
-      RefexDynamicDataBI[] data =
-          new RefexDynamicDataBI[propertyRefset.getColumnInfo().length];
-      data[0] = new RefexDynamicString(property.getLabel());
-      data[1] = new RefexDynamicString(property.getType());
-      data[2] = new RefexDynamicString(property.getName());
-      data[3] = new RefexDynamicString(property.getDefaultValue());
-      data[4] = new RefexDynamicString(property.getValue());
-      data[5] = new RefexDynamicString(property.getCardinalityMin());
-      data[6] = new RefexDynamicString(property.getCardinalityMax());
-      data[7] = new RefexDynamicString(property.getVisibility());
-      refexBlueprint.setData(data, OTFUtility.getViewCoordinate());
+      DynamicSememeDataBI[] data = new DynamicSememeDataBI[propertyRefset.getColumnInfo().length];
+      data[0] = new DynamicSememeString(property.getLabel());
+      data[1] = new DynamicSememeString(property.getType());
+      data[2] = new DynamicSememeString(property.getName());
+      data[3] = new DynamicSememeString(property.getDefaultValue());
+      data[4] = new DynamicSememeString(property.getValue());
+      data[5] = new DynamicSememeString(property.getCardinalityMin());
+      data[6] = new DynamicSememeString(property.getCardinalityMax());
+      data[7] = new DynamicSememeString(property.getVisibility());
+      
+      SememeChronology<?> sc = Get.sememeBuilderService().getDyanmicSememeBuilder(modelConcept.getNid(), propertyRefset.getDynamicSememeUsageDescriptorSequence(), data)
+      	.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
+      
+      Get.commitService().commit("Creating info model");
 
       // Construct and wire the dynamic refex
-      RefexDynamicChronicleBI<?> refex =
-          OTFUtility.getBuilder().construct(refexBlueprint);
-      modelConcept.addDynamicAnnotation(refex);
-      refexUuids.add(refex.getPrimordialUuid());
-      LOG.debug("    UUID = " + refex.getPrimordialUuid());
+      refexUuids.add(sc.getPrimordialUuid());
+      LOG.debug("    UUID = " + sc.getPrimordialUuid());
     }
 
     // Now iterate through all refexes and retire those that do not
     // have uuids from the code above
-    for (RefexDynamicChronicleBI<?> refex : modelConcept
-        .getRefexDynamicAnnotations()) {
-      Optional<? extends RefexDynamicVersionBI<?>> refexVersion =
-          refex.getVersion(OTFUtility.getViewCoordinate());
-      if (refexVersion.isPresent()
-          && !refexUuids.contains(refex.getPrimordialUuid())) {
-        RefexDynamicCAB refexBlueprint =
-            refexVersion.get().makeBlueprint(OTFUtility.getViewCoordinate(),
-                IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-        refexBlueprint.setRetired();
-        RefexDynamicChronicleBI<?> refex2 =
-            OTFUtility.getBuilder().construct(refexBlueprint);
-        LOG.debug("  Retire sememe UUID = " + refex2.getPrimordialUuid());
-      }
-    }
+    
+    Get.sememeService().getSememesForComponent(modelConcept.getNid()).forEach(sememeC ->
+	{
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<SememeVersion<?>>> latest = ((SememeChronology)sememeC).getLatestVersion(SememeVersion.class, 
+				ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+		if (latest.isPresent() && latest.get().value().getState() == State.ACTIVE)
+		{
+			if (!refexUuids.contains(sememeC.getPrimordialUuid()))
+			{
+				int retireStamp = Get.commitService().getRetiredStampSequence(latest.get().value().getStampSequence());
+				Get.sememeBuilderService().getDyanmicSememeBuilder(sememeC.getReferencedComponentNid(), sememeC.getAssemblageSequence())
+					.build(retireStamp, new ArrayList<>());
+				LOG.debug("  Retire sememe UUID = " + sememeC.getPrimordialUuid());
+			}
+		}
+	});
   }
 
   /**

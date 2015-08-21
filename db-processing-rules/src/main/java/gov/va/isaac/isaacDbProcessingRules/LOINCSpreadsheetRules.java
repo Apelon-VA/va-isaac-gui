@@ -18,18 +18,6 @@
  */
 package gov.va.isaac.isaacDbProcessingRules;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
-import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
-import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
-import gov.vha.isaac.ochre.api.index.SearchResult;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -43,18 +31,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Named;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.init.SystemInit;
+import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
+import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
+import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 /**
  * {@link LOINCSpreadsheetRules}
@@ -255,13 +260,13 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 			}
 			else
 			{
-				LuceneDynamicRefexIndexer refexIndexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
+				DynamicSememeIndexer dynamicSememeIndexer = AppContext.getService(DynamicSememeIndexer.class);
 				
-				if (refexIndexer == null)
+				if (dynamicSememeIndexer == null)
 				{
 					throw new RuntimeException("No sememe indexer found, aborting.");
 				}
-				List<SearchResult> searchResults = refexIndexer.query(new RefexDynamicString("\"" + sc.getValueId().replaceAll("-", "\\\\-") + "\""), 
+				List<SearchResult> searchResults = dynamicSememeIndexer.query(new DynamicSememeString("\"" + sc.getValueId().replaceAll("-", "\\\\-") + "\""), 
 						getNid(sc.getValueId().startsWith("LP") ? CODE : LOINC_NUM), false, new Integer[] {0}, 5, null);
 				if (searchResults.size() != 1)
 				{
@@ -308,17 +313,20 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 	
 	private boolean attributeIs(UUID attributeType, String orderValue, ConceptChronicleBI cc) throws IOException
 	{
-		for (RefexDynamicVersionBI<?> rv : cc.getRefexesDynamicActive(vc_))
+		return Get.sememeService().getSememesForComponentFromAssemblage(cc.getNid(), 
+				Get.identifierService().getConceptSequenceForUuids(attributeType)).anyMatch(sememe ->
 		{
-			if (rv.getAssemblageNid() == getNid(attributeType))
+			if (sememe.getSememeType() == SememeType.DYNAMIC)
 			{
-				if (rv.getData()[0].getDataObject().toString().equals(orderValue))
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe>>  latest = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, StampCoordinates.getDevelopmentLatest());
+				if (latest.isPresent() && latest.get().value().getData()[0].getDataObject().toString().equals(orderValue))
 				{
 					return true;
 				}
 			}
-		}
-		return false;
+			return false;
+		});
 	}
 	
 	private boolean systemIs(String system, ConceptChronicleBI cc) throws IOException, ContradictionException
@@ -381,8 +389,8 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
 		LOINCSpreadsheetRules lsr = new LOINCSpreadsheetRules();
-		lsr.configure((File)null, ExtendedAppContext.getDataStore());
-		lsr.transform(ExtendedAppContext.getDataStore(), ExtendedAppContext.getDataStore().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
+		lsr.configure((File)null, Ts.get());
+		lsr.transform(Ts.get(), Ts.get().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
 		System.out.println(lsr.getWorkResultSummary());
 	}
 }

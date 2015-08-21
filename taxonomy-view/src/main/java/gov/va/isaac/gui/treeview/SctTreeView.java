@@ -40,8 +40,10 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -137,7 +139,7 @@ class SctTreeView {
     private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
     public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
         if (conceptSnapshotService.get() == null) {
-            ReadOnlyObjectProperty<StampCoordinate<?>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+            ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
             ReadOnlyObjectProperty<LanguageCoordinate> langCoord = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
             stampCoord.addListener(change -> 
             {
@@ -725,7 +727,8 @@ class SctTreeView {
         if (expandedUUIDs_.contains(item.getConceptUuid())) {
             item.blockUntilChildrenReady();
             Platform.runLater(() -> item.setExpanded(true));
-            for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : item.getChildren()) {
+            List<TreeItem<ConceptChronology<? extends ConceptVersion<?>>>> list = new ArrayList<>(item.getChildren());
+            for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : list) {
                 restoreExpanded((SctTreeItem) child, scrollTo);
             }
         }

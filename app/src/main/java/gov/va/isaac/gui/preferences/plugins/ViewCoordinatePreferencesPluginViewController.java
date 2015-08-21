@@ -893,7 +893,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 			String desc = null;
 			try {
-				desc = OchreUtility.getDescription(nid);
+				desc = Get.conceptDescriptionText(nid);
 			} catch (Exception e) {
 				log.error("Failed to set description for concept with nid={}", nid);
 			}

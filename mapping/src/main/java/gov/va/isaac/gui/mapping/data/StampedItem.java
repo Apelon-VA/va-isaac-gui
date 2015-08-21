@@ -18,22 +18,15 @@
  */
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.UUID;
-
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
-
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 
 /**
  * {@link StampedItem}
@@ -52,45 +45,33 @@ public abstract class StampedItem
 	private SimpleStringProperty moduleSSP = new SimpleStringProperty("-");;
 	private SimpleStringProperty pathSSP   = new SimpleStringProperty("-");;
 	
-	private int authorNid;
-	private int moduleNid;
-	private int pathNid;
+	private int authorSequence;
+	private int moduleSequence;
+	private int pathSequence;
 	
-	protected void readStampDetails(ComponentVersionBI componentVersion) throws IOException
+	protected void readStampDetails(StampedVersion componentVersion) throws RuntimeException
 	{
 		try
 		{
-			if (componentVersion instanceof ConceptVersionBI)
-			{
-				ConceptAttributeVersionBI<?> ca = ((ConceptVersionBI)componentVersion).getConceptAttributes().getVersion(OTFUtility.getViewCoordinateAllowInactive()).get();
-				authorNid = ca.getAuthorNid();
-				moduleNid = ca.getModuleNid();
-				pathNid = ca.getPathNid();
-				creationTime = ca.getTime();
-				isActive = ca.getStatus() == Status.ACTIVE;
-			}
-			else
-			{
-				authorNid = componentVersion.getAuthorNid();
-				moduleNid = componentVersion.getModuleNid();
-				pathNid = componentVersion.getPathNid();
-				creationTime = componentVersion.getTime();
-				isActive = componentVersion.getStatus() == Status.ACTIVE;
-			}
+			authorSequence = componentVersion.getAuthorSequence();
+			moduleSequence = componentVersion.getModuleSequence();
+			pathSequence = componentVersion.getPathSequence();
+			creationTime = componentVersion.getTime();
+			isActive = componentVersion.getState() == State.ACTIVE;
 		}
 		catch (Exception e)
 		{
 			throw new RuntimeException("Unexpected", e);
 		}
-		authorUUID = ExtendedAppContext.getDataStore().getUuidPrimordialForNid(authorNid);
-		moduleUUID = ExtendedAppContext.getDataStore().getUuidPrimordialForNid(moduleNid);
-		pathUUID = ExtendedAppContext.getDataStore().getUuidPrimordialForNid(pathNid);
+		authorUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(authorSequence).get();
+		moduleUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(moduleSequence).get();
+		pathUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(pathSequence).get();
 		
 		Utility.execute(() ->
 		{
-			String authorName = OTFUtility.getDescription(authorUUID);
-			String moduleName = OTFUtility.getDescription(moduleUUID);
-			String pathName =   OTFUtility.getDescription(pathUUID);
+			String authorName = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(authorUUID));
+			String moduleName = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(moduleUUID));
+			String pathName =   Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(pathUUID));
 			Platform.runLater(() -> {
 				authorSSP.set(authorName);
 				moduleSSP.set(moduleName);
@@ -153,9 +134,9 @@ public abstract class StampedItem
 	public SimpleStringProperty getModuleProperty() { return moduleSSP; }
 	public SimpleStringProperty getPathProperty()   { return pathSSP; }
 	
-	public int getAuthorNid() { return authorNid; }
-	public int getModuleNid() { return moduleNid; }
-	public int getPathNid()   { return pathNid; }
+	public int getAuthorNid() { return authorSequence; }
+	public int getModuleNid() { return moduleSequence; }
+	public int getPathNid()   { return pathSequence; }
 	
 	public static final Comparator<StampedItem> statusComparator = new Comparator<StampedItem>() {
 		@Override

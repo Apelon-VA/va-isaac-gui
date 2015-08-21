@@ -1,23 +1,19 @@
 package gov.va.isaac.gui.enhancedsearchview.resulthandler;
 
+import java.beans.PropertyVetoException;
+import java.io.IOException;
+import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-
-import java.beans.PropertyVetoException;
-import java.io.IOException;
-
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
-
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 
 public class ResultsToRefset {
 	
@@ -29,31 +25,31 @@ public class ResultsToRefset {
 		
 		// Create RefsetDynamic
 		if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
-			RefexDynamicUsageDescription refset = 
-					RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(prompt.getNameTextField().getText(), 
-																									 prompt.getNameTextField().getText(), 
-																									 prompt.getDescTextField().getText(),
-																									 new RefexDynamicColumnInfo[] {},
-																									 prompt.getParentConcept().getConcept().getPrimordialUuid(),
-																									 prompt.getAnnot().isSelected(),
-																									 null,
-																									 ViewCoordinates.getMetadataViewCoordinate());
+//			DynamicSememeUsageDescription refset = 
+//					DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(prompt.getNameTextField().getText(), 
+//																									 prompt.getNameTextField().getText(), 
+//																									 prompt.getDescTextField().getText(),
+//																									 new DynamicSememeColumnInfo[] {},
+//																									 prompt.getParentConcept().getConcept().getPrimordialUuid(),
+//																									 prompt.getAnnot().isSelected(),
+//																									 null,
+//																									 ViewCoordinates.getMetadataViewCoordinate());
 		    // Create a dynamic refex CAB for each result
-			for (CompositeSearchResult con : tableView.getItems()) {
-				RefexDynamicCAB refexBlueprint = new RefexDynamicCAB(con.getContainingConcept().get().getNid(), refset.getRefexUsageDescriptorNid());
-				OTFUtility.getBuilder().construct(refexBlueprint);
-				
-				if (prompt.getAnnot().isSelected()) {
-					//TODO Dan broke this - it needs to be rewritten with builder anyway
-					//ExtendedAppContext.getDataStore().addUncommitted(con.getContainingConcept().get());
-				} 
-			}
-			
-			if (!prompt.getAnnot().isSelected()) {
-				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(refset.getRefexUsageDescriptorNid()));
-			}
-			
-			ExtendedAppContext.getDataStore().commit();
+//			for (CompositeSearchResult con : tableView.getItems()) {
+//				DynamicSememeCAB refexBlueprint = new DynamicSememeCAB(con.getContainingConcept().get().getNid(), refset.getRefexUsageDescriptorNid());
+//				OTFUtility.getBuilder().construct(refexBlueprint);
+//				
+//				if (prompt.getAnnot().isSelected()) {
+//					//TODO Dan broke this - it needs to be rewritten with builder anyway
+//					//ExtendedAppContext.getDataStore().addUncommitted(con.getContainingConcept().get());
+//				} 
+//			}
+//			
+//			if (!prompt.getAnnot().isSelected()) {
+//				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(refset.getRefexUsageDescriptorNid()));
+//			}
+//			
+//			ExtendedAppContext.getDataStore().commit();
 			
 			return prompt.getNameTextField().getText();
 		}

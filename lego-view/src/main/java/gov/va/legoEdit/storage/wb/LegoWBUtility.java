@@ -18,10 +18,12 @@
  */
 package gov.va.legoEdit.storage.wb;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OchreUtility;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
 import gov.va.legoEdit.model.schemaModel.Assertion;
 import gov.va.legoEdit.model.schemaModel.AssertionComponent;
 import gov.va.legoEdit.model.schemaModel.Concept;
@@ -33,14 +35,7 @@ import gov.va.legoEdit.model.schemaModel.Relation;
 import gov.va.legoEdit.model.schemaModel.RelationGroup;
 import gov.va.legoEdit.model.schemaModel.Type;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.id.IdBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 
 /**
  * 
@@ -52,8 +47,6 @@ import org.slf4j.LoggerFactory;
 public class LegoWBUtility
 {
 	private static Logger logger = LoggerFactory.getLogger(LegoWBUtility.class);
-	private static UUID snomedIdType = TermAux.SNOMED_IDENTIFIER.getUuids()[0]; // SNOMED integer id
-	private static Integer snomedIdTypeNid = null;
 
 	public static Concept convertConcept(ConceptSnapshot concept)
 	{
@@ -65,7 +58,7 @@ public class LegoWBUtility
 			c.setUuid(concept.getPrimordialUuid().toString());
 			try
 			{
-				Optional<Long> sctId = OchreUtility.getSctId(concept.getNid());
+				Optional<Long> sctId = Frills.getSctId(concept.getNid(), null);
 				if (sctId.isPresent())
 				{
 					c.setSctid(sctId.get());
@@ -81,15 +74,6 @@ public class LegoWBUtility
 			}
 		}
 		return c;
-	}
-
-	private static int getSnomedIdTypeNid()
-	{
-		if (snomedIdTypeNid == null)
-		{
-			snomedIdTypeNid = ExtendedAppContext.getDataStore().getNidForUuids(snomedIdType);
-		}
-		return snomedIdTypeNid;
 	}
 
 	/**

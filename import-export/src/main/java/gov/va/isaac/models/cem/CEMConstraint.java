@@ -2,17 +2,12 @@
 package gov.va.isaac.models.cem;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.InformationModels;
 import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import java.beans.PropertyVetoException;
-import java.io.IOException;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
+import gov.vha.isaac.ochre.model.constants.InformationModelsConstants;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.RefexDynamicUsageDescriptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,12 +119,9 @@ public class CEMConstraint {
 				try {
 					// Create Enumeration
 					AppContext.getRuntimeGlobals().disableAllCommitListeners();
-					RefexDynamicUsageDescriptionBuilder.createNewRefexDynamicUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, 
-																									 new RefexDynamicColumnInfo[] {},
-																									 InformationModels.CEM_ENUMERATIONS.getUuids()[0], false, null,
-																									 ViewCoordinates.getMetadataViewCoordinate());
-				} catch (IOException | ContradictionException | InvalidCAB
-						| PropertyVetoException e) {
+					DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(value, value, "Value Set Sememe for " + value, new DynamicSememeColumnInfo[] {},
+							InformationModelsConstants.CEM_ENUMERATIONS.getNid(), null, null);
+				} catch (RuntimeException e) {
 					LOGGER.error("Unable to create CEM enumeration for " + value);
 				}
 				finally
@@ -145,6 +137,6 @@ public class CEMConstraint {
 			UUID uuid = OTFUtility.getUuidForFsn(value, value);
 //			UUID uuid = UuidT5Generator.get(UUID PATH_ID_FROM_FS_DESC, value);
 	
-			return ExtendedAppContext.getDataStore().hasUuid(uuid);
+			return Get.identifierService().hasUuid(uuid);
 	}
 }

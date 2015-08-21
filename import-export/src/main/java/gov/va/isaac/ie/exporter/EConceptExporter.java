@@ -1,11 +1,5 @@
 package gov.va.isaac.ie.exporter;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.models.util.CommonBase;
-import gov.va.isaac.util.ProgressEvent;
-import gov.va.isaac.util.ProgressListener;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.ochre.collections.NidSet;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -20,9 +14,15 @@ import org.ihtsdo.otf.tcc.api.concept.ProcessUnfetchedConceptDataBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.ihtsdo.otf.tcc.dto.TtkConceptChronicle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.models.util.CommonBase;
+import gov.va.isaac.util.ProgressEvent;
+import gov.va.isaac.util.ProgressListener;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
+import gov.vha.isaac.ochre.collections.NidSet;
 
 /**
  * Handler for export to file in eConcept format.
@@ -43,8 +43,7 @@ public class EConceptExporter extends CommonBase implements
       .getLogger(EConceptExporter.class);
 
   /** The data store. */
-  private static TerminologyStoreDI dataStore = ExtendedAppContext
-      .getDataStore();
+  private static TerminologyStoreDI dataStore = Ts.get();
 
   /** The dos. */
   private DataOutputStream dos;

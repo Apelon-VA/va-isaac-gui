@@ -47,6 +47,7 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.type_nid.RefexNidVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,7 +173,7 @@ public class PreferredAcceptabilityPrompt {
 
 		try {
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
-			ExtendedAppContext.getDataStore().commit();
+			Ts.get().commit();
 		} catch (Exception e) {
 			LOG.error("Coudn't commit selected preferred/acceptability changes", e);
 		} finally {
@@ -191,7 +192,7 @@ public class PreferredAcceptabilityPrompt {
 			OTFUtility.getBuilder().constructIfNotCurrent(bp);
 			ConceptVersionBI refCon = OTFUtility.getConceptVersion(member.getEnclosingConceptNid());
 	
-			ExtendedAppContext.getDataStore().addUncommitted(refCon);
+			Ts.get().addUncommitted(refCon);
 		} catch (Exception e) {
 			AppContext.getCommonDialogs().showErrorDialog("Failed to retire member: " + member, e);
 		}
@@ -206,7 +207,7 @@ public class PreferredAcceptabilityPrompt {
 		
 		 OTFUtility.getBuilder().construct(newMember);
 
-		 ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(description.getConceptNid()));
+		 Ts.get().addUncommitted(Ts.get().getConceptForNid(description.getConceptNid()));
 	}
 	private static HBox setupLangugaeSelection() {
 		HBox languageSelectionHBox = new HBox(10);

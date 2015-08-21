@@ -81,6 +81,10 @@ public final class UserProfileDefaults {
 	public static UUID getDefaultEditCoordinatePath() {
 		return IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid();
 	}
+	
+	public static UUID getDefaultEditCoordinateModule() {
+		return IsaacMetadataAuxiliaryBinding.SOLOR_OVERLAY.getPrimodialUuid();
+	}
 
 	public static UUID getDefaultWorkflowPromotionPath() {
 		return AppContext.getAppConfiguration().getDefaultWorkflowPromotionPathUuidAsUUID();

@@ -33,6 +33,7 @@ import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
 import java.io.IOException;
@@ -121,7 +122,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 							if(c == null) {
 								setText(null);
 							}else {
-								String desc = OchreUtility.getDescription(c);
+								String desc = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(c));
 								setText(desc);
 							}
 						}
@@ -137,7 +138,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 					if (emptyRow) {
 						setText("");
 					} else {
-						String desc = OchreUtility.getDescription(c);
+						String desc = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(c));
 						setText(desc);
 					}
 				}

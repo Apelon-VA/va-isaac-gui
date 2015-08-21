@@ -1,21 +1,5 @@
 package gov.va.isaac.gui.enhancedsearchview.model;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.Search;
-import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
-import gov.va.isaac.gui.enhancedsearchview.SearchConceptHelper;
-import gov.va.isaac.gui.enhancedsearchview.SearchConceptHelper.SearchConceptException;
-import gov.va.isaac.gui.enhancedsearchview.SearchDisplayConcept;
-import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.ComponentSearchType;
-import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.SearchType;
-import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
-import gov.va.isaac.gui.enhancedsearchview.resulthandler.SaveSearchPrompt;
-import gov.va.isaac.util.ComponentDescriptionHelper;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.api.Get;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,6 +10,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
+import gov.va.isaac.gui.enhancedsearchview.SearchConceptHelper;
+import gov.va.isaac.gui.enhancedsearchview.SearchConceptHelper.SearchConceptException;
+import gov.va.isaac.gui.enhancedsearchview.SearchDisplayConcept;
+import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.ComponentSearchType;
+import gov.va.isaac.gui.enhancedsearchview.SearchTypeEnums.SearchType;
+import gov.va.isaac.gui.enhancedsearchview.model.type.text.TextSearchTypeModel;
+import gov.va.isaac.gui.enhancedsearchview.resulthandler.SaveSearchPrompt;
+import gov.va.isaac.util.ComponentDescriptionHelper;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.model.constants.QueryBuilderConstants;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -37,17 +41,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.ListCell;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 
+//TODO saved search has not been repaired for ochre
 public class EnhancedSavedSearch {
 	public TextField getSearchSaveNameTextField() {
 		return searchSaveNameTextField;
@@ -170,39 +169,39 @@ public class EnhancedSavedSearch {
 			LOG.debug("saveSearch() called.  Search specified: " + savedSearchesComboBox.valueProperty().getValue());
 			// Save Search popup
 			try {
-				String searchName = getSaveSearchRequest();
-
-				if (searchName != null) {
-					AppContext.getCommonDialogs().showInformationDialog("Search Successfully Saved", "Saved new search:" + searchName);
-				}
+//				String searchName = getSaveSearchRequest();
+				throw new RuntimeException("Save disabled");
+//
+//				if (searchName != null) {
+//					AppContext.getCommonDialogs().showInformationDialog("Search Successfully Saved", "Saved new search:" + searchName);
+//				}
 			} catch (Exception e) {
-				LOG.error("Failed saving search.  Caught {} \"{}\"", e.getClass().getName(), e.getLocalizedMessage());
-				e.printStackTrace();
+				LOG.error("Failed saving search.", e);
 				AppContext.getCommonDialogs().showErrorDialog("Save Search Failure", "Save Search Failure", "Failed to save new search\n\n" + e.getLocalizedMessage()); 
 			}
 		}
 	}
 
-	private String getSaveSearchRequest() throws SearchConceptException {
-		SaveSearchPrompt prompt = new SaveSearchPrompt();
-		prompt.showUserPrompt(AppContext.getMainApplicationWindow().getPrimaryStage(), "Define Refset");
-
-
-		if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd @ HH:mm:ss");
-			LocalDateTime dateTime = LocalDateTime.now();
-			String formattedDateTime = dateTime.format(formatter);
-			String user = ExtendedAppContext.getCurrentlyLoggedInUserProfile().getUserLogonName();
-			final String nameToSave = prompt.getNameTextField().getText() + " by " + user + " on " + formattedDateTime;
-
-			SearchConceptHelper.buildAndSaveSearchConcept(searchModel, nameToSave, prompt.getDescTextField().getText());
-			refreshSavedSearchComboBox();
-
-			return prompt.getNameTextField().getText();
-		}
-		
-		return null;
-	}
+//	private String getSaveSearchRequest() throws SearchConceptException {
+//		SaveSearchPrompt prompt = new SaveSearchPrompt();
+//		prompt.showUserPrompt(AppContext.getMainApplicationWindow().getPrimaryStage(), "Define Refset");
+//
+//
+//		if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
+//			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd @ HH:mm:ss");
+//			LocalDateTime dateTime = LocalDateTime.now();
+//			String formattedDateTime = dateTime.format(formatter);
+//			String user = ExtendedAppContext.getCurrentlyLoggedInUserProfile().getUserLogonName();
+//			final String nameToSave = prompt.getNameTextField().getText() + " by " + user + " on " + formattedDateTime;
+//
+//			SearchConceptHelper.buildAndSaveSearchConcept(searchModel, nameToSave, prompt.getDescTextField().getText());
+//			refreshSavedSearchComboBox();
+//
+//			return prompt.getNameTextField().getText();
+//		}
+//		
+//		return null;
+//	}
 
 	private void initializeSavedSearchComboBox() {
 		savedSearchesComboBox = new ComboBox<SearchDisplayConcept>();
@@ -250,31 +249,32 @@ public class EnhancedSavedSearch {
 		ObservableList<SearchDisplayConcept> searches = FXCollections.observableList(new ArrayList<>());
 		
 		try {
-			Set<Integer> savedSearches = OchreUtility.getAllChildrenOfConcept(Search.STORED_QUERIES.getConceptSequence(), true, false);
-
-			SearchType currentSearchType = SearchModel.getSearchTypeSelector().getSearchTypeComboBox().getSelectionModel().getSelectedItem();
-			for (Integer conceptSeq : savedSearches) {
-				int nid = Get.identifierService().getConceptNid(conceptSeq);
-				if (getCachedSearchTypeFromSearchConcept(nid) == currentSearchType) {
-					boolean addSearchToList = true;
-					if (currentSearchType == SearchType.TEXT) {
-						ComponentSearchType currentlyViewedComponentSearchType = TextSearchTypeModel.getCurrentComponentSearchType();
-						ComponentSearchType loadedComponentSearchType = getCachedComponentSearchTypeFromSearchConcept(nid);
-						
-						if (currentlyViewedComponentSearchType != null && loadedComponentSearchType != null) {
-							if (currentlyViewedComponentSearchType != loadedComponentSearchType) {
-								addSearchToList = false;
-							}
-						}
-					}
-					
-					if (addSearchToList) {
-						String fsn = OchreUtility.getFSNForConceptNid(nid, null).get();
-						String preferredTerm = OchreUtility.getPreferredTermForConceptNid(nid, null).get();
-						searches.add(new SearchDisplayConcept(fsn, preferredTerm, nid));
-					}
-				}
-			}
+			throw new RuntimeException("Saved searches disabled");
+//			Set<Integer> savedSearches = OchreUtility.getAllChildrenOfConcept(QueryBuilderConstants.STORED_QUERIES.getConceptSequence(), true, false);
+//
+//			SearchType currentSearchType = SearchModel.getSearchTypeSelector().getSearchTypeComboBox().getSelectionModel().getSelectedItem();
+//			for (Integer conceptSeq : savedSearches) {
+//				int nid = Get.identifierService().getConceptNid(conceptSeq);
+//				if (getCachedSearchTypeFromSearchConcept(nid) == currentSearchType) {
+//					boolean addSearchToList = true;
+//					if (currentSearchType == SearchType.TEXT) {
+//						ComponentSearchType currentlyViewedComponentSearchType = TextSearchTypeModel.getCurrentComponentSearchType();
+//						ComponentSearchType loadedComponentSearchType = getCachedComponentSearchTypeFromSearchConcept(nid);
+//						
+//						if (currentlyViewedComponentSearchType != null && loadedComponentSearchType != null) {
+//							if (currentlyViewedComponentSearchType != loadedComponentSearchType) {
+//								addSearchToList = false;
+//							}
+//						}
+//					}
+//					
+//					if (addSearchToList) {
+//						String fsn = OchreUtility.getFSNForConceptNid(nid, null).get();
+//						String preferredTerm = OchreUtility.getPreferredTermForConceptNid(nid, null).get();
+//						searches.add(new SearchDisplayConcept(fsn, preferredTerm, nid));
+//					}
+//				}
+//			}
 		} catch (Exception e) {
 			LOG.error("Error reading saved searches", e);
 		}
@@ -366,118 +366,118 @@ public class EnhancedSavedSearch {
 	}
 	
 	private static Map<Integer, SearchType> conceptSearchTypeCache = new HashMap<>();
-	private static SearchType getCachedSearchTypeFromSearchConcept(Integer conNid) throws IOException {
-		synchronized (conceptSearchTypeCache) {
-			if (conceptSearchTypeCache.get(conNid) == null) {
-				conceptSearchTypeCache.put(conNid, getSearchTypeFromSearchConcept(conNid));
-			}
-		}
-
-		return conceptSearchTypeCache.get(conNid);
-	}
-	private static Set<Integer> badSearchConceptsToIgnore = new HashSet<>();
-	private static SearchType getSearchTypeFromSearchConcept(Integer conNid) throws IOException {
-		synchronized (badSearchConceptsToIgnore) {
-			if (badSearchConceptsToIgnore.contains(conNid)) {
-				LOG.debug("Ignoring invalid/unsupported search filter concept nid=" + conNid + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"");
-			
-				return null;
-			}
-		}
-
-		Collection<? extends RefexDynamicVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
-		for (RefexDynamicVersionBI<?> refex : refexes) {
-			RefexDynamicUsageDescription dud = null;
-			try {
-				dud = refex.getRefexDynamicUsageDescription();
-			} catch (IOException | ContradictionException e) {
-				LOG.error("Failed performing getRefexDynamicUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
-
-				return null;
-			}
-
-			if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getConceptDescriptionText())) {
-				return SearchType.TEXT;
-			} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getConceptDescriptionText())) {
-				return SearchType.TEXT;
-			} else if (dud.getRefexName().equals(Search.SEARCH_SEMEME_CONTENT_FILTER.getConceptDescriptionText())) {
-				return SearchType.SEMEME;
-			} else {
-				LOG.debug("getSearchTypeFromSearchConcept() ignoring refex \"" + dud.getRefexName() + "\" on search filter concept nid=" + conNid 
-						+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\""); 
-			}
-		}
-		
-		//String warn = "Automatically RETIRING invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\"";
-		String warn = "Invalid/unsupported search filter concept nid=" + conNid+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"";
-
-		LOG.warn(warn);
-		
-		synchronized (badSearchConceptsToIgnore) {
-			// Retire Concept for bad search refex
-//			RuntimeGlobalsI globals = AppContext.getService(RuntimeGlobalsI.class);
-			try {
-				// disable WorkflowInitiationPropertyChangeListener
-//				globals.disableAllCommitListeners();
-
-				// TODO: Make retirement of bad search concepts work: https://csfe.aceworkspace.net/sf/go/artf231405
-//				ConceptAttributeAB cab = new ConceptAttributeAB(concept.getConceptNid(), /* concept.getConceptAttributesActive().isDefined() */ true, RefexDirective.EXCLUDE);
-//				ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
-//				
-//				//ConceptCB cab = concept.makeBlueprint(OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.INCLUDE);
-//				//ConceptChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
-//				
-//				cab.setStatus(Status.INACTIVE);
-//				
-//				OTFUtility.addUncommitted(cabi.getEnclosingConcept());
-//				
-//				// Commit
-//				OTFUtility.commit(concept);
-			} catch (Exception e) {
-				String error = "FAILED to automatically retire invalid/unsupported search filter concept nid=" + conNid 
-						+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
-				LOG.error(error, e);
-				e.printStackTrace();
-			} finally {
-//				globals.enableAllCommitListeners();
-
-				badSearchConceptsToIgnore.add(conNid);
-			}
-		}
-		return null;
-	}
-	
-	private static Map<Integer, ComponentSearchType> componentSearchTypeCache = new HashMap<>();
-	private static ComponentSearchType getCachedComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
-		synchronized (componentSearchTypeCache) {
-			if (componentSearchTypeCache.get(conNid) == null) {
-				componentSearchTypeCache.put(conNid, getComponentSearchTypeFromSearchConcept(conNid));
-			}
-		}
-		
-		return componentSearchTypeCache.get(conNid);
-	}
-	private static ComponentSearchType getComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
-		Collection<? extends RefexDynamicVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
-		for (RefexDynamicVersionBI<?> refex : refexes) {
-			RefexDynamicUsageDescription dud = null;
-			try {
-				dud = refex.getRefexDynamicUsageDescription();
-			} catch (IOException | ContradictionException e) {
-				LOG.error("Failed performing getRefexDynamicUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
-
-				return null;
-			}
-
-			if (dud.getRefexName().equals(Search.SEARCH_LUCENE_FILTER.getConceptDescriptionText())) {
-				return ComponentSearchType.LUCENE;
-			} else if (dud.getRefexName().equals(Search.SEARCH_REGEXP_FILTER.getConceptDescriptionText())) {
-				return ComponentSearchType.REGEXP;
-			}
-		}
-		
-		String error = "Invalid/unsupported search filter concept nid=" + conNid + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"";
-		LOG.error(error);
-		return null;
-	}
+//	private static SearchType getCachedSearchTypeFromSearchConcept(Integer conNid) throws IOException {
+//		synchronized (conceptSearchTypeCache) {
+//			if (conceptSearchTypeCache.get(conNid) == null) {
+//				conceptSearchTypeCache.put(conNid, getSearchTypeFromSearchConcept(conNid));
+//			}
+//		}
+//
+//		return conceptSearchTypeCache.get(conNid);
+//	}
+//	private static Set<Integer> badSearchConceptsToIgnore = new HashSet<>();
+//	private static SearchType getSearchTypeFromSearchConcept(Integer conNid) throws IOException {
+//		synchronized (badSearchConceptsToIgnore) {
+//			if (badSearchConceptsToIgnore.contains(conNid)) {
+//				LOG.debug("Ignoring invalid/unsupported search filter concept nid=" + conNid + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"");
+//			
+//				return null;
+//			}
+//		}
+//
+//		Collection<? extends DynamicSememeVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
+//		for (DynamicSememeVersionBI<?> refex : refexes) {
+//			DynamicSememeUsageDescription dud = null;
+//			try {
+//				dud = refex.getDynamicSememeUsageDescription();
+//			} catch (IOException | ContradictionException e) {
+//				LOG.error("Failed performing getDynamicSememeUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+//
+//				return null;
+//			}
+//
+//			if (dud.getRefexName().equals(QueryBuilderConstants.SEARCH_LUCENE_FILTER.getConceptDescriptionText())) {
+//				return SearchType.TEXT;
+//			} else if (dud.getRefexName().equals(QueryBuilderConstants.SEARCH_REGEXP_FILTER.getConceptDescriptionText())) {
+//				return SearchType.TEXT;
+//			} else if (dud.getRefexName().equals(QueryBuilderConstants.SEARCH_SEMEME_CONTENT_FILTER.getConceptDescriptionText())) {
+//				return SearchType.SEMEME;
+//			} else {
+//				LOG.debug("getSearchTypeFromSearchConcept() ignoring refex \"" + dud.getRefexName() + "\" on search filter concept nid=" + conNid 
+//						+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\""); 
+//			}
+//		}
+//		
+//		//String warn = "Automatically RETIRING invalid/unsupported search filter concept nid=" + concept.getConceptNid() + ", status=" + concept.getStatus() + ", uuid=" + concept.getPrimordialUuid() + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(concept) + "\"";
+//		String warn = "Invalid/unsupported search filter concept nid=" + conNid+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"";
+//
+//		LOG.warn(warn);
+//		
+//		synchronized (badSearchConceptsToIgnore) {
+//			// Retire Concept for bad search refex
+////			RuntimeGlobalsI globals = AppContext.getService(RuntimeGlobalsI.class);
+//			try {
+//				// disable WorkflowInitiationPropertyChangeListener
+////				globals.disableAllCommitListeners();
+//
+//				// TODO: Make retirement of bad search concepts work: https://csfe.aceworkspace.net/sf/go/artf231405
+////				ConceptAttributeAB cab = new ConceptAttributeAB(concept.getConceptNid(), /* concept.getConceptAttributesActive().isDefined() */ true, RefexDirective.EXCLUDE);
+////				ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
+////				
+////				//ConceptCB cab = concept.makeBlueprint(OTFUtility.getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.INCLUDE);
+////				//ConceptChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
+////				
+////				cab.setStatus(Status.INACTIVE);
+////				
+////				OTFUtility.addUncommitted(cabi.getEnclosingConcept());
+////				
+////				// Commit
+////				OTFUtility.commit(concept);
+//			} catch (Exception e) {
+//				String error = "FAILED to automatically retire invalid/unsupported search filter concept nid=" + conNid 
+//						+ ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
+//				LOG.error(error, e);
+//				e.printStackTrace();
+//			} finally {
+////				globals.enableAllCommitListeners();
+//
+//				badSearchConceptsToIgnore.add(conNid);
+//			}
+//		}
+//		return null;
+//	}
+//	
+//	private static Map<Integer, ComponentSearchType> componentSearchTypeCache = new HashMap<>();
+//	private static ComponentSearchType getCachedComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
+//		synchronized (componentSearchTypeCache) {
+//			if (componentSearchTypeCache.get(conNid) == null) {
+//				componentSearchTypeCache.put(conNid, getComponentSearchTypeFromSearchConcept(conNid));
+//			}
+//		}
+//		
+//		return componentSearchTypeCache.get(conNid);
+//	}
+//	private static ComponentSearchType getComponentSearchTypeFromSearchConcept(Integer conNid) throws IOException {
+//		Collection<? extends DynamicSememeVersionBI<?>> refexes = OTFUtility.getConceptVersion(conNid).getRefexesDynamicActive(OTFUtility.getViewCoordinate());
+//		for (DynamicSememeVersionBI<?> refex : refexes) {
+//			DynamicSememeUsageDescription dud = null;
+//			try {
+//				dud = refex.getDynamicSememeUsageDescription();
+//			} catch (IOException | ContradictionException e) {
+//				LOG.error("Failed performing getDynamicSememeUsageDescription(): caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
+//
+//				return null;
+//			}
+//
+//			if (dud.getRefexName().equals(QueryBuilderConstants.SEARCH_LUCENE_FILTER.getConceptDescriptionText())) {
+//				return ComponentSearchType.LUCENE;
+//			} else if (dud.getRefexName().equals(QueryBuilderConstants.SEARCH_REGEXP_FILTER.getConceptDescriptionText())) {
+//				return ComponentSearchType.REGEXP;
+//			}
+//		}
+//		
+//		String error = "Invalid/unsupported search filter concept nid=" + conNid + ", desc=\"" + ComponentDescriptionHelper.getComponentDescription(conNid) + "\"";
+//		LOG.error(error);
+//		return null;
+//	}
 }

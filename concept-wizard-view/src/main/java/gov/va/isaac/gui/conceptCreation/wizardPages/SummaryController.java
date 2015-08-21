@@ -46,6 +46,7 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -210,9 +211,9 @@ public class SummaryController implements PanelControllers {
 			for (int i = 0; i < processController.getWizard().getRelationshipsCreated(); i++) {
 				processController.getWizard().createNewRelationship(newCon, i);
 			}
-			ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(newCon.getNid()));
+			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
 			//boolean committed = 
-			ExtendedAppContext.getDataStore().commit(/* newCon.getNid() */);
+			Ts.get().commit(/* newCon.getNid() */);
 			//TODO OCHRE - figure out how commits get voided now that they don't return boolean
 //			if (!committed)
 //			{
