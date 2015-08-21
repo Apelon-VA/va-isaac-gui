@@ -134,15 +134,17 @@ public class CommonDialogs implements CommonDialogsI
 				ed.setVariables(title, message, details);
 				if (!calledFromFXThread)
 				{
-					ed.show();  //don't block
-					Platform.runLater(() -> 
-					{
-						ed.toFront();  //bug hack fix
-					});
+//					ed.show();  //don't block
+//					Platform.runLater(() -> 
+//					{
+//						ed.toFront();  //bug hack fix
+//					});
+					LOG.error("Dan needs to fix something! " + message + " : " + details);
 				}
 				else
 				{
 					ed.showAndWait();  //block
+					LOG.error("Dan needs to fix something! " + message + " : " + details);
 				}
 			}
 		};

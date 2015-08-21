@@ -1,9 +1,8 @@
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.ExtendedAppContext;
-import java.io.IOException;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 
 /**
  * {@link MappingItemComment}
@@ -18,16 +17,16 @@ public class MappingItemComment extends StampedItem
 	private UUID primoridalUUID;
 
 
-	protected MappingItemComment(RefexDynamicVersionBI<?> comment) throws IOException
+	protected MappingItemComment(DynamicSememe<?> comment) throws RuntimeException
 	{
 		read(comment);
 	}
 
-	private void read(RefexDynamicVersionBI<?> commentRefex) throws IOException
+	private void read(DynamicSememe<?> commentRefex) throws RuntimeException
 	{
 		commentText = commentRefex.getData()[0].getDataObject().toString();
 		commentContext = ((commentRefex.getData().length > 1 && commentRefex.getData()[1] != null) ? commentRefex.getData()[1].getDataObject().toString() : null);
-		mappingItemUUID = ExtendedAppContext.getDataStore().getUuidPrimordialForNid(commentRefex.getReferencedComponentNid());
+		mappingItemUUID = Get.identifierService().getUuidPrimordialForNid(commentRefex.getReferencedComponentNid()).get();
 		primoridalUUID = commentRefex.getPrimordialUuid();
 		readStampDetails(commentRefex);
 	}

@@ -100,7 +100,7 @@ public class SystemInit
 			LoggerFactory.getLogger(SystemInit.class).debug("Loaded CRADLE_CONCEPT_MODEL_PROPERTY value \"{}\".", cradleConceptModelPropertyValue);
 			model = ConceptModel.valueOf(cradleConceptModelPropertyValue);
 		} else {
-			model = ConceptModel.OTF_CONCEPT_MODEL;
+			model = ConceptModel.OCHRE_CONCEPT_MODEL;
 		}
 		LoggerFactory.getLogger(SystemInit.class).debug("Setting ConceptModel to \"{}\".", model.name());
 

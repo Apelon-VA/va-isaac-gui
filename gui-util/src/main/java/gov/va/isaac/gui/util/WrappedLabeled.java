@@ -18,7 +18,6 @@
  */
 package gov.va.isaac.gui.util;
 
-import javafx.scene.Node;
 import javafx.scene.control.Labeled;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;

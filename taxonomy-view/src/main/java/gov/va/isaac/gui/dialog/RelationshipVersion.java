@@ -66,7 +66,7 @@ public class RelationshipVersion
 //	{
 //		try
 //		{
-//			Collection<? extends RefexDynamicChronicleBI<?>> foo = rv_.getRefexDynamicAnnotations();
+//			Collection<? extends DynamicSememeChronicleBI<?>> foo = rv_.getDynamicSememeAnnotations();
 //			if (foo != null && foo.size() > 0)
 //			{
 //				return true;

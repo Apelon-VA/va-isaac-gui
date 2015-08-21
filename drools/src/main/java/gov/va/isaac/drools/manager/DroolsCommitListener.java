@@ -50,6 +50,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.ihtsdo.otf.tcc.api.store.TerminologyDI.CONCEPT_EVENT;
 import org.ihtsdo.otf.tcc.model.cc.concept.ConceptChronicle;
 import org.jvnet.hk2.annotations.Service;
@@ -164,13 +165,13 @@ public class DroolsCommitListener implements CommitListenerI, VetoableChangeList
 				
 				for (int nid : allConceptNids)
 				{
-					ConceptChronicleBI ccbi = ExtendedAppContext.getDataStore().getConceptForNid(nid);
+					ConceptChronicleBI ccbi = Ts.get().getConceptForNid(nid);
 					if (ccbi instanceof ConceptChronicle)
 					{
 						ConceptChronicle cc = (ConceptChronicle)ccbi;
 						for (int componentNid : cc.getUncommittedNids().getListArray())
 						{
-							ComponentChronicleBI<?> comChronicleBI = ExtendedAppContext.getDataStore().getComponent(componentNid);
+							ComponentChronicleBI<?> comChronicleBI = Ts.get().getComponent(componentNid);
 							
 							if (comChronicleBI instanceof DescriptionChronicleBI)
 							{

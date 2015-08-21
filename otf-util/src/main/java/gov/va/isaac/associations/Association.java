@@ -18,22 +18,26 @@
  */
 package gov.va.isaac.associations;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.ISAAC;
-import gov.va.isaac.util.OTFUtility;
 import java.io.IOException;
 import java.util.Optional;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
+import gov.va.isaac.ExtendedAppContext;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeSequence;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 /**
  * {@link Association}
@@ -42,36 +46,39 @@ import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
  */
 public class Association
 {
-	private RefexDynamicVersionBI<?> refex_;
+	private DynamicSememe<?> sememe_;
 
 	//TODO Write the code that checks the index states on startup
 
-	public Association(RefexDynamicVersionBI<?> data)
+	public Association(DynamicSememe<?> data)
 	{
-		refex_ = data;
+		sememe_ = data;
 	}
 
-	public ComponentChronicleBI<?> getSourceComponent() throws IOException
+	public ConceptChronology<? extends ConceptVersion<?>> getSourceComponent() throws IOException
 	{
-		return ExtendedAppContext.getDataStore().getComponent(refex_.getReferencedComponentNid());
+		return Get.conceptService().getConcept(sememe_.getReferencedComponentNid());
 	}
 
-	public ComponentChronicleBI<?> getTargetComponent() throws IOException, ContradictionException
+	public ConceptChronology<? extends ConceptVersion<?>> getTargetComponent()
 	{
-		int targetColIndex = AssociationUtilities.findTargetColumnIndex(refex_.getAssemblageNid());
+		int targetColIndex = AssociationUtilities.findTargetColumnIndex(sememe_.getAssemblageSequence());
 		if (targetColIndex >= 0)
 		{
-		
-			RefexDynamicDataBI[] data = refex_.getData();
+			DynamicSememeDataBI[] data = sememe_.getData();
 			if (data != null && data.length > targetColIndex)
 			{
-				if (data[targetColIndex].getRefexDataType() == RefexDynamicDataType.UUID)
+				if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
-					return ExtendedAppContext.getDataStore().getComponent(((RefexDynamicUUID) data[targetColIndex]).getDataUUID());
+					return Get.conceptService().getConcept(((DynamicSememeUUID) data[targetColIndex]).getDataUUID());
 				}
-				else if (data[targetColIndex].getRefexDataType() == RefexDynamicDataType.NID)
+				else if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
-					return ExtendedAppContext.getDataStore().getComponent(((RefexDynamicNid) data[targetColIndex]).getDataNid());
+					return Get.conceptService().getConcept(((DynamicSememeNid) data[targetColIndex]).getDataNid());
+				}
+				else if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.SEQUENCE)
+				{
+					return Get.conceptService().getConcept(((DynamicSememeSequence) data[targetColIndex]).getDataSequence());
 				}
 			}
 		}
@@ -83,58 +90,71 @@ public class Association
 		return null;
 	}
 
-	public ConceptChronicleBI getAssociationTypeConcept() throws IOException
+	public ConceptChronology<? extends ConceptVersion<?>> getAssociationTypeConcept() 
 	{
-		return ExtendedAppContext.getDataStore().getConcept(refex_.getAssemblageNid());
+		return Get.conceptService().getConcept(sememe_.getAssemblageSequence());
 	}
 
-	public String getAssociationName() throws IOException, ContradictionException
+	public String getAssociationName()
 	{
-		Optional<? extends ConceptVersionBI> cc = getAssociationTypeConcept().getVersion(OTFUtility.getViewCoordinate());
-		if (!cc.isPresent())
-		{
-			return "NOT ON PATH!";
-		}
-		
 		String best = null;
-		for (DescriptionVersionBI<?> desc : cc.get().getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
+		for (DescriptionSememe<?> desc : Frills.getDescriptionsOfType(Get.identifierService().getConceptNid(sememe_.getAssemblageSequence()),
+				IsaacMetadataAuxiliaryBinding.SYNONYM, ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get()))
 		{
 			if (best == null)
 			{
 				best = desc.getText();
 			}
-			if (OTFUtility.isPreferred(desc.getAnnotations()))
+			if (Frills.isDescriptionPreferred(desc.getNid(), ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get()))
 			{
 				return desc.getText();
 			}
 		}
+		
+		if (best == null)
+		{
+			return "-No name on path!-";
+		}
 		return best;
 	}
 
-	public String getAssociationInverseName() throws ContradictionException, IOException
+	public Optional<String> getAssociationInverseName()
 	{
-		Optional<? extends ConceptVersionBI> cc = getAssociationTypeConcept().getVersion(OTFUtility.getViewCoordinate());
-		if (!cc.isPresent())
+		String best = null;
+		for (DescriptionSememe<?> desc : Frills.getDescriptionsOfType(Get.identifierService().getConceptNid(sememe_.getAssemblageSequence()),
+				IsaacMetadataAuxiliaryBinding.SYNONYM, ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get()))
 		{
-			return "NOT ON PATH!";
-		}
-		
-		for (DescriptionVersionBI<?> desc : cc.get().getDescriptionsActive(Snomed.SYNONYM_DESCRIPTION_TYPE.getNid()))
-		{
-			for (RefexDynamicVersionBI<?> descNestedType : desc.getRefexesDynamicActive(OTFUtility.getViewCoordinate()))
+			if (best == null)
 			{
-				if (descNestedType.getAssemblageNid() == ISAAC.ASSOCIATION_INVERSE_NAME.getNid())
+				best = desc.getText();
+			}
+			if (Get.sememeService().getSememesForComponentFromAssemblage(desc.getNid(), 
+					IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getSequence()).anyMatch(nestedSememe ->
+			{
+				if (nestedSememe.getSememeType() == SememeType.DYNAMIC)
 				{
-					return desc.getText();
+					@SuppressWarnings({ "rawtypes", "unchecked" })
+					Optional<LatestVersion<ComponentNidSememe>> latest = ((SememeChronology)nestedSememe).getLatestVersion(ComponentNidSememe.class, 
+							ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+					
+					if (latest.isPresent())
+					{
+						return true;
+					}
 				}
+				return false;
+			}))
+			{
+				return Optional.of(desc.getText());
 			}
 		}
-		return null;
+		
+		return Optional.empty();
 	}
 
-	public RefexDynamicVersionBI<?> getData()
+	public DynamicSememe<?> getData()
 	{
-		return refex_;
+		return sememe_;
 	}
 
 	/**
@@ -151,7 +171,7 @@ public class Association
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			return refex_.toString();
+			return sememe_.toString();
 		}
 	}
 }

@@ -18,15 +18,14 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
-import gov.va.isaac.gui.util.Images;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import com.sun.javafx.collections.ObservableListWrapper;
+import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
+import gov.va.isaac.gui.util.Images;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -39,8 +38,6 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-
-import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * HeaderNode

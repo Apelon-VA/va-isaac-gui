@@ -24,25 +24,27 @@
  */
 package gov.va.isaac.gui.index;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import javax.inject.Singleton;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.util.Utility;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.ObjectChronicleTaskService;
+import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import javafx.concurrent.Task;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
-import javax.inject.Singleton;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -79,7 +81,7 @@ public class IndexView implements IsaacViewWithMenusI {
 					try
 					{
 						LOG.info("Full reindex launched");
-						Task<?> task = ExtendedAppContext.getDataStore().index((Class[])null);
+						Task<?> task = LookupService.get().getService(ObjectChronicleTaskService.class).startIndexTask((Class<IndexServiceBI>[])null);
 						AppContext.getMainApplicationWindow().addBackgroundTask(task);
 						task.get();
 						LOG.info("Full reindex complete");

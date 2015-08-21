@@ -30,12 +30,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
-
 import javax.inject.Named;
-
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeChronicleBI;
@@ -53,10 +50,10 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
@@ -68,9 +65,10 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Relationship_Type;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Semantic_Tag;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.concurrent.Task;
 
 
@@ -750,7 +748,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 //				isTest = true;
 //			}
 //		}
-		Optional<? extends Long> sct = OchreUtility.getSctId(nid);
+		Optional<? extends Long> sct = Frills.getSctId(nid, null);
 		if(sct.isPresent() && !isTest) {
 			return sct.get();
 		} else if(isTest) {
@@ -767,11 +765,11 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		return nid;
 	}
 	
-	private static boolean isChildOfSCT(int conceptNid) throws IOException, ContradictionException 
+	private static boolean isChildOfSCT(int conceptSequenceOrNid) 
 	{
-		return ExtendedAppContext.getDataStore().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), OTFUtility.getViewCoordinate());
+		return Get.taxonomyService().isChildOf(conceptSequenceOrNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getConceptSequence(), 
+				ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
 	}
-	
 	
 	/**
 	 * Creates a new row in the "New Concept" tab of the workbook passed in. It returns the ISA relationships
@@ -806,7 +804,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 						parentNids.add(count, relDestNid);
 
 						parentsTerms.add(count, this.getTerminology(
-								ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), relDestNid).get()));
+								Ts.get().getComponentVersion(OTFUtility.getViewCoordinate(), relDestNid).get()));
 						
 						if(count > 2 && relVersion != null) {
 							extraRels.add(relVersion);

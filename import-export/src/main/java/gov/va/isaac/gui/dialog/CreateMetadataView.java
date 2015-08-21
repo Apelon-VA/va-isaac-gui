@@ -18,8 +18,13 @@
  */
 package gov.va.isaac.gui.dialog;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
@@ -27,17 +32,12 @@ import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.models.api.BdbInformationModelService;
 import gov.va.isaac.models.api.InformationModelService;
 import gov.va.isaac.util.Utility;
-import java.util.ArrayList;
-import java.util.List;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
 import javafx.concurrent.Task;
 import javafx.scene.Cursor;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * CEMMetadataCreatorView
@@ -102,7 +102,7 @@ public class CreateMetadataView implements PopupViewI, IsaacViewWithMenusI {
     Task<Boolean> task = new Task<Boolean>() {
       @Override
       protected Boolean call() throws Exception {
-        TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
+        TerminologyStoreDI dataStore = Ts.get();
         InformationModelService service = new BdbInformationModelService(dataStore);
         return true;
       }

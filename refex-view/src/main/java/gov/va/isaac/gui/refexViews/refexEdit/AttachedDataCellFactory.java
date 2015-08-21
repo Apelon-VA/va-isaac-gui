@@ -21,10 +21,10 @@ package gov.va.isaac.gui.refexViews.refexEdit;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 
 /**
  * {@link AttachedDataCellFactory}
@@ -33,10 +33,10 @@ import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
  */
 public class AttachedDataCellFactory implements Callback <TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>, TreeTableCell<RefexDynamicGUI,RefexDynamicGUI>>
 {
-	private Hashtable<UUID, List<RefexDynamicColumnInfo>> colInfo_;
+	private Hashtable<UUID, List<DynamicSememeColumnInfo>> colInfo_;
 	private int listPosition_;
 	
-	public AttachedDataCellFactory(Hashtable<UUID, List<RefexDynamicColumnInfo>> colInfo, int listPosition)
+	public AttachedDataCellFactory(Hashtable<UUID, List<DynamicSememeColumnInfo>> colInfo, int listPosition)
 	{
 		colInfo_ = colInfo;
 		listPosition_ = listPosition;

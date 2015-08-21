@@ -44,10 +44,9 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import java.util.Optional;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -74,7 +73,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +96,8 @@ public class ConceptViewController {
 	@FXML private SplitPane splitPane;
 	@FXML private VBox splitRight;
 	@FXML private Label uuidLabel;
+	@FXML private Label idLabel;
+	@FXML private Label idLabelValue;
 	@FXML private VBox annotationsRegion;
 	@FXML private ToggleButton stampToggle;
 	@FXML private ToggleButton historyToggle;
@@ -229,6 +229,11 @@ public class ConceptViewController {
 			}
 		});
 		CopyableLabel.addCopyMenu(uuidLabel);
+		
+		final SimpleStringProperty conceptID = new SimpleStringProperty("");
+		idLabel.setVisible(false);
+		idLabelValue.textProperty().bind(conceptID);
+		CopyableLabel.addCopyMenu(idLabelValue);
 
 		
 		dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
@@ -386,9 +391,17 @@ public class ConceptViewController {
 			conceptNid = concept.getNid();
 			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(concept.getConceptSequence()));
 
+			
+			Optional<Long> sctID = Frills.getSctId(concept.getNid(), conceptSnapshot.getStampCoordinate());
+
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);
 				fsnLabel.setGraphic(null);
+				if (sctID.isPresent())
+				{
+					idLabel.setVisible(true);
+					conceptID.set(sctID.get() + "");
+				}
 
 				copyFull.setOnAction(e -> CustomClipboard.set(conceptSnapshot.toUserString()));
 				

@@ -24,7 +24,6 @@
  */
 package gov.va.isaac.util;
 
-import gov.va.isaac.ExtendedAppContext;
 import java.io.IOException;
 import java.util.UUID;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
@@ -34,8 +33,8 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 
 /**
  * ComponentDescriptionHelper
@@ -61,7 +60,7 @@ public class ComponentDescriptionHelper {
 		case CONCEPT: case CONCEPT_ATTRIBUTES: {
 			ConceptChronicleBI concept = null;
 			if (component instanceof ConceptAttributeVersionBI) {
-				concept = ExtendedAppContext.getDataStore().getConceptForNid(component.getNid());
+				concept = Ts.get().getConceptForNid(component.getNid());
 			} else if (component instanceof ConceptChronicleBI) {
 				concept = (ConceptChronicleBI)component;
 			}
@@ -98,23 +97,23 @@ public class ComponentDescriptionHelper {
 			description = ComponentType.SEMEME.toString() + " member " + refexVersion.getPrimordialUuid() + " \nwith referenced component " + referencedComponent + " \nin sememe " + assemblageUuid;
 			break;
 
-		case SEMEME_DYNAMIC:
-			//The refex Dynamic member with Referenced Component UUID: <REF_COMP_UUID> in Refex: <REFEX_UUID> having with UUID: <Refex MEMEBER UUID>
-			RefexDynamicVersionBI<?> refexDynamicVersion = (RefexDynamicVersionBI<?>)component;
-			UUID dynamicReferencedComponent = OTFUtility.getComponentVersion(refexDynamicVersion.getReferencedComponentNid()).getPrimordialUuid();
-			int assemblageDynamicNid = refexDynamicVersion.getAssemblageNid();
-			ConceptVersionBI assemblageDynamicComponentVersion = OTFUtility.getConceptVersion(assemblageDynamicNid);
-			UUID assemblageDynamicUuid = assemblageDynamicComponentVersion.getPrimordialUuid();
-			try {
-				if (assemblageDynamicComponentVersion.isAnnotationStyleRefex()) {
-					description = ComponentType.SEMEME_DYNAMIC.toString() + " annotated member " + refexDynamicVersion.getPrimordialUuid() + " \nwith referenced component " + dynamicReferencedComponent + " \nin sememe " + assemblageDynamicUuid;
-				} else {
-					description = ComponentType.SEMEME_DYNAMIC.toString() + " regular member " + refexDynamicVersion.getPrimordialUuid() + " \nwith referenced component " + dynamicReferencedComponent + " \nin sememe " + assemblageDynamicUuid;
-				}
-			} catch (Exception e) {
-				description = "Error accessing Dynamic Sememe Annotation type\n" + ComponentType.SEMEME_DYNAMIC.toString() + " member " + refexDynamicVersion.getPrimordialUuid() + " \nwith referenced component " + dynamicReferencedComponent + " \nin sememe " + assemblageDynamicUuid;
-			}
-			break;
+//		case SEMEME_DYNAMIC:
+//			//The refex Dynamic member with Referenced Component UUID: <REF_COMP_UUID> in Refex: <REFEX_UUID> having with UUID: <Refex MEMEBER UUID>
+//			DynamicSememeVersionBI<?> refexDynamicVersion = (DynamicSememeVersionBI<?>)component;
+//			UUID dynamicReferencedComponent = OTFUtility.getComponentVersion(refexDynamicVersion.getReferencedComponentNid()).getPrimordialUuid();
+//			int assemblageDynamicNid = refexDynamicVersion.getAssemblageNid();
+//			ConceptVersionBI assemblageDynamicComponentVersion = OTFUtility.getConceptVersion(assemblageDynamicNid);
+//			UUID assemblageDynamicUuid = assemblageDynamicComponentVersion.getPrimordialUuid();
+//			try {
+//				if (assemblageDynamicComponentVersion.isAnnotationStyleRefex()) {
+//					description = ComponentType.SEMEME_DYNAMIC.toString() + " annotated member " + refexDynamicVersion.getPrimordialUuid() + " \nwith referenced component " + dynamicReferencedComponent + " \nin sememe " + assemblageDynamicUuid;
+//				} else {
+//					description = ComponentType.SEMEME_DYNAMIC.toString() + " regular member " + refexDynamicVersion.getPrimordialUuid() + " \nwith referenced component " + dynamicReferencedComponent + " \nin sememe " + assemblageDynamicUuid;
+//				}
+//			} catch (Exception e) {
+//				description = "Error accessing Dynamic Sememe Annotation type\n" + ComponentType.SEMEME_DYNAMIC.toString() + " member " + refexDynamicVersion.getPrimordialUuid() + " \nwith referenced component " + dynamicReferencedComponent + " \nin sememe " + assemblageDynamicUuid;
+//			}
+//			break;
 
 		case RELATIONSHIP: {
 			RelationshipVersionBI<?> relationshipVersion = (RelationshipVersionBI<?>)component;

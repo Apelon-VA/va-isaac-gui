@@ -41,6 +41,7 @@ import org.ihtsdo.otf.tcc.api.nid.IntSet;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import au.csiro.snorocket.core.IFactory_123;
@@ -82,8 +83,7 @@ public class SnomedSnorocketClassifier implements Classifier {
   private List<ProgressListener> listeners = new ArrayList<>();
 
   /** The data store. */
-  private static TerminologyStoreDI dataStore = ExtendedAppContext
-      .getDataStore();
+  private static TerminologyStoreDI dataStore = Ts.get();
 
   /** The role group. */
   @SuppressWarnings("unused")

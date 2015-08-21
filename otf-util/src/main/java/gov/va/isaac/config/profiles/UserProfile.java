@@ -111,6 +111,9 @@ public class UserProfile
 	
 	@XmlElement 
 	private UUID editCoordinatePath = null;
+	
+	@XmlElement 
+	private UUID editCoordinateModule = null;
 
 	@XmlElement 
 	private UUID workflowPromotionPath = null;
@@ -158,6 +161,7 @@ public class UserProfile
 		clone.viewCoordinatePath = this.viewCoordinatePath;
 		clone.viewCoordinateTime = this.viewCoordinateTime;
 		clone.editCoordinatePath = this.editCoordinatePath;
+		clone.editCoordinateModule = this.editCoordinateModule;
 		clone.workflowPromotionPath = this.workflowPromotionPath;
 		clone.workflowServerUrl = this.workflowServerUrl;
 		clone.changeSetUrl = this.changeSetUrl;
@@ -513,6 +517,25 @@ public class UserProfile
 	public void setEditCoordinatePath(UUID editCoordinatePath)
 	{
 		this.editCoordinatePath = editCoordinatePath;
+	}
+	
+	/**
+	 * @return editCoordinatePath
+	 */
+	public UUID getEditCoordinateModule()
+	{
+		if (editCoordinateModule == null)
+		{
+			return UserProfileDefaults.getDefaultEditCoordinateModule();
+		}
+		return editCoordinateModule;
+	}
+	/**
+	 * @param editCoordinatePath
+	 */
+	public void setEditCoordinateModule(UUID editCoordinateModule)
+	{
+		this.editCoordinateModule = editCoordinateModule;
 	}
 
 	/**

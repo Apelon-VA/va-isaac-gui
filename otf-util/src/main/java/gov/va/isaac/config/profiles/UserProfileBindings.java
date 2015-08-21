@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.config.profiles;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateComponents;
@@ -25,12 +26,14 @@ import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 
@@ -79,6 +82,7 @@ public class UserProfileBindings
 	ReadOnlyObjectWrapper<RelationshipDirection> displayRelDirection = new ReadOnlyObjectWrapper<>();
 	ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
 	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
+	ReadOnlyObjectWrapper<UUID> editCoordinateModule = new ReadOnlyObjectWrapper<>();
 
 	// View Coordinate Components
 	ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
@@ -95,6 +99,7 @@ public class UserProfileBindings
 
 	private final ReadOnlyObjectWrapper<StampCoordinate<StampCoordinateImpl>> stampCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<EditCoordinate> editCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
 	public Property<?>[] getAll() {
@@ -103,6 +108,7 @@ public class UserProfileBindings
 				displayRelDirection,
 				workflowUsername,
 				editCoordinatePath,
+				editCoordinateModule,
 				
 				statedInferredPolicy,
 				viewCoordinatePath,
@@ -114,7 +120,8 @@ public class UserProfileBindings
 				
 				stampCoordinate,
 				languageCoordinate,
-				taxonomyCoordinate
+				taxonomyCoordinate,
+				editCoordinate
 		};
 	}
 
@@ -147,6 +154,14 @@ public class UserProfileBindings
 	public ReadOnlyProperty<UUID> getEditCoordinatePath()
 	{
 		return editCoordinatePath.getReadOnlyProperty();
+	}
+	
+	/**
+	 * @return the editCoordinateModule
+	 */
+	public ReadOnlyProperty<UUID> getEditCoordinateModule()
+	{
+		return editCoordinateModule.getReadOnlyProperty();
 	}
 
 	/**
@@ -209,6 +224,14 @@ public class UserProfileBindings
 	{
 		return languageCoordinate.getReadOnlyProperty();
 	}
+	
+	/**
+	 * @return the languageCoordinate
+	 */
+	public ReadOnlyObjectProperty<EditCoordinate> getEditCoordinate()
+	{
+		return editCoordinate.getReadOnlyProperty();
+	}
 
 	/**
 	 * @return the taxonomyCoordinate
@@ -224,6 +247,7 @@ public class UserProfileBindings
 		AtomicBoolean updateStampCoordinate = new AtomicBoolean(false);
 		AtomicBoolean updateLanguageCoordinate = new AtomicBoolean(false);
 		AtomicBoolean updateTaxonomyCoordinate = new AtomicBoolean(false);
+		AtomicBoolean updateEditCoordinate = new AtomicBoolean(false);
 		
 		if (displayFSN.get() != up.getDisplayFSN())
 		{
@@ -237,7 +261,14 @@ public class UserProfileBindings
 		if (!Objects.equals(editCoordinatePath.get(), up.getEditCoordinatePath()))
 		{
 			editCoordinatePath.set(up.getEditCoordinatePath());
+			updateEditCoordinate.set(true);
 		}
+		if (!Objects.equals(editCoordinateModule.get(), up.getEditCoordinateModule()))
+		{
+			editCoordinateModule.set(up.getEditCoordinateModule());
+			updateEditCoordinate.set(true);
+		}
+		
 		if (!Objects.equals(workflowUsername.get(), up.getWorkflowUsername()))
 		{
 			workflowUsername.set(up.getWorkflowUsername());
@@ -297,6 +328,15 @@ public class UserProfileBindings
 		Utility.execute(() ->
 		{
 			try {
+				
+				if (updateEditCoordinate.get())
+				{
+					editCoordinate.set(new EditCoordinateImpl(
+							Get.identifierService().getConceptSequenceForUuids(ExtendedAppContext.getCurrentlyLoggedInUserProfile().getConceptUUID()),
+							Get.identifierService().getConceptSequenceForUuids(getEditCoordinateModule().getValue()), 
+							Get.identifierService().getConceptSequenceForUuids(getEditCoordinatePath().getValue())));
+				}
+				
 				if (updateStampCoordinate.get() || stampCoordinate.get() == null) {
 					updateTaxonomyCoordinate.set(true);
 					
