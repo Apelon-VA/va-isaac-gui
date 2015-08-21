@@ -24,12 +24,24 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -56,6 +68,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	
+	
 	final ObjectProperty<ObservableTaxonomyCoordinate> taxonomyCoordinate = new SimpleObjectProperty<>(new ObservableTaxonomyCoordinateImpl(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get()));
 	final UpdateableBooleanBinding taxonomyCoordinateBinding = new UpdateableBooleanBinding()
     {
@@ -78,11 +91,50 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
             	logger_.debug("Skip initial spurious refresh calls");
                 return false;
             }
-            logger_.debug("Kicking off tree refresh() due to change of user preference property");
+            logger_.debug("Kicking off tree refresh() due to change of property");
+
+			updateRootPanePremiseTypeMenuItem();
             LogicalExpressionTreeGraphView.this.refresh();
             return false;
         }
     };
+
+	private final MenuItem rootPanePremiseTypeMenuItem = new MenuItem();
+
+	private void resetRootPanePremiseTypeMenuItemText(PremiseType pt) {
+		rootPanePremiseTypeMenuItem.setText("Switch to " + pt.name() + " view");
+	}
+	private void resetRootPaneTooltipText(PremiseType pt) {
+		rootScrollPane.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view"));
+	}
+	private void updateRootPanePremiseTypeMenuItem() {
+		switch (taxonomyCoordinate.get().premiseTypeProperty().get()) {
+		case STATED:
+			resetRootPanePremiseTypeMenuItemText(PremiseType.INFERRED);
+			resetRootPaneTooltipText(PremiseType.INFERRED);
+			rootPanePremiseTypeMenuItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event)
+				{
+					taxonomyCoordinate.get().premiseTypeProperty().set(PremiseType.INFERRED);
+				}
+			});
+			break;
+		case INFERRED:
+			resetRootPanePremiseTypeMenuItemText(PremiseType.STATED);
+			resetRootPaneTooltipText(PremiseType.STATED);
+			rootPanePremiseTypeMenuItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event)
+				{
+					taxonomyCoordinate.get().premiseTypeProperty().set(PremiseType.STATED);
+				}
+			});
+			break;
+			default:
+				throw new RuntimeException("Invalid PremiseType value " + taxonomyCoordinate.get().premiseTypeProperty().get());
+		}
+	}
 
     @Override
     public Integer getConceptId() {
@@ -104,14 +156,37 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			vbox.setAlignment(Pos.TOP_CENTER);
 			
 			title = new Label();
+			title.setAlignment(Pos.CENTER);
 			
 			logicalExpressionTreeGraph = new LogicalExpressionTreeGraph(
 					true, 
 					true, 
 					200, 100);
 			textGraph = new Label();
+			textGraph.setAlignment(Pos.CENTER);
 			
 			rootScrollPane = new ScrollPane();
+			
+			rootScrollPane.setContextMenu(new ContextMenu());
+
+			rootScrollPane.getContextMenu().getItems().add(rootPanePremiseTypeMenuItem);
+			
+			taxonomyCoordinate.get().premiseTypeProperty().addListener(new ChangeListener<PremiseType>() {
+				@Override
+				public void changed(
+						ObservableValue<? extends PremiseType> observable,
+						PremiseType oldValue, PremiseType newValue) {
+					if (newValue == PremiseType.INFERRED) {
+						resetRootPanePremiseTypeMenuItemText(PremiseType.STATED);
+						resetRootPaneTooltipText(PremiseType.STATED);
+					} else {
+						resetRootPanePremiseTypeMenuItemText(PremiseType.INFERRED);
+						resetRootPaneTooltipText(PremiseType.INFERRED);
+					}
+				}
+				
+			});
+			updateRootPanePremiseTypeMenuItem();
 			
 			vbox.getChildren().addAll(title, logicalExpressionTreeGraph, textGraph);
 
