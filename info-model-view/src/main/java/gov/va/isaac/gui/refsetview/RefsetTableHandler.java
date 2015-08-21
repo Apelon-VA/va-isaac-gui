@@ -51,6 +51,7 @@ import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.javafx.tk.Toolkit;
@@ -209,7 +210,7 @@ public class RefsetTableHandler {
 							}
 							refCompCon.addAnnotation(newMemChron);
 							
-							ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(instance.getRefCompConNid()));
+							Ts.get().addUncommitted(Ts.get().getConceptForNid(instance.getRefCompConNid()));
 							rvc_.reloadData();
 							return;
 						} else {
@@ -316,7 +317,7 @@ public class RefsetTableHandler {
 									}
 									refCompCon.addAnnotation(newMemChron);
 									
-									ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(instance.getRefCompConNid()));
+									Ts.get().addUncommitted(Ts.get().getConceptForNid(instance.getRefCompConNid()));
 									rvc_.reloadData();
 									return;
 								} else {
@@ -494,9 +495,9 @@ public class RefsetTableHandler {
 		
 		//TODO retest this... the old impl was quite wrong, not sure how it ever worked, when it called addUncommitted on the wrong things.
 		OTFUtility.getBuilder().constructIfNotCurrent(member);
-		ExtendedAppContext.getDataStore().addUncommitted(OTFUtility.getConceptVersion(refex.getAssemblageNid()));
+		Ts.get().addUncommitted(OTFUtility.getConceptVersion(refex.getAssemblageNid()));
 		if (isAnnotation) {
-			ExtendedAppContext.getDataStore().addUncommitted(OTFUtility.getConceptVersion(refex.getReferencedComponentNid()));
+			Ts.get().addUncommitted(OTFUtility.getConceptVersion(refex.getReferencedComponentNid()));
 		}
 	}
 }

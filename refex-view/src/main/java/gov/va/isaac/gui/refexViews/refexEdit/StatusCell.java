@@ -18,15 +18,16 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.gui.util.Images;
+import gov.vha.isaac.ochre.api.State;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link StatusCell}
@@ -57,7 +58,7 @@ public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 
 			try
 			{
-				if (item.getRefex().isActive())
+				if (item.getRefex().getState() == State.ACTIVE)
 				{
 					sizeAndPosition(Images.BLACK_DOT, sp, Pos.TOP_LEFT);
 					tooltipText += "Active";

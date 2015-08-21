@@ -18,8 +18,15 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.CustomClipboard;
@@ -27,13 +34,11 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.Utility;
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.UUID;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUIDBI;
 import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -41,12 +46,6 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.text.Text;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicNidBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link AttachedDataCell}
@@ -55,11 +54,11 @@ import org.slf4j.LoggerFactory;
  */
 public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 {
-	private Hashtable<UUID, List<RefexDynamicColumnInfo>> columnInfo_;
+	private Hashtable<UUID, List<DynamicSememeColumnInfo>> columnInfo_;
 	private int listItem_;
 	private static Logger logger_ = LoggerFactory.getLogger(AttachedDataCell.class);
 
-	public AttachedDataCell(Hashtable<UUID, List<RefexDynamicColumnInfo>> columnInfo, int listItem)
+	public AttachedDataCell(Hashtable<UUID, List<DynamicSememeColumnInfo>> columnInfo, int listItem)
 	{
 		super();
 		columnInfo_ = columnInfo;
@@ -85,20 +84,20 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 			{
 				for (UUID uuid : columnInfo_.keySet())
 				{
-					if (UUIDToNid(uuid) == item.getRefex().getAssemblageNid())
+					if (Get.identifierService().getConceptSequenceForUuids(uuid) == item.getRefex().getAssemblageSequence())
 					{
-						List<RefexDynamicColumnInfo> colInfo =  columnInfo_.get(uuid);
+						List<DynamicSememeColumnInfo> colInfo =  columnInfo_.get(uuid);
 						Integer refexColumnOrder = (colInfo.size() > listItem_ ? 
 								(item.getRefex().getData().length <= colInfo.get(listItem_).getColumnOrder() ? null 
 									: colInfo.get(listItem_).getColumnOrder()): null);
-						RefexDynamicDataBI data = (refexColumnOrder == null ? null : item.getRefex().getData()[refexColumnOrder]); 
+						DynamicSememeDataBI data = (refexColumnOrder == null ? null : item.getRefex().getData()[refexColumnOrder]); 
 						if (data != null)
 						{
-							if (data instanceof RefexDynamicNidBI)
+							if (data instanceof DynamicSememeNidBI)
 							{
 								conceptLookup(item, refexColumnOrder);
 							}
-							else if (data instanceof RefexDynamicUUIDBI)
+							else if (data instanceof DynamicSememeUUIDBI)
 							{
 								conceptLookup(item, refexColumnOrder);
 							}
@@ -211,10 +210,5 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 				setText(null);
 			});
 		});
-	}
-
-	private int UUIDToNid(UUID uuid) throws IOException
-	{
-		return ExtendedAppContext.getDataStore().getNidForUuids(uuid);
 	}
 }

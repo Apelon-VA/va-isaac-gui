@@ -37,6 +37,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 
@@ -97,7 +98,7 @@ public class RelationshipTableView implements EmbeddableViewI
 	private TableView<RelationshipVersion> relationshipsTable = new TableView<>();
 	private UUID conceptUUID_;
 	private BooleanProperty showActiveOnly_, showHistory_, showStampColumns_;
-	private final ReadOnlyObjectProperty<TaxonomyCoordinate> taxonomyCoordinate;
+	private final ReadOnlyObjectProperty<TaxonomyCoordinate<?>> taxonomyCoordinate;
 	private final ReadOnlyObjectProperty<ConceptSnapshotService> conceptSnapshotService;
 	
 	private ReadOnlyStringWrapper summaryText = new ReadOnlyStringWrapper("0 relationships");
@@ -108,7 +109,7 @@ public class RelationshipTableView implements EmbeddableViewI
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 	private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
-	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, ReadOnlyObjectProperty<TaxonomyCoordinate> tcProvider, ReadOnlyObjectProperty<ConceptSnapshotService> cssProvider)
+	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> tcProvider, ReadOnlyObjectProperty<ConceptSnapshotService> cssProvider)
 	{
 		taxonomyCoordinate = tcProvider;
 		conceptSnapshotService = cssProvider;
@@ -609,7 +610,7 @@ public class RelationshipTableView implements EmbeddableViewI
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.TARGET)
 				{
 					//OchreUtility.getParentsAsConceptNids(localConcept, getTaxonomyTreeProvider().getTaxonomyTree(), treeItem.getTaxonomyCoordinateProvider().getTaxonomyCoordinate());
-					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getLatestRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate());
+					List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(localConcept.getNid(), taxonomyCoordinate.get().getStampCoordinate(), showHistory_.get(), (PremiseType)null, (Integer)null);
 					allRelationships.addAll(outgoingRelChronicles);
 				}
 
@@ -617,8 +618,8 @@ public class RelationshipTableView implements EmbeddableViewI
 				// source is the only option where we would exclude target
 				if (AppContext.getService(UserProfileBindings.class).getDisplayRelDirection().get() != RelationshipDirection.SOURCE)
 				{
-					List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> incomingRelChronicles = localConcept.getRelationshipListWithConceptAsDestination();
-					for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : incomingRelChronicles)
+					List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> incomingRelChronicles = localConcept.getRelationshipListWithConceptAsDestination();
+					for (SememeChronology<? extends RelationshipVersionAdaptor<?>> chronicle : incomingRelChronicles)
 					{
 						for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 						{

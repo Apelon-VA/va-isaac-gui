@@ -4,7 +4,7 @@ import gov.va.isaac.drools.testmodel.DrDescription
 import gov.va.isaac.drools.helper.templates.DescriptionTemplate
 import gov.va.isaac.drools.helper.ResultsItemError
 import gov.va.isaac.drools.helper.TerminologyHelperDrools
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUIDBI
 import java.util.UUID
 
 global gov.va.isaac.drools.helper.ResultsCollector resultsCollector
@@ -16,7 +16,7 @@ rule "If LOINC concept ref, must be a member of 'CURATED_RANGE_AND_UNITS'"
 	@RULE_CODE(108)
 	dialect "mvel"
 	when
-		$c : RefexDynamicUUIDBI( )
+		$c : DynamicSememeUUIDBI( )
 		eval(terminologyHelper.isParentOf( "3958d043-9e8c-508e-bf6d-fd9c83a856da", $c.dataUUID.toString))
 		eval(!terminologyHelper.isMemberOf( $c.dataUUID.toString, "b856b9e8-8d7f-5a08-b59e-7786ee05920e"))
 	then

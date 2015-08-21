@@ -18,21 +18,6 @@
  */
 package gov.va.isaac.util;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
-import gov.vha.isaac.cradle.Builder;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.ConceptModel;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.IdentifierService;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.util.UuidFactory;
-
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -44,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -52,7 +36,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.TerminologyBuilderBI;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
@@ -72,14 +55,13 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
@@ -90,6 +72,18 @@ import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.config.profiles.UserProfile;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.config.users.InvalidUserException;
+import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.ConceptModel;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.util.UuidFactory;
 
 /**
  * 
@@ -114,7 +108,7 @@ public class OTFUtility {
 	private static Integer langTypeNid = null;
 	private static Integer snomedAssemblageNid = null;
 	
-	private static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
+	private static TerminologyStoreDI dataStore = Ts.get();
 
 	private static final Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
 
@@ -256,10 +250,7 @@ public class OTFUtility {
 		}
 	}
 	public static String getDescription(int nid) {
-            if (Get.conceptModel() == ConceptModel.OTF_CONCEPT_MODEL) {
-		return getDescription(nid, getViewCoordinate());
-            }
-            return Get.conceptDescriptionText(nid);
+		return Get.conceptDescriptionText(nid);
 	}
 
 	/**
@@ -877,8 +868,8 @@ public class OTFUtility {
 
 		ConceptChronicleBI newCon = getBuilder().construct(newConCB);
 
-		ExtendedAppContext.getDataStore().addUncommitted(newCon);
-		ExtendedAppContext.getDataStore().commit();
+		Ts.get().addUncommitted(newCon);
+		Ts.get().commit();
 
 		return newCon;
 	}
@@ -1076,14 +1067,11 @@ public class OTFUtility {
 				} else if (type == ComponentType.SEMEME) {
 					RefexCAB cab = (RefexCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 					cbi = builder.construct(cab);
-				} else if (type == ComponentType.SEMEME_DYNAMIC) {
-					RefexDynamicCAB cab = (RefexDynamicCAB) comp.makeBlueprint(getViewCoordinate(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-					cbi = builder.construct(cab);
-				}
+				} 
 			}	
 		}
 		
-		ExtendedAppContext.getDataStore().commit(/* conceptWithComp.getVersion(getViewCoordinate()) */);
+		Ts.get().commit(/* conceptWithComp.getVersion(getViewCoordinate()) */);
 	}
 	
 	
@@ -1103,10 +1091,6 @@ public class OTFUtility {
 
 		for(RefexChronicleBI<?> refsetMember : conceptWithComp.getRefsetMembers()) {
 			refsetMember.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rm) -> retSet.add(rm));
-		}
-
-		for(RefexDynamicChronicleBI<?> dynRef : conceptWithComp.getRefexesDynamic()) {
-			dynRef.getVersion(conceptWithComp.getViewCoordinate()).ifPresent((rdv) -> retSet.add(rdv));
 		}
 
 		return retSet;
@@ -1147,21 +1131,6 @@ public class OTFUtility {
 		RefexVersionBI<?> newest = null;;
 		long newestTime = Long.MIN_VALUE;
 		for (RefexVersionBI<?> x : collection)
-		{
-			if (x.getTime() > newestTime)
-			{
-				newest = x;
-				newestTime = x.getTime();
-			}
-		}
-		return newest;
-	}
-	
-	public static RefexDynamicVersionBI<?> getLatestDynamicRefexVersion(@SuppressWarnings("rawtypes") Collection<? extends RefexDynamicVersionBI> collection)
-	{
-		RefexDynamicVersionBI<?> newest = null;;
-		long newestTime = Long.MIN_VALUE;
-		for (RefexDynamicVersionBI<?> x : collection)
 		{
 			if (x.getTime() > newestTime)
 			{

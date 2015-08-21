@@ -69,6 +69,7 @@ import javax.inject.Inject;
 
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -210,7 +211,7 @@ public class WorkflowInboxController
 				}
 			} else {
 				try {
-					containingConcept = ExtendedAppContext.getDataStore().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate()).get();
+					containingConcept = Ts.get().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate()).get();
 				} catch (Exception e) {
 					LOG.error("Failed getting version from ComponentChronicleBI task " + value.getValue().getId() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
 					e.printStackTrace();

@@ -18,16 +18,36 @@
  */
 package gov.va.isaac.config.users;
 
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.UUID;
+import javax.xml.XMLConstants;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.IsaacUserCreation;
 import gov.va.isaac.config.generated.User;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.vha.isaac.metadata.coordinates.EditCoordinates;
 import gov.vha.isaac.metadata.coordinates.LogicCoordinates;
-import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.ConceptModel;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
@@ -38,43 +58,8 @@ import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.UUID;
-import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
-import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
-import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.EditCoordinate;
-import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
-import org.ihtsdo.otf.tcc.api.refex.RefexType;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import gov.vha.isaac.ochre.util.UuidT5Generator;
-import java.util.ArrayList;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 
 /**
  * {@link GenerateUsers}
@@ -129,7 +114,7 @@ public class GenerateUsers {
         try {
             UserProfileManager upm = AppContext.getService(UserProfileManager.class);
 
-			//This bit of hashing is to ensure that they didn't repeat any userLogin names (which can't be duplicated
+            //This bit of hashing is to ensure that they didn't repeat any userLogin names (which can't be duplicated
             //for obvious reasons) and to make sure that the UniqueFullName is unique, which is used as the FSN, and as 
             //the basis for the computed UUID for the user concept (if they don't provide their own UUID)
             HashSet<String> uniqueFullNames = new HashSet<>();
@@ -152,7 +137,7 @@ public class GenerateUsers {
                     continue;
                 }
 
-				//This also validates other rules about the incoming user, to make sure it can be created - throws an exception, if the user 
+                //This also validates other rules about the incoming user, to make sure it can be created - throws an exception, if the user 
                 //is invalid for whatever reason.  This also populates the UUID field (if necessary)
                 if (alreadyExists(user)) {
                     logger.debug("User already exists in DB");
@@ -181,91 +166,45 @@ public class GenerateUsers {
         logger.info("Creating user " + toString(user) + " in DB");
         AppContext.getRuntimeGlobals().disableAllCommitListeners();
         try {
-            if (Get.conceptModel() == ConceptModel.OCHRE_CONCEPT_MODEL) {
-                createOchreUserConcept(user);
-            } else {
-                createOtfUserConcept(user);
-            }
-
-        } finally {
+                
+            ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
+            conceptBuilderService.setDefaultLanguageForDescriptions(IsaacMetadataAuxiliaryBinding.ENGLISH);
+            conceptBuilderService.setDefaultDialectAssemblageForDescriptions(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
+            conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
+    
+            DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class);
+            LogicalExpressionBuilderService expressionBuilderService
+                    = LookupService.getService(LogicalExpressionBuilderService.class);
+            LogicalExpressionBuilder defBuilder = expressionBuilderService.getLogicalExpressionBuilder();
+    
+            NecessarySet(And(ConceptAssertion(Get.conceptService().getConcept(IsaacMetadataAuxiliaryBinding.USER.getConceptSequence()), defBuilder)));
+    
+            LogicalExpression userDef = defBuilder.build();
+    
+            ConceptBuilder builder = conceptBuilderService.getDefaultConceptBuilder(user.getUniqueFullName(), "user", userDef);
+            builder.setPrimordialUuid(UUID.fromString(user.getUUID()));
+    
+            @SuppressWarnings("rawtypes")
+			DescriptionBuilder definitionBuilder = descriptionBuilderService.
+                    getDescriptionBuilder(user.getUniqueLogonName(), builder,
+                            IsaacMetadataAuxiliaryBinding.SYNONYM,
+                            IsaacMetadataAuxiliaryBinding.ENGLISH);
+    
+            definitionBuilder.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
+            builder.addDescription(definitionBuilder);
+    
+            ConceptChronology<?> newCon = builder.build(EditCoordinates.getDefaultUserSolorOverlay(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
+    
+            Get.commitService().addUncommitted(newCon);
+    
+            Get.commitService().commit("GenerateUsers adding: " + user.getUniqueFullName());
+        }
+        finally {
             AppContext.getRuntimeGlobals().enableAllCommitListeners();
         }
     }
 
-    private static void createOchreUserConcept(User user) {
-        ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
-        conceptBuilderService.setDefaultLanguageForDescriptions(IsaacMetadataAuxiliaryBinding.ENGLISH);
-        conceptBuilderService.setDefaultDialectAssemblageForDescriptions(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-        conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
-
-        DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class);
-        LogicalExpressionBuilderService expressionBuilderService
-                = LookupService.getService(LogicalExpressionBuilderService.class);
-        LogicalExpressionBuilder defBuilder = expressionBuilderService.getLogicalExpressionBuilder();
-
-        NecessarySet(And(ConceptAssertion(Get.conceptService().getConcept(IsaacMetadataAuxiliaryBinding.USER.getConceptSequence()), defBuilder)));
-
-        LogicalExpression userDef = defBuilder.build();
-
-        ConceptBuilder builder = conceptBuilderService.getDefaultConceptBuilder(user.getUniqueFullName(), "user", userDef);
-        builder.setPrimordialUuid(UUID.fromString(user.getUUID()));
-
-        DescriptionBuilder definitionBuilder = descriptionBuilderService.
-                getDescriptionBuilder(user.getUniqueLogonName(), builder,
-                        IsaacMetadataAuxiliaryBinding.SYNONYM,
-                        IsaacMetadataAuxiliaryBinding.ENGLISH);
-
-        definitionBuilder.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-        builder.addDescription(definitionBuilder);
-
-        List createdComponents = new ArrayList();
-
-        ConceptChronology newCon = builder.build(EditCoordinates.getDefaultUserSolorOverlay(), ChangeCheckerMode.ACTIVE, createdComponents);
-
-        Get.commitService().addUncommitted(newCon);
-
-        Get.commitService().commit("GenerateUsers adding: " + user.getUniqueFullName());
-
-    }
-
-    private static void createOtfUserConcept(User user) throws InvalidCAB, IOException, ContradictionException {
-        TerminologyStoreDI ts = ExtendedAppContext.getDataStore();
-        String fsn = user.getUniqueFullName();
-        String preferredName = user.getFullName();
-        String logonName = user.getUniqueLogonName();
-        UUID userUUID = UUID.fromString(user.getUUID());
-
-        LanguageCode lc = LanguageCode.EN_US;
-        UUID isA = IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid();
-        IdDirective idDir = IdDirective.PRESERVE;
-        UUID module = IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getPrimodialUuid();
-        UUID parents[] = new UUID[]{IsaacMetadataAuxiliaryBinding.USER.getPrimodialUuid()};
-
-        ConceptCB cab = new ConceptCB(fsn, preferredName, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), userUUID, parents);
-
-        DescriptionCAB dCab = new DescriptionCAB(cab.getComponentUuid(), IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid(), lc, logonName, true,
-                IdDirective.GENERATE_HASH);
-        dCab.getProperties().put(ComponentProperty.MODULE_ID, module);
-
-        //Mark it as acceptable
-        RefexCAB rCabAcceptable = new RefexCAB(RefexType.CID, dCab.getComponentUuid(), IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT.getPrimodialUuid(),
-                IdDirective.GENERATE_HASH, RefexDirective.EXCLUDE);
-        rCabAcceptable.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getPrimodialUuid());
-        rCabAcceptable.getProperties().put(ComponentProperty.MODULE_ID, module);
-        dCab.addAnnotationBlueprint(rCabAcceptable);
-
-        cab.addDescriptionCAB(dCab);
-
-        //TODO store roles on the concept
-        //Build this on the lowest level path, otherwise, other code that references this will fail (as it doesn't know about custom paths)
-        ConceptChronicleBI newCon = ts.getTerminologyBuilder(
-                new EditCoordinate(IsaacMetadataAuxiliaryBinding.USER.getLenient().getConceptNid(), IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getLenient().getNid(),
-                        IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getLenient().getConceptNid()), ViewCoordinates.getMetadataViewCoordinate()).construct(cab);
-        ts.addUncommitted(newCon);
-        ts.commit();  //TODO OCHRE change back to a concept commit
-    }
-
-    /**
+     /**
      * Check if the user already exists in the DB (return true) and if not,
      * validate the incoming parameters, throwing an exception if anything is
      * amiss with the user definition.
@@ -309,7 +248,8 @@ public class GenerateUsers {
             user.setPassword(user.getUniqueLogonName());
         }
 
-        return ExtendedAppContext.getDataStore().hasConcept(uuid);
+        
+        return Get.conceptService().getOptionalConcept(uuid).isPresent();
     }
 
     public static UUID calculateUserUUID(String uniqueLogonName) {

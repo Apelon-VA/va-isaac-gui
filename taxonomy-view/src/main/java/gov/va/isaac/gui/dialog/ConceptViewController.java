@@ -35,7 +35,6 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -45,11 +44,9 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.tree.Tree;
-
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import java.util.Optional;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -57,8 +54,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -78,7 +73,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +96,8 @@ public class ConceptViewController {
 	@FXML private SplitPane splitPane;
 	@FXML private VBox splitRight;
 	@FXML private Label uuidLabel;
+	@FXML private Label idLabel;
+	@FXML private Label idLabelValue;
 	@FXML private VBox annotationsRegion;
 	@FXML private ToggleButton stampToggle;
 	@FXML private ToggleButton historyToggle;
@@ -122,9 +118,9 @@ public class ConceptViewController {
 	private int conceptNid = 0;
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     
-    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
     	if (taxonomyCoordinate.get() == null) {
     		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
     	}
@@ -204,9 +200,7 @@ public class ConceptViewController {
 		conceptUuid = concept.getPrimordialUuid();
 
 		// Update text of labels.
-		ConceptChronology rawCC = (ConceptChronology)concept;
-		Optional<LatestVersion<ConceptVersion>> latestVersionOptional =
-				rawCC.getLatestVersion(ConceptVersion.class, getConceptSnapshotService().get().getStampCoordinate());
+		Optional<LatestVersion<? extends ConceptVersion<?>>> latestVersionOptional = OchreUtility.getLatestConceptVersion(concept, getConceptSnapshotService().get().getStampCoordinate());
 		conceptStatusLabel.setText(latestVersionOptional.get().value().getState().name());
 		
 		final SimpleStringProperty conceptDescriptionSSP = new SimpleStringProperty("Loading...");
@@ -235,6 +229,11 @@ public class ConceptViewController {
 			}
 		});
 		CopyableLabel.addCopyMenu(uuidLabel);
+		
+		final SimpleStringProperty conceptID = new SimpleStringProperty("");
+		idLabel.setVisible(false);
+		idLabelValue.textProperty().bind(conceptID);
+		CopyableLabel.addCopyMenu(idLabelValue);
 
 		
 		dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
@@ -387,17 +386,22 @@ public class ConceptViewController {
 		
 		Utility.execute(() -> {
 			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().get().getLanguageCoordinate(), getConceptSnapshotService().get().getStampCoordinate());
-			ConceptChronology localRawCC = Get.conceptService().getConcept(concept.getPrimordialUuid());
 			
-			Optional<LatestVersion<ConceptVersion>> latestConceptVersionOptional = localRawCC.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
-			ConceptVersion conceptVersion = latestConceptVersionOptional.get().value();
 			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().get().getConceptSnapshot(concept.getNid());
-			conceptNid = localRawCC.getNid();
-			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(localRawCC.getConceptSequence()));
+			conceptNid = concept.getNid();
+			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(concept.getConceptSequence()));
+
+			
+			Optional<Long> sctID = Frills.getSctId(concept.getNid(), conceptSnapshot.getStampCoordinate());
 
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);
 				fsnLabel.setGraphic(null);
+				if (sctID.isPresent())
+				{
+					idLabel.setVisible(true);
+					conceptID.set(sctID.get() + "");
+				}
 
 				copyFull.setOnAction(e -> CustomClipboard.set(conceptSnapshot.toUserString()));
 				

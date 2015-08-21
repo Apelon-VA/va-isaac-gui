@@ -54,7 +54,6 @@
 						</Label>
 						<Label fx:id="actualRefexName" wrapText="true" GridPane.columnIndex="1" />
 						<Label fx:id="actualParentConcept" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-						<Label fx:id="actualRefexType" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 						<Label fx:id="actualRefexDescription" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 						<Label text="Component Type Restriction" GridPane.rowIndex="4">
 							<font>

@@ -18,6 +18,8 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import java.io.IOException;
 import java.net.URL;
 import javafx.application.Platform;
@@ -30,7 +32,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 
 /**
  * {@link NewColumnDialog}
@@ -74,7 +75,7 @@ public class NewColumnDialog extends Stage
 		});
 	}
 	
-	public ConceptChronicleBI getNewColumnConcept() {
+	public ConceptChronology<? extends ConceptVersion<?>> getNewColumnConcept() {
 		return ncdc_.getNewColumnConcept();
 	}
 }

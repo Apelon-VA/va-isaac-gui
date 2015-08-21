@@ -18,8 +18,18 @@
  */
 package gov.va.isaac.gui.treeview;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.Images;
@@ -29,19 +39,11 @@ import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -58,10 +60,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
-
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link TreeCell} for rendering {@link ConceptChronology<ConceptVersion>} objects.
@@ -112,8 +110,13 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get()));
-
+                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get()));
+               
+//                List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(value.getNid(), treeItem.getTaxonomyCoordinate().get().getStampCoordinate(), false, treeItem.getTaxonomyCoordinate().getValue().getTaxonomyType());
+//                if (allParents.size() != outgoingRelChronicles.size()) {
+//                	LOG.warn("For {} getParentsAsConceptChronologies() returns {} and getRelationshipListOriginatingFromConcept() returns {}", Get.conceptDescriptionText(value.getNid()), allParents.size(), outgoingRelChronicles.size());
+//                }
+                
                 List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
                 for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
                     if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
@@ -170,8 +173,10 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             }
             else if (!empty && taxRef != null) {
                 final SctTreeItem treeItem = (SctTreeItem) getTreeItem();
-                ConceptSnapshot snapshot = treeItem.getConceptSnapshotService().get().getConceptSnapshot(taxRef.getNid());
-    
+           
+                final Optional<LatestVersion<? extends ConceptVersion<?>>> optional = OchreUtility.getLatestConceptVersion(taxRef, treeItem.getTaxonomyCoordinate().get().getStampCoordinate());
+                final boolean active = optional.isPresent() && optional.get().value() != null && optional.get().value().getState() == State.ACTIVE;
+                
                 if (treeItem.getMultiParentDepth() > 0) {
                     if (treeItem.isLeaf()) {
                         BorderPane graphicBorderPane = new BorderPane();
@@ -204,7 +209,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                         LOG.debug("No description found for concept {}", taxRef.toUserString());
                     }
     
-                    if (snapshot.getState() != State.ACTIVE) {
+                    if (! active) {
                         setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                     } else {
                         setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
@@ -226,7 +231,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                     LOG.debug("No description found for concept {}", taxRef.toUserString());
                 }
                 
-                if (snapshot.getState() != State.ACTIVE) {
+                if (! active) {
                     setFont(Font.font(getFont().getFamily(), FontPosture.ITALIC, getFont().getSize()));
                 } else {
                     setFont(Font.font(getFont().getFamily(), FontPosture.REGULAR, getFont().getSize()));
@@ -289,7 +294,7 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                 try
                 {
                     if (item != null ) {
-                        return Arrays.asList(new Integer[] {ExtendedAppContext.getDataStore().getNidForUuids(item.getPrimordialUuid())});
+                        return Arrays.asList(new Integer[] {Get.identifierService().getNidForUuids(item.getPrimordialUuid())});
                     } else if (SctTreeCell.this.isEmpty()) {
                         // NOOP This is probably an internally-used empty cell generated by the TreeView
                         return EMPTY_UNMODIFIABLE_INTEGER_COLLECTION;

@@ -44,6 +44,7 @@ import javafx.stage.Window;
 import javax.inject.Named;
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
@@ -170,7 +171,7 @@ public class EnhancedConceptView implements PopupConceptViewI {
 		//TODO fix threading issues on this too...
 		try
 		{
-			ConceptChronicleBI concept = ExtendedAppContext.getDataStore().getConcept(conceptNid);
+			ConceptChronicleBI concept = Ts.get().getConcept(conceptNid);
 			if (concept != null)
 			{
 				setConcept(concept.getPrimordialUuid());

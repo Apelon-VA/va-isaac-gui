@@ -18,9 +18,17 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeByteArray;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -32,14 +40,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicByteArray;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicNid;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicUUID;
-import org.slf4j.LoggerFactory;
-
 /**
  * {@link DynamicRefexDataColumnListCell}
  *
@@ -47,13 +47,13 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnInfo>
+public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumnInfo>
 {
 	/**
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicColumnInfo item, boolean empty)
+	protected void updateItem(DynamicSememeColumnInfo item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		if (item != null)
@@ -106,21 +106,21 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 			String temp = "";
 			if (item.getDefaultColumnValue() != null)
 			{
-				if (item.getColumnDataType() == RefexDynamicDataType.BYTEARRAY)
+				if (item.getColumnDataType() == DynamicSememeDataType.BYTEARRAY)
 				{
-					temp = "Byte array of size " + ((RefexDynamicByteArray) item.getDefaultColumnValue()).getDataByteArray().length;
+					temp = "Byte array of size " + ((DynamicSememeByteArray) item.getDefaultColumnValue()).getDataByteArray().length;
 				}
-				else if (item.getColumnDataType() == RefexDynamicDataType.NID)
+				else if (item.getColumnDataType() == DynamicSememeDataType.NID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicNid)item.getDefaultColumnValue()).getDataNid());
+					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)item.getDefaultColumnValue()).getDataNid());
 					if (temp == null)
 					{
 						temp = "NID: " + item.getDefaultColumnValue().getDataObject().toString();
 					}
 				}
-				else if (item.getColumnDataType() == RefexDynamicDataType.UUID)
+				else if (item.getColumnDataType() == DynamicSememeDataType.UUID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicUUID)item.getDefaultColumnValue()).getDataUUID());
+					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)item.getDefaultColumnValue()).getDataUUID());
 					if (temp == null)
 					{
 						temp = "UUID: " + item.getDefaultColumnValue().getDataObject().toString();
@@ -138,42 +138,42 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 
 			gp.add(wrapAndStyle(makeBoldLabel("Validator"), row), 0, row);
 			gp.add(wrapAndStyle(new Label(item.getValidator() == null ? "" : 
-				(item.getValidator() == RefexDynamicValidatorType.EXTERNAL ? "Drools" : item.getValidator().getDisplayName())),
+				(valUnwrap(item) == DynamicSememeValidatorType.EXTERNAL ? "Drools" : valUnwrap(item).getDisplayName())),
 				row), 1, row++);
 
 			if (item.getValidator() != null)
 			{
 				gp.add(wrapAndStyle(makeBoldLabel("Validator Data"), row), 0, row);
 				String validatorData = "";
-				if (item.getValidatorData() == null)
+				if (valDataUnwrap(item) == null)
 				{
 					validatorData = "[null]";
 					LoggerFactory.getLogger(this.getClass()).warn("Null validator data on " + item.getColumnName() + " - " + item.getColumnOrder());
 					//I saw this case once, but had a odd DB state at the time.  Leave warning, as it shouldn't happen in normal use.
 				}
-				else if (item.getValidatorData().getRefexDataType() == RefexDynamicDataType.BYTEARRAY)
+				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.BYTEARRAY)
 				{
-					validatorData = "Byte array of size " + ((RefexDynamicByteArray) item.getValidatorData()).getDataByteArray().length;
+					validatorData = "Byte array of size " + ((DynamicSememeByteArray) valDataUnwrap(item)).getDataByteArray().length;
 				}
-				else if (item.getValidatorData().getRefexDataType() == RefexDynamicDataType.NID)
+				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicNid)item.getValidatorData()).getDataNid());
+					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)valDataUnwrap(item)).getDataNid());
 					if (validatorData == null)
 					{
-						validatorData = "NID: " + item.getValidatorData().getDataObject().toString();
+						validatorData = "NID: " + valDataUnwrap(item).getDataObject().toString();
 					}
 				}
-				else if (item.getValidatorData().getRefexDataType() == RefexDynamicDataType.UUID)
+				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((RefexDynamicUUID)item.getValidatorData()).getDataUUID());
+					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)valDataUnwrap(item)).getDataUUID());
 					if (validatorData == null)
 					{
-						validatorData = "UUID: " + item.getValidatorData().getDataObject().toString();
+						validatorData = "UUID: " + valDataUnwrap(item).getDataObject().toString();
 					}
 				}
-				else if (item.getValidator() == RefexDynamicValidatorType.EXTERNAL)
+				else if (valUnwrap(item) == DynamicSememeValidatorType.EXTERNAL)
 				{
-					RefexDroolsValidatorImplInfo rdvi = RefexDroolsValidator.readFromData(item.getValidatorData());
+					RefexDroolsValidatorImplInfo rdvi = RefexDroolsValidator.readFromData(valDataUnwrap(item));
 					if (rdvi == null)
 					{
 						//this should be impossible....
@@ -187,7 +187,7 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 						
 				else
 				{
-					validatorData = item.getValidatorData().getDataObject().toString();
+					validatorData = valDataUnwrap(item).getDataObject().toString();
 				}
 				Label valData = new Label(validatorData);
 				valData.setWrapText(true);
@@ -225,5 +225,25 @@ public class DynamicRefexDataColumnListCell extends ListCell<RefexDynamicColumnI
 		Label l = new Label(labelText);
 		l.getStyleClass().add("boldLabel");
 		return l;
+	}
+	
+	
+	//TODO get rid of these next two methods when we properly support multiple validators
+	private DynamicSememeValidatorType valUnwrap(DynamicSememeColumnInfo info)
+	{
+		if (info.getValidator() == null || info.getValidator().length == 0)
+		{
+			return null;
+		}
+		return info.getValidator()[0];
+	}
+	
+	private DynamicSememeDataBI valDataUnwrap(DynamicSememeColumnInfo info)
+	{
+		if (info.getValidatorData() == null || info.getValidatorData().length == 0)
+		{
+			return null;
+		}
+		return info.getValidatorData()[0];
 	}
 }

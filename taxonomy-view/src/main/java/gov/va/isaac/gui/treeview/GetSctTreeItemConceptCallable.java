@@ -54,7 +54,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     }
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren) {
-        this.treeItem = treeItem;
+    	this.treeItem = treeItem;
         this.concept = treeItem != null ? treeItem.getValue() : null;
         this.addChildren = addChildren;
         if (addChildren) {
@@ -75,55 +75,41 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
             if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                 return false;
             }
-            
-            // TODO is current value == old value.getRelationshipVersion()?
-//            if (addChildren) {
-//                reference = treeItem.getValue().getRelationshipVersion().getOriginReference();
-//            } else {
-//                reference = treeItem.getValue().getRelationshipVersion().getDestinationReference();
-//            }
-    
-            if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
-                return false;
-            }
     
            concept = treeItem.getValue();
-            
-            // TODO how do we determine defined status of ConceptChronology?
-//            if ((concept.getConceptAttributes() == null)
-//                    || concept.getConceptAttributes().getVersions().isEmpty()
-//                    || concept.getConceptAttributes().getVersions().get(0).isDefined()) {
-//            	// TODO why is defined being set here?
-//                treeItem.setDefined(true);
-//            }
             
             if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
                 return false;
             }
 
-            if (OchreUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get()).size() > 1) {
+            int numParentsFromTree = OchreUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTree().get()).size();
+            if (numParentsFromTree > 1) {
                 treeItem.setMultiParent(true);
-            } 
+            }
     
             if (addChildren) {
                 //TODO it would be nice to show progress here, by binding this status to the 
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-                for (ConceptChronology<? extends ConceptVersion<?>> destRel : OchreUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get())) {
-                    if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
-                        return false;
-                    }
-                        SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getTaxonomyCoordinate(), treeItem.getTaxonomyTree(), treeItem.getConceptSnapshotService());
-                        if (childItem.shouldDisplay()) {
-                            childrenToAdd.add(childItem);
+            	for (ConceptChronology<? extends ConceptVersion<?>> destRel : OchreUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTree().get())) {
+            		if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
+            			return false;
+            		}
+            		SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getTaxonomyCoordinate(), treeItem.getTaxonomyTree(), treeItem.getConceptSnapshotService());
+            		if (childItem.shouldDisplay()) {
+                        int numParents = OchreUtility.getParentsAsConceptNids(childItem.getValue(), childItem.getTaxonomyTree().get()).size();
+                        if (numParents > 1) {
+                        	childItem.setMultiParent(true);
                         }
-                        if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
-                            return false;
-                        }
-                    
-                }
-                Collections.sort(childrenToAdd);
+            			childrenToAdd.add(childItem);
+            		}
+            		if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
+            			return false;
+            		}
+
+            	}
+            	Collections.sort(childrenToAdd);
             }
             
             CountDownLatch temp = new CountDownLatch(1);

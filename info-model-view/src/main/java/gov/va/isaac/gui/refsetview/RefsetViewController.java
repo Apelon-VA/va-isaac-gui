@@ -48,6 +48,7 @@ import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +105,7 @@ public class RefsetViewController {
 				public void handle(ActionEvent e) {
 					try
 					{
-						ExtendedAppContext.getDataStore().commit();
+						Ts.get().commit();
 						reloadData();
 					}
 					catch (IOException ex)
