@@ -208,5 +208,6 @@
 		<module>db-processing-rules</module>
 		<module>mapping</module>
 		<module>logic-view</module>
+		<module>concept-view</module>
 	</modules>
 </project>

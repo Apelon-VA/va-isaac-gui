@@ -7,14 +7,16 @@ import gov.vha.isaac.ochre.model.logic.node.external.RoleNodeAllWithUuids;
 import gov.vha.isaac.ochre.model.logic.node.external.RoleNodeSomeWithUuids;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeAllWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
+
 import java.util.Optional;
+
 import javafx.scene.control.Label;
 
 // RoleNodeAllWithUuids
 // RoleNodeSomeWithUuids
 // RoleNodeAllWithSequences
 // RoleNodeSomeWithSequences
-public class RoleNodeFxNode extends Label {
+public class RoleNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 	private final int typeSequence;
 	
 	public int getTypeSequence() { return typeSequence; }
@@ -37,8 +39,13 @@ public class RoleNodeFxNode extends Label {
 	}
 	
 	private RoleNodeFxNode(AbstractNode logicalNode, int typeSequence, Optional<Long> sctId) {
-		super(logicalNode.getNodeSemantic().name() + /* "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + */ "\n" + /* "type=" + */ 
+		super(logicalNode, logicalNode.getNodeSemantic().name() + /* "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + */ "\n" + /* "type=" + */ 
 				Get.conceptDescriptionText(typeSequence) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
 		this.typeSequence = typeSequence;
+	}
+
+	@Override
+	public int getConceptId() {
+		return typeSequence;
 	}
 }

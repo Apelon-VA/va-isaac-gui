@@ -12,7 +12,9 @@ import javafx.scene.control.Label;
 
 // ConceptNodeWithSequences
 // ConceptNodeWithUuids
-public class ConceptNodeFxNode extends Label {
+public class ConceptNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
+	private final int conceptId;
+	
 	public ConceptNodeFxNode(ConceptNodeWithSequences logicalNode, Function<Integer, String> descriptionRenderer) {
 		this(logicalNode, logicalNode.getConceptSequence(), descriptionRenderer);
 	}
@@ -20,6 +22,12 @@ public class ConceptNodeFxNode extends Label {
 		this(logicalNode, Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid()), descriptionRenderer);
 	}
 	private ConceptNodeFxNode(AbstractNode logicalNode, int conceptId, Function<Integer, String> descriptionRenderer) {
-		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\n" + descriptionRenderer.apply(conceptId));
+		super(logicalNode, logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\n" + descriptionRenderer.apply(conceptId));
+		this.conceptId = conceptId;
+	}
+	
+	@Override
+	public int getConceptId() {
+		return conceptId;
 	}
 }
