@@ -2,6 +2,7 @@ package gov.va.isaac.gui.conceptview;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.UUID;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -13,13 +14,15 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptView2I;
+import gov.va.isaac.util.Utility;
 
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 
 @Service
 @PerLookup
-public class ConceptView implements PopupViewI{
+public class ConceptView implements ConceptView2I {
 
 	private ConceptViewController controller;
 
@@ -48,9 +51,34 @@ public class ConceptView implements PopupViewI{
 		Platform.runLater(() -> {s.toFront();});
 	} 
 	
+	@Override
 	public Region getView() {
 		return controller.getRoot();
 	}
 	
-
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.conceptview.ConceptView2I#getConcept()
+	 */
+	//@Override
+	public Integer getConcept() {
+		return controller.getConcept();
+	}
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.conceptview.ConceptView2I#setConcept(int)
+	 */
+	//@Override
+	public void setConcept(int conceptId) {
+		Utility.execute(() -> controller.setConcept(conceptId));
+	}
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.conceptview.ConceptView2I#setConcept(java.util.UUID)
+	 */
+	//@Override
+	public void setConcept(UUID conceptUuid) {
+		Utility.execute(() -> controller.setConcept(conceptUuid));
+	}
+	@Override
+	public void viewDiscarded() {
+		// TODO Auto-generated method stub
+	}
 }

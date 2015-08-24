@@ -26,6 +26,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -170,9 +171,22 @@ public class ConceptViewController {
 		moduleTableColumn.setUserData(ConceptViewColumnType.STAMP_MODULE);
 	}
 	
-	public void setConcept(UUID conceptUUID) {
-		ConceptChronology<?> concept = Get.conceptService().getConcept(conceptUUID);
-		conceptNode.set(Get.conceptSnapshot().getConceptSnapshot(concept.getConceptSequence()));
+	public static void runLaterIfNotFXApplicationThread(Runnable work) {
+		if (Platform.isFxApplicationThread()) {
+			work.run();
+		} else {
+			Platform.runLater(work);
+		}
+	}
+	public Integer getConcept() {
+		return (conceptNode.isValid().get() && conceptNode.getConceptNoWait() != null) ? conceptNode.getConceptNoWait().getChronology().getConceptSequence() : null;
+	}
+	public void setConcept(int conceptId) {
+		runLaterIfNotFXApplicationThread(() -> conceptNode.set(Get.conceptSnapshot().getConceptSnapshot(conceptId)));
+	}
+	public void setConcept(UUID conceptUuid) {
+		ConceptChronology<?> concept = Get.conceptService().getConcept(conceptUuid);
+		setConcept(concept.getConceptSequence());
 	}
 	
 	private void populateConcept() {
