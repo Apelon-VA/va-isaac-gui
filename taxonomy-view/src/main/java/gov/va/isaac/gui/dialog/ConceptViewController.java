@@ -383,8 +383,8 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OchreUtility.getDescription(concept.getConceptSequence(), getConceptSnapshotService().get().getLanguageCoordinate(), 
-					getConceptSnapshotService().get().getStampCoordinate()).get();
+			String conceptDescription = OchreUtility.getDescription(concept.getConceptSequence(), getConceptSnapshotService().get().getStampCoordinate(), 
+					getConceptSnapshotService().get().getLanguageCoordinate()).get();
 			
 			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().get().getConceptSnapshot(concept.getNid());
 			conceptNid = concept.getNid();

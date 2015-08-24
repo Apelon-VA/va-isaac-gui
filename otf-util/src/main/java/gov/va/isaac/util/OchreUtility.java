@@ -215,8 +215,8 @@ public final class OchreUtility {
 	 * @return
 	 */
 	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate<?> taxonomyCoordinate) {
-		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate(), 
-				taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate());
+		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
 
 	/**
@@ -228,8 +228,8 @@ public final class OchreUtility {
 	 * @return
 	 */
 	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate<?> taxonomyCoordinate) {
-		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate(), 
-				taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate());
+		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
 	
 	/**
@@ -241,9 +241,9 @@ public final class OchreUtility {
 	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
 	 * @return
 	 */
-	public static Optional<String> getDescription(UUID conceptUUID, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) 
+	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
-		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), languageCoordinate, stampCoordinate);
+		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), stampCoordinate, languageCoordinate);
 	}
 
 	/**
@@ -254,7 +254,7 @@ public final class OchreUtility {
 	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
 	 * @return
 	 */
-	public static Optional<String> getDescription(int conceptId, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) 
+	public static Optional<String> getDescription(int conceptId, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Optional<LatestVersion<DescriptionSememe>> desc = Get.conceptService()

@@ -218,7 +218,7 @@ public class RelationshipVersion
 	{
 		try
 		{
-			return OchreUtility.getDescription(nidFetcher.applyAsInt(rv_), css.getLanguageCoordinate(), css.getStampCoordinate()).get();
+			return OchreUtility.getDescription(nidFetcher.applyAsInt(rv_), css.getStampCoordinate(), css.getLanguageCoordinate()).get();
 		}
 		catch (Exception e)
 		{
