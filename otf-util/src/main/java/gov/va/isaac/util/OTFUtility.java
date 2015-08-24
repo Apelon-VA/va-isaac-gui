@@ -87,14 +87,6 @@ import org.slf4j.LoggerFactory;
 public class OTFUtility {
 	static final Logger LOG = LoggerFactory.getLogger(OTFUtility.class);
 
-	private static final UUID FSN_UUID = IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getPrimodialUuid();
-	private static final UUID PREFERRED_UUID = IsaacMetadataAuxiliaryBinding.PREFERRED.getPrimodialUuid();
-	private static final UUID SYNONYM_UUID = IsaacMetadataAuxiliaryBinding.SYNONYM.getPrimodialUuid();
-
-	private static Integer fsnNid = null;
-	private static Integer preferredNid = null;
-	private static Integer synonymNid = null;
-	private static Integer langTypeNid = null;
 	private static Integer snomedAssemblageNid = null;
 	
 	private static TerminologyStoreDI dataStore = Ts.get();
@@ -178,15 +170,6 @@ public class OTFUtility {
 		}
 
 		return null;
-	}
-
-
-	private static int getPreferredTypeNid() {
-		// Lazily load.
-		if (preferredNid == null) {
-			preferredNid = dataStore.getNidForUuids(PREFERRED_UUID);
-		}
-		return preferredNid;
 	}
 	
 	public static int getSnomedAssemblageNid() {
