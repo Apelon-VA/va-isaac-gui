@@ -225,7 +225,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				
 				StampPosition spLatest = new StampPositionImpl(System.currentTimeMillis(), pathSequence);
 				StampPosition spInitial = new StampPositionImpl(previousReleaseTime, pathSequence);
-				
+				//todo - add modules  to the SC
 				StampCoordinate scLatestActive = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
 						ConceptSequenceSet.EMPTY, gov.vha.isaac.ochre.api.State.ACTIVE_ONLY_SET);
 				StampCoordinate scLatestAll = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
