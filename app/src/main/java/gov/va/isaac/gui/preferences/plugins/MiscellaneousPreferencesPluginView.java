@@ -29,6 +29,8 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginCheckBoxProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -52,12 +54,13 @@ public class MiscellaneousPreferencesPluginView extends AbstractPreferencesPlugi
 		List<PreferencesPluginProperty<?, ? extends Control>> properties = new ArrayList<>();
 
 		PreferencesPluginCheckBoxProperty displayFSNProperty =
-				new PreferencesPluginCheckBoxProperty("Display FSN") {
+				new PreferencesPluginCheckBoxProperty("Display FSN") {  //TODO Display FSN is something that needs to go away... and be replaced with 
+			// a GUI that properly supports LanguageCoordianate
 
 			@Override
 			public Boolean readFromPersistedPreferences() {
 				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				return loggedIn.getDisplayFSN();
+				return IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence() == loggedIn.getLanguageCoordinate().getDescriptionTypePreferenceList()[0] ;
 			}
 
 			@Override
@@ -67,7 +70,8 @@ public class MiscellaneousPreferencesPluginView extends AbstractPreferencesPlugi
 
 			@Override
 			public void writeToUnpersistedPreferences(UserProfile userProfile) {
-				userProfile.setDisplayFSN(getProperty().getValue());
+				userProfile.setLanguageCoordinate(getProperty().getValue() ? LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate() : 
+					LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
 			}
 		};
 		properties.add(displayFSNProperty);

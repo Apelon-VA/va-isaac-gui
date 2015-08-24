@@ -110,31 +110,20 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
             if (treeItem.isSecondaryParentOpened()) {
                 removeExtraParents(treeItem, siblings);
             } else {
-                ArrayList<ConceptChronology<? extends ConceptVersion<?>>> allParents = new ArrayList<>(OchreUtility.getParentsAsConceptChronologies(value, treeItem.getTaxonomyTree().get()));
-               
-//                List<RelationshipVersionAdaptor<?>> outgoingRelChronicles = OchreUtility.getRelationshipListOriginatingFromConcept(value.getNid(), treeItem.getTaxonomyCoordinate().get().getStampCoordinate(), false, treeItem.getTaxonomyCoordinate().getValue().getTaxonomyType());
-//                if (allParents.size() != outgoingRelChronicles.size()) {
-//                	LOG.warn("For {} getParentsAsConceptChronologies() returns {} and getRelationshipListOriginatingFromConcept() returns {}", Get.conceptDescriptionText(value.getNid()), allParents.size(), outgoingRelChronicles.size());
-//                }
+                int[] allParents = treeItem.getTaxonomyTree().get().getParentSequences(value.getConceptSequence());
                 
-                List<ConceptChronology<? extends ConceptVersion<?>>> secondaryParents = new ArrayList<>();
-                for (ConceptChronology<? extends ConceptVersion<?>> parent : allParents) {
-                    if (allParents.size() == 1 || parent.getNid() != parentItem.getValue().getNid()) {
-                        secondaryParents.add(parent);
-                    }
-                }
-
-                ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>(secondaryParents.size());
-
-                for (ConceptChronology<? extends ConceptVersion<?>> extraParent : secondaryParents) {
+                ArrayList<SctTreeItem> secondaryParentItems = new ArrayList<>();
+                for (int parentSequence : allParents) {
+                    if (allParents.length == 1 || parentSequence != parentItem.getValue().getConceptSequence()) {
                         SctTreeItem extraParentItem =
-                                new SctTreeItem(extraParent,
+                                new SctTreeItem(parentSequence,
                                                 treeItem.getDisplayPolicies(),
                                                 treeItem.getTaxonomyCoordinate(),
                                                 treeItem.getTaxonomyTree(),
                                                 treeItem.getConceptSnapshotService());
                         extraParentItem.setMultiParentDepth(treeItem.getMultiParentDepth() + 1);
                         secondaryParentItems.add(extraParentItem);
+                    }
                 }
 
                 Collections.sort(secondaryParentItems);
@@ -202,9 +191,9 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
                         setGraphic(graphicBorderPane);
                     }
     
-                    String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
-                    if (desc != null) {
-                        setText(desc);
+                    Optional<String> desc = OchreUtility.getDescription(taxRef.getNid(), treeItem.getTaxonomyCoordinate().get());
+                    if (desc.isPresent()) {
+                        setText(desc.get());
                     } else {
                         LOG.debug("No description found for concept {}", taxRef.toUserString());
                     }
@@ -224,9 +213,9 @@ final class SctTreeCell extends TreeCell<ConceptChronology<? extends ConceptVers
     
                 setDisclosureNode(iv);
     
-                String desc = OchreUtility.getDescription(taxRef, treeItem.getTaxonomyCoordinate().get());
-                if (desc != null) {
-                    setText(desc);
+                Optional<String> desc = OchreUtility.getDescription(taxRef.getNid(), treeItem.getTaxonomyCoordinate().get());
+                if (desc.isPresent()) {
+                    setText(desc.get());
                 } else {
                     LOG.debug("No description found for concept {}", taxRef.toUserString());
                 }

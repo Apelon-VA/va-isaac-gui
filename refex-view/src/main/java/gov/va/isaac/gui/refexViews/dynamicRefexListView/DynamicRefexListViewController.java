@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.ResourceBundle;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
@@ -38,7 +37,6 @@ import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
@@ -162,7 +160,7 @@ public class DynamicRefexListViewController
 		clearFilterButton.setOnAction((event) -> {
 			disableRead = true;
 			descriptionMatchesFilter.setText("");
-			conceptNode.set((ConceptVersionBI) null);
+			conceptNode.set((ConceptSnapshot) null);
 			disableRead = false;
 			rebuildList(true);
 		});

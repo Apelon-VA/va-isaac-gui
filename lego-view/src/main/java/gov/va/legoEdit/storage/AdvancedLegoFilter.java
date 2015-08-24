@@ -1,6 +1,7 @@
 package gov.va.legoEdit.storage;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.legoEdit.gui.legoFilterPane.LegoFilterPaneController;
 import gov.va.legoEdit.model.LegoReference;
 import gov.va.legoEdit.model.schemaModel.Assertion;
@@ -13,6 +14,8 @@ import gov.va.legoEdit.model.schemaModel.Relation;
 import gov.va.legoEdit.model.schemaModel.RelationGroup;
 import gov.va.legoEdit.model.schemaModel.Type;
 import gov.va.legoEdit.storage.wb.LegoWBUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +24,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import java.util.Optional;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -365,12 +369,12 @@ public class AdvancedLegoFilter
 			hierarchyCache.put(conceptKey, map);
 		}
 		
-		ConceptVersionBI cv = OTFUtility.lookupIdentifier(concept.getUuid());
-		if (cv == null)
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cv = OchreUtility.getConceptForUnknownIdentifier(concept.getUuid());
+		if (!cv.isPresent())
 		{
-			cv = OTFUtility.lookupIdentifier(concept.getSctid() + "");
+			cv = OchreUtility.getConceptForUnknownIdentifier(concept.getSctid() + "");
 		}
-		if (cv == null)
+		if (!cv.isPresent())
 		{
 			return false;
 		}
@@ -378,7 +382,7 @@ public class AdvancedLegoFilter
 		{
 			try
 			{
-				Collection<List<Integer>> pathsToRoot = cv.getNidPathsToRoot();
+				Collection<List<Integer>> pathsToRoot = Ts.get().getConceptVersion(OTFUtility.getViewCoordinate(), cv.get().getNid()).getNidPathsToRoot();
 				for (List<Integer> list : pathsToRoot)
 				{
 					for (Integer i : list)

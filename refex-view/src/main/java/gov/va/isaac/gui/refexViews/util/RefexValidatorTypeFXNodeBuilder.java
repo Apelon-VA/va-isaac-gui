@@ -18,10 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
-import java.util.ArrayList;
-import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.drools.manager.DroolsExecutor;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
@@ -30,8 +26,9 @@ import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
@@ -39,6 +36,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeInteger;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
+import java.util.ArrayList;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -48,6 +46,8 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.util.StringConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link RefexValidatorTypeFXNodeBuilder}
@@ -152,7 +152,7 @@ public class RefexValidatorTypeFXNodeBuilder
 
 			if (currentValue != null)
 			{
-				cn.set(OTFUtility.getConceptVersion(((DynamicSememeNidBI) currentValue).getDataNid()));
+				cn.set(OchreUtility.getConceptSnapshot(((DynamicSememeNidBI) currentValue).getDataNid(), null, null).get());
 			}
 
 			returnValue.nodeForDisplay = cn.getNode();
@@ -307,29 +307,29 @@ public class RefexValidatorTypeFXNodeBuilder
 		}
 		else if (DynamicSememeValidatorType.COMPONENT_TYPE == dt)
 		{
-			ChoiceBox<ComponentType> cb = new ChoiceBox<>();
+			ChoiceBox<ObjectChronologyType> cb = new ChoiceBox<>();
 			cb.setMaxWidth(Double.MAX_VALUE);
 			
-			for (ComponentType ct : ComponentType.values())
+			for (ObjectChronologyType ct : ObjectChronologyType.values())
 			{
-				if (ct != ComponentType.UNKNOWN && ct != ComponentType.CONCEPT_ATTRIBUTES)
+				if (ct != ObjectChronologyType.UNKNOWN_NID)
 				{
 					cb.getItems().add(ct);
 				}
 			}
-			cb.setConverter(new StringConverter<ComponentType>()
+			cb.setConverter(new StringConverter<ObjectChronologyType>()
 			{
 				@Override
-				public String toString(ComponentType object)
+				public String toString(ObjectChronologyType object)
 				{
 					return "Must be a " + object.toString();
 				}
 
 				@Override
-				public ComponentType fromString(String string)
+				public ObjectChronologyType fromString(String string)
 				{
 					//not needed
-					return ComponentType.UNKNOWN;
+					return ObjectChronologyType.UNKNOWN_NID;
 				}
 			});
 			

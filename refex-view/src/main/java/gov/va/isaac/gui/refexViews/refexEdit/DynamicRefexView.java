@@ -18,34 +18,8 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
-import javax.inject.Named;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.glassfish.hk2.api.PerLookup;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableMapWrapper;
-import com.sun.javafx.tk.Toolkit;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileBindings;
-import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dialog.YesNoDialog;
 import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
@@ -65,6 +39,20 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -97,6 +85,14 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javax.inject.Named;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.glassfish.hk2.api.PerLookup;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableMapWrapper;
+import com.sun.javafx.tk.Toolkit;
 
 
 /**
@@ -140,10 +136,13 @@ public class DynamicRefexView implements RefexViewI
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 
 	private final ObservableMap<ColumnId, Filter<?>> filterCache_ = new ObservableMapWrapper<>(new WeakHashMap<>());
+	
+	BooleanProperty displayFSN_ = new SimpleBooleanProperty(ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().isFSNPreferred());
+	
 	// Display refreshes on change of UserProfileBindings.getDisplayFSN().
 	// If UserProfileBindings.getDisplayFSN() at time of refresh has changed since last refresh
 	// then all filters must be cleared, because they may contain outdated display text values
-	private boolean filterCacheLastBuildDisplayFSNValue_ = AppContext.getService(UserProfileBindings.class).getDisplayFSN().get();
+	private boolean filterCacheLastBuildDisplayFSNValue_ = displayFSN_.get();
 	
 	private final MapChangeListener<ColumnId, Filter<?>> filterCacheListener_ = new MapChangeListener<ColumnId, Filter<?>>() {
 		@Override
@@ -461,12 +460,17 @@ public class DynamicRefexView implements RefexViewI
 				}
 			};
 			
+			ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().addListener(change ->
+			{
+				displayFSN_.set(ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().isFSNPreferred());
+			});
+			
 			displayFSNButton_ = new Button("");
 			ImageView displayFsn = Images.DISPLAY_FSN.createImageView();
 			Tooltip.install(displayFsn, new Tooltip("Displaying the Fully Specified Name - click to display the Preferred Term"));
-			displayFsn.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+			displayFsn.visibleProperty().bind(displayFSN_);
 			ImageView displayPreferred = Images.DISPLAY_PREFERRED.createImageView();
-			displayPreferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not());
+			displayPreferred.visibleProperty().bind(displayFSN_.not());
 			Tooltip.install(displayPreferred, new Tooltip("Displaying the Preferred Term - click to display the Fully Specified Name"));
 			displayFSNButton_.setGraphic(new StackPane(displayFsn, displayPreferred));
 			displayFSNButton_.prefHeightProperty().bind(historyButton_.heightProperty());
@@ -476,16 +480,8 @@ public class DynamicRefexView implements RefexViewI
 				@Override
 				public void handle(ActionEvent event)
 				{
-					try
-					{
-						UserProfile up = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-						up.setDisplayFSN(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not().get());
-						ExtendedAppContext.getService(UserProfileManager.class).saveChanges(up);
-					}
-					catch (Exception e)
-					{
-						logger_.error("Unexpected error storing pref change", e);
-					}
+					//TODO Dan displayFSN fixes are not yet complete
+					displayFSN_.set(displayFSN_.not().get());
 				}
 			});
 			t.getItems().add(displayFSNButton_);
@@ -575,7 +571,7 @@ public class DynamicRefexView implements RefexViewI
 			{
 				{
 					setComputeOnInvalidate(true);
-					addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(), AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+					addBinding(ExtendedAppContext.getUserProfileBindings().getViewCoordinatePath(), ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate());
 				}
 
 				@Override
@@ -1163,7 +1159,7 @@ public class DynamicRefexView implements RefexViewI
 		});
 	}
 	
-	private synchronized void loadRealData() throws IOException, ContradictionException, NumberFormatException, InterruptedException, ParseException
+	private synchronized void loadRealData() throws IOException, NumberFormatException, InterruptedException, ParseException
 	{
 		Platform.runLater(() ->
 		{
@@ -1172,7 +1168,7 @@ public class DynamicRefexView implements RefexViewI
 		});
 		// If UserProfileBindings.getDisplayFSN() has changed since last data load
 		// then clear all filters, because they may contain outdated display text values
-		boolean currentDisplayFSNPreferenceValue = AppContext.getService(UserProfileBindings.class).getDisplayFSN().get();
+		boolean currentDisplayFSNPreferenceValue = displayFSN_.get();
 		if (currentDisplayFSNPreferenceValue != filterCacheLastBuildDisplayFSNValue_) {
 			logger_.debug("Clearing header node filter cache during refresh because displayFSN preference value changed to {}", currentDisplayFSNPreferenceValue);
 			filterCacheLastBuildDisplayFSNValue_ = currentDisplayFSNPreferenceValue;
@@ -1238,7 +1234,7 @@ public class DynamicRefexView implements RefexViewI
 
 	
 	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int componentNid, TreeItem<RefexDynamicGUI> nestUnder) 
-			throws IOException, ContradictionException
+			throws IOException
 	{
 		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(Get.sememeService().getSememesForComponent(componentNid));
 		
@@ -1253,8 +1249,7 @@ public class DynamicRefexView implements RefexViewI
 		}
 	}
 	
-	private ArrayList<TreeItem<RefexDynamicGUI>> createFilteredRowData(Stream<SememeChronology<? extends SememeVersion<?>>> sememes) throws IOException, 
-		ContradictionException
+	private ArrayList<TreeItem<RefexDynamicGUI>> createFilteredRowData(Stream<SememeChronology<? extends SememeVersion<?>>> sememes) throws IOException
 	{
 		ArrayList<TreeItem<RefexDynamicGUI>> rowData = new ArrayList<>();
 		ArrayList<DynamicSememe<?>> allVersions = new ArrayList<>();
@@ -1490,9 +1485,8 @@ public class DynamicRefexView implements RefexViewI
 	}
 	
 
-	@SuppressWarnings("unchecked")
 	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int assemblageNid) 
-			throws IOException, ContradictionException, InterruptedException, NumberFormatException, ParseException
+			throws IOException, InterruptedException, NumberFormatException, ParseException
 	{
 		Platform.runLater(() ->
 		{

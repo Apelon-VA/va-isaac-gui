@@ -26,7 +26,6 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
@@ -41,17 +40,16 @@ import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -71,7 +69,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
-
 import org.apache.mahout.math.Arrays;
 import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
 import org.slf4j.Logger;
@@ -115,6 +112,8 @@ class SctTreeView {
 
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
+    
+    private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
     
     private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     private ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
@@ -160,13 +159,19 @@ class SctTreeView {
         treeView_ = new TreeView<>();
         bp_ = new BorderPane();
         
+        //Listen to changes to global - but no longer push local changes back to global
+        ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().addListener(change -> 
+        {
+            displayFSN_.set(ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().isFSNPreferred());
+        });
+        
         Button descriptionType = new Button();
         descriptionType.setPadding(new Insets(2.0));
         ImageView displayFsn = Images.DISPLAY_FSN.createImageView();
         Tooltip.install(displayFsn, new Tooltip("Displaying the Fully Specified Name - click to display the Preferred Term"));
-        displayFsn.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+        displayFsn.visibleProperty().bind(displayFSN_);
         ImageView displayPreferred = Images.DISPLAY_PREFERRED.createImageView();
-        displayPreferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not());
+        displayPreferred.visibleProperty().bind(displayFSN_.not());
         Tooltip.install(displayPreferred, new Tooltip("Displaying the Preferred Term - click to display the Fully Specified Name"));
         descriptionType.setGraphic(new StackPane(displayFsn, displayPreferred));
         descriptionType.setOnAction(new EventHandler<ActionEvent>()
@@ -174,16 +179,7 @@ class SctTreeView {
             @Override
             public void handle(ActionEvent event)
             {
-                try
-                {
-                    UserProfile up = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-                    up.setDisplayFSN(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not().get());
-                    ExtendedAppContext.getService(UserProfileManager.class).saveChanges(up);
-                }
-                catch (Exception e)
-                {
-                    LOG.error("Unexpected error storing pref change", e);
-                }
+                displayFSN_.set(displayFSN_.not().get());
             }
         });
         
@@ -382,7 +378,9 @@ class SctTreeView {
                         addBinding(
                                 getTaxonomyCoordinate(),
                                 getTaxonomyTree(),
-                                getConceptSnapshotService());
+                                getConceptSnapshotService(),
+                                displayFSN_);  //TODO Dan broke this button, this code needs to be more properly rewritten, so that this code actually has its own coordinates, 
+                        //instead of only referencing the global ones.
                         enabled = true;
                     }
 
@@ -509,9 +507,10 @@ class SctTreeView {
                     
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OchreUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree().get())) {
-                        pathToRoot.add(parent.getPrimordialUuid());
-                        current = parent.getPrimordialUuid();
+                    for (int parent : getTaxonomyTree().get().getParentSequences(concept.getConceptSequence())) {
+                        current = Get.identifierService().getUuidPrimordialFromConceptSequence(parent).get();
+                        pathToRoot.add(current);
+                        
                         found = true;
                         break;
                     }

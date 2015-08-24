@@ -3,14 +3,12 @@ package gov.va.isaac.util;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.mahout.math.Arrays;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
@@ -120,7 +118,7 @@ public class ViewCoordinateFactory {
 				return ViewCoordinates.getMasterStatedLatestActiveOnly();
 			} else {
 				ConceptVersionBI pathConcept = OTFUtility.getConceptVersion(path, ViewCoordinates.getDevelopmentStatedLatest());
-				String pathDesc = OTFUtility.getDescription(pathConcept).toLowerCase();
+				String pathDesc = OchreUtility.getDescription(pathConcept.getNid()).get().toLowerCase();
 				String statusDesc = null;
 				if (statuses.size() == 2 && statuses.contains(Status.ACTIVE) && statuses.contains(Status.INACTIVE)) {
 					// noop

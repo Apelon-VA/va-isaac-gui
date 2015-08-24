@@ -19,14 +19,15 @@
 package gov.va.isaac.gui.refsetview;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.CEMCompositRefestInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.NidExtRefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.NidStrExtRefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.RefsetInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.StrExtRefsetInstance;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import java.io.IOException;
 import java.util.Optional;
 import javafx.collections.FXCollections;
@@ -44,7 +45,6 @@ import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
 import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
@@ -288,8 +288,8 @@ public class RefsetTableHandler {
 						return;
 					}
 	
-					ConceptVersionBI comp = OTFUtility.lookupIdentifier(t.getNewValue());
-					if (comp == null) {
+					Optional<? extends ConceptChronology> con = OchreUtility.getConceptForUnknownIdentifier(t.getNewValue());
+					if (!con.isPresent()) {
 						AppContext.getCommonDialogs().showErrorDialog("UUID Not Found", "Could not find the UUID in the database", t.getNewValue());
 					} else {
 						RefexCAB bp = null;
@@ -303,7 +303,7 @@ public class RefsetTableHandler {
 								if (OTFUtility.getRefsetMember(instance.getMemberNid()) == null) {
 									RefexCAB newMember = new RefexCAB(RefexType.CID, instance.getRefCompConNid(), refsetNid, IdDirective.GENERATE_RANDOM, RefexDirective.EXCLUDE);
 
-									newMember.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, comp.getPrimordialUuid());
+									newMember.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, con.get().getPrimordialUuid());
 									
 									RefexChronicleBI<?> newMemChron = OTFUtility.getBuilder().construct(newMember);
 									instance.setMemberNid(newMemChron.getNid());
@@ -321,11 +321,11 @@ public class RefsetTableHandler {
 									rvc_.reloadData();
 									return;
 								} else {
-									instance.setCidExtFsn(comp.getFullySpecifiedDescription().getText());
-									instance.setCidExtUuid(comp.getPrimordialUuid());
+									instance.setCidExtFsn(OchreUtility.getFSNForConceptNid(con.get().getNid(), null).get());
+									instance.setCidExtUuid(con.get().getPrimordialUuid());
 	
 									bp = createBlueprint(instance.getMemberNid());
-									bp.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, comp.getPrimordialUuid());
+									bp.put(ComponentProperty.COMPONENT_EXTENSION_1_ID, con.get().getPrimordialUuid());
 								}
 							}
 						}
@@ -369,14 +369,14 @@ public class RefsetTableHandler {
 					if (instance.getMemberNid() != 0) {
 						AppContext.getCommonDialogs().showErrorDialog("Illegal Operation", "Cannot modify the reference component of an existing refset member", "");
 					} else {
-						ConceptVersionBI comp = OTFUtility.lookupIdentifier(t.getNewValue());
-						if (comp == null) {
+						Optional<? extends ConceptChronology> con = OchreUtility.getConceptForUnknownIdentifier(t.getNewValue());
+						if (!con.isPresent()) {
 							AppContext.getCommonDialogs().showErrorDialog("UUID Not Found", "Could not find the UUID in the database", t.getNewValue());
 						} else {
 							try {
-								instance.setRefCompConFsn(comp.getFullySpecifiedDescription().getText());
-								instance.setRefCompConUuid(comp.getPrimordialUuid());
-								instance.setRefCompConNid(comp.getNid());
+								instance.setRefCompConFsn(OchreUtility.getFSNForConceptNid(con.get().getNid(), null).get());
+								instance.setRefCompConUuid(con.get().getPrimordialUuid());
+								instance.setRefCompConNid(con.get().getNid());
 							} catch (Exception e) {
 								e.printStackTrace();
 							}

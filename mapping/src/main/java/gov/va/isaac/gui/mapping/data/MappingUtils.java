@@ -18,19 +18,6 @@
  */
 package gov.va.isaac.gui.mapping.data;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Function;
-import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.gui.RenameableDisplayConcept;
@@ -41,7 +28,6 @@ import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.SearchStringProcessor;
-import gov.va.isaac.util.TaskCompleteCallback;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -49,6 +35,20 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.model.constants.IsaacMappingConstants;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link MappingUtils}
@@ -103,7 +103,8 @@ public class MappingUtils
 	/**
 	 * Launch a search in a background thread (returns immediately) handing back a handle to the search.
 	 * @param searchString - the query string
-	 * @param callback - (optional) the class instance that desires a callback when the background threaded search completes
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param descriptionType - (optional) if provided, only searches within the specified description type
 	 * @param advancedDescriptionType - (optional) if provided, only searches within the specified advanced description type.  
 	 * When this parameter is provided, the descriptionType parameter is ignored.
@@ -114,7 +115,7 @@ public class MappingUtils
 	 * @return - A handle to the running search.
 	 * @throws IOException
 	 */
-	public static SearchHandle search(String searchString, TaskCompleteCallback callback, LuceneDescriptionType descriptionType, 
+	public static SearchHandle search(String searchString, Consumer<SearchHandle> operationToRunWhenSearchComplete, LuceneDescriptionType descriptionType, 
 			UUID advancedDescriptionType, Integer targetCodeSystemPathNidOrSequence, Integer memberOfRefsetNid, Integer kindOfNid) throws IOException
 	{
 		ArrayList<Function<List<CompositeSearchResult>, List<CompositeSearchResult>>> filters = new ArrayList<>();
@@ -208,15 +209,15 @@ public class MappingUtils
 		
 		if (descriptionType == null && advancedDescriptionType == null)
 		{
-			return SearchHandler.descriptionSearch(searchString, 500, false, (UUID)null, callback, null, filterSet, null, true, false);
+			return SearchHandler.descriptionSearch(searchString, 500, false, (UUID)null, operationToRunWhenSearchComplete, null, filterSet, null, true, false);
 		}
 		else if (advancedDescriptionType != null)
 		{
-			return SearchHandler.descriptionSearch(searchString, 500, false, advancedDescriptionType, callback, null, filterSet, null, true, false);
+			return SearchHandler.descriptionSearch(searchString, 500, false, advancedDescriptionType, operationToRunWhenSearchComplete, null, filterSet, null, true, false);
 		}
 		else if (descriptionType != null)
 		{
-			return SearchHandler.descriptionSearch(searchString, 500, false, descriptionType, callback, null, filterSet, null, true, false);
+			return SearchHandler.descriptionSearch(searchString, 500, false, descriptionType, operationToRunWhenSearchComplete, null, filterSet, null, true, false);
 		}
 		else
 		{
@@ -227,7 +228,8 @@ public class MappingUtils
 	/**
 	 * Launch a search in a background thread (returns immediately) handing back a handle to the search.
 	 * @param sourceConceptNid - the source concept of the map - the descriptions of this concept will be used to create a search
-	 * @param callback - (optional) the class instance that desires a callback when the background threaded search completes
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param descriptionType - (optional) if provided, only searches within the specified description type
 	 * @param advancedDescriptionType - (optional) if provided, only searches within the specified advanced description type.  
 	 * When this parameter is provided, the descriptionType parameter is ignored.
@@ -237,7 +239,7 @@ public class MappingUtils
 	 * @return - A handle to the running search.
 	 * @throws IOException
 	 */
-	public static SearchHandle search(int sourceConceptNid, TaskCompleteCallback callback, LuceneDescriptionType descriptionType, 
+	public static SearchHandle search(int sourceConceptNid, Consumer<SearchHandle> operationToRunWhenSearchComplete, LuceneDescriptionType descriptionType, 
 			UUID advancedDescriptionType, Integer targetCodeSystemPathNid, Integer memberOfRefsetNid, Integer kindOfNid) throws IOException
 	{
 		StringBuilder searchString;
@@ -257,7 +259,7 @@ public class MappingUtils
 			
 		});
 		
-		return search(searchString.toString(), callback, descriptionType, advancedDescriptionType, targetCodeSystemPathNid, memberOfRefsetNid, kindOfNid);
+		return search(searchString.toString(), operationToRunWhenSearchComplete, descriptionType, advancedDescriptionType, targetCodeSystemPathNid, memberOfRefsetNid, kindOfNid);
 	}
 	
 	public static List<SimpleDisplayConcept> getExtendedDescriptionTypes() throws IOException

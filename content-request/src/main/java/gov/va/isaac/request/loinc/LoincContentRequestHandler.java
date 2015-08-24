@@ -8,18 +8,15 @@ import gov.va.isaac.request.ContentRequestHandler;
 import gov.va.isaac.request.ContentRequestTrackingInfo;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.OchreUtility;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
-
 import javax.inject.Named;
-
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -90,9 +87,8 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
     fileChooser.getExtensionFilters().addAll(xmlFilter, allFilter);
 
     // Now determine
-    LoincContentRequestTrackingInfo info =
-        new LoincContentRequestTrackingInfo();
-    info.setName(OTFUtility.getConPrefTerm(concept.getNid()));
+    LoincContentRequestTrackingInfo info = new LoincContentRequestTrackingInfo();
+    info.setName(OchreUtility.getDescription(concept.getNid(), null).get());
 
     // Show save file dialog.
     File file = fileChooser.showSaveDialog(null);
@@ -132,7 +128,7 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
     sb.append(concept.getPrimordialUuid()).append("\t");
 
     // Local observation name - concept preferred name
-    sb.append(OTFUtility.getConPrefTerm(concept.getNid())).append("\t");
+    sb.append(OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get()).append("\t");
 
     // Observation description - if there is a definition
     sb.append(getDescriptionText(concept, "Definition (core metadata concept)")).append("\t");
@@ -246,9 +242,9 @@ public class LoincContentRequestHandler implements ContentRequestHandler,
     for (RelationshipChronicleBI rel : concept.getRelationshipsOutgoing()) {
       RelationshipVersionBI<?> relVersion =
           rel.getVersion(OTFUtility.getViewCoordinate()).get();
-      String prefName = OTFUtility.getConPrefTerm(relVersion.getTypeNid());
+      String prefName = OchreUtility.getPreferredTermForConceptNid(relVersion.getTypeNid(), null, null).get();
       if (relVersion.isActive() && prefName.equals(type)) {
-        return OTFUtility.getConPrefTerm(relVersion.getDestinationNid());
+        return OchreUtility.getPreferredTermForConceptNid(relVersion.getDestinationNid(), null, null).get();
       }
     }
     return "";

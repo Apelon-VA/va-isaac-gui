@@ -25,6 +25,7 @@ import gov.va.isaac.interfaces.workflow.ProcessInstanceCreationRequestI;
 import gov.va.isaac.interfaces.workflow.WorkflowProcess;
 import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -234,7 +235,7 @@ public class WorkflowInitiationViewController {
 					+ passedComponentOrConcept.toUserString());
 		} else {
 			LOG.debug("Set componentOrConcept nid=" + passedComponentOrConcept.getNid() + ", uuid=" + passedComponentOrConcept.getPrimordialUuid() + ", desc=" 
-					+ OTFUtility.getDescription(passedComponentOrConcept.getNid()));
+					+ OchreUtility.getDescription(passedComponentOrConcept.getNid()).get());
 		}
 
 		try

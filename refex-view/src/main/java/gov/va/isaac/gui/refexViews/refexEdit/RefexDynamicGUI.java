@@ -24,21 +24,19 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.ToIntFunction;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.media.MediaVersionBI;
-import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.util.AlphanumComparator;
 import gov.va.isaac.util.NumberUtilities;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArrayBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeByteArrayBI;
@@ -306,48 +304,49 @@ public class RefexDynamicGUI
 					else if (data instanceof DynamicSememeArrayBI<?>)
 					{
 						DynamicSememeArrayBI<?> instanceData = (DynamicSememeArrayBI<?>)data;
-						switch (instanceData.getArrayDataType())
-						{
-							case ARRAY:
-								//Could recurse... but I can't imagine a use case at the moment.
-								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[" + instanceData.getDataArray().length + " nested arrays]",
-										"An array of nested arrays");
-								break;
-							case STRING: case BOOLEAN: case DOUBLE: case FLOAT: case INTEGER: case LONG: case NID: case UUID:
-							{
-								//NID and UUID could be turned into strings... but, unusual use case... leave like this for now.
-								StringBuilder sb = new StringBuilder();
-								sb.append("[");
-								for (DynamicSememeDataBI d : instanceData.getDataArray())
-								{
-									sb.append(d.getDataObject().toString());
-									sb.append(", ");
-								}
-								if (sb.length() > 1)
-								{
-									sb.setLength(sb.length() - 2);
-								}
-								sb.append("]");
-								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(sb.toString(), "Array of " + instanceData.getDataArray().length + " items: " + sb.toString());
-								break;
-							}
-							
-							case BYTEARRAY:
-								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[" + instanceData.getDataArray().length + " Binary items]",
-										"An array of binary objects");
-								break;
-							case UNKNOWN: case POLYMORPHIC:
-							{
-								//shouldn't happen - but just do the toString
-								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[" + instanceData.getDataArray().length + " items]",
-										"An array of unknown data elements");
-								break;
-							}
-							default:
+						//TODO dan needs to implement - I changed some details of how array data types are handled...
+//						switch (instanceData.getArrayDataType())
+//						{
+//							case ARRAY:
+//								//Could recurse... but I can't imagine a use case at the moment.
+//								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[" + instanceData.getDataArray().length + " nested arrays]",
+//										"An array of nested arrays");
+//								break;
+//							case STRING: case BOOLEAN: case DOUBLE: case FLOAT: case INTEGER: case LONG: case NID: case UUID:
+//							{
+//								//NID and UUID could be turned into strings... but, unusual use case... leave like this for now.
+//								StringBuilder sb = new StringBuilder();
+//								sb.append("[");
+//								for (DynamicSememeDataBI d : instanceData.getDataArray())
+//								{
+//									sb.append(d.getDataObject().toString());
+//									sb.append(", ");
+//								}
+//								if (sb.length() > 1)
+//								{
+//									sb.setLength(sb.length() - 2);
+//								}
+//								sb.append("]");
+//								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>(sb.toString(), "Array of " + instanceData.getDataArray().length + " items: " + sb.toString());
+//								break;
+//							}
+//							
+//							case BYTEARRAY:
+//								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[" + instanceData.getDataArray().length + " Binary items]",
+//										"An array of binary objects");
+//								break;
+//							case UNKNOWN: case POLYMORPHIC:
+//							{
+//								//shouldn't happen - but just do the toString
+//								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("[" + instanceData.getDataArray().length + " items]",
+//										"An array of unknown data elements");
+//								break;
+//							}
+//							default:
 								logger_.error("Unhandled case: {}, {}", instanceData, Arrays.toString(instanceData.getDataArray()));
 								returnValue = new AbstractMap.SimpleImmutableEntry<String, String>("-ERROR-", "Internal error computing value");
-								break;
-						}
+//								break;
+//						}
 					}
 					else
 					{
@@ -381,53 +380,44 @@ public class RefexDynamicGUI
 		
 		try
 		{
-			ConceptVersionBI c = OTFUtility.getConceptVersion(nid);
-			if (c == null) 
+			Optional<ConceptSnapshot> c = OchreUtility.getConceptSnapshot(nid, null, null);
+			if (!c.isPresent()) 
 			{
 				//This may be a different component - like a description, or another refex... need to handle.
-				Optional<? extends ComponentVersionBI> cv = Ts.get().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
-				if (!cv.isPresent())
+				Optional<? extends ObjectChronology<? extends StampedVersion>> oc = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
+
+				if (!oc.isPresent())
 				{
 					text = "[NID] " + nid + " not on path";
 				}
 				
-				else if (cv.get() instanceof DescriptionVersionBI<?>)
+				else if (oc.get() instanceof DescriptionSememe<?>)
 				{
-					DescriptionVersionBI<?> dv = (DescriptionVersionBI<?>) cv.get();
+					DescriptionSememe<?> dv = (DescriptionSememe<?>) oc.get();
 					text = "Description: " + dv.getText();
 				}
-				else if (cv.get() instanceof RelationshipVersionBI<?>)
+				else if (oc.get() instanceof LogicGraphSememe<?>)
 				{
-					RelationshipVersionBI<?> rv = (RelationshipVersionBI<?>) cv.get();
-					text = "Relationship: " + OTFUtility.getDescription(rv.getOriginNid()) + "->" 
-							+ OTFUtility.getDescription(rv.getTypeNid()) + "->"
-							+ OTFUtility.getDescription(rv.getDestinationNid());
+					LogicGraphSememe<?> lg = (LogicGraphSememe<?>) oc.get();
+					
+					//TODO Dan talk to Joel about how to turn a logic graph into a rel type thing
+					text = "Logic Graph: " + lg.toUserString();
 				}
-				else if (cv.get() instanceof DynamicSememe<?>)
+				else if (oc.get() instanceof DynamicSememe<?>)
 				{
-					DynamicSememe<?> rdv = (DynamicSememe<?>) cv.get();
-					text = "Nested Sememe Dynamic: using assemblage " + OTFUtility.getDescription(rdv.getAssemblageSequence());
-				}
-				else if (cv.get() instanceof RefexVersionBI<?>)
-				{
-					RefexVersionBI<?> rv = (RefexVersionBI<?>) cv.get();
-					text = "Nested Sememe: using assemblage " + OTFUtility.getDescription(rv.getAssemblageNid());
-				}
-				else if (cv.get() instanceof MediaVersionBI<?>)
-				{
-					MediaVersionBI<?> mv = (MediaVersionBI<?>) cv.get();
-					text = "Media of format " + mv.getFormat();
+					DynamicSememe<?> nds = (DynamicSememe<?>) oc.get();
+					text = "Nested Sememe Dynamic: using assemblage " + OchreUtility.getDescription(nds.getAssemblageSequence());
 				}
 				else
 				{
-					logger_.warn("The component type " + cv + " is not handled yet!");
-					//Not sure what else there may be?
-					text = cv.get().toUserString();
+					logger_.warn("The component type " + oc + " is not handled yet!");
+					//TODO should handle other types of common sememes
+					text = oc.get().toUserString();
 				}
 			}
 			else
 			{
-				text = OTFUtility.getDescription(c);
+				text = OchreUtility.getDescription(c.get().getConceptSequence()).get();
 			}
 		}
 		catch (Exception e)

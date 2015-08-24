@@ -49,6 +49,7 @@ import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
@@ -207,14 +208,14 @@ public class LOINCSpreadsheetRules extends BaseSpreadsheetCode implements Transf
 		}
 		
 		//passed all criteria
-		ruleHits.get(rd.getId()).add(cc.getPrimordialUuid() + "," + OTFUtility.getFullySpecifiedName(cc));
+		ruleHits.get(rd.getId()).add(cc.getPrimordialUuid() + "," + OchreUtility.getFSNForConceptNid(cc.getNid(), null).get());
 		if (rd.getId() != 1000)  //skip rule 1000, it modifies the entire LOINC set
 		{
 			Set<Integer> rules = conceptHitsByRule.get(cc.getPrimordialUuid());
 			if (rules == null)
 			{
 				rules = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
-				Set<Integer> oldRules = conceptHitsByRule.put(cc.getPrimordialUuid().toString() + "," + OTFUtility.getFullySpecifiedName(cc), rules);
+				Set<Integer> oldRules = conceptHitsByRule.put(cc.getPrimordialUuid().toString() + "," + OchreUtility.getFSNForConceptNid(cc.getNid(), null).get(), rules);
 				if (oldRules != null)
 				{
 					//two different threads tried to do this at the same time.  merge

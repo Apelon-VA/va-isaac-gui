@@ -110,12 +110,13 @@ public class ConceptViewController {
 	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
 
 	private SctTreeViewIsaacView sctTree;
-//	private RefexViewI refexView;
 	private DescriptionTableView dtv;
 	private RelationshipTableView rtv;
 	
 	private UUID conceptUuid;
 	private int conceptNid = 0;
+	
+	private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
     private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
@@ -160,12 +161,18 @@ public class ConceptViewController {
 		historyToggle.setGraphic(Images.HISTORY.createImageView());
 		historyToggle.setTooltip(new Tooltip("Shows full history when pressed, Only shows current items when not pressed"));
 		
+		//Listen to changes to global - but no longer push local changes back to global
+		ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().addListener(change -> 
+		{
+			displayFSN_.set(ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().isFSNPreferred());
+		});
+		
 		descriptionTypeButton.setText("");
 		ImageView displayFsn = Images.DISPLAY_FSN.createImageView();
 		Tooltip.install(displayFsn, new Tooltip("Displaying the Fully Specified Name - click to display the Preferred Term"));
-		displayFsn.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+		displayFsn.visibleProperty().bind(displayFSN_);
 		ImageView displayPreferred = Images.DISPLAY_PREFERRED.createImageView();
-		displayPreferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not());
+		displayPreferred.visibleProperty().bind(displayFSN_.not());
 		Tooltip.install(displayPreferred, new Tooltip("Displaying the Preferred Term - click to display the Fully Specified Name"));
 		descriptionTypeButton.setGraphic(new StackPane(displayFsn, displayPreferred));
 		descriptionTypeButton.prefHeightProperty().bind(historyToggle.heightProperty());
@@ -175,16 +182,7 @@ public class ConceptViewController {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				try
-				{
-					UserProfile up = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					up.setDisplayFSN(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not().get());
-					ExtendedAppContext.getService(UserProfileManager.class).saveChanges(up);
-				}
-				catch (Exception e)
-				{
-					LOG.error("Unexpected error storing pref change", e);
-				}
+				displayFSN_.set(displayFSN_.not().get());
 			}
 		});
 		
@@ -385,7 +383,8 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().get().getLanguageCoordinate(), getConceptSnapshotService().get().getStampCoordinate());
+			String conceptDescription = OchreUtility.getDescription(concept.getConceptSequence(), getConceptSnapshotService().get().getLanguageCoordinate(), 
+					getConceptSnapshotService().get().getStampCoordinate()).get();
 			
 			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().get().getConceptSnapshot(concept.getNid());
 			conceptNid = concept.getNid();

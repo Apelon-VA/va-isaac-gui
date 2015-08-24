@@ -66,6 +66,7 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Semantic_Tag;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.impl.utility.Frills;
@@ -548,7 +549,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getSemanticTag(ConceptChronicleBI concept) throws Exception {
-		String fsn = OTFUtility.getFullySpecifiedName(concept);
+		String fsn = OchreUtility.getFSNForConceptNid(concept.getNid(), null).get();
 		if (fsn.indexOf('(') != -1)
 		{
 			String st = fsn.substring(fsn.lastIndexOf('(') + 1, fsn.lastIndexOf(')'));
@@ -570,7 +571,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getTopic(ConceptChronicleBI concept) throws Exception {
-		String fsn = OTFUtility.getFullySpecifiedName(concept);
+		String fsn = OchreUtility.getFSNForConceptNid(concept.getNid(), null).get();
 		if (fsn.indexOf('(') != -1)
 		{
 			String st = fsn.substring(fsn.lastIndexOf('(') + 1, fsn.lastIndexOf(')'));
@@ -588,19 +589,11 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getFsnWithoutSemTag(ConceptChronicleBI concept) throws Exception {
-		String fsn = null;
-		fsn = OTFUtility.getFullySpecifiedName(concept);
-		
-		String fsnOnly;
-		if(fsn == null) {
-			throw new Exception("FSN Could not be retreived");
-		} else {
-		
-			fsnOnly = fsn;
-			if (fsn.indexOf('(') != -1)
-			{
-				fsnOnly = fsn.substring(0, fsn.lastIndexOf('(') - 1);
-			}
+		String fsn = OchreUtility.getFSNForConceptNid(concept.getNid(), null).get();
+		String fsnOnly = fsn;
+		if (fsn.indexOf('(') != -1)
+		{
+			fsnOnly = fsn.substring(0, fsn.lastIndexOf('(') - 1);
 		}
 		return fsnOnly;
 	}
@@ -612,7 +605,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @return String of the relationship type
 	 */
 	private String getRelType(int nid) {
-		String relType = OTFUtility.getConPrefTerm(nid);
+		String relType = OchreUtility.getPreferredTermForConceptNid(nid, null, null).get();
 		if(relType.equalsIgnoreCase("is-a")) {
 			relType = "Is a";
 		}
@@ -652,7 +645,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @return characteristic type from PICKLIST
 	 */
 	private String getCharType(int nid) {
-		String characteristic = OTFUtility.getConPrefTerm(nid); 
+		String characteristic = OchreUtility.getPreferredTermForConceptNid(nid, null, null).get();
 		if(characteristic.equalsIgnoreCase("stated")) {
 			return RelationshipType.STATED_ROLE.toString();
 			//return PICKLIST_Characteristic_Type.Defining_relationship.toString(); 
@@ -667,7 +660,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	
 	private String getRefinability(int nid) {
 		
-		String desc = OTFUtility.getConPrefTerm(nid);
+		String desc = OchreUtility.getPreferredTermForConceptNid(nid, null, null).get();
 		String descToPicklist = desc;
 		
 		//Map the words optional and mandatory to their equal ENUMS b/c of API limitations
@@ -825,7 +818,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				DescriptionVersionBI<?> descVersion = descVersionOpt.get();
 				// Synonyms: find active, non FSN descriptions not matching the preferred name
 				if (descVersion.isActive() && (descVersion.getTypeNid() != Snomed.FULLY_SPECIFIED_DESCRIPTION_TYPE.getLenient().getNid())
-						&& !descVersion.getText().equals(OTFUtility.getConPrefTerm(concept.getNid())))
+						&& !descVersion.getText().equals(OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get()))
 				{
 					synonyms.add(descVersion.getText());
 				}
@@ -864,7 +857,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, concept.getPrimordialUuid().toString());
 					break;
 				case Local_Term: 
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
+					bt.addStringCell(column, OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get());
 					break;
 				case Fully_Specified_Name:
 					bt.addStringCell(column, this.getFsnWithoutSemTag(concept));
@@ -873,7 +866,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, this.getSemanticTag(concept));
 					break;
 				case Preferred_Term:
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
+					bt.addStringCell(column, OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get());
 					break;
 				//Note that this logic is fragile, and will break, if we encounter a parentConcept column before the corresponding terminology column....
 				//but we should be processing them in order, as far as I know.
@@ -958,7 +951,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 						firstSyn = true;
 					}
 					if(testing) {
-						sb.append("Concept: " + concept.getNid()+ " - " + OTFUtility.getDescription(concept));
+						sb.append("Concept: " + concept.getNid()+ " - " + OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get());
 					} 
 					bt.addStringCell(column, sb.toString());
 					break;

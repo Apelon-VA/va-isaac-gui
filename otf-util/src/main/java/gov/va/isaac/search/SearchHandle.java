@@ -30,10 +30,16 @@ import java.util.List;
 public class SearchHandle {
 
     private final long searchStartTime = System.currentTimeMillis();
+    private Integer searchID_;
 
-    private List<CompositeSearchResult> result;
+    private List<CompositeSearchResult> result_;
     private volatile boolean cancelled = false;
     private Exception error = null;
+    
+    SearchHandle(Integer searchID)
+    {
+        searchID_ = searchID;
+    }
 
     /**
      * Blocks until the results are available....
@@ -42,9 +48,9 @@ public class SearchHandle {
      * @throws Exception
      */
     public Collection<CompositeSearchResult> getResults() throws Exception {
-        if (result == null) {
+        if (result_ == null) {
             synchronized (SearchHandle.this) {
-                while (result == null && error == null && !cancelled) {
+                while (result_ == null && error == null && !cancelled) {
                     try {
                         SearchHandle.this.wait();
                     } catch (InterruptedException e) {
@@ -56,7 +62,7 @@ public class SearchHandle {
         if (error != null) {
             throw error;
         }
-        return result;
+        return result_;
     }
     
     /**
@@ -76,7 +82,7 @@ public class SearchHandle {
 
     protected void setResults(List<CompositeSearchResult> results) {
         synchronized (SearchHandle.this) {
-            result = results;
+            result_ = results;
             SearchHandle.this.notifyAll();
         }
     }
@@ -98,5 +104,13 @@ public class SearchHandle {
 
     public void cancel() {
         this.cancelled = true;
+    }
+    
+    /**
+     * Returns the identifier provided (if any) by the caller when the search was started
+     */
+    public Integer getTaskId()
+    {
+        return searchID_;
     }
 }

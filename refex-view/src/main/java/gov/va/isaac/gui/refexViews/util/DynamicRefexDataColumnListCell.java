@@ -21,7 +21,7 @@ package gov.va.isaac.gui.refexViews.util;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
@@ -112,19 +112,13 @@ public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumn
 				}
 				else if (item.getColumnDataType() == DynamicSememeDataType.NID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)item.getDefaultColumnValue()).getDataNid());
-					if (temp == null)
-					{
-						temp = "NID: " + item.getDefaultColumnValue().getDataObject().toString();
-					}
+					temp = OchreUtility.getDescription(((DynamicSememeNid)item.getDefaultColumnValue()).getDataNid())
+							.orElse("NID: " + item.getDefaultColumnValue().getDataObject().toString());
 				}
 				else if (item.getColumnDataType() == DynamicSememeDataType.UUID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)item.getDefaultColumnValue()).getDataUUID());
-					if (temp == null)
-					{
-						temp = "UUID: " + item.getDefaultColumnValue().getDataObject().toString();
-					}
+					temp = OchreUtility.getDescription(((DynamicSememeUUID)item.getDefaultColumnValue()).getDataUUID())
+							.orElse("UUID: " + item.getDefaultColumnValue().getDataObject().toString());
 				}
 				else
 				{
@@ -157,19 +151,13 @@ public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumn
 				}
 				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid)valDataUnwrap(item)).getDataNid());
-					if (validatorData == null)
-					{
-						validatorData = "NID: " + valDataUnwrap(item).getDataObject().toString();
-					}
+					validatorData = OchreUtility.getDescription(((DynamicSememeNid)valDataUnwrap(item)).getDataNid())
+							.orElse("NID: " + valDataUnwrap(item).getDataObject().toString());
 				}
 				else if (valDataUnwrap(item).getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
-					validatorData = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID)valDataUnwrap(item)).getDataUUID());
-					if (validatorData == null)
-					{
-						validatorData = "UUID: " + valDataUnwrap(item).getDataObject().toString();
-					}
+					validatorData = OchreUtility.getDescription(((DynamicSememeUUID)valDataUnwrap(item)).getDataUUID())
+							.orElse("UUID: " + valDataUnwrap(item).getDataObject().toString());
 				}
 				else if (valUnwrap(item) == DynamicSememeValidatorType.EXTERNAL)
 				{

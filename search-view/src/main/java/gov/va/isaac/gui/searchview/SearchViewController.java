@@ -745,25 +745,30 @@ public class SearchViewController implements TaskCompleteCallback
 				if (descriptionTypeSelection.getValue().getNid() == Integer.MIN_VALUE)
 				{
 					LOG.debug("Doing a description search across all description types");
-					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), this, true, false);
+					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), 
+							((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+							true, false);
 				}
 				else if (descriptionTypeSelection.getValue().getNid() == LuceneDescriptionType.FSN.ordinal())
 				{
 					LOG.debug("Doing a description search on FSN");
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, LuceneDescriptionType.FSN, 
-							this, null, null, null, true, false);
+							((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+							null, null, null, true, false);
 				}
 				else if (descriptionTypeSelection.getValue().getNid() == LuceneDescriptionType.DEFINITION.ordinal())
 				{
 					LOG.debug("Doing a description search on Definition");
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, LuceneDescriptionType.DEFINITION, 
-							this, null, null, null, true, false);
+							((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+							null, null, null, true, false);
 				}
 				else if (descriptionTypeSelection.getValue().getNid() == LuceneDescriptionType.SYNONYM.ordinal())
 				{
 					LOG.debug("Doing a description search on Synonym");
 					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, LuceneDescriptionType.SYNONYM, 
-							this, null, null, null, true, false);
+							((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+							null, null, null, true, false);
 				}
 				else
 				{
@@ -772,13 +777,15 @@ public class SearchViewController implements TaskCompleteCallback
 					{
 						ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
 								LuceneDescriptionType.fromOrdinal(descriptionTypeSelection.getValue().getNid()), 
-								this, null, null, null, true, false);
+								((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+								null, null, null, true, false);
 					}
 					else
 					{
 						ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
 							Get.identifierService().getUuidPrimordialForNid(descriptionTypeSelection.getValue().getNid()).get(), 
-							this, null, null, null, true, false);
+							((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+							null, null, null, true, false);
 					}
 				}
 			}
@@ -799,7 +806,8 @@ public class SearchViewController implements TaskCompleteCallback
 						{
 							throw new RuntimeException(e);
 						}
-					}, this, null, null, null, true, false);
+					}, ((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+					null, null, null, true, false);
 				}
 				catch (NumberFormatException e)
 				{
@@ -820,7 +828,8 @@ public class SearchViewController implements TaskCompleteCallback
 							{
 								throw new RuntimeException(e1);
 							}
-						}, this, null, null, null, true, false);
+						}, ((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+						null, null, null, true, false);
 					}
 					catch (NumberFormatException e1) 
 					{
@@ -837,7 +846,8 @@ public class SearchViewController implements TaskCompleteCallback
 							{
 								throw new RuntimeException(e2);
 							}
-						}, this, null, null, null, true, false);
+						}, ((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+						null, null, null, true, false);
 					}
 				}
 			}

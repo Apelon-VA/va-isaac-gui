@@ -39,23 +39,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
+import org.ihtsdo.otf.query.lucene.LuceneIndexer;
 import org.ihtsdo.otf.query.lucene.indexers.DescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Class for handling the ISAAC search functionality.
  * <p>
- * Logic has been mostly copied from LEGO {@code WBDataStore#search}, but now rewritten and updated to use the newer
- * search APIs provided in OTF
+ * A wrapper on top of the search capabilities provided by {@link LuceneIndexer} implementations that adds things like
+ * background threaded searches, convenience methods for common searches, etc.
  * 
- * @author ocarlsen
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
-   */
+ * @author ocarlsen
+ */
 
 //TODO need to rework these APIs to take in path info - so that the path for the search can easily be customized from the search GUI
 public class SearchHandler
@@ -73,7 +76,8 @@ public class SearchHandler
 	 * @param resultLimit - limit to X results.  Use {@link Integer#MAX_VALUE} for no limit.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
 	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
-	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
 	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
@@ -90,7 +94,7 @@ public class SearchHandler
 			String query, 
 			final int resultLimit, 
 			final boolean prefixSearch, 
-			final TaskCompleteCallback callback, 
+			Consumer<SearchHandle> operationToRunWhenSearchComplete,
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
@@ -110,7 +114,7 @@ public class SearchHandler
 						throw new RuntimeException(e);
 					}
 				},
-		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
+		prefixSearch, operationToRunWhenSearchComplete, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
 	}
 	
 	/**
@@ -123,9 +127,10 @@ public class SearchHandler
 	 * @param query - The query text
 	 * @param resultLimit - limit to X results.  Use {@link Integer#MAX_VALUE} for no limit.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
-	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
+	 *   See {@link DescriptionIndexer#query(String, boolean, Integer, int, Long)} for more details on this algorithm.
 	 * @param descriptionType - The type to search within (FSN / Synonym / Description)
-	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
 	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
@@ -143,7 +148,7 @@ public class SearchHandler
 			final int resultLimit, 
 			final boolean prefixSearch, 
 			final LuceneDescriptionType descriptionType,
-			final TaskCompleteCallback callback, 
+			Consumer<SearchHandle> operationToRunWhenSearchComplete,
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
@@ -163,7 +168,7 @@ public class SearchHandler
 						throw new RuntimeException(e);
 					}
 				},
-		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
+		prefixSearch, operationToRunWhenSearchComplete, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
 	}
 	
 	/**
@@ -179,7 +184,8 @@ public class SearchHandler
 	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
 	 * @param extendedDescriptionType - The UUID of the concept that represents the extended (terminology specific) description type.
 	 * This concept should be a child of {@link IsaacMetadataAuxiliaryBinding#DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY}
-	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
 	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
@@ -197,7 +203,7 @@ public class SearchHandler
 			final int resultLimit, 
 			final boolean prefixSearch, 
 			final UUID extendedDescriptionType,
-			final TaskCompleteCallback callback, 
+			Consumer<SearchHandle> operationToRunWhenSearchComplete,
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
@@ -217,7 +223,7 @@ public class SearchHandler
 						throw new RuntimeException(e);
 					}
 				},
-		prefixSearch, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
+		prefixSearch, operationToRunWhenSearchComplete, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults); 
 	}
 	
 	/**
@@ -225,7 +231,8 @@ public class SearchHandler
 	 * passing false for prefixSearch, null for the taskID, null for the filter, null for the comparator
 	 * @param query - The query string
 	 * @param resultLimit - limit to X results.  Use {@link Integer#MAX_VALUE} for no limit.
-	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
 	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
 	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
@@ -233,8 +240,9 @@ public class SearchHandler
 	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
-	public static SearchHandle descriptionSearch(String query, int resultLimit, TaskCompleteCallback callback, boolean mergeResultsOnConcepts, boolean includeOffPathResults) {
-		return descriptionSearch(query, resultLimit, false, callback, (Integer)null, null, null, mergeResultsOnConcepts, includeOffPathResults);
+	public static SearchHandle descriptionSearch(String query, int resultLimit, Consumer<SearchHandle> operationToRunWhenSearchComplete, 
+			boolean mergeResultsOnConcepts, boolean includeOffPathResults) {
+		return descriptionSearch(query, resultLimit, false, operationToRunWhenSearchComplete, (Integer)null, null, null, mergeResultsOnConcepts, includeOffPathResults);
 	}
 	
 	
@@ -254,7 +262,8 @@ public class SearchHandler
 	 * that class for documentation on the various search types supported.
 	 * @param prefixSearch - true to use the "prefex search" algorithm.  False to use the standard lucene algorithm.  
 	 *   See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for more details on this algorithm.
-	 * @param callback - (optional) Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
 	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
@@ -271,14 +280,14 @@ public class SearchHandler
 			String query,
 			final BiFunction<DescriptionIndexer, String, List<SearchResult>> searchFunction,
 			final boolean prefixSearch, 
-			final TaskCompleteCallback callback, 
+			final Consumer<SearchHandle> operationToRunWhenSearchComplete, 
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
 			boolean mergeOnConcepts,
 			boolean includeOffPathResults)
 	{
-		final SearchHandle searchHandle = new SearchHandle();
+		final SearchHandle searchHandle = new SearchHandle(taskId);
 
 		if (!prefixSearch)
 		{
@@ -392,9 +401,9 @@ public class SearchHandler
 					LOG.error("Unexpected error during lucene search", ex);
 					searchHandle.setError(ex);
 				}
-				if (callback != null)
+				if (operationToRunWhenSearchComplete != null)
 				{
-					callback.taskComplete(searchHandle.getSearchStartTime(), taskId);
+					operationToRunWhenSearchComplete.accept(searchHandle);
 				}
 			}
 		};
@@ -415,7 +424,8 @@ public class SearchHandler
 	 * 
 	 * @param searchFunction A function that will call one of the query(...) methods within {@link DynamicSememeIndexer}.  See
 	 * that class for documentation on the various search types supported.
-	 * @param callback - Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
 	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
@@ -429,14 +439,14 @@ public class SearchHandler
 	 */
 	public static SearchHandle dynamicRefexSearch(
 			Function<DynamicSememeIndexer, List<SearchResult>> searchFunction,
-			final TaskCompleteCallback callback, 
+			final Consumer<SearchHandle> operationToRunWhenSearchComplete, 
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
 			boolean mergeOnConcepts,
 			boolean includeOffPathResults)
 	{
-		final SearchHandle searchHandle = new SearchHandle();
+		final SearchHandle searchHandle = new SearchHandle(taskId);
 		
 		// Do search in background.
 		Runnable r = new Runnable()
@@ -502,7 +512,10 @@ public class SearchHandler
 					LOG.error("Unexpected error during lucene search", ex);
 					searchHandle.setError(ex);
 				}
-				callback.taskComplete(searchHandle.getSearchStartTime(), taskId);
+				if (operationToRunWhenSearchComplete != null)
+				{
+					operationToRunWhenSearchComplete.accept(searchHandle);
+				}
 			}
 		};
 
@@ -519,7 +532,8 @@ public class SearchHandler
 	 * @param prefixSearch - use the prefix search text algorithm.  See {@link DescriptionIndexer#query(String, boolean, ComponentProperty, int, Long)} for 
 	 *  a description on the prefix search algorithm.
 	 * @param assemblageNid - (optional) limit the search to the specified assemblage type, or all assemblage objects (if null)
-	 * @param callback - Pass the handle that you want to have notified when the search is complete, and the results are ready for use.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
 	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
 	 *   requests to this method with callbacks.
 	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
@@ -536,7 +550,7 @@ public class SearchHandler
 			int resultLimit,
 			boolean prefixSearch,
 			Integer assemblageNid,
-			final TaskCompleteCallback callback, 
+			Consumer<SearchHandle> operationToRunWhenSearchComplete,
 			final Integer taskId, 
 			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
 			Comparator<CompositeSearchResult> comparator,
@@ -553,7 +567,7 @@ public class SearchHandler
 				{
 					throw new RuntimeException(e);
 				}
-			}, callback, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults);
+			}, operationToRunWhenSearchComplete, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults);
 	}
 	
 	private static void processResults(SearchHandle searchHandle, List<CompositeSearchResult> rawResults, 

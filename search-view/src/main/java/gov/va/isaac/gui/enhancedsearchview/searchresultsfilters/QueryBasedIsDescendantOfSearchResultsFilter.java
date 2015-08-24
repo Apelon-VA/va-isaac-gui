@@ -28,21 +28,20 @@ import gov.va.isaac.gui.enhancedsearchview.filters.IsDescendantOfFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.collections.NidSet;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-
 import org.ihtsdo.otf.query.implementation.Clause;
 import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
+import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 import org.ihtsdo.otf.query.implementation.Query;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
-import org.ihtsdo.otf.query.implementation.ForSetSpecification;
 
 class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<CompositeSearchResult>, List<CompositeSearchResult>>  {
 	private final IsDescendantOfFilter filter;
@@ -73,7 +72,7 @@ class QueryBasedIsDescendantOfSearchResultsFilter implements Function<List<Compo
 		Query q = new Query() {
 			@Override
 			public void Let()  {
-				let(concept.getPrimordialUuid().toString(), new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
+				let(concept.getPrimordialUuid().toString(), new ConceptSpec(OchreUtility.getDescription(concept.getNid()).get(), concept.getPrimordialUuid()));
 			}
 
 			@Override

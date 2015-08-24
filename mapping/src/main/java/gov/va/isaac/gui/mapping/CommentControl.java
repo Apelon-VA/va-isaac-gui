@@ -7,16 +7,15 @@ import gov.va.isaac.gui.mapping.data.MappingItemCommentDAO;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.utility.DialogResponse;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.Label;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.AnchorPane;
 
 public class CommentControl extends AnchorPane {
 	@FXML private Label timestampLabel;
@@ -76,7 +75,7 @@ public class CommentControl extends AnchorPane {
 		mappingItem_ = mappingItem;
 		comment_ = comment;
 		commentTextArea.textProperty().set(comment.getCommentText());
-		authorLabel.textProperty().set(OTFUtility.getDescription(comment.getAuthorName()));
+		authorLabel.textProperty().set(OchreUtility.getDescription(comment.getAuthorName()).get());
 		timestampLabel.textProperty().set(dateTimeFormatShort.format(comment.getCreationDate()));
 	}
 }

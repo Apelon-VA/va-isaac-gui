@@ -22,7 +22,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.IsaacAppConfig;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.interfaces.config.IsaacAppConfigI;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import java.io.File;
@@ -427,7 +427,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	@Override
 	public String getCurrentEditPathName()
 	{
-		return OTFUtility.getDescriptionIfConceptExists(IsaacAppConfigI.getUuidForString(getCurrentEditPathUuid()));
+		return OchreUtility.getDescription(IsaacAppConfigI.getUuidForString(getCurrentEditPathUuid()), null).get();
 	}
 
 	/**
@@ -445,7 +445,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	@Override
 	public String getCurrentViewPathName()
 	{
-		return OTFUtility.getDescriptionIfConceptExists(IsaacAppConfigI.getUuidForString(getCurrentViewPathUuid()));
+		return OchreUtility.getDescription(IsaacAppConfigI.getUuidForString(getCurrentViewPathUuid()), null).get();
 	}
 
 	/**
@@ -508,7 +508,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	@Override
 	public String getDefaultWorkflowPromotionPathName()
 	{
-		return OTFUtility.getDescriptionIfConceptExists(getDefaultWorkflowPromotionPathUuidAsUUID());
+		return OchreUtility.getDescription(getDefaultWorkflowPromotionPathUuidAsUUID(), null).get();
 	}
 
 	/**
@@ -517,7 +517,7 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 	@Override
 	public String getCurrentWorkflowPromotionPathName()
 	{
-		return OTFUtility.getDescriptionIfConceptExists(getCurrentWorkflowPromotionPathUuidAsUUID());
+		return OchreUtility.getDescription(getCurrentWorkflowPromotionPathUuidAsUUID(), null).get();
 	}
 
 	/**

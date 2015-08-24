@@ -2,6 +2,7 @@ package gov.va.isaac.gui.conceptViews.componentRows;
 
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public abstract class TermRow extends Row {
 		
 		if (prefTermTypeStr == null) {
 			prefTermTypeNid = SnomedMetadataRf2.PREFERRED_RF2.getNid();
-			prefTermTypeStr = OTFUtility.getConPrefTerm(prefTermTypeNid);
+			prefTermTypeStr = OchreUtility.getPreferredTermForConceptNid(prefTermTypeNid, null, null).get();
 		}
 	}
 	

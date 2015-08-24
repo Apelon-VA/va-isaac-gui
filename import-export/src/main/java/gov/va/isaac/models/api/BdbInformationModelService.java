@@ -58,6 +58,7 @@ import gov.va.isaac.models.InformationModelMetadata;
 import gov.va.isaac.models.InformationModelProperty;
 import gov.va.isaac.models.util.DefaultInformationModel;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
@@ -294,10 +295,10 @@ public class BdbInformationModelService implements InformationModelService {
         + modelConcept.getPrimordialUuid());
 
     // Key is the FN
-    String key = OTFUtility.getFullySpecifiedName(modelConcept);
+    String key = OchreUtility.getFSNForConceptNid(modelConcept.getNid(), null).get();
     LOG.debug("  key = " + key);
     // Name is the PT
-    String name = OTFUtility.getConPrefTerm(modelConcept.getNid());
+    String name = OchreUtility.getPreferredTermForConceptNid(modelConcept.getNid(), null, null).get();
     LOG.debug("  name = " + name);
     // UUID of the concept
     UUID uuid = modelConcept.getPrimordialUuid();
@@ -434,11 +435,7 @@ public class BdbInformationModelService implements InformationModelService {
     // Walk up tree until we encounter a "type" concept
     while (true) {
       // Look for match (the pref name will match an information model type)
-      String prefName = OTFUtility.getConPrefTerm(concept.getNid());
-      if (prefName == null) {
-        throw new IOException("Concept preferred name unexepectedly null "
-            + concept.getPrimordialUuid());
-      }
+      String prefName = OchreUtility.getFSNForConceptNid(concept.getNid(), null).get();
       for (InformationModelType type : values) {
         if (prefName.equals(type.getDisplayName())) {
           LOG.debug("  FOUND TYPE: " + type.getDisplayName());
@@ -668,8 +665,7 @@ public class BdbInformationModelService implements InformationModelService {
 
         // If the UUID is not in range, retire the rel
         if (!associatedConceptUuids.contains(uuid)) {
-          LOG.debug("    Found relationship to retire - "
-              + OTFUtility.getConPrefTerm(relCAB.getTargetNid()));
+          LOG.debug("    Found relationship to retire - "+ Get.conceptDescriptionText(relCAB.getTargetNid()));
           relCAB.setRetired();
           OTFUtility.getBuilder().constructIfNotCurrent(relCAB);
         }

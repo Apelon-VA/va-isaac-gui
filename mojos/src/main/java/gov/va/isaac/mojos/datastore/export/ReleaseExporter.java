@@ -18,6 +18,25 @@
  */
 package gov.va.isaac.mojos.datastore.export;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.config.profiles.UserProfile;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.config.users.InvalidUserException;
+import gov.va.isaac.ie.exporter.EConceptExporter;
+import gov.va.isaac.init.SystemInit;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
+import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.ProgressEvent;
+import gov.va.isaac.util.ProgressListener;
+import gov.va.isaac.util.Utility;
+import gov.va.isaac.util.ViewCoordinateFactory;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -26,7 +45,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,7 +55,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
+import javafx.concurrent.Task;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -52,27 +70,6 @@ import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
-import gov.va.isaac.ie.exporter.EConceptExporter;
-import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
-import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.ProgressEvent;
-import gov.va.isaac.util.ProgressListener;
-import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.ViewCoordinateFactory;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
-import javafx.concurrent.Task;
 
 
 
@@ -424,7 +421,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 					if(thisPath.getChronology().getPrimordialUuid().equals(pathSpec.getConceptSpec().getPrimodialUuid())) {
 						selectedPath = pathSpec.getConceptSpec().getPrimodialUuid();
 						selectedPathNid = pathSpec.getConceptSpec().getNid();
-						getLog().info("Path is valid: " + OTFUtility.getDescription(selectedPathNid));
+						getLog().info("Path is valid: " + OchreUtility.getDescription(selectedPathNid).get());
 						return true; 
 					}
 				} catch (Exception e) {

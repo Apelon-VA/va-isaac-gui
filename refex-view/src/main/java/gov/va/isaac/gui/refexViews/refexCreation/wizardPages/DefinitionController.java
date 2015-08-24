@@ -18,14 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
-import java.net.URL;
-import java.util.Arrays;
-import java.util.ResourceBundle;
-import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.ConceptNode;
@@ -36,11 +28,18 @@ import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.interfaces.utility.DialogResponse;
+import gov.va.isaac.search.SearchHandler;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
+import java.net.URL;
+import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicLong;
+import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -56,6 +55,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -84,7 +86,8 @@ public class DefinitionController implements PanelControllersI {
 	
 	private ConceptNode parentConcept = null;
 	
-	private StringBinding refexDescriptionInvalidReason, refexNameInvalidReason, extensionCountInvalidReason;
+	private StringBinding refexDescriptionInvalidReason, extensionCountInvalidReason;
+	private StringProperty refexNameInvalidReason;
 	private BooleanBinding allValid;
 	
 	private RefexData wizardData;
@@ -164,35 +167,52 @@ public class DefinitionController implements PanelControllersI {
 			
 		componentType.getSelectionModel().select(0);
 		
-		refexNameInvalidReason = new StringBinding()
+		final AtomicLong lastUsedSearchStartTime = new AtomicLong(0);
+		
+		refexNameInvalidReason = new SimpleStringProperty("");
+		refexName.textProperty().addListener(change ->
 		{
+			if (refexName.getText().trim().isEmpty())
 			{
-				bind(refexName.textProperty());
+				refexNameInvalidReason.set("The Sememe Name is required");
 			}
-			@Override
-			protected String computeValue()
+			else
 			{
-				if (refexName.getText().trim().isEmpty())
-				{
-					return "The Sememe Name is required";
-				}
-				else
-				{
-					//This test isn't perfect... won't detect all cases where the FSN is actually identical to something that exists.
-					//But it will detect the cases that will cause the blueprint construct to blowup
-					UUID uuidWeWouldGetUponCreate = ConceptCB.computeComponentUuid(IdDirective.GENERATE_HASH, Arrays.asList(new String[] {refexName.getText().trim()}), 
-							Arrays.asList(new String[] {refexName.getText().trim()}), null);
-					if (Get.identifierService().hasUuid(uuidWeWouldGetUponCreate))
-					{
-						return "A concept already exists with this FSN";
-					}
-					else
-					{
-						return "";
-					}
-				}
+				//This test isn't perfect... won't detect all cases where the FSN is actually identical to something that exists.
+				//An extra space tells the prefex search algorithm that each word is required
+				SearchHandler.descriptionSearch(refexName.getText().trim() + " ",
+						1, true, LuceneDescriptionType.FSN, 
+						(searchHandle -> 
+						{
+							//In case they come back out-of-order, only use newest
+							if (searchHandle.getSearchStartTime() > lastUsedSearchStartTime.get())
+							{
+								lastUsedSearchStartTime.set(searchHandle.getSearchStartTime());
+									Platform.runLater(() -> 
+									{
+										try
+										{
+											if (searchHandle.getResults().size() > 0)
+											{
+												//TODO need to read the desc nid and do an equality compare...
+												refexNameInvalidReason.set("A concept already exists with this FSN");
+											}
+											else
+											{
+												refexNameInvalidReason.set("");
+											}
+										}
+										catch (Exception e1)
+										{
+											refexNameInvalidReason.set("");
+											logger.error("Unexpected error checking for FSN", e1);
+										}
+									});
+							}
+						}), null, null, null, false, true);
 			}
-		};
+		});
+
 
 		extensionCountInvalidReason = new StringBinding()
 		{

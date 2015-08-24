@@ -18,6 +18,15 @@
  */
 package gov.va.isaac.util;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.va.isaac.config.profiles.UserProfile;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.config.users.InvalidUserException;
+import gov.vha.isaac.cradle.Builder;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -29,7 +38,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
@@ -53,7 +61,6 @@ import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
-import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
@@ -62,28 +69,10 @@ import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.ihtsdo.otf.tcc.api.store.Ts;
-import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.description.DescriptionVersionDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.refex.RefexChronicleDdo;
-import org.ihtsdo.otf.tcc.ddo.concept.component.refex.type_comp.RefexCompVersionDdo;
 import org.ihtsdo.otf.tcc.model.cc.refex.type_membership.MembershipMember;
-import org.ihtsdo.otf.tcc.model.cc.refex.type_nid.NidMember;
 import org.ihtsdo.otf.tcc.model.cc.termstore.PersistentStoreI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
-import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
-import gov.vha.isaac.cradle.Builder;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.ConceptModel;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.util.UuidFactory;
 
 /**
  * 
@@ -117,10 +106,6 @@ public class OTFUtility {
 	}
 	public static TerminologyBuilderBI getBuilder(EditCoordinate ec, ViewCoordinate vc) {
 		return new Builder(ec, vc, AppContext.getService(PersistentStoreI.class));
-	}
-
-	public static ViewCoordinate getSystemViewCoordinate() {
-		return ViewCoordinateFactory.getSystemViewCoordinate();
 	}
 
 	public static ViewCoordinate getViewCoordinate() {
@@ -184,9 +169,6 @@ public class OTFUtility {
 				pathChronicle = dataStore.getConcept(pathNid);
 				pathUuid = pathChronicle.getPrimordialUuid();
 			}
-
-			LOG.info("Using EditCoordinate path nid={}, uuid={}, desc={}", pathNid, pathUuid, OTFUtility.getDescription(pathChronicle));
-
 			// Override edit path
 			return new EditCoordinate(authorNid, module, pathNid);
 		} catch (NullPointerException e) {
@@ -197,156 +179,7 @@ public class OTFUtility {
 
 		return null;
 	}
-	
-	/**
-	 * Returns null if no concept exists with this nid
-	 */
-	public static String getDescriptionIfConceptExists(UUID uuid, ViewCoordinate vc)
-	{
-		ConceptVersionBI result = getConceptVersion(uuid, vc);
-		return (result == null ? null : getDescription(result));
-	}
-	public static String getDescriptionIfConceptExists(UUID uuid) {
-		return getDescriptionIfConceptExists(uuid, getViewCoordinate());
-	}
 
-
-	public static String getDescription(UUID uuid, ViewCoordinate vc) {
-		try {
-			ConceptVersionBI conceptVersion = dataStore.getConceptVersion(vc, uuid);
-			return getDescription(conceptVersion);
-		} catch (Exception ex) {
-			LOG.warn("Unexpected error looking up description", ex);
-			return null;
-		}
-	}
-	public static String getDescription(UUID uuid) {
-		return getDescription(uuid, getViewCoordinate());
-	}
-	
-	/**
-	 * Returns null if no concept exists with this nid
-	 */
-	public static String getDescriptionIfConceptExists(int nid, ViewCoordinate vc)
-	{
-		ConceptVersionBI result = getConceptVersion(nid, vc);
-		return (result == null ? null : getDescription(result));
-	}
-	public static String getDescriptionIfConceptExists(int nid) {
-		return getDescriptionIfConceptExists(nid, getViewCoordinate());
-	}
-	
-	public static String getDescription(int nid, ViewCoordinate vc) {
-		try {
-			if (!dataStore.hasConcept(nid))
-			{
-				return null;
-			}
-			ConceptVersionBI conceptVersion = dataStore.getConceptVersion(vc, nid);
-			return getDescription(conceptVersion);
-		} catch (Exception ex) {
-			LOG.warn("Unexpected error looking up description", ex);
-			return null;
-		}
-	}
-	public static String getDescription(int nid) {
-		return Get.conceptDescriptionText(nid);
-	}
-
-	/**
-	 * Note, this method isn't smart enough to work with multiple versions properly....
-	 * assumes you only pass in a concept with current values.
-	 */
-	public static String getDescription(ConceptChronicleBI concept) {
-		String fsn = null;
-		String preferred = null;
-		String bestFound = null;
-		try {
-			if (concept.getDescriptions() != null) {
-				for (DescriptionChronicleBI desc : concept.getDescriptions()) {
-					int versionCount = desc.getVersions().size();
-					DescriptionVersionBI<?> descVer = desc.getVersions()
-							.toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
-
-					if (descVer.getTypeNid() == getFSNNid()) {
-						if (descVer.getStatus() == Status.ACTIVE) {
-							if (ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
-								return descVer.getText();
-							} else {
-								fsn = descVer.getText();
-							}
-
-						} else {
-							bestFound = descVer.getText();
-						}
-					} else if ((descVer.getTypeNid() == getSynonymTypeNid()) && 
-							isPreferred(descVer.getAnnotations())) {
-						if (descVer.getStatus() == Status.ACTIVE) {
-							if (!ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
-								return descVer.getText();
-							} else {
-								preferred = descVer.getText();
-							}
-						} else {
-							bestFound = descVer.getText();
-						}
-					}
-				}
-			}
-		} catch (IOException e) {
-			// noop
-		}
-		// If we get here, we didn't find what they were looking for. Pick
-		// something....
-		String returnValue = (fsn != null ? fsn : (preferred != null ? preferred
-				: (bestFound != null ? bestFound : concept.toUserString())));
-		
-		return returnValue;
-	}
-	public static String getFullySpecifiedName(ConceptChronicleBI concept) {
-		try {
-			if (concept.getDescriptions() != null) {
-				for (DescriptionChronicleBI desc : concept.getDescriptions()) {
-					int versionCount = desc.getVersions().size();
-					DescriptionVersionBI<?> descVer = desc.getVersions()
-							.toArray(new DescriptionVersionBI[versionCount])[versionCount - 1];
-
-					if (descVer.getTypeNid() == getFSNNid()) {
-						if (descVer.getStatus() == Status.ACTIVE) {
-								return descVer.getText();
-						}
-					}
-				}
-			}
-		} catch (IOException e) {
-			// noop
-		}
-		
-		return null;
-	}
-	
-	private static int getFSNNid() {
-		if (fsnNid == null) {
-			fsnNid = dataStore.getNidForUuids(FSN_UUID);
-		}
-		return fsnNid;
-	}
-
-	private static int getSynonymTypeNid() {
-		// Lazily load.
-		if (synonymNid == null) {
-			synonymNid = dataStore.getNidForUuids(SYNONYM_UUID);
-		}
-		return synonymNid;
-	}
-
-	public static int getLangTypeNid() {
-		// Lazily load.
-		if (langTypeNid == null) {
-			langTypeNid = dataStore.getNidForUuids(Snomed.LANGUAGE_REFEX.getPrimodialUuid());
-		}
-		return langTypeNid;
-	}
 
 	private static int getPreferredTypeNid() {
 		// Lazily load.
@@ -362,182 +195,6 @@ public class OTFUtility {
 			snomedAssemblageNid = IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getNid();
 		}
 		return snomedAssemblageNid;
-	}
-
-	/**
-	 * Pass in the annotations on a description component to determine if one of the 
-	 * annotations is the isPreferred annotation
-	 */
-	public static boolean isPreferred(Collection<? extends RefexChronicleBI<?>> collection) {
-		for (RefexChronicleBI<?> rc : collection) {
-			if (rc.getRefexType() == RefexType.CID) {
-				int nid1 = ((NidMember) rc).getNid1();  // RefexType.CID means NidMember.
-				if (nid1 == getPreferredTypeNid()) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-	public static String getDescription(ConceptChronicleDdo concept) {
-		// Go hunting for a FSN
-		if (concept == null) {
-			return null;
-		}
-		if (concept.getDescriptions() == null) {
-			if (concept.getConceptReference() == null) {
-				return null;
-			}
-			return concept.getConceptReference().getText();
-		}
-
-		String fsn = null;
-		String preferred = null;
-		String bestFound = null;
-		for (DescriptionChronicleDdo d : concept.getDescriptions()) {
-			DescriptionVersionDdo dv = d.getVersions().get(d.getVersions().size() - 1);
-			if (dv.getTypeReference().getUuid().equals(FSN_UUID) ) {
-				if (dv.getStatus() == Status.ACTIVE) {
-					if (ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
-						return dv.getText();
-					} else {
-						fsn = dv.getText();
-					}
-				} else {
-					bestFound = dv.getText();
-				}
-			} else if (dv.getTypeReference().getUuid().equals(SYNONYM_UUID)) {
-				if ((dv.getStatus() == Status.ACTIVE) && isPreferred(dv.getAnnotations())) {
-					if (!ExtendedAppContext.getCurrentlyLoggedInUserProfile().getDisplayFSN()) {
-						return dv.getText();
-					} else {
-						preferred = dv.getText();
-					}
-				} else {
-					bestFound = dv.getText();
-				}
-			}
-		}
-		// If we get here, we didn't find what they were looking for. Pick
-		// something....
-		return (fsn != null ? fsn : (preferred != null ? preferred
-				: (bestFound != null ? bestFound : concept
-						.getConceptReference().getText())));
-	}
-
-	private static boolean isPreferred(List<RefexChronicleDdo<?, ?>> annotations) {
-		for (RefexChronicleDdo<?, ?> frc : annotations) {
-			for (Object version : frc.getVersions()) {
-				if (version instanceof RefexCompVersionDdo) {
-					UUID uuid = ((RefexCompVersionDdo<?, ?>) version).getComp1Ref().getUuid();
-					return uuid.equals(PREFERRED_UUID);
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
-	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
-	 * a SCTID and converts that to UUID and then calls {@link #getConceptVersion(UUID)}.  Note that is is possible for some 
-	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - then a 
-	 * runtime exception is thrown.
-	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
-	 * 
-	 * 
-	 */
-	public static ConceptVersionBI lookupIdentifier(String identifier, ViewCoordinate vc)
-	{
-		LOG.debug("WB DB String Lookup '{}'", identifier);
-
-		if (StringUtils.isBlank(identifier))
-		{
-			return null;
-		}
-		String localIdentifier = identifier.trim();
-
-		UUID uuid = Utility.getUUID(localIdentifier);
-		if (uuid != null)
-		{
-			return getConceptVersion(uuid, vc);
-		}
-		
-		//if it is a negative integer, assume nid
-		Optional<Integer> nid = Utility.getNID(localIdentifier);
-		if (nid.isPresent()) {
-			return getConceptVersion(nid.get(), vc);
-		}
-		
-		if (SctId.isValidSctId(localIdentifier))
-		{
-			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
-			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
-			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
-			ConceptVersionBI cv = getConceptVersion(alternateUUID, vc);
-			if (cv != null)
-			{
-				//sanity check:
-				if (Utility.isInt(localIdentifier))
-				{
-					int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
-					if (nidFromSequence != 0)
-					{
-						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
-					}
-				}
-				return cv;
-			}
-		}
-		else if (Utility.isInt(localIdentifier))
-		{
-			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
-			int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
-			if (nidFromSequence != 0)
-			{
-				return getConceptVersion(nidFromSequence, vc);
-			}
-		}
-		return null;
-	}
-	public static ConceptVersionBI lookupIdentifier(String identifier) {
-		return lookupIdentifier(identifier, getViewCoordinate());
-	}
-	
-	/**
-	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
-	 * then calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int, calls {@link #getConceptVersion(int)}
-	 * 
-	 * All done in a background thread, method returns immediately
-	 * 
-	 * @param identifier - what to search for
-	 * @param callback - who to inform when lookup completes
-	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
-	 */
-	public static void lookupIdentifier(
-			final String identifier,
-			final ConceptLookupCallback callback,
-			final Integer callId,
-			ViewCoordinate vc)
-	{
-		LOG.debug("Threaded Lookup: '{}'", identifier);
-		final long submitTime = System.currentTimeMillis();
-		Runnable r = new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				ConceptVersionBI c = lookupIdentifier(identifier, vc);
-				callback.lookupComplete(c, submitTime, callId);
-			}
-		};
-		Utility.execute(r);
-	}
-	public static void lookupIdentifier(final String identifier, final ConceptLookupCallback callback, final Integer callId) {
-		lookupIdentifier(identifier, callback, callId, getViewCoordinate());
 	}
 
 	/**
@@ -778,10 +435,6 @@ public class OTFUtility {
 		return null;
 	}
 
-	// TODO OCHRE getUncommittedConcepts() is unsupported so isUncommittened(con) will always throw exception
-	public static boolean isUncommittened(ConceptVersionBI con) {
-		return dataStore.getUncommittedConcepts().contains(con.getChronicle());
-	}
 	
 	/**
 	 * Recursively get Is a parents of a concept
@@ -811,7 +464,8 @@ public class OTFUtility {
 		
 		// This both prevents infinite recursion and avoids processing or returning of duplicates
 		if (handledNids.contains(concept.getNid())) {
-			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(concept.getNid(), vc));
+			LOG.debug("Encountered already-handled concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", 
+					concept.getNid());
 			return results;
 		}
 		
@@ -820,7 +474,8 @@ public class OTFUtility {
 		{
 			if (handledNids.contains(r.getDestinationNid())) {
 				// avoids processing or returning of duplicates
-				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", OTFUtility.getDescription(r.getDestinationNid(), vc));
+				LOG.debug("Encountered already-handled DESTINATION ancestor concept \"{}\".  May be result of OTF-returned duplicate or source of potential infinite loop", 
+						r.getDestinationNid());
 				continue;
 			}
 
@@ -833,25 +488,6 @@ public class OTFUtility {
 
 		return results;
 	}
-	private static Set<ConceptVersionBI> getConceptAncestors(Set<Integer> handledNids, ConceptVersionBI concept) throws IOException, ContradictionException {
-		return getConceptAncestors(handledNids, concept, getViewCoordinate());
-	}
-	/**
-	 * Finds just the concept's parents
-	 */
-	public static Set<ConceptVersionBI> getConceptParents(ConceptVersionBI concept, ViewCoordinate vc) throws IOException, ContradictionException
-	{
-		Set<ConceptVersionBI> results = new HashSet<>();
-		
-		for (RelationshipVersionBI<?> r : concept.getRelationshipsOutgoingActiveIsa())
-		{
-			results.add(getConceptVersion(r.getDestinationNid(), vc));
-		}
-		return results;
-	}
-	public static Set<ConceptVersionBI> getConceptParents(ConceptVersionBI concept) throws IOException, ContradictionException {
-		return getConceptParents(concept, getViewCoordinate());
-	}
 
 	public static ConceptChronicleBI createNewConcept(ConceptChronicleBI parent, String fsn,
 			String prefTerm) throws IOException, InvalidCAB, ContradictionException {
@@ -862,17 +498,6 @@ public class OTFUtility {
 		return newCon;
 	}
 	
-	public static ConceptChronicleBI createAndCommitNewConcept(ConceptChronicleBI parent, String fsn,
-			String prefTerm) throws IOException, InvalidCAB, ContradictionException {
-		ConceptCB newConCB = createNewConceptBlueprint(parent, fsn, prefTerm);
-
-		ConceptChronicleBI newCon = getBuilder().construct(newConCB);
-
-		Ts.get().addUncommitted(newCon);
-		Ts.get().commit();
-
-		return newCon;
-	}
 	
 	public static ConceptCB createNewConceptBlueprint(ConceptChronicleBI parent, String fsn, String prefTerm) throws ValidationException, IOException, InvalidCAB, ContradictionException {
 		LanguageCode lc = LanguageCode.EN_US;
@@ -884,66 +509,8 @@ public class OTFUtility {
 		return new ConceptCB(fsn, prefTerm, lc, isA, idDir, module, IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid(), parentUUIDs);
 	}
 
-//	public static void commit(int nid) throws IOException {
-//		ConceptVersionBI con = getConceptVersion(nid);
-//		commit(/* con */);
-//	}
-
-	public static void cancel() throws IOException {
-		dataStore.cancel();
-	}
-
-	public static String getConPrefTerm(int nid, ViewCoordinate vc) {
-		try {
-			ConceptVersionBI cv = OTFUtility.getConceptVersion(nid, vc);
-			if (cv == null)
-			{
-				return nid + " NOT ON PATH";
-			}
-			else
-			{
-				DescriptionVersionBI<?> dv = cv.getPreferredDescription();
-				if (dv == null)
-				{
-					return nid + " NO DESC FOUND";
-				}
-				else
-				{
-					return dv.getText();
-				}
-			}
-		} catch (IOException | ContradictionException e) {
-			LOG.error("Unable to identify description.  Points to larger problem", e);
-			return "ERROR";
-		}
-	}
-	public static String getConPrefTerm(int nid) {
-		return getConPrefTerm(nid, getViewCoordinate());
-	}
-
 	public static String getStatusString(ComponentVersionBI comp) {
 		return comp.getStatus() == Status.ACTIVE ? "Active" : "Inactive";
-	}
-
-	public static String getAuthorString(ComponentVersionBI comp, ViewCoordinate vc) {
-		return getConPrefTerm(comp.getAuthorNid(), vc);
-	}
-	public static String getAuthorString(ComponentVersionBI comp) {
-		return getAuthorString(comp, getViewCoordinate());
-	}
-
-	public static String getModuleString(ComponentVersionBI comp, ViewCoordinate vc) {
-		return getConPrefTerm(comp.getModuleNid(), vc);
-	}
-	public static String getModuleString(ComponentVersionBI comp) {
-		return getModuleString(comp, getViewCoordinate());
-	}
-
-	public static String getPathString(ComponentVersionBI comp, ViewCoordinate vc) {
-		return getConPrefTerm(comp.getPathNid(), vc);
-	}
-	public static String getPathString(ComponentVersionBI comp) {
-		return getPathString(comp, getViewCoordinate());
 	}
 
 	public static String getTimeString(ComponentVersionBI comp) {

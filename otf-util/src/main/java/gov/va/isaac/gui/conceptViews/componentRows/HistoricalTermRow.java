@@ -2,13 +2,11 @@ package gov.va.isaac.gui.conceptViews.componentRows;
 
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
-
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
@@ -18,9 +16,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.slf4j.Logger;
@@ -67,15 +63,15 @@ public class HistoricalTermRow extends TermRow {
 			if (isPrefTerm) {
 				descTypeLabel = labelHelper.createLabel(dv, prefTermTypeStr, ComponentType.DESCRIPTION, prefTermTypeNid);
 			} else {
-				descTypeLabel = labelHelper.createLabel(dv, OTFUtility.getConPrefTerm(dv.getTypeNid()), ComponentType.DESCRIPTION, dv.getTypeNid());
+				descTypeLabel = labelHelper.createLabel(dv, OchreUtility.getDescription(dv.getTypeNid()), ComponentType.DESCRIPTION, dv.getTypeNid());
 			}
 			Label descCaseLabel = labelHelper.createLabel(dv, getBooleanValue(dv.isInitialCaseSignificant()), ComponentType.DESCRIPTION, 0);
 			Label descLangLabel = labelHelper.createLabel(dv, dv.getLang(), ComponentType.DESCRIPTION, 0);
 
 			Label descStatusLabel = labelHelper.createLabel(dv, OTFUtility.getStatusString(dv), ComponentType.DESCRIPTION, 0);
 			Label descTimeLabel = labelHelper.createLabel(dv, OTFUtility.getTimeString(dv), ComponentType.DESCRIPTION, 0);
-			Label descAuthorLabel = labelHelper.createLabel(dv, OTFUtility.getAuthorString(dv), ComponentType.DESCRIPTION, 0);
-			Label descPathLabel = labelHelper.createLabel(dv, OTFUtility.getPathString(dv), ComponentType.DESCRIPTION, 0);
+			Label descAuthorLabel = labelHelper.createLabel(dv, OchreUtility.getDescription(dv.getAuthorNid()), ComponentType.DESCRIPTION, 0);
+			Label descPathLabel = labelHelper.createLabel(dv, OchreUtility.getDescription(dv.getPathNid()), ComponentType.DESCRIPTION, 0);
 			
 			if (desc.isUncommitted()) {
 				if (desc.getVersionList().size() == 1) {
@@ -96,16 +92,17 @@ public class HistoricalTermRow extends TermRow {
 		
 					if (!descLabel.getText().equals(origVersion.getText())) {
 						descLabel.setUnderline(true);
-					}
-					try {
-						if (OTFUtility.getConceptVersion(desc.getConceptNid()).getPreferredDescription().getNid() != desc.getNid()) {
-					if (!descTypeLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getTypeNid()))) {
-						descTypeLabel.setUnderline(true);
-							}
-						}
-					} catch (IOException | ContradictionException e) {
-						LOG.error("Failed testing Preferred Term Labels", e);
-					}
+				}
+//Dan commented out because he doesn't know what is going on
+//					try {
+//						if (OTFUtility.getConceptVersion(desc.getConceptNid()).getPreferredDescription().getNid() != desc.getNid()) {
+//					if (!descTypeLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getTypeNid()))) {
+//						descTypeLabel.setUnderline(true);
+//							}
+//						}
+//					} catch (IOException | ContradictionException e) {
+//						LOG.error("Failed testing Preferred Term Labels", e);
+//					}
 		
 					if (!descCaseLabel.getText().equals(getBooleanValue(origVersion.isInitialCaseSignificant()))) {
 						descCaseLabel.setUnderline(true);

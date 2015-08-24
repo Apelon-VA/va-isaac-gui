@@ -18,15 +18,12 @@
  */
 package gov.va.isaac.gui.dialog;
 
-import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-
 import java.util.AbstractMap;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.ToIntFunction;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
