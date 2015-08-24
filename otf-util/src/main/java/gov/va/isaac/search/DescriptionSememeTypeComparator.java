@@ -19,6 +19,7 @@
 package gov.va.isaac.search;
 
 import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import java.util.Comparator;
 import org.slf4j.Logger;
@@ -37,8 +38,8 @@ public class DescriptionSememeTypeComparator implements Comparator<DescriptionSe
 	@Override
 	public int compare(DescriptionSememe<?> o1, DescriptionSememe<?> o2)
 	{
-		String o1matchingComponentType = OchreUtility.getConceptChronology(o1.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
-		String o2matchingComponentType = OchreUtility.getConceptChronology(o2.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+		String o1matchingComponentType = Get.conceptService().getOptionalConcept(o1.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+		String o2matchingComponentType = Get.conceptService().getOptionalConcept(o2.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
 
 		return o1matchingComponentType.compareTo(o2matchingComponentType);
 	}

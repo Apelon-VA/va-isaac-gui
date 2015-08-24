@@ -40,6 +40,7 @@ import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
 import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
@@ -164,12 +165,12 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 		}
 		
 		//passed all criteria
-		ruleHits.get(rd.getId()).add(cc.getPrimordialUuid() + "," + OTFUtility.getFullySpecifiedName(cc));
+		ruleHits.get(rd.getId()).add(cc.getPrimordialUuid() + "," + OchreUtility.getFSNForConceptNid(cc.getNid(), null).get());
 		Set<Integer> rules = conceptHitsByRule.get(cc.getPrimordialUuid());
 		if (rules == null)
 		{
 			rules = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
-			Set<Integer> oldRules = conceptHitsByRule.put(cc.getPrimordialUuid().toString() + "," + OTFUtility.getFullySpecifiedName(cc), rules);
+			Set<Integer> oldRules = conceptHitsByRule.put(cc.getPrimordialUuid().toString() + "," + OchreUtility.getFSNForConceptNid(cc.getNid(), null).get(), rules);
 			if (oldRules != null)
 			{
 				//two different threads tried to do this at the same time.  merge

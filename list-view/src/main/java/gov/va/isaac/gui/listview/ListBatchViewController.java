@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -491,10 +492,10 @@ public class ListBatchViewController
 			{
 				try
 				{
-					OTFUtility.cancel();
+					Get.commitService().cancel().get();
 					uncommitAllTableItems();
 				}
-				catch (IOException e)
+				catch (ExecutionException | InterruptedException e)
 				{
 					// TODO OCHRE
 					e.printStackTrace();

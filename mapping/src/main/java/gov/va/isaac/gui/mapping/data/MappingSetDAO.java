@@ -112,7 +112,7 @@ public class MappingSetDAO extends MappingDAO
 						IsaacMetadataAuxiliaryBinding.SYNONYM, IsaacMetadataAuxiliaryBinding.ENGLISH).build(
 								ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
 				
-				Get.sememeBuilderService().getDyanmicSememeBuilder(builtDesc.getNid(),IsaacMetadataConstants.DYNAMIC_SEMEME_ASSEMBLAGES.getSequence()).build(
+				Get.sememeBuilderService().getDyanmicSememeBuilder(builtDesc.getNid(),IsaacMetadataConstants.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence()).build(
 						ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
 			}
 			

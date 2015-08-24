@@ -22,13 +22,11 @@ import gov.va.isaac.gui.refsetview.RefsetView;
 import gov.va.isaac.gui.util.DragResizer;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.InfoModelViewI;
-import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.OchreUtility;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.UUID;
-
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -52,7 +50,6 @@ import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 import org.jvnet.hk2.annotations.Service;
@@ -113,7 +110,7 @@ public class InfoModelView implements PopupViewI, InfoModelViewI
 		title.getStyleClass().add("boldLabel");
 		HBox.setMargin(title, new Insets(4, 0, 0, 0));
 		
-		Label l = new Label(OTFUtility.getDescription(conceptUUID));
+		Label l = new Label(OchreUtility.getDescription(conceptUUID).get());
 		HBox.setMargin(l, new Insets(4, 0, 0, 10));
 		h.getChildren().add(l);
 		

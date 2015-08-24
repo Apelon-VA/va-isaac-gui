@@ -25,9 +25,11 @@
 package gov.va.isaac.gui.querybuilder.node;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import java.util.Optional;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -149,14 +151,14 @@ public class RelType extends AssertionNode {
 
 	@Override
 	public String getDescription() {
-		String relTypeConceptDescription = null;
+		Optional<String> relTypeConceptDescription = null;
 		if (getRelTypeConceptNid() != null && getRelTypeConceptNid() != 0) {
-			relTypeConceptDescription = OTFUtility.getDescriptionIfConceptExists(getRelTypeConceptNid());
+			relTypeConceptDescription = OchreUtility.getDescription(getRelTypeConceptNid());
 		}
 
-		String targetConceptDescription = null;
+		Optional<String> targetConceptDescription = null;
 		if (getTargetConceptNid() != null && getTargetConceptNid() != 0) {
-			targetConceptDescription = OTFUtility.getDescriptionIfConceptExists(getTargetConceptNid());
+			targetConceptDescription = OchreUtility.getDescription(getTargetConceptNid());
 		}
 		
 		String useSubsumptionDescription = null;

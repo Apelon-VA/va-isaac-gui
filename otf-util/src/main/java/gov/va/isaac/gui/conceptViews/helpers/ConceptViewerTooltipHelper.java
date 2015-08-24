@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.conceptViews.helpers;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import java.io.IOException;
 import java.util.Optional;
 import javafx.event.Event;
@@ -89,7 +90,7 @@ public class ConceptViewerTooltipHelper {
 	}
 
 	protected String createRefsetTooltip(RefexVersionBI<?> annot) throws IOException, ContradictionException {
-		String refset = OTFUtility.getConPrefTerm(annot.getAssemblageNid());
+		String refset = OchreUtility.getDescription(annot.getAssemblageNid()).get();
 		StringBuffer strBuf = new StringBuffer();
 
 		strBuf.append(refset + " is a ");
@@ -127,7 +128,7 @@ public class ConceptViewerTooltipHelper {
 	private String createDescTooltipText(DescriptionVersionBI<?> desc) {
 		String lang = desc.getLang();
 		String text = desc.getText();
-		String type = OTFUtility.getConPrefTerm(desc.getTypeNid());
+		String type = OchreUtility.getDescription(desc.getTypeNid()).get();
 		String caseSig = desc.isInitialCaseSignificant() ? "Is Case Significant" : "Not Case Significant";
 
 		return "Term: " + text + "\nType: " + type + "  Case Significant: " + caseSig + "  Language: " + lang + getStampTooltip(desc);
@@ -151,8 +152,8 @@ public class ConceptViewerTooltipHelper {
 			LOG.error("Unknown error in identifying relationship type");
 		}
 		String group = Integer.toString(rel.getGroup());
-		String type = OTFUtility.getConPrefTerm(rel.getTypeNid());
-		String target = OTFUtility.getConPrefTerm(rel.getDestinationNid());
+		String type = OchreUtility.getDescription(rel.getTypeNid()).get();
+		String target = OchreUtility.getDescription(rel.getDestinationNid()).get();
 		String statInf = rel.isInferred() ? "False" : "True";
 
 		return "Destination: " + target + "  Type: " + type + "\nStated: " + statInf + "  Relationship Type: " + refinCharType + "  Role Group: " + group + getStampTooltip(rel);
@@ -203,9 +204,9 @@ public class ConceptViewerTooltipHelper {
 	private String getStampTooltip(ComponentVersionBI comp) {
 		String status = OTFUtility.getStatusString(comp);
 		String time =  OTFUtility.getTimeString(comp);
-		String author = OTFUtility.getAuthorString(comp); 
-		String module = OTFUtility.getModuleString(comp);
-		String path = OTFUtility.getPathString(comp);
+		String author = OchreUtility.getDescription(comp.getAuthorNid()).get(); 
+		String module = OchreUtility.getDescription(comp.getModuleNid()).get();
+		String path = OchreUtility.getDescription(comp.getPathNid()).get();
 
 		return "\nStatus: " + status + "  Time: " + time + "  Author: " + author + "  Module: " + module + "  Path: " + path;
 	}

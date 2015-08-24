@@ -275,7 +275,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 					{
 						throw new RuntimeException(e);
 					}
-				}, this, null, null, null, true, false);
+				}, ((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}), null, null, null, true, false);
 			}
 			catch (NumberFormatException e)
 			{
@@ -296,7 +296,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 						{
 							throw new RuntimeException(e1);
 						}
-					}, this, null, null, null, true, false);
+					}, ((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}), null, null, null, true, false);
 				}
 				catch (NumberFormatException e1) 
 				{
@@ -313,7 +313,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 						{
 							throw new RuntimeException(e2);
 						}
-					}, this, null, null, null, true, false);
+					}, ((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}), null, null, null, true, false);
 				}
 			}
 		}

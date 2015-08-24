@@ -601,17 +601,6 @@ public class QueryBuilderHelper {
 		if (component != null) {
 			componentDescription = ComponentDescriptionHelper.getComponentDescription(component);
 		}
-		if (componentDescription == null) {
-			componentDescription = OTFUtility.getDescriptionIfConceptExists(nid);
-		}
-		if (componentDescription == null) {
-			try {
-				componentDescription = OTFUtility.getConPrefTerm(nid);
-			} catch (Exception e) {
-				//
-			}
-		}
-		
 		return componentDescription;
 	}
 	

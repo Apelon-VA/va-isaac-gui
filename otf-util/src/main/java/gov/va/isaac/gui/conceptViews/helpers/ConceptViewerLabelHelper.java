@@ -101,6 +101,10 @@ public class ConceptViewerLabelHelper {
 	public ConceptViewerLabelHelper(PopupConceptViewI conceptView) {
 		this.conceptView = conceptView;
 	}
+	
+	public Label createLabel(ComponentVersionBI comp, Optional<String> txt, ComponentType type, int refConNid) {
+		return createLabel(comp, txt.isPresent() ? txt.get() : "-ERROR-", type, refConNid);
+	}
 
 	// Create Labels
 	public Label createLabel(ComponentVersionBI comp, String txt, ComponentType type, int refConNid) {
@@ -372,7 +376,7 @@ public class ConceptViewerLabelHelper {
 						} else {
 							RetireConceptPrompt prompt = new RetireConceptPrompt();
 							
-							prompt.showUserPrompt((Stage)pane.getScene().getWindow(), "Retire Concept: " + OTFUtility.getConPrefTerm(comp.getNid()));
+							prompt.showUserPrompt((Stage)pane.getScene().getWindow(), "Retire Concept: " + OchreUtility.getDescription(comp.getNid()).get());
 							
 							if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
 								// Retire Stated Parent Rels

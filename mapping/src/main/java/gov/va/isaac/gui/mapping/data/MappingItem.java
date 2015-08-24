@@ -18,20 +18,20 @@
  */
 package gov.va.isaac.gui.mapping.data;
 
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link MappingItem}
@@ -81,10 +81,11 @@ public class MappingItem extends MappingObject
 	public int getQualifierConceptNid() { return qualifierConceptNid; }
 	
 	public String getSummary() {
-		return  (isActive() ? "Active " : "Retired ") + "Mapping: " + OTFUtility.getDescription(sourceConcept) + "-" + OTFUtility.getDescription(mappingSetIDConcept)
-				+ "-" + (targetConcept == null ? "not mapped" : OTFUtility.getDescription(targetConcept)) + "-" 
-				+ (qualifierConcept == null ? "no qualifier" : OTFUtility.getDescription(qualifierConcept)) 
-				+ "-" + (editorStatusConcept == null ? "no status" : OTFUtility.getDescription(editorStatusConcept)) + "-" + primordialUUID.toString();
+		return  (isActive() ? "Active " : "Retired ") + "Mapping: " + OchreUtility.getDescription(sourceConcept).get() 
+				+ "-" + OchreUtility.getDescription(mappingSetIDConcept).get() 
+				+ "-" + (targetConcept == null ? "not mapped" : OchreUtility.getDescription(targetConcept).get() ) + "-" 
+				+ (qualifierConcept == null ? "no qualifier" : OchreUtility.getDescription(qualifierConcept).get() ) 
+				+ "-" + (editorStatusConcept == null ? "no status" : OchreUtility.getDescription(editorStatusConcept).get() ) + "-" + primordialUUID.toString();
 	}
 	
 	/**

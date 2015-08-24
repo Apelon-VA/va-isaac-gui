@@ -57,128 +57,128 @@ import org.slf4j.LoggerFactory;
 
 //If you were to actually use this as a template, you would need to uncomment the following line
 //@Service
-@Singleton
-public class ExampleAbstractPreferencesPluginView extends AbstractPreferencesPluginView {
-	private static Logger logger = LoggerFactory.getLogger(ExampleAbstractPreferencesPluginView.class);
-	
-	private static Collection<PreferencesPluginProperty<?, ? extends Control>> createProperties() {
-		List<PreferencesPluginProperty<?, ? extends Control>> properties = new ArrayList<>();
-
-		PreferencesPluginLabelProperty syncUserProperty = new PreferencesPluginLabelProperty("Sync User") {
-			@Override
-			public String readFromPersistedPreferences() {
-				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				return loggedIn.getSyncUsername();
-			}
-
-			@Override
-			public String readFromDefaults() {
-				return null;
-			}
-			
-		};
-		properties.add(syncUserProperty);
-
-		PreferencesPluginCheckBoxProperty displayFSNProperty =
-				new PreferencesPluginCheckBoxProperty("Display FSN") {
-
-			@Override
-			public Boolean readFromPersistedPreferences() {
-				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				return loggedIn.getDisplayFSN();
-			}
-
-			@Override
-			public Boolean readFromDefaults() {
-				return UserProfileDefaults.getDefaultDisplayFSN();
-			}
-
-			@Override
-			public void writeToUnpersistedPreferences(UserProfile userProfile) {
-				userProfile.setDisplayFSN(getProperty().getValue());
-			}
-		};
-		properties.add(displayFSNProperty);
-
-		PreferencesPluginTextFieldProperty workflowServerDeploymentIdProperty = 
-				new PreferencesPluginTextFieldProperty("Workflow Server Deployment ID") {
-			@Override
-			public String readFromPersistedPreferences() {
-				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				return loggedIn.getWorkflowServerDeploymentId();
-			}
-
-			@Override
-			public String readFromDefaults() {
-				return UserProfileDefaults.getDefaultWorkflowServerDeploymentId();
-			}
-
-			@Override
-			public void writeToUnpersistedPreferences(UserProfile userProfile) {
-				userProfile.setWorkflowServerDeploymentId(getProperty().getValue());
-			}
-		};
-		properties.add(workflowServerDeploymentIdProperty);
-
-		PreferencesPluginComboBoxProperty<UUID> viewCoordinatePathProperty = new PreferencesPluginComboBoxProperty<UUID>(
-				"View Coordinate Path",
-				new PreferencesPluginProperty.StringConverter<UUID>() {
-					@Override
-					public String convertToString(UUID value) {
-						return value != null ? OTFUtility.getDescription(value) : null;
-					}
-				}) {
-			@Override
-			public UUID readFromPersistedPreferences() {
-				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				return loggedIn.getViewCoordinatePath();
-			}
-
-			@Override
-			public UUID readFromDefaults() {
-				return UserProfileDefaults.getDefaultViewCoordinatePath();
-			}
-
-			@Override
-			public void writeToUnpersistedPreferences(UserProfile userProfile) {
-				userProfile.setViewCoordinatePath(getProperty().getValue());
-			}
-		};
-		
-		List<UUID> list = new ArrayList<>();
-
-		try {
-			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
-			for (ConceptVersion<?> cv : pathConcepts) {
-				list.add(cv.getChronology().getPrimordialUuid());
-			}
-		} catch (RuntimeException e) {
-			logger.error("Failed loading path concepts", e);
-		}
-		UUID current = viewCoordinatePathProperty.readFromPersistedPreferences();
-		if (current != null && ! list.contains(current)) {
-			list.add(current);
-		}
-		viewCoordinatePathProperty.getControl().getItems().addAll(list);
-		properties.add(viewCoordinatePathProperty);
-
-		return properties;
-	}
-	
-	/**
-	 * @param name
-	 * @param properties
-	 */
-	protected ExampleAbstractPreferencesPluginView() {
-		super("Example", createProperties());
-	}
-	
-	/**
-	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getTabOrder()
-	 */
-	@Override
-	public int getTabOrder()
-	{
-		return 100;
-	}
-}
+//@Singleton
+//public class ExampleAbstractPreferencesPluginView extends AbstractPreferencesPluginView {
+//	private static Logger logger = LoggerFactory.getLogger(ExampleAbstractPreferencesPluginView.class);
+//	
+//	private static Collection<PreferencesPluginProperty<?, ? extends Control>> createProperties() {
+//		List<PreferencesPluginProperty<?, ? extends Control>> properties = new ArrayList<>();
+//
+//		PreferencesPluginLabelProperty syncUserProperty = new PreferencesPluginLabelProperty("Sync User") {
+//			@Override
+//			public String readFromPersistedPreferences() {
+//				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+//				return loggedIn.getSyncUsername();
+//			}
+//
+//			@Override
+//			public String readFromDefaults() {
+//				return null;
+//			}
+//			
+//		};
+//		properties.add(syncUserProperty);
+//
+//		PreferencesPluginCheckBoxProperty displayFSNProperty =
+//				new PreferencesPluginCheckBoxProperty("Display FSN") {
+//
+//			@Override
+//			public Boolean readFromPersistedPreferences() {
+//				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+//				return loggedIn.getDisplayFSN();
+//			}
+//
+//			@Override
+//			public Boolean readFromDefaults() {
+//				return UserProfileDefaults.getDefaultDisplayFSN();
+//			}
+//
+//			@Override
+//			public void writeToUnpersistedPreferences(UserProfile userProfile) {
+//				userProfile.setDisplayFSN(getProperty().getValue());
+//			}
+//		};
+//		properties.add(displayFSNProperty);
+//
+//		PreferencesPluginTextFieldProperty workflowServerDeploymentIdProperty = 
+//				new PreferencesPluginTextFieldProperty("Workflow Server Deployment ID") {
+//			@Override
+//			public String readFromPersistedPreferences() {
+//				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+//				return loggedIn.getWorkflowServerDeploymentId();
+//			}
+//
+//			@Override
+//			public String readFromDefaults() {
+//				return UserProfileDefaults.getDefaultWorkflowServerDeploymentId();
+//			}
+//
+//			@Override
+//			public void writeToUnpersistedPreferences(UserProfile userProfile) {
+//				userProfile.setWorkflowServerDeploymentId(getProperty().getValue());
+//			}
+//		};
+//		properties.add(workflowServerDeploymentIdProperty);
+//
+//		PreferencesPluginComboBoxProperty<UUID> viewCoordinatePathProperty = new PreferencesPluginComboBoxProperty<UUID>(
+//				"View Coordinate Path",
+//				new PreferencesPluginProperty.StringConverter<UUID>() {
+//					@Override
+//					public String convertToString(UUID value) {
+//						return value != null ? OTFUtility.getDescription(value) : null;
+//					}
+//				}) {
+//			@Override
+//			public UUID readFromPersistedPreferences() {
+//				UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
+//				return loggedIn.getViewCoordinatePath();
+//			}
+//
+//			@Override
+//			public UUID readFromDefaults() {
+//				return UserProfileDefaults.getDefaultViewCoordinatePath();
+//			}
+//
+//			@Override
+//			public void writeToUnpersistedPreferences(UserProfile userProfile) {
+//				userProfile.setViewCoordinatePath(getProperty().getValue());
+//			}
+//		};
+//		
+//		List<UUID> list = new ArrayList<>();
+//
+//		try {
+//			Set<ConceptVersion<?>> pathConcepts = OchreUtility.getPathConcepts();
+//			for (ConceptVersion<?> cv : pathConcepts) {
+//				list.add(cv.getChronology().getPrimordialUuid());
+//			}
+//		} catch (RuntimeException e) {
+//			logger.error("Failed loading path concepts", e);
+//		}
+//		UUID current = viewCoordinatePathProperty.readFromPersistedPreferences();
+//		if (current != null && ! list.contains(current)) {
+//			list.add(current);
+//		}
+//		viewCoordinatePathProperty.getControl().getItems().addAll(list);
+//		properties.add(viewCoordinatePathProperty);
+//
+//		return properties;
+//	}
+//	
+//	/**
+//	 * @param name
+//	 * @param properties
+//	 */
+//	protected ExampleAbstractPreferencesPluginView() {
+//		super("Example", createProperties());
+//	}
+//	
+//	/**
+//	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI#getTabOrder()
+//	 */
+//	@Override
+//	public int getTabOrder()
+//	{
+//		return 100;
+//	}
+//}

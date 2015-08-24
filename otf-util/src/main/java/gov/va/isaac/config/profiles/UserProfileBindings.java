@@ -22,7 +22,6 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateComponents;
-import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
@@ -36,18 +35,14 @@ import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.application.Platform;
 import javafx.beans.property.Property;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyProperty;
@@ -57,14 +52,11 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
-
 import javax.inject.Singleton;
-
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.collections.ObservableSetWrapper;
 /**
  * {@link UserProfileBindings}
@@ -78,22 +70,21 @@ public class UserProfileBindings
 	private static final Logger LOG = LoggerFactory.getLogger(UserProfileBindings.class);
 	public enum RelationshipDirection {SOURCE, TARGET, SOURCE_AND_TARGET};
 	
-	ReadOnlyBooleanWrapper displayFSN = new ReadOnlyBooleanWrapper();
-	ReadOnlyObjectWrapper<RelationshipDirection> displayRelDirection = new ReadOnlyObjectWrapper<>();
-	ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
-	ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
-	ReadOnlyObjectWrapper<UUID> editCoordinateModule = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<RelationshipDirection> displayRelDirection = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyStringWrapper workflowUsername = new ReadOnlyStringWrapper();
+	private final ReadOnlyObjectWrapper<UUID> editCoordinatePath = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<UUID> editCoordinateModule = new ReadOnlyObjectWrapper<>();
 
 	// View Coordinate Components
-	ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
-	ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
-	ReadOnlyObjectWrapper<Long> viewCoordinateTime = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<Long> viewCoordinateTime = new ReadOnlyObjectWrapper<>();
 
 	private final SetProperty<Status> viewCoordinateStatuses = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
-	ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
+	private final ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
 
 	private final SetProperty<UUID> viewCoordinateModules = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>(new HashSet<>())));
-	ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
+	private final ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
 
 	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
 
@@ -104,7 +95,6 @@ public class UserProfileBindings
 
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
-				displayFSN,
 				displayRelDirection,
 				workflowUsername,
 				editCoordinatePath,
@@ -125,14 +115,6 @@ public class UserProfileBindings
 		};
 	}
 
-	/**
-	 * @return displayFSN when true, display the preferred term when false
-	 */
-	public ReadOnlyBooleanProperty getDisplayFSN()
-	{
-		return displayFSN.getReadOnlyProperty();
-	}
-	
 	/**
 	 * @return which direction of relationships should be displayed
 	 */
@@ -245,16 +227,15 @@ public class UserProfileBindings
 	{
 		boolean updateViewCoordinateComponents = false;
 		AtomicBoolean updateStampCoordinate = new AtomicBoolean(false);
-		AtomicBoolean updateLanguageCoordinate = new AtomicBoolean(false);
 		AtomicBoolean updateTaxonomyCoordinate = new AtomicBoolean(false);
 		AtomicBoolean updateEditCoordinate = new AtomicBoolean(false);
 		
-		if (displayFSN.get() != up.getDisplayFSN())
+		if (!Objects.equals(languageCoordinate.get(), up.getLanguageCoordinate()))
 		{
-			updateLanguageCoordinate.set(true);
-			displayFSN.set(up.getDisplayFSN());
+			updateTaxonomyCoordinate.set(true);
+			languageCoordinate.set(up.getLanguageCoordinate());
 		}
-		if (displayRelDirection.get() != up.getDisplayRelDirection())
+		if (!Objects.equals(displayRelDirection.get(),up.getDisplayRelDirection()))
 		{
 			displayRelDirection.set(up.getDisplayRelDirection());
 		}
@@ -370,18 +351,6 @@ public class UserProfileBindings
 					});
 					cdl.await();
 				}			
-				if (updateLanguageCoordinate.get() || languageCoordinate.get() == null) {
-					updateTaxonomyCoordinate.set(true);
-					
-					CountDownLatch cdl = new CountDownLatch(1);
-					Platform.runLater(() ->
-					{
-						languageCoordinate.set(
-							displayFSN.get() ? LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate() : LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
-						cdl.countDown();
-					});
-					cdl.await();
-				}
 				
 				if (updateTaxonomyCoordinate.get()) {
 					try {

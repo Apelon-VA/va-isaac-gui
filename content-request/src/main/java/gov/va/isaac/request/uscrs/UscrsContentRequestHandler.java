@@ -19,34 +19,8 @@
 
 package gov.va.isaac.request.uscrs;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
-
-import javax.inject.Named;
-
-import org.glassfish.hk2.api.PerLookup;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
@@ -59,38 +33,42 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Semantic_Tag;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology;
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
 import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.cradle.sememe.SememeProvider;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
-import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.PremiseType;
-import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.StampPosition;
-import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
-import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.relationship.RelationshipAdaptorChronicleKey;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.collections.StampSequenceSet;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import javafx.concurrent.Task;
+import javax.inject.Named;
+import org.glassfish.hk2.api.PerLookup;
+import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -339,8 +317,13 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 									}
 									
 									for(DescriptionSememe d : descriptions) {
-										Optional<LatestVersion<DescriptionSememe<?>>> dsLatest = OchreUtility.getDescriptionOptional(chronology, lc, scLatestActive);
-										Optional<LatestVersion<DescriptionSememe<?>>> dsInitial = OchreUtility.getDescriptionOptional(chronology, lc, scInitialActive);
+										@SuppressWarnings("unchecked")
+										Optional<LatestVersion<DescriptionSememe>> dsLatest = Get.conceptService().getSnapshot(scLatestActive, lc)
+												.getDescriptionOptional(chronology.getConceptSequence()); 
+										@SuppressWarnings("unchecked")
+										Optional<LatestVersion<DescriptionSememe>> dsInitial = Get.conceptService().getSnapshot(scInitialActive, lc)
+												.getDescriptionOptional(chronology.getConceptSequence()); 
+
 										
 										if(dsInitial.isPresent()) {
 											if(dsLatest.isPresent()){
@@ -364,7 +347,9 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 											}
 										} else {
 											if(dsLatest.isPresent()) {
-												Optional<LatestVersion<DescriptionSememe<?>>> dvCheckRetired = OchreUtility.getDescriptionOptional(concept.getChronology(), lc, scInitialAll);
+												@SuppressWarnings("unchecked")
+												Optional<LatestVersion<DescriptionSememe>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
+														.getDescriptionOptional(concept.getConceptSequence());  
 												if(dvCheckRetired.isPresent()) {
 													handleChangeDesc(dvCheckRetired.get().value(), concept);
 												} else {
@@ -559,8 +544,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	/**
 	 *  Prints the column cell, but if testing is disabled, just print nothing in the cell.
 	 * @param nid
-	 * @throws ContradictionException 
-	 * @throws ValidationException 
 	 */
 	private void getNote(int nid)  {
 		this.getNote(nid, "");
@@ -571,8 +554,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 *  disabled then print the value of alternateNote
 	 * @param nid
 	 * @param alternateNote if testing is disabled, print this instead
-	 * @throws ContradictionException 
-	 * @throws ValidationException 
 	 */
 	private void getNote(int nid, String alternateNote) {
 		if(testing) {
@@ -731,7 +712,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private String getCharType(int nid) {
 		try {
-			String characteristic = OTFUtility.getConPrefTerm(nid); 
+			String characteristic = OchreUtility.getPreferredTermForConceptNid(nid, null, null).get();
 			if(characteristic.equalsIgnoreCase("stated")) {
 				return "STATED"; //TODO - we need to map this correctly
 				//return RelationshipType.STATED_ROLE.toString();
@@ -753,7 +734,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	
 	private String getRefinability(int nid) {
 		try {
-			String desc = OTFUtility.getConPrefTerm(nid);
+			String desc = OchreUtility.getPreferredTermForConceptNid(nid, null, null).get();
 			String descToPicklist = desc;
 			
 			//Map the words optional and mandatory to their equal ENUMS b/c of API limitations
@@ -826,7 +807,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			//what IDs were previously submitted - so we can't choose between on of these 
 			//official constants, and "New Concept Request"
 			if(moduleNid == Snomed.CORE_MODULE.getNid()) {
-				return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();
+				return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();  //TODO Dan notes these won't work in OCHRE - need to talk to me and/or Keith
 			}
 			else if (moduleNid == Snomed.US_EXTENSION_MODULE.getNid()) {
 				return PICKLIST_Source_Terminology.SNOMED_CT_National_US.toString();
@@ -889,7 +870,8 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	private static boolean isChildOfSCT(int conceptNid) throws IOException 
 	{
 		try {
-			return Get.taxonomyService().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), OTFUtility.getViewCoordinate());
+			return Get.taxonomyService().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), 
+					ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
 		} catch (Exception e) {
 			logger.error("USCRS Error retreiving isChildOfSct", e);
 		}
@@ -966,7 +948,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, concept.getPrimordialUuid().toString());
 					break;
 				case Local_Term: 
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
+					bt.addStringCell(column, OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get());
 					break;
 				case Fully_Specified_Name:
 					bt.addStringCell(column, this.getFsnWithoutSemTag(concept));
@@ -975,7 +957,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					bt.addStringCell(column, this.getSemanticTag(concept));
 					break;
 				case Preferred_Term:
-					bt.addStringCell(column, OTFUtility.getConPrefTerm(concept.getNid()));
+					bt.addStringCell(column, OchreUtility.getPreferredTermForConceptNid(concept.getNid(), null, null).get());
 					break;
 				//Note that this logic is fragile, and will break, if we encounter a parentConcept column before the corresponding terminology column....
 				//but we should be processing them in order, as far as I know.
@@ -984,7 +966,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				case Terminology_3_:
 					if (parentNids.size() >= 1)
 					{
-						bt.addStringCell(column, getTerminology(OTFUtility.getConceptVersion(parentNids.get(0))));
+						bt.addStringCell(column, getTerminology(OchreUtility.getConceptSnapshot(parentNids.get(0), null, null)));
 					}
 					else
 					{
@@ -1019,8 +1001,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 					StringBuilder sb = new StringBuilder();
 					
 					sb.append("SCT ID: " + this.getSct(concept.getNid()));
-					
-					//
 					bt.addStringCell(column, sb.toString());
 					break;
 				case Synonym:

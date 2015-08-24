@@ -30,6 +30,7 @@ import gov.va.isaac.gui.enhancedsearchview.filters.IsDescendantOfFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +80,7 @@ class IsDescendantOfSearchResultsFilter implements Function<List<CompositeSearch
 			return filteredResults;
 		} catch (Exception e) {
 			throw new SearchResultsFilterException(this, "Failed calling (" + currentResult.getContainingConcept().get().getConceptDescriptionText() 
-			+ " (nid=" + currentResult.getContainingConcept().get().getNid() + ")).isKindOf(" + OTFUtility.getDescription(possibleAscendantConcept) 
+			+ " (nid=" + currentResult.getContainingConcept().get().getNid() + ")).isKindOf(" + OchreUtility.getDescription(possibleAscendantConcept.getNid()) 
 			+ " (nid=" + possibleAscendantConcept.getConceptNid() + "))", e);
 		}
 	}

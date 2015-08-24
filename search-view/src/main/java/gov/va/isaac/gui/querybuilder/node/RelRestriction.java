@@ -25,9 +25,11 @@
 package gov.va.isaac.gui.querybuilder.node;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import java.util.Optional;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -194,19 +196,19 @@ public class RelRestriction extends AssertionNode {
 
 	@Override
 	public String getDescription() {
-		String relRestrictionConceptDescription = null;
+		Optional<String> relRestrictionConceptDescription = null;
 		if (getRelRestrictionConceptNid() != null && getRelRestrictionConceptNid() != 0) {
-			relRestrictionConceptDescription = OTFUtility.getDescriptionIfConceptExists(getRelRestrictionConceptNid());
+			relRestrictionConceptDescription = OchreUtility.getDescription(getRelRestrictionConceptNid());
 		}
 		
-		String relTypeConceptDescription = null;
+		Optional<String> relTypeConceptDescription = null;
 		if (getRelTypeConceptNid() != null && getRelTypeConceptNid() != 0) {
-			relTypeConceptDescription = OTFUtility.getDescriptionIfConceptExists(getRelTypeConceptNid());
+			relTypeConceptDescription = OchreUtility.getDescription(getRelTypeConceptNid());
 		}
 
-		String sourceConceptDescription = null;
+		Optional<String> sourceConceptDescription = null;
 		if (getSourceConceptNid() != null && getSourceConceptNid() != 0) {
-			sourceConceptDescription = OTFUtility.getDescriptionIfConceptExists(getSourceConceptNid());
+			sourceConceptDescription = OchreUtility.getDescription(getSourceConceptNid());
 		}
 		
 		String useDestinationSubsumptionDescription = null;

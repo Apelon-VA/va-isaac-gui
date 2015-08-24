@@ -27,7 +27,6 @@ import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
@@ -35,7 +34,6 @@ import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +42,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -70,11 +67,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.tk.Toolkit;
 
 /**
@@ -116,7 +111,7 @@ public class DescriptionTableView implements EmbeddableViewI
 			{
 				setComputeOnInvalidate(true);
 				addBinding(AppContext.getService(UserProfileBindings.class).getViewCoordinatePath(),
-						AppContext.getService(UserProfileBindings.class).getDisplayFSN(),
+						AppContext.getService(UserProfileBindings.class).getLanguageCoordinate(),
 						showActiveOnly,
 						showHistory);
 			}
@@ -584,7 +579,7 @@ public class DescriptionTableView implements EmbeddableViewI
 			{
 				ConceptSnapshot localConcept = (concept == null ? Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID_)) : concept);
 	
-				List<? extends SememeChronology<? extends DescriptionSememe<?>>> descs = OchreUtility.getConceptDescriptionList(localConcept.getChronology());
+				List<? extends SememeChronology<? extends DescriptionSememe<?>>> descs = localConcept.getChronology().getConceptDescriptionList();
 				for (SememeChronology<? extends DescriptionSememe<?>> descChronology : descs)
 				{
 					for (DescriptionSememe<?> dv : descChronology.getVersionList())

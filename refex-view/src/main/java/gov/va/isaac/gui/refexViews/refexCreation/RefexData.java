@@ -18,9 +18,6 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -28,6 +25,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * 
@@ -61,12 +61,12 @@ public class RefexData
 		}
 	}
 
-	public void setColumnVals(int currentCol, ConceptVersionBI colNameConcept, DynamicSememeDataType type, DynamicSememeDataBI defaultValueObject, boolean isMandatory,
+	public void setColumnVals(int currentCol, UUID colNameConcept, DynamicSememeDataType type, DynamicSememeDataBI defaultValueObject, boolean isMandatory,
 			DynamicSememeValidatorType validatorType, DynamicSememeDataBI validatorData)
 	{
 		adjustColumnCount(currentCol);
 		DynamicSememeColumnInfo rdci = columnInfo_.get(currentCol);
-		rdci.setColumnDescriptionConcept(colNameConcept.getPrimordialUuid());
+		rdci.setColumnDescriptionConcept(colNameConcept);
 		rdci.setColumnDataType(type);
 		rdci.setColumnDefaultData(defaultValueObject);
 		rdci.setColumnRequired(isMandatory);

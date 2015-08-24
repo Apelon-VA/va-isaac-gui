@@ -221,7 +221,7 @@ public class SearchResultsTable  {
 		
 		matchingDescTypeCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OchreUtility.getConceptChronology(param.getValue().getMatchingDescriptionComponents().iterator().next()
+				return new SimpleStringProperty(Get.conceptService().getOptionalConcept(param.getValue().getMatchingDescriptionComponents().iterator().next()
 						.getLatestVersion(DescriptionSememe.class, AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get()
 						.value().getDescriptionTypeConceptSequence()).get().getConceptDescriptionText());
 			} catch (Exception e) {
@@ -343,7 +343,7 @@ public class SearchResultsTable  {
 							
 							Collections.sort(matchingDescComponents, new DescriptionSememeTypeComparator());
 							for (DescriptionSememe<?> descComp : matchingDescComponents) {
-								String type = OchreUtility.getConceptChronology(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+								String type = Get.conceptService().getOptionalConcept(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
 								buffer.append(type + ": " + descComp.getText() + "\n");
 							}
 							Tooltip tooltip = new Tooltip("Matching descriptions for \"" + fsn + "\":\n" + buffer.toString());

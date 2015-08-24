@@ -37,7 +37,7 @@ public class SearchHandleBuilder
 				builder.getQuery(), 
 				builder.getSizeLimit(), 
 				builder.isPrefixSearch(), 
-				builder.getCallback(), 
+				((searchHandle) -> {builder.getCallback().taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}), 
 				builder.getTaskId(), 
 				builder.getFilter(),
 				builder.getComparator(),

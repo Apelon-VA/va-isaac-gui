@@ -31,7 +31,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 
 /**
  * {@link DynamicReferencedItemsView}
@@ -41,7 +40,6 @@ import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 public class DynamicReferencedItemsView implements PopupViewI
 {
 	private SimpleDisplayConcept assemblageConcept_;
-	ConceptVersionBI assemblageConceptFull_;
 	private BorderPane root_;
 	private DynamicRefexView drv_;
 

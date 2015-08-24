@@ -32,6 +32,7 @@ import gov.va.isaac.gui.enhancedsearchview.filters.NonSearchTypeFilter;
 import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchResultsFilterException;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.collections.NidSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -115,15 +116,15 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 					if (filter instanceof IsDescendantOfFilter) {
 						ConceptVersionBI concept = OTFUtility.getConceptVersion(((IsDescendantOfFilter)filter).getNid());
 
-						let(concept.getPrimordialUuid().toString(), new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
+						let(concept.getPrimordialUuid().toString(), new ConceptSpec(OchreUtility.getDescription(concept.getNid()).get(), concept.getPrimordialUuid()));
 					} else if (filter instanceof IsAFilter) {
 						ConceptVersionBI concept = OTFUtility.getConceptVersion(((IsAFilter)filter).getNid());
 
-						let(concept.getPrimordialUuid().toString(), new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
+						let(concept.getPrimordialUuid().toString(), new ConceptSpec(OchreUtility.getDescription(concept.getNid()).get(), concept.getPrimordialUuid()));
 					} else if (filter instanceof IsRefsetMemberFilter) {
 						ConceptVersionBI concept = OTFUtility.getConceptVersion(((IsRefsetMemberFilter)filter).getNid());
 
-						let(concept.getPrimordialUuid().toString(), new ConceptSpec(OTFUtility.getDescription(concept), concept.getPrimordialUuid()));
+						let(concept.getPrimordialUuid().toString(), new ConceptSpec(OchreUtility.getDescription(concept.getNid()).get(), concept.getPrimordialUuid()));
 					} else {
 						// This should never happen, since validateFilters(filters) was already called
 						throw new RuntimeException(new SearchResultsFilterException(QueryBasedSearchResultsIntersectionFilter.this, "Unsupported NonSearchTypeFilter " + filter.getClass().getName() + ". Curently only IsDescendantOfFilter and IsAFilter supported"));

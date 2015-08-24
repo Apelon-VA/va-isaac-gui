@@ -25,7 +25,7 @@ import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
 import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
@@ -52,6 +52,7 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Optional;
 import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -501,7 +502,7 @@ public class RefexDataTypeFXNodeBuilder
 			if (currentValue != null)
 			{
 				//TODO (artf231429) this doesn't work, if the nid isn't a concept nid.  We need a NidNode, rather than a ConceptNode
-				cn.set(OTFUtility.getConceptVersion(((DynamicSememeNidBI)currentValue).getDataNid()));
+				cn.set(OchreUtility.getConceptSnapshot(((DynamicSememeNidBI)currentValue).getDataNid(), null, null).get());
 			}
 			
 			if (valueIsRequired != null && defaultValue == null)
@@ -720,21 +721,21 @@ public class RefexDataTypeFXNodeBuilder
 			if (defaultValue != null)
 			{
 				
-				String temp = null;
+				Optional<String> temp = null;
 				if (defaultValue.getDynamicSememeDataType() == DynamicSememeDataType.NID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) defaultValue).getDataNid());
+					temp = OchreUtility.getDescription(((DynamicSememeNid) defaultValue).getDataNid());
 				}
 				else if (defaultValue.getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 				{
-					temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) defaultValue).getDataUUID());
+					temp = OchreUtility.getDescription(((DynamicSememeUUID) defaultValue).getDataUUID());
 				}
-				if (temp == null)
+				if (!temp.isPresent())
 				{
-					temp = defaultValue.getDataObject().toString();
+					temp = Optional.of(defaultValue.getDataObject().toString());
 				}
 				
-				tip = "If no value is specified the default value of '" + temp + "' will be used";
+				tip = "If no value is specified the default value of '" + temp.get() + "' will be used";
 			}
 			if (validatorType != null && validatorType.get() != null)
 			{
@@ -749,11 +750,11 @@ public class RefexDataTypeFXNodeBuilder
 					String temp = null;
 					if (validatorData.get().getDynamicSememeDataType() == DynamicSememeDataType.NID)
 					{
-						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeNid) validatorData.get()).getDataNid());
+						temp = OchreUtility.getDescription(((DynamicSememeNid) validatorData.get()).getDataNid()).orElse(null);
 					}
 					else if (validatorData.get().getDynamicSememeDataType() == DynamicSememeDataType.UUID)
 					{
-						temp = OTFUtility.getDescriptionIfConceptExists(((DynamicSememeUUID) validatorData.get()).getDataUUID());
+						temp = OchreUtility.getDescription(((DynamicSememeUUID) validatorData.get()).getDataUUID()).orElse(null);
 					}
 					if (temp == null)
 					{

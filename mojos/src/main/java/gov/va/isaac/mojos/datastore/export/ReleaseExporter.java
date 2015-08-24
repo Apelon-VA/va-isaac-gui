@@ -55,7 +55,6 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
 import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
@@ -455,7 +454,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			allPaths = OchreUtility.getPathConcepts();
 			//Set<ConceptVersion<?>> pathConcepts = OCHREUtility.getPathConcepts();
 		} catch (Exception e) {
-			getLog().error("Error getting all PATHS for path validation - OTFUtility.getPathConcepts()", e);
+			getLog().error("Error getting all PATHS for path validation - OchreUtility.getPathConcepts()", e);
 		} 
 		if(allPaths != null) {
 			for(ConceptVersion<?> thisPath : allPaths) {
@@ -463,7 +462,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 					if(thisPath.getChronology().getPrimordialUuid().equals(pathSpec.getConceptSpec().getPrimodialUuid())) {
 						selectedPath = pathSpec.getConceptSpec().getPrimodialUuid();
 						selectedPathNid = pathSpec.getConceptSpec().getNid();
-						getLog().info("Path is valid: " + OTFUtility.getDescription(selectedPathNid));
+						getLog().info("Path is valid: " + OchreUtility.getDescription(selectedPathNid));
 						return true; 
 					}
 				} catch (Exception e) {
@@ -472,7 +471,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 				}
 			}
 		} else {
-			getLog().error("Error getting paths for validation from - OTFUtility.getPathConcepts()");
+			getLog().error("Error getting paths for validation from - OchreUtility.getPathConcepts()");
 		}
 		return false;
 	}

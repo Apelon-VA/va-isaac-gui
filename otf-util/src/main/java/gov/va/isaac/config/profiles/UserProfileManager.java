@@ -26,6 +26,7 @@ import gov.va.isaac.config.users.GenerateUsers;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.interfaces.utility.ServicesToPreloadI;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +60,7 @@ public class UserProfileManager implements ServicesToPreloadI
 	private Logger logger = LoggerFactory.getLogger(UserProfileManager.class);
 
 	private File profilesFolder_ = new File("profiles");
-	public static final String PREFS_FILE_NAME = "Preferences.xml";
+	public static final String PREFS_FILE_NAME = "Preferences.json";
 
 	//protected, rather than private, to allow the mock code to bypass this
 	protected CountDownLatch cdl = new CountDownLatch(2);
@@ -267,7 +268,8 @@ public class UserProfileManager implements ServicesToPreloadI
 			}
 			if (defaults.isDisplayFSN() != null)
 			{
-				up.setDisplayFSN(defaults.isDisplayFSN().booleanValue());
+				up.setLanguageCoordinate(defaults.isDisplayFSN() ? LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate() : 
+					LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
 			}
 			if (defaults.isLaunchWorkflowForEachCommit() != null)
 			{

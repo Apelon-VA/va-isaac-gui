@@ -23,12 +23,10 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.GridPaneBuilder;
 import gov.va.isaac.ie.ExportFileHandler;
 import gov.va.isaac.model.ExportType;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
-import gov.va.isaac.util.OTFUtility;
-
 import java.io.File;
-
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
@@ -44,10 +42,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Preconditions;
 
 /**
@@ -55,7 +51,6 @@ import com.google.common.base.Preconditions;
  *
  * @author bcarlsenca
  */
-@SuppressWarnings("restriction")
 public class ExportView extends GridPane {
 
   /** The Constant LOG. */
@@ -148,7 +143,7 @@ public class ExportView extends GridPane {
 
     // Update UI.
     exportTypeLabel.setText(exportType.getDisplayName());
-    pathNameLabel.setText(OTFUtility.getConPrefTerm(pathNid));
+    pathNameLabel.setText(OchreUtility.getFSNForConceptNid(pathNid, null).get());
     folderNameLabel.setText(folderName);
 
     File folder = new File(folderName);
