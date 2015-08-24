@@ -119,9 +119,9 @@ public class ConceptViewController {
 	private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     
-    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
     	if (taxonomyCoordinate.get() == null) {
     		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
     	}

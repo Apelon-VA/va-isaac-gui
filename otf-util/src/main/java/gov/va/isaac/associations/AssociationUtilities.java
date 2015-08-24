@@ -56,7 +56,7 @@ public class AssociationUtilities
 		return associationSequence;
 	}
 
-	public static List<Association> getSourceAssociations(int componentNid, StampCoordinate<? extends StampCoordinate<?>> stamp) throws IOException
+	public static List<Association> getSourceAssociations(int componentNid, StampCoordinate stamp) throws IOException
 	{
 		ArrayList<Association> results = new ArrayList<>();
 		Get.sememeService().getSememesForComponentFromAssemblage(componentNid, getAssociationSequence())
@@ -74,7 +74,7 @@ public class AssociationUtilities
 		return results;
 	}
 
-	public static List<Association> getTargetAssociations(int componentNid, StampCoordinate<? extends StampCoordinate<?>> stamp)
+	public static List<Association> getTargetAssociations(int componentNid, StampCoordinate stamp)
 	{
 		ArrayList<Association> result = new ArrayList<>();
 
@@ -112,7 +112,7 @@ public class AssociationUtilities
 		return result;
 	}
 
-	public static List<Association> getAssociationsOfType(int associationTypeConceptNid, StampCoordinate<? extends StampCoordinate<?>> stamp)
+	public static List<Association> getAssociationsOfType(int associationTypeConceptNid, StampCoordinate stamp)
 	{
 		ArrayList<Association> results = new ArrayList<>();
 		Get.sememeService().getSememesFromAssemblage(associationTypeConceptNid)

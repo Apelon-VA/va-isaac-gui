@@ -93,7 +93,7 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 
 	@Override
 	public void setConcept(
-			TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate,
+			TaxonomyCoordinate taxonomyCoordinate,
 			int conceptId) {
 		embeddableView.setConcept(taxonomyCoordinate, conceptId);
 	}
@@ -111,7 +111,7 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 
 	@Override
 	public void setConcept(
-			TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate,
+			TaxonomyCoordinate taxonomyCoordinate,
 			UUID conceptUuid) {
 		embeddableView.setConcept(taxonomyCoordinate, conceptUuid);
 	}

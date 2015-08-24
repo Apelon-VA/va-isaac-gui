@@ -24,6 +24,7 @@
  */
 package gov.va.isaac.gui.enhancedsearchview.searchresultsfilters;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.enhancedsearchview.filters.Invertable;
 import gov.va.isaac.gui.enhancedsearchview.filters.IsAFilter;
 import gov.va.isaac.gui.enhancedsearchview.filters.IsDescendantOfFilter;
@@ -197,7 +198,7 @@ class QueryBasedSearchResultsIntersectionFilter implements Function<List<Composi
 		try {
 			SearchResultsFilterHelper.LOG.debug("Applying " + filters.size() + " clauses to " + forSetCustomCollection.size() + " uuids");
 
-			q.setTaxonomyCoordinate(OTFUtility.getViewCoordinate());
+			q.setTaxonomyCoordinate(ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
 			outputNids = q.compute();
 			
 			SearchResultsFilterHelper.LOG.debug(outputNids.size() + " nids remained after applying " + filters.size() + " clauses to filtering a total of " + forSetCustomCollection.size() + " uuids");

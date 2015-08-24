@@ -187,8 +187,8 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	 * org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.DynamicSememeStringBI, org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate)
 	 */
 	@Override
-	public boolean validate(DynamicSememeDataBI userData, DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, StampCoordinate<?> sc, 
-			TaxonomyCoordinate<?> tc) throws RuntimeException
+	public boolean validate(DynamicSememeDataBI userData, DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, StampCoordinate sc, 
+			TaxonomyCoordinate tc) throws RuntimeException
 	{
 		RefexDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
 		if (rdvi == null)

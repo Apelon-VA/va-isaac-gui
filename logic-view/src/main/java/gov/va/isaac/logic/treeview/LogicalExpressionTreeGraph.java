@@ -82,7 +82,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		return ignoreSingleChildRoleGroups;
 	}
 
-	public void displayLogicalExpression(LogicalExpression le, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
+	public void displayLogicalExpression(LogicalExpression le, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		System.out.println("Processing LogicalExpression for concept " + Get.conceptDescriptionText(le.getConceptSequence()));
 		System.out.println("Root is " + le.getRoot().getNodeSemantic().name());
 
@@ -102,7 +102,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	public static String logicalNodeTypeToString(Node node) {
 		return node.getClass().getName().replaceAll(".*\\.", "");
 	}
-	private void displayLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
+	private void displayLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		System.out.println("Processing " + logicalNode.getNodeSemantic().name() + " node");
 
 		TreeNodeImpl currentTreeNode = null;
@@ -156,7 +156,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	}
 
 	// TODO: properly populate all labels
-	private Label createFxNodeFromLogicalExpression(LogicalExpression logicalExpression, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
+	private Label createFxNodeFromLogicalExpression(LogicalExpression logicalExpression, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		RootNode rootNode = (RootNode)logicalExpression.getNode(0);
 		
 		RootNodeFxNode label = new RootNodeFxNode(logicalExpression, rootNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
@@ -166,7 +166,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		
 		return label;
 	}
-	private Label createFxNodeFromLogicalNode(Node logicalNode, StampCoordinate<?> stampCoordinate, LanguageCoordinate languageCoordinate) {
+	private Label createFxNodeFromLogicalNode(Node logicalNode, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Label label = null;
 		
 		if (logicalNode instanceof ConceptNodeWithSequences) {
