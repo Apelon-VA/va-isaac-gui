@@ -98,35 +98,7 @@ public final class OchreUtility {
 	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int id, 
 			StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
-		
-		// Code for examining STATED LogicGraph only
-		//TODO JOEL, what is going on here?  None of this code is even doing anything related to the results that are returned?
-//		if (premiseType == null || premiseType == PremiseType.STATED)
-//		{
-//			LogicGraphSememeImpl latestStatedGraph = null;
-//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(id);
-//
-//			SememeChronology rawDefChronology = defChronologyOptional.get();
-//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-//			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
-//			
-//			LOG.debug("STATED LogicGraph for {}:\n{}", Get.conceptDescriptionText(id), latestStatedGraph.toString());
-//		}	
-//
-//		// Code for examining INFERRED LogicGraph only
-//		if (premiseType == null || premiseType == PremiseType.INFERRED)
-//		{
-//			LogicGraphSememeImpl latestInferredGraph = null;
-//			
-//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(id);
-//
-//			SememeChronology rawDefChronology = defChronologyOptional.get();
-//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-//			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
-//			
-//			LOG.debug("INFERRED LogicGraph for {}:\n{}", Get.conceptDescriptionText(id), latestInferredGraph.toString());
-//		}
-		
+	
 		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(id)
 				.getRelationshipListOriginatingFromConcept();
 		for (SememeChronology<? extends RelationshipVersionAdaptor<?>> chronicle : outgoingRelChronicles)
@@ -135,11 +107,11 @@ public final class OchreUtility {
 				for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 				{
 					// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
-					if (premiseType == null || premiseType == rv.getPremiseType()) {
+					if ((premiseType == null || premiseType == rv.getPremiseType())
+							&& (relTypeSequence == null || relTypeSequence == rv.getTypeSequence())) {
 						allRelationships.add(rv);
-						//TODO JOEL, did you not forget to filter by relTypeSequence here?
 						LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(id) + ", stampCoord, (PremiseType)" 
-						+ (premiseType != null ? premiseType.name() : null) + ") adding " + OchreUtility.toString(rv));
+						+ (premiseType != null ? premiseType.name() : null) + ", relTypeSequence=" + relTypeSequence + ") adding " + rv);
 					}
 				}
 			} else {
@@ -149,6 +121,8 @@ public final class OchreUtility {
 						&& (premiseType == null || premiseType == latest.get().value().getPremiseType())
 						&& (relTypeSequence == null || relTypeSequence == latest.get().value().getTypeSequence())) {
 					allRelationships.add(latest.get().value());
+					LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(id) + ", stampCoord, (PremiseType)" 
+					+ (premiseType != null ? premiseType.name() : null) + ", relTypeSequence=" + relTypeSequence + ") adding " + latest.get().value());
 				}
 			}
 		}
@@ -566,26 +540,5 @@ public final class OchreUtility {
 
 		Collections.sort(allDynamicSememeDefConcepts);
 		return allDynamicSememeDefConcepts;
-	}
-	
-	public static String toString(Object obj) {
-		try {
-			if (obj == null) {
-				return null;
-			} else if (obj instanceof RelationshipVersionAdaptor) {
-				//TODO Joel, why wouldn't you just write this in the impl of RelationshipVersionAdapter?
-				RelationshipVersionAdaptor<?> rva = (RelationshipVersionAdaptor<?>) obj;
-				String orig = Get.conceptDescriptionText(rva.getOriginSequence());
-				String dest = Get.conceptDescriptionText(rva.getDestinationSequence());
-				String type = Get.conceptDescriptionText(rva.getTypeSequence());
-				String stamp = Get.conceptDescriptionText(rva.getStampSequence());
-				return "RelationshipVersionAdaptor: origin=" + orig + " (seq=" + rva.getOriginSequence() + "), dest=" + dest + " (seq=" + rva.getDestinationSequence() + "), type=" + type + " (seq=" + rva.getTypeSequence() + "), premise=" + rva.getPremiseType().name() + ", group=" + rva.getGroup() + " stamp=" + stamp;
-			} else {
-				return obj.toString();
-			}
-		} catch (Exception e) {
-			LOG.error("Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-			return null;
-		}
 	}
 }
