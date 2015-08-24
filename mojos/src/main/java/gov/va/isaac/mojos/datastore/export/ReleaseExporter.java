@@ -26,12 +26,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -49,8 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
@@ -59,25 +55,19 @@ import gov.va.isaac.init.SystemInit;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskHandlerI;
 import gov.va.isaac.mojos.conceptSpec.MojoConceptSpec;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ProgressEvent;
 import gov.va.isaac.util.ProgressListener;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.ViewCoordinateFactory;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
-import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.StampPath;
-import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
@@ -146,7 +136,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	public ExportReleaseType[] exportType;
 	
 	@Parameter (name = "path", required = true)
-	public ConceptProxy path;
+	public MojoConceptSpec path;
 	
 	//OPTIONAL
 	@Parameter (name="namespace", defaultValue="0")
@@ -180,11 +170,11 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			//Initial Filename
 			String date = new SimpleDateFormat("MM-dd-yyyy HH-mm-ss").format(new Date());
 			uscrsFileName = "VA_USCRS_Submission_File_" + date;
-			econceptFileName = "SOLOR_Snapshot_" + path.getConceptDescriptionText();
+			econceptFileName = "SOLOR_Snapshot_" + path.getFsn();
 			
 			getLog().info("Executing Content Export" );
 			
-			getLog().debug("PATH Param Loaded: " + path.getConceptDescriptionText() + " - " + path.getPrimodialUuid().toString());
+			getLog().debug("PATH Param Loaded: " + path.getFsn() + " - " + path.getUuid().toString());
 			
 			//Check if output folder exists, if not then create it
 			if(outputFolder != null) {
@@ -235,10 +225,9 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			
 			try
 			{
-				// boolean isPathValid = validPath(path); todo - enable the PATH Validity Check
+				boolean isPathValid = validPath(path); //todo - enable the PATH Validity Check
 				
 				if(allPaths != null) {
-					pathNid = path.getConceptSequence();
 					
 					if(exportFormat.equalsIgnoreCase(ExportMojoFormat.Uscrs.name()) || exportFormat.equalsIgnoreCase("all")) //USCRS EXPORT
 					{
@@ -260,8 +249,8 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 						exportEconcept();
 					} 
 				} else {
-					getLog().error("PATH " + path.getPrimodialUuid() + " is NOT valid, cannot export. Or OCHREUtil did not return any paths.");
-					throw new MojoExecutionException("PATH ERROR - Path is invalid: " + path.getPrimodialUuid().toString()); 
+					getLog().error("PATH " + path.getUuid() + " is NOT valid, cannot export. Or OCHREUtil did not return any paths.");
+					throw new MojoExecutionException("PATH ERROR - Path is invalid: " + path.getUuid()); 
 				}
 			}
 			catch (Exception e) 
@@ -333,7 +322,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	 * @return  
 	 * @throws IOException 
 	 */
-	public int exportUscrs(ConceptProxy path) throws IOException {
+	public int exportUscrs(MojoConceptSpec path) throws IOException {
 		
 		//Convert Module UUID HashSet to IntSTream for StampCoordinate Construction
 		IntStream moduleSequences = modules.stream()
@@ -351,12 +340,16 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 												}
 												return namespace; 
 												} );
+		Optional<ConceptSnapshot> pathCon = OchreUtility.getConceptSnapshot(UUID.fromString(path.getUuid()), sc, lc);
+		if(pathCon.isPresent()) {
+			pathNid = pathCon.get().getPathSequence();
+		}
 		if(uscrsDateFilter != null) { 
-			sp = new StampPositionImpl(uscrsDateFilter.getTime(), path.getConceptSequence());
+			sp = new StampPositionImpl(uscrsDateFilter.getTime(), pathNid);
 			sc = new StampCoordinateImpl(StampPrecedence.PATH, sp, 
 					ConceptSequenceSet.of(moduleSequences), gov.vha.isaac.ochre.api.State.ANY_STATE_SET);
 		} else {
-			sp = new StampPositionImpl(System.currentTimeMillis(), path.getConceptSequence());
+			sp = new StampPositionImpl(System.currentTimeMillis(), pathNid);
 			sc = new StampCoordinateImpl(StampPrecedence.PATH, sp, 
 					ConceptSequenceSet.of(moduleSequences), gov.vha.isaac.ochre.api.State.ACTIVE_ONLY_SET);
 		}
@@ -370,11 +363,16 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		
 		IntStream conceptStream = stream.filter( 
 										(ConceptChronology<? extends ConceptVersion<?>> cc) ->  {
-											int nid = ((ConceptChronology)cc).getConceptSequence();
-											Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, sc, lc); //Concept Snapshot
-											if(cs.isPresent()) {
-												return true;
-											}else {
+											try {
+												int nid = ((ConceptChronology<?>)cc).getConceptSequence();
+												Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, sc, lc); //Concept Snapshot
+												if(cs.isPresent()) {
+													return true;
+												}else {
+													return false;
+												}
+											} catch(Exception e) {
+												getLog().error("Error during IntStream filter", e);
 												return false;
 											}
 								}).mapToInt(
@@ -509,18 +507,16 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		export.exportType = new ExportReleaseType[]{ExportReleaseType.SNAPSHOT};
 		export.skipExportAssembly = false;
 		
-		UUID[] pathUuids = new UUID[1];
-		pathUuids[0] = UUID.fromString("32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7");
-		ConceptProxy conceptProxy = new ConceptProxy();
-		conceptProxy.setUuids(pathUuids);
-		conceptProxy.setDescription("ISAAC Development Path");
-
+		MojoConceptSpec mojoConceptSpec = new MojoConceptSpec();
+		mojoConceptSpec.setFsn("ISAAC Development Path");
+		mojoConceptSpec.setUuid("32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7"); //32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7
+		
 		HashSet<String> modules = new HashSet<String>();
 		modules.add(Snomed.US_EXTENSION_MODULE.getPrimodialUuid().toString());
 		modules.add(Snomed.CORE_MODULE.getPrimodialUuid().toString());
 		export.modules = modules;
 		
-		export.path = conceptProxy;
+		export.path = mojoConceptSpec;
 		
 		//export.exportFormat = ExportMojoFormat.Econcept.name.toString();
 		export.exportFormat = ExportMojoFormat.Uscrs.name.toString();
