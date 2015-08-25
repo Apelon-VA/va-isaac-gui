@@ -224,9 +224,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			
 			try
 			{
-				boolean isPathValid = validPath(path); //todo - enable the PATH Validity Check
-				
-				if(allPaths != null) {
+				if(validPath(path)) { //allPaths != null && 
 					
 					if(exportFormat.equalsIgnoreCase(ExportMojoFormat.Uscrs.name()) || exportFormat.equalsIgnoreCase("all")) //USCRS EXPORT
 					{
@@ -359,15 +357,17 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		} catch(Exception e) {
 			getLog().error("USCRS Export Mojo Error - problem loading GET Concept-Stream", e);
 		} 
-		
 		IntStream conceptStream = stream.filter( 
 										(ConceptChronology<? extends ConceptVersion<?>> cc) ->  {
 											try {
-												int nid = ((ConceptChronology<?>)cc).getConceptSequence();
+												int nid = ((ConceptChronology<?>)cc).getNid();
+												getLog().info("Stream Filter Nid: " + nid);
 												Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, sc, lc); //Concept Snapshot
 												if(cs.isPresent()) {
+													getLog().info("Stream present");
 													return true;
 												}else {
+													getLog().info("Stream False");
 													return false;
 												}
 											} catch(Exception e) {
