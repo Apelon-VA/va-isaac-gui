@@ -18,11 +18,11 @@
  */
 package gov.va.isaac.model;
 
-import java.util.UUID;
-import com.sun.javafx.collections.ImmutableObservableList;
 import gov.vha.isaac.ochre.api.MetadataConceptConstant;
 import gov.vha.isaac.ochre.model.constants.InformationModelsConstants;
+import java.util.UUID;
 import javafx.collections.ObservableList;
+import com.sun.javafx.collections.ImmutableObservableList;
 
 /**
  * An enumerated type representing various information models.
