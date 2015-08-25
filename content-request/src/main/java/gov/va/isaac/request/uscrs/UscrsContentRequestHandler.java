@@ -238,7 +238,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				
 				logger.info("USCRS Content Request Handler - Starting Concept Stream Iterator");
 				intStream
-					.limit(65000)
+					.limit(15) //todo replace with 65000
 					.forEach( nid -> {	
 						
 						if(examinedConCount % 100 == 0) {
@@ -571,7 +571,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getSemanticTag(ConceptSnapshot concept) throws Exception {
-		Optional<? extends String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), concept.getStampCoordinate());
+		Optional<String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), null);
 		if(fsnO.isPresent()) {
 			String fsn = fsnO.get();
 			if (fsn.indexOf('(') != -1) {
@@ -608,7 +608,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getTopic(ConceptSnapshot concept) throws Exception {
-		Optional<? extends String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), concept.getStampCoordinate());
+		Optional<? extends String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), null);
 		if (fsnO.isPresent()) {
 			String fsn = fsnO.get();
 			if(fsn.indexOf('(') != -1) {
@@ -651,7 +651,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private String getRelType(int nid) {
 		try {
-			Optional<String> rtPrefTerm = Frills.getPreferredTermForConceptNid(nid, sc);
+			Optional<String> rtPrefTerm = OchreUtility.getPreferredTermForConceptNid(nid, null, null);
 			Optional<String> rtFsn = OchreUtility.getFSNForConceptNid(nid, sc); 
 			if(rtPrefTerm.isPresent()) {
 				return PICKLIST_Relationship_Type.find(rtPrefTerm.get()).toString();
