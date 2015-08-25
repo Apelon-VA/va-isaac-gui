@@ -276,7 +276,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	@Override
 	public void setConcept(
-			TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate,
+			TaxonomyCoordinate taxonomyCoordinate,
 			int componentNid) {
 		this.taxonomyCoordinate.get().languageCoordinateProperty().set(new ObservableLanguageCoordinateImpl(taxonomyCoordinate.getLanguageCoordinate()));
 		this.taxonomyCoordinate.get().stampCoordinateProperty().set(new ObservableStampCoordinateImpl(taxonomyCoordinate.getStampCoordinate()));
@@ -302,7 +302,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	@Override
 	public void setConcept(
-			TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate,
+			TaxonomyCoordinate taxonomyCoordinate,
 			UUID uuid) {
 		Utility.execute(() -> setConcept(taxonomyCoordinate, Get.identifierService().getConceptSequenceForUuids(uuid)));
 	}

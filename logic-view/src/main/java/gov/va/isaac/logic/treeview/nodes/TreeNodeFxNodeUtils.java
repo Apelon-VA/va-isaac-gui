@@ -46,11 +46,11 @@ public class TreeNodeFxNodeUtils {
 		treeNodeFxNode.setContextMenu(cm);
 	}
 
-	public static Function<Integer, String> newDescriptionRenderer(StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) {
+	public static Function<Integer, String> newDescriptionRenderer(StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		return (conceptId) -> getDescription(conceptId, stampCoordinate, languageCoordinate);
 	}
-	public static <T extends DescriptionSememe<T>> String getDescription(int conceptId, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) {
-		Optional<LatestVersion<T>> opt = Get.conceptService().getSnapshot(stampCoordinate, languageCoordinate).getDescriptionOptional(conceptId);
+	public static String getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
+		Optional<LatestVersion<DescriptionSememe<?>>> opt = Get.conceptService().getSnapshot(stampCoordinate, languageCoordinate).getDescriptionOptional(conceptId);
 
 		return opt.isPresent() ? opt.get().value().getText() : "No description found for concept (id=" + conceptId + ", uuid=" + Get.identifierService().getUuidPrimordialFromConceptSequence(conceptId) + ")";
 	}

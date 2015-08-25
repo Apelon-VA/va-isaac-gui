@@ -152,7 +152,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	
 	private PersistenceInterface persistenceInterface = null;
 
-	final private TaxonomyCoordinate<?> panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+	final private TaxonomyCoordinate panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 	
 	final private ProgressIndicator progressIndicator = new ProgressIndicator();
 	{

@@ -66,14 +66,14 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
     private int multiParentDepth = 0;
     private boolean secondaryParentOpened = false;
     private SctTreeItemDisplayPolicies displayPolicies;
-    private final ReadOnlyObjectProperty<TaxonomyCoordinate<?>> taxonomyCoordinate;
+    private final ReadOnlyObjectProperty<TaxonomyCoordinate> taxonomyCoordinate;
     private final ReadOnlyObjectProperty<Tree> taxonomyTree;
     private final ReadOnlyObjectProperty<ConceptSnapshotService> conceptSnapshotService;
     
     public ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
     	return taxonomyTree;
     }
-    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
     	return taxonomyCoordinate;
     }
     public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
@@ -101,12 +101,12 @@ class SctTreeItem extends TreeItem<ConceptChronology<? extends ConceptVersion<?>
     }
     
     SctTreeItem(int conceptSequence, SctTreeItemDisplayPolicies displayPolicies, 
-            ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
+            ReadOnlyObjectProperty<TaxonomyCoordinate> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css) {
         this(Get.conceptService().getConcept(conceptSequence), displayPolicies, vcp, ttp, css, (Node) null);
     }
 
     SctTreeItem(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, SctTreeItemDisplayPolicies displayPolicies, 
-            ReadOnlyObjectProperty<TaxonomyCoordinate<?>> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
+            ReadOnlyObjectProperty<TaxonomyCoordinate> vcp, ReadOnlyObjectProperty<Tree> ttp, ReadOnlyObjectProperty<ConceptSnapshotService> css, Node node) {
         super(conceptChronology, node);
         this.taxonomyCoordinate = vcp;
         this.taxonomyTree = ttp;

@@ -63,7 +63,7 @@ public final class OchreUtility {
 	 */
 	@SuppressWarnings("unchecked")
 	public static Optional<LatestVersion<? extends ConceptVersion<?>>> getLatestConceptVersion(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, 
-			StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+			StampCoordinate stampCoordinate) {
 		@SuppressWarnings("rawtypes")
 		ConceptChronology raw = (ConceptChronology)conceptChronology;
 		
@@ -79,7 +79,7 @@ public final class OchreUtility {
 	 */
 	@SuppressWarnings("unchecked")
 	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptor(
-			SememeChronology<? extends RelationshipVersionAdaptor<?>> sememeChronology, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+			SememeChronology<? extends RelationshipVersionAdaptor<?>> sememeChronology, StampCoordinate stampCoordinate) {
 		@SuppressWarnings("rawtypes")
 		SememeChronology rawSememChronology = (SememeChronology)sememeChronology;
 		
@@ -96,7 +96,7 @@ public final class OchreUtility {
 	 * @return List of RelationshipVersionAdaptor
 	 */
 	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int id, 
-			StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
+			StampCoordinate stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 		
 		// Code for examining STATED LogicGraph only
@@ -214,7 +214,7 @@ public final class OchreUtility {
 	 * @param tc - optional - if not provided, defaults to user preferences values
 	 * @return
 	 */
-	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate<?> taxonomyCoordinate) {
+	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate taxonomyCoordinate) {
 		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
 				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
@@ -227,7 +227,7 @@ public final class OchreUtility {
 	 * @param tc - optional - if not provided, defaults to user preferences values
 	 * @return
 	 */
-	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate<?> taxonomyCoordinate) {
+	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate taxonomyCoordinate) {
 		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
 				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
@@ -241,7 +241,7 @@ public final class OchreUtility {
 	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
 	 * @return
 	 */
-	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) 
+	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
 		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), stampCoordinate, languageCoordinate);
 	}
@@ -254,10 +254,9 @@ public final class OchreUtility {
 	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
 	 * @return
 	 */
-	public static Optional<String> getDescription(int conceptId, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) 
+	public static Optional<String> getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Optional<LatestVersion<DescriptionSememe>> desc = Get.conceptService()
+		Optional<LatestVersion<DescriptionSememe<?>>> desc = Get.conceptService()
 			.getSnapshot(stampCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stampCoordinate,
 						languageCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get() : languageCoordinate)
 					.getDescriptionOptional(conceptId);
@@ -326,7 +325,7 @@ public final class OchreUtility {
 	 *   have a version available on the specified stampCoord
 	 */
 	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence, 
-			StampCoordinate<? extends StampCoordinate<?>> stampCoord, LanguageCoordinate langCoord)
+			StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
 		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = Get.conceptService().getOptionalConcept(conceptNidOrSequence);
 		if (c.isPresent())
@@ -348,7 +347,7 @@ public final class OchreUtility {
 	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
 	 *   have a version available on the specified stampCoord
 	 */
-	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate<? extends StampCoordinate<?>> stampCoord, LanguageCoordinate langCoord)
+	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
 		return getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID), stampCoord, langCoord);
 	}
@@ -420,7 +419,7 @@ public final class OchreUtility {
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate<? extends StampCoordinate<?>> stamp)
+	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate stamp)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
@@ -451,7 +450,7 @@ public final class OchreUtility {
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate<? extends StampCoordinate<?>> stamp, ConceptProxy language)
+	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate stamp, ConceptProxy language)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
@@ -493,7 +492,7 @@ public final class OchreUtility {
 			final String identifier,
 			final ConceptLookupCallback callback,
 			final Integer callId,
-			final StampCoordinate<? extends StampCoordinate<?>> stampCoord,
+			final StampCoordinate stampCoord,
 			final LanguageCoordinate langCoord)
 	{
 		LOG.debug("Threaded Lookup: '{}'", identifier);
@@ -533,7 +532,7 @@ public final class OchreUtility {
 			final int nid,
 			final ConceptLookupCallback callback,
 			final Integer callId,
-			final StampCoordinate<? extends StampCoordinate<?>> stampCoord,
+			final StampCoordinate stampCoord,
 			final LanguageCoordinate langCoord)
 	{
 		LOG.debug("Threaded Lookup: '{}'", nid);
