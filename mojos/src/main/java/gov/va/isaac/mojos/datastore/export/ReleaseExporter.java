@@ -118,7 +118,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 	private static UserProfile userProfileMain = null;
 	private int streamCount = 0;
 	private StampPositionImpl sp = null; 
-	private StampCoordinate<?> sc = null;
+	private StampCoordinate sc = null;
 	private LanguageCoordinate lc = LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate();
 	
 	IntStream uscrsConcepts;
@@ -360,7 +360,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		IntStream conceptStream = stream.filter( 
 										(ConceptChronology<? extends ConceptVersion<?>> cc) ->  {
 											try {
-												int nid = ((ConceptChronology<?>)cc).getConceptSequence();
+												int nid = ((ConceptChronology<?>)cc).getNid();
 												getLog().info("Stream Filter Nid: " + nid);
 												Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, sc, lc); //Concept Snapshot
 												if(cs.isPresent()) {

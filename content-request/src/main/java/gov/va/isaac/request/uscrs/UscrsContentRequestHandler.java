@@ -317,10 +317,10 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 									}
 									
 									for(DescriptionSememe d : descriptions) {
-										Optional<LatestVersion<DescriptionSememe>> dsLatest = Get.conceptService().getSnapshot(scLatestActive, lc)
+										Optional<LatestVersion<DescriptionSememe<?>>> dsLatest = Get.conceptService().getSnapshot(scLatestActive, lc)
 												.getDescriptionOptional(chronology.getConceptSequence()); 
 										
-										Optional<LatestVersion<DescriptionSememe>> dsInitial = Get.conceptService().getSnapshot(scInitialActive, lc)
+										Optional<LatestVersion<DescriptionSememe<?>>> dsInitial = Get.conceptService().getSnapshot(scInitialActive, lc)
 												.getDescriptionOptional(chronology.getConceptSequence()); 
 
 										
@@ -346,7 +346,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 											}
 										} else {
 											if(dsLatest.isPresent()) {
-												Optional<LatestVersion<DescriptionSememe>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
+												Optional<LatestVersion<DescriptionSememe<?>>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
 														.getDescriptionOptional(concept.getConceptSequence());  
 												if(dvCheckRetired.isPresent()) {
 													handleChangeDesc(dvCheckRetired.get().value(), concept);
