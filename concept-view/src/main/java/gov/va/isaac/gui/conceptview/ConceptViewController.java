@@ -8,37 +8,28 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.Utility;
-
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.UUID;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -54,18 +45,21 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConceptViewController {
 	
@@ -87,12 +81,18 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, ConceptDescription> dialectTableColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem> statusTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription> descriptionValueTableColumn;
+	
+    @FXML private TableColumn<ConceptDescription, ?> descriptionTableSTAMPColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem> moduleTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem> timeTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem> authorTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem> pathTableColumn;
 	
 	@FXML private Label conceptCodeLabel;
 
 	@FXML private ComboBox<State> statusComboBox;
 	@FXML private ComboBox<Integer> moduleComboBox;
+	@FXML private VBox uuidsVBox;
 	
 	@FXML private Button minusDescriptionButton;
 	@FXML private Button plusDescriptionButton;
@@ -102,6 +102,8 @@ public class ConceptViewController {
 	@FXML private ToggleButton stampToggle;
 	
 	private ConceptNode conceptNode = new ConceptNode(null, false);
+	
+	private UpdateableBooleanBinding updateableBooleanBinding;
 	
 	@FXML
 	void initialize() {
@@ -114,7 +116,13 @@ public class ConceptViewController {
 		assert statusTableColumn 			!= null : "fx:id=\"statusTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionTableView 		!= null : "fx:id=\"descriptionTableView\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionValueTableColumn 	!= null : "fx:id=\"descriptionValueTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+
+		assert descriptionTableSTAMPColumn 			!= null : "fx:id=\"descriptionTableSTAMPColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert moduleTableColumn 			!= null : "fx:id=\"moduleTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert timeTableColumn 				!= null : "fx:id=\"timeTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert authorTableColumn 			!= null : "fx:id=\"authorTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert pathTableColumn 				!= null : "fx:id=\"pathTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		
 		assert mainPane 					!= null : "fx:id=\"mainPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionsPane 			!= null : "fx:id=\"descriptionsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert headerGridPane 				!= null : "fx:id=\"headerGridPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -123,6 +131,7 @@ public class ConceptViewController {
 
 		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert moduleComboBox 			!= null : "fx:id=\"moduleComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert uuidsVBox 			!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert duplicateDescriptionButton 	!= null : "fx:id=\"editDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -142,23 +151,44 @@ public class ConceptViewController {
 		setupStatusComboBox();
 		setupModuleComboBox();
 		setupConceptCodeLabel();
+		setupUuidsVBox();
+		setupActiveOnlyToggle();
+		setupStampToggle();
 		
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
 		
 		headerGridPane.add(conceptNode.getNode(), 0, 0, 3, 1);
 		conceptNode.getNode().setPadding(new Insets(10,0,10,10));
-		
-		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
-			@Override
-			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue) {
-				if (newValue != null) {
-					//criteriaText.setText(OTFUtility.getDescription(newValue));
-					populateConcept();
-				}
-			}
-		});
 
+		// This binding refreshes whenever its bindings change
+		updateableBooleanBinding = new UpdateableBooleanBinding() {
+			private volatile boolean enabled = false;
+            {
+                setComputeOnInvalidate(true);
+                addBinding(
+                		conceptNode.getConceptProperty(),
+                		activeOnlyToggle.selectedProperty(),
+                		stampToggle.selectedProperty());
+                enabled = true;
+            }
+
+            @Override
+            protected boolean computeValue()
+            {
+                if (!enabled)
+                {
+                    LOG.debug("Skip initial spurious refresh calls");
+                    return false;
+                }
+                LOG.debug("Refreshing ConceptView due to change in updateableBooleanBinding");
+
+				refresh();
+
+				return false;
+            }
+		};
+		//updateableBooleanBinding.addBinding(conceptNode.getConceptProperty(), activeOnlyToggle.selectedProperty());
 	}
 
 	public AnchorPane getRoot()	{
@@ -170,13 +200,13 @@ public class ConceptViewController {
 	}
 	
 	void setColumnWidths() {
-		descriptionTypeTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.15));
-		descriptionValueTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.25));
-		dialectTableColumn.prefWidthProperty().bind(			descriptionTableView.widthProperty().multiply(0.15));
-		acceptabilityTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.10));
-		significanceTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.15));
-		statusTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.07));
-		moduleTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.13));
+//		descriptionTypeTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.15));
+//		descriptionValueTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.25));
+//		dialectTableColumn.prefWidthProperty().bind(			descriptionTableView.widthProperty().multiply(0.15));
+//		acceptabilityTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.10));
+//		significanceTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.15));
+//		statusTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.07));
+//		moduleTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.13));
 	}
 	
 	private void setupColumnTypes() {
@@ -186,7 +216,12 @@ public class ConceptViewController {
 		dialectTableColumn.setUserData(ConceptViewColumnType.LANGUAGE);
 		statusTableColumn.setUserData(ConceptViewColumnType.STAMP_STATE);
 		descriptionValueTableColumn.setUserData(ConceptViewColumnType.VALUE);
+		
+		descriptionTableSTAMPColumn.setUserData(ConceptViewColumnType.STAMP_HEADING);
 		moduleTableColumn.setUserData(ConceptViewColumnType.STAMP_MODULE);
+		timeTableColumn.setUserData(ConceptViewColumnType.STAMP_TIME);
+		authorTableColumn.setUserData(ConceptViewColumnType.STAMP_AUTHOR);
+		pathTableColumn.setUserData(ConceptViewColumnType.STAMP_PATH);
 	}
 	
 	public static void runLaterIfNotFXApplicationThread(Runnable work) {
@@ -197,7 +232,7 @@ public class ConceptViewController {
 		}
 	}
 	public Integer getConcept() {
-		return (conceptNode.isValid().get() && conceptNode.getConceptNoWait() != null) ? conceptNode.getConceptNoWait().getChronology().getConceptSequence() : null;
+		return (conceptNode.isValid().get() && conceptNode.getConcept() != null) ? conceptNode.getConcept().getChronology().getConceptSequence() : null;
 	}
 	public void setConcept(int conceptId) {
 		runLaterIfNotFXApplicationThread(() -> conceptNode.set(Get.conceptSnapshot().getConceptSnapshot(conceptId)));
@@ -207,16 +242,23 @@ public class ConceptViewController {
 		setConcept(concept.getConceptSequence());
 	}
 	
-	private void populateConcept() {
-		ConceptChronology<? extends StampedVersion> concept = conceptNode.getConcept().getChronology();
-		
-//		List<UUID> uuids = concept.getUuidList();
-//		if (!uuids.isEmpty()) {
-//			// Just throwing UUID here to show it
-//			conceptCodeLabel.setText(uuids.get(0).toString());
-//		}
+	private void refresh() {
+		ConceptChronology<? extends StampedVersion> concept = null;
+		if (conceptNode.getConceptProperty().get() != null) {
+			concept = conceptNode.getConcept().getChronology();
+		}
 
 		refreshConceptDescriptions(concept);
+	}
+
+	private void setupActiveOnlyToggle() {
+		activeOnlyToggle.setSelected(false);
+	}
+	private void setupStampToggle() {
+		stampToggle.setSelected(false);
+
+		descriptionTableSTAMPColumn.visibleProperty().set(stampToggle.selectedProperty().get());
+		descriptionTableSTAMPColumn.visibleProperty().bind(stampToggle.selectedProperty());
 	}
 
 	private void setupConceptCodeLabel() {
@@ -228,7 +270,7 @@ public class ConceptViewController {
 				loadConceptCodeFromConcept(newValue);
 			}
 		});
-		loadConceptCodeFromConcept(conceptNode.getConceptNoWait());
+		loadConceptCodeFromConcept(conceptNode.getConcept());
 	}
 	private void loadConceptCodeFromConcept(ConceptSnapshot concept) {
 		conceptCodeLabel.setText(null);
@@ -236,6 +278,26 @@ public class ConceptViewController {
 			Optional<Long> sctId = Frills.getSctId(concept.getChronology().getNid(), StampCoordinates.getDevelopmentLatest());
 			
 			conceptCodeLabel.setText(sctId.isPresent() ? sctId.get().toString() : null);
+		}
+	}
+	
+	private void setupUuidsVBox() {
+		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				loadUuidsVBoxFromConcept(newValue);
+			}
+		});
+		loadUuidsVBoxFromConcept(conceptNode.getConcept());
+	}
+	private void loadUuidsVBoxFromConcept(ConceptSnapshot concept) {
+		uuidsVBox.getChildren().clear();
+		if (concept != null) {
+			for (UUID uuid : concept.getUuidList()) {
+				uuidsVBox.getChildren().add(new Label(uuid.toString()));
+			}
 		}
 	}
 
@@ -289,7 +351,7 @@ public class ConceptViewController {
 			}
 		});
 		
-		loadStatusComboBoxFromConcept(conceptNode.getConceptNoWait());
+		loadStatusComboBoxFromConcept(conceptNode.getConcept());
 	}
 	// In read-only view, set contents/choices of statusComboBox
 	// to state of loaded property only
@@ -298,6 +360,8 @@ public class ConceptViewController {
 		if (concept != null) {
 			statusComboBox.getItems().add(concept.getState());
 			statusComboBox.getSelectionModel().clearAndSelect(0);
+		} else {
+			statusComboBox.buttonCellProperty().set(null);
 		}
 	}
 
@@ -351,7 +415,7 @@ public class ConceptViewController {
 			}
 		});
 		
-		loadModuleComboBoxFromConcept(conceptNode.getConceptNoWait());
+		loadModuleComboBoxFromConcept(conceptNode.getConcept());
 	}
 	// In read-only view, set contents/choices of moduleComboBox
 	// to module of loaded concept only
@@ -360,11 +424,15 @@ public class ConceptViewController {
 		if (concept != null) {
 			moduleComboBox.getItems().add(concept.getModuleSequence());
 			moduleComboBox.getSelectionModel().clearAndSelect(0);
+		} else {
+			moduleComboBox.buttonCellProperty().set(null);
 		}
 	}
 	
 	private void setupDescriptionTable() 
 	{
+		//descriptionTableView.setTableMenuButtonVisible(true);
+
 		setDescriptionTableFactories(descriptionTableView.getColumns());
 
 		descriptionTypeTableColumn.setComparator(ConceptDescription.valueComparator);
@@ -374,7 +442,6 @@ public class ConceptViewController {
 		statusTableColumn.setComparator(StampedItem.statusComparator);
 		descriptionValueTableColumn.setComparator(ConceptDescription.valueComparator);
 		moduleTableColumn.setComparator(StampedItem.moduleComparator);
-
 
 		/*
 		mappingSetTableView.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<MappingSet>()
@@ -386,11 +453,8 @@ public class ConceptViewController {
 			}
 		});
 		
-		ma
-		ppingSetSTAMPTableColumn.setVisible(false);
+		mappingSetSTAMPTableColumn.setVisible(false);
 		*/
-		
-		
 	}
 	
 	private void setDescriptionTableFactories(ObservableList<TableColumn<ConceptDescription,?>> tableColumns)
@@ -516,8 +580,6 @@ public class ConceptViewController {
 				cm.getItems().add(mi);
 	
 				if (columnType.isConcept() && conceptSequence != 0) {
-					// TODO add common menus?
-					/*
 					final int sequence = conceptSequence;
 					CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider() {
 						@Override
@@ -525,7 +587,6 @@ public class ConceptViewController {
 						   return Arrays.asList(new Integer[] {sequence});
 						}
 					});
-					*/
 				}
 			}
 		} else {
@@ -568,8 +629,12 @@ public class ConceptViewController {
 
 	private void refreshConceptDescriptions(ConceptChronology<? extends StampedVersion> concept)
 	{
-		ObservableList<ConceptDescription> descriptionList = ConceptDescription.makeDescriptionList(concept.getConceptDescriptionList());
-		descriptionTableView.setItems(descriptionList);
+		descriptionTableView.getItems().clear();
 		descriptionTableView.getSelectionModel().clearSelection();
+		
+		if (concept != null) {
+			ObservableList<ConceptDescription> descriptionList = ConceptDescription.makeDescriptionList(concept.getConceptDescriptionList(), activeOnlyToggle.selectedProperty().get());
+			descriptionTableView.setItems(descriptionList);
+		}
 	}
 }

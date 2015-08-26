@@ -30,6 +30,7 @@ public class ConceptViewRunner extends Application {
     
     public ConceptViewRunner() throws IOException {
     	/*
+    	 * Drug coated stent 9268fbc8-50f8-38d0-bbc5-d78dc671b4ca
 		 * Bleeding (finding) 89ce6b87-545b-3138-82c7-aafa76f8f9a0
 		 * Fracture of radius c50138b9-70ee-3af2-b567-af2f20359925
 		 * Entire skin (body structure) cbb0653c-bc87-37b0-aafb-6d020917e172
@@ -38,8 +39,8 @@ public class ConceptViewRunner extends Application {
 		 */
         view = AppContext.getService(ConceptView2I.class);
         
-        
-        view.setConcept(UUID.fromString("9549a066-7d57-371d-8958-82a6a0b5b175"));
+        //view.setConcept(UUID.fromString("9549a066-7d57-371d-8958-82a6a0b5b175"));
+        //view.setConcept(UUID.fromString("4bf05b37-076a-3a6a-ad53-b10bbf83cfc5"));
     }
 
     @Override
