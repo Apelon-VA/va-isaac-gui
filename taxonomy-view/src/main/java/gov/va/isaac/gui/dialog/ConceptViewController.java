@@ -119,9 +119,9 @@ public class ConceptViewController {
 	private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     
-    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
     	if (taxonomyCoordinate.get() == null) {
     		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
     	}
@@ -383,8 +383,8 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OchreUtility.getDescription(concept.getConceptSequence(), getConceptSnapshotService().get().getLanguageCoordinate(), 
-					getConceptSnapshotService().get().getStampCoordinate()).get();
+			String conceptDescription = OchreUtility.getDescription(concept.getConceptSequence(), getConceptSnapshotService().get().getStampCoordinate(), 
+					getConceptSnapshotService().get().getLanguageCoordinate()).get();
 			
 			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().get().getConceptSnapshot(concept.getNid());
 			conceptNid = concept.getNid();

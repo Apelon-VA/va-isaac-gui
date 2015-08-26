@@ -27,11 +27,6 @@
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>gov.vha.isaac.gui.modules</groupId>
-			<artifactId>constants</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>gov.vha.isaac.newtons-cradle.modules</groupId>
 			<artifactId>newtons-cradle</artifactId>
 		</dependency>

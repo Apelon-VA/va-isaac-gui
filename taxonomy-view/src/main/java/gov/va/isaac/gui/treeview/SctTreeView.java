@@ -115,8 +115,8 @@ class SctTreeView {
     
     private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
     
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
-    private ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
         if (taxonomyCoordinate.get() == null) {
             taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
         }
@@ -138,7 +138,7 @@ class SctTreeView {
     private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
     public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
         if (conceptSnapshotService.get() == null) {
-            ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+            ReadOnlyObjectProperty<StampCoordinate> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
             ReadOnlyObjectProperty<LanguageCoordinate> langCoord = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
             stampCoord.addListener(change -> 
             {

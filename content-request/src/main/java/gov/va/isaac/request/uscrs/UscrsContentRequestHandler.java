@@ -225,7 +225,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				
 				StampPosition spLatest = new StampPositionImpl(System.currentTimeMillis(), pathSequence);
 				StampPosition spInitial = new StampPositionImpl(previousReleaseTime, pathSequence);
-				
+				//todo - add modules  to the SC
 				StampCoordinate scLatestActive = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
 						ConceptSequenceSet.EMPTY, gov.vha.isaac.ochre.api.State.ACTIVE_ONLY_SET);
 				StampCoordinate scLatestAll = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
@@ -238,7 +238,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				
 				logger.info("USCRS Content Request Handler - Starting Concept Stream Iterator");
 				intStream
-					.limit(65000)
+					.limit(15) //todo replace with 65000
 					.forEach( nid -> {	
 						
 						if(examinedConCount % 100 == 0) {
@@ -317,11 +317,10 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 									}
 									
 									for(DescriptionSememe d : descriptions) {
-										@SuppressWarnings("unchecked")
-										Optional<LatestVersion<DescriptionSememe>> dsLatest = Get.conceptService().getSnapshot(scLatestActive, lc)
+										Optional<LatestVersion<DescriptionSememe<?>>> dsLatest = Get.conceptService().getSnapshot(scLatestActive, lc)
 												.getDescriptionOptional(chronology.getConceptSequence()); 
-										@SuppressWarnings("unchecked")
-										Optional<LatestVersion<DescriptionSememe>> dsInitial = Get.conceptService().getSnapshot(scInitialActive, lc)
+										
+										Optional<LatestVersion<DescriptionSememe<?>>> dsInitial = Get.conceptService().getSnapshot(scInitialActive, lc)
 												.getDescriptionOptional(chronology.getConceptSequence()); 
 
 										
@@ -347,8 +346,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 											}
 										} else {
 											if(dsLatest.isPresent()) {
-												@SuppressWarnings("unchecked")
-												Optional<LatestVersion<DescriptionSememe>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
+												Optional<LatestVersion<DescriptionSememe<?>>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
 														.getDescriptionOptional(concept.getConceptSequence());  
 												if(dvCheckRetired.isPresent()) {
 													handleChangeDesc(dvCheckRetired.get().value(), concept);
@@ -571,7 +569,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getSemanticTag(ConceptSnapshot concept) throws Exception {
-		Optional<? extends String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), concept.getStampCoordinate());
+		Optional<String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), null);
 		if(fsnO.isPresent()) {
 			String fsn = fsnO.get();
 			if (fsn.indexOf('(') != -1) {
@@ -608,7 +606,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception
 	 */
 	private String getTopic(ConceptSnapshot concept) throws Exception {
-		Optional<? extends String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), concept.getStampCoordinate());
+		Optional<? extends String> fsnO = OchreUtility.getFSNForConceptNid(concept.getNid(), null);
 		if (fsnO.isPresent()) {
 			String fsn = fsnO.get();
 			if(fsn.indexOf('(') != -1) {
@@ -651,7 +649,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private String getRelType(int nid) {
 		try {
-			Optional<String> rtPrefTerm = Frills.getPreferredTermForConceptNid(nid, sc);
+			Optional<String> rtPrefTerm = OchreUtility.getPreferredTermForConceptNid(nid, null, null);
 			Optional<String> rtFsn = OchreUtility.getFSNForConceptNid(nid, sc); 
 			if(rtPrefTerm.isPresent()) {
 				return PICKLIST_Relationship_Type.find(rtPrefTerm.get()).toString();

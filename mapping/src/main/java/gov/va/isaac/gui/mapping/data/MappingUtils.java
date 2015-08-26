@@ -19,7 +19,6 @@
 package gov.va.isaac.gui.mapping.data;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.MappingConstants;
 import gov.va.isaac.gui.RenameableDisplayConcept;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.search.CompositeSearchResult;
@@ -91,7 +90,7 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getQualifierConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		for (Integer conSequence : OchreUtility.getAllChildrenOfConcept(MappingConstants.MAPPING_QUALIFIERS.getConceptSequence(), true, false))
+		for (Integer conSequence : OchreUtility.getAllChildrenOfConcept(IsaacMappingConstants.MAPPING_QUALIFIERS.getSequence(), true, false))
 		{
 			result.add(new SimpleDisplayConcept(conSequence));
 		}

@@ -98,7 +98,7 @@ public class RelationshipTableView implements EmbeddableViewI
 	private TableView<RelationshipVersion> relationshipsTable = new TableView<>();
 	private UUID conceptUUID_;
 	private BooleanProperty showActiveOnly_, showHistory_, showStampColumns_;
-	private final ReadOnlyObjectProperty<TaxonomyCoordinate<?>> taxonomyCoordinate;
+	private final ReadOnlyObjectProperty<TaxonomyCoordinate> taxonomyCoordinate;
 	private final ReadOnlyObjectProperty<ConceptSnapshotService> conceptSnapshotService;
 	
 	private ReadOnlyStringWrapper summaryText = new ReadOnlyStringWrapper("0 relationships");
@@ -109,7 +109,7 @@ public class RelationshipTableView implements EmbeddableViewI
 	private UpdateableBooleanBinding refreshRequiredListenerHack;
 	private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
 
-	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, ReadOnlyObjectProperty<TaxonomyCoordinate<?>> tcProvider, ReadOnlyObjectProperty<ConceptSnapshotService> cssProvider)
+	public RelationshipTableView(BooleanProperty showStampColumns, BooleanProperty showHistory, BooleanProperty showActiveOnly, ReadOnlyObjectProperty<TaxonomyCoordinate> tcProvider, ReadOnlyObjectProperty<ConceptSnapshotService> cssProvider)
 	{
 		taxonomyCoordinate = tcProvider;
 		conceptSnapshotService = cssProvider;

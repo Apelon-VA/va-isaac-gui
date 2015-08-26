@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.query.lucene.indexers.SememeIndexer;
@@ -63,7 +62,7 @@ public final class OchreUtility {
 	 */
 	@SuppressWarnings("unchecked")
 	public static Optional<LatestVersion<? extends ConceptVersion<?>>> getLatestConceptVersion(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, 
-			StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+			StampCoordinate stampCoordinate) {
 		@SuppressWarnings("rawtypes")
 		ConceptChronology raw = (ConceptChronology)conceptChronology;
 		
@@ -79,7 +78,7 @@ public final class OchreUtility {
 	 */
 	@SuppressWarnings("unchecked")
 	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptor(
-			SememeChronology<? extends RelationshipVersionAdaptor<?>> sememeChronology, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+			SememeChronology<? extends RelationshipVersionAdaptor<?>> sememeChronology, StampCoordinate stampCoordinate) {
 		@SuppressWarnings("rawtypes")
 		SememeChronology rawSememChronology = (SememeChronology)sememeChronology;
 		
@@ -96,7 +95,7 @@ public final class OchreUtility {
 	 * @return List of RelationshipVersionAdaptor
 	 */
 	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int id, 
-			StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
+			StampCoordinate stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
 	
 		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(id)
@@ -188,9 +187,9 @@ public final class OchreUtility {
 	 * @param tc - optional - if not provided, defaults to user preferences values
 	 * @return
 	 */
-	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate<?> taxonomyCoordinate) {
-		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate(), 
-				taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate());
+	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
 
 	/**
@@ -201,9 +200,9 @@ public final class OchreUtility {
 	 * @param tc - optional - if not provided, defaults to user preferences values
 	 * @return
 	 */
-	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate<?> taxonomyCoordinate) {
-		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate(), 
-				taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate());
+	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
 	
 	/**
@@ -215,9 +214,9 @@ public final class OchreUtility {
 	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
 	 * @return
 	 */
-	public static Optional<String> getDescription(UUID conceptUUID, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) 
+	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
-		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), languageCoordinate, stampCoordinate);
+		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), stampCoordinate, languageCoordinate);
 	}
 
 	/**
@@ -228,10 +227,9 @@ public final class OchreUtility {
 	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
 	 * @return
 	 */
-	public static Optional<String> getDescription(int conceptId, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) 
+	public static Optional<String> getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Optional<LatestVersion<DescriptionSememe>> desc = Get.conceptService()
+		Optional<LatestVersion<DescriptionSememe<?>>> desc = Get.conceptService()
 			.getSnapshot(stampCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stampCoordinate,
 						languageCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get() : languageCoordinate)
 					.getDescriptionOptional(conceptId);
@@ -300,16 +298,23 @@ public final class OchreUtility {
 	 *   have a version available on the specified stampCoord
 	 */
 	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence, 
-			StampCoordinate<? extends StampCoordinate<?>> stampCoord, LanguageCoordinate langCoord)
+			StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
 		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = Get.conceptService().getOptionalConcept(conceptNidOrSequence);
 		if (c.isPresent())
 		{
-			if (c.get().isLatestVersionActive(stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord))
+			try
 			{
-				return Optional.of(Get.conceptService().getSnapshot(stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord,
+				return Optional.of(Get.conceptService().getSnapshot(
+						stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord,
 						langCoord == null ? AppContext.getService(UserProfileBindings.class).getLanguageCoordinate().get() : langCoord)
 							.getConceptSnapshot(c.get().getConceptSequence()));
+			}
+			catch (Exception e)
+			{
+				//TODO conceptSnapshot APIs are currently broken, provide no means of detecting if a concept doesn't exist on a given coordinate
+				//See slack convo https://informatics-arch.slack.com/archives/dev-isaac/p1440568057000512
+				return Optional.empty();
 			}
 		}
 		return Optional.empty();
@@ -322,7 +327,7 @@ public final class OchreUtility {
 	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
 	 *   have a version available on the specified stampCoord
 	 */
-	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate<? extends StampCoordinate<?>> stampCoord, LanguageCoordinate langCoord)
+	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
 		return getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID), stampCoord, langCoord);
 	}
@@ -394,7 +399,7 @@ public final class OchreUtility {
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate<? extends StampCoordinate<?>> stamp)
+	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate stamp)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
@@ -420,17 +425,18 @@ public final class OchreUtility {
 	/**
 	 * @param nid concept nid (must be a nid)
 	 * @param stamp - optional - defaults to user prefs if not provided
-	 * @param language - optional - defaults to {@link IsaacMetadataAuxiliaryBinding#ENGLISH} if not provided.
+	 * @param language - optional - defaults to the user prefs if not provided.
 	 * If provided, it should be a child of {@link IsaacMetadataAuxiliaryBinding#LANGUAGE}
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate<? extends StampCoordinate<?>> stamp, ConceptProxy language)
+	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate stamp, ConceptProxy language)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
 		
-		int langMatch = language == null ? IsaacMetadataAuxiliaryBinding.ENGLISH.getConceptSequence() : language.getConceptSequence();
+		int langMatch = language == null ? ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().getLanguageConceptSequence() 
+				: language.getConceptSequence();
 		
 		Stream<LatestVersion<DescriptionSememe>> descriptions = ss.getLatestDescriptionVersionsForComponent(nid);
 		Optional<LatestVersion<DescriptionSememe>> desc = descriptions.filter((LatestVersion<DescriptionSememe> d) -> 
@@ -467,7 +473,7 @@ public final class OchreUtility {
 			final String identifier,
 			final ConceptLookupCallback callback,
 			final Integer callId,
-			final StampCoordinate<? extends StampCoordinate<?>> stampCoord,
+			final StampCoordinate stampCoord,
 			final LanguageCoordinate langCoord)
 	{
 		LOG.debug("Threaded Lookup: '{}'", identifier);
@@ -507,7 +513,7 @@ public final class OchreUtility {
 			final int nid,
 			final ConceptLookupCallback callback,
 			final Integer callId,
-			final StampCoordinate<? extends StampCoordinate<?>> stampCoord,
+			final StampCoordinate stampCoord,
 			final LanguageCoordinate langCoord)
 	{
 		LOG.debug("Threaded Lookup: '{}'", nid);

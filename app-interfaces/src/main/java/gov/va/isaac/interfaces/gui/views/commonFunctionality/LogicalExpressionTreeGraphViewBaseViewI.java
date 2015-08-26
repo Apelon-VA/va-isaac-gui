@@ -20,7 +20,7 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 	public abstract void setConcept(int componentNid);
 
 	public abstract void setConcept(
-			TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate,
+			TaxonomyCoordinate taxonomyCoordinate,
 			int componentNid);
 
 	public abstract void setConcept(
@@ -34,7 +34,7 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 	public abstract void setConcept(UUID uuid);
 
 	public abstract void setConcept(
-			TaxonomyCoordinate<? extends TaxonomyCoordinate<?>> taxonomyCoordinate,
+			TaxonomyCoordinate taxonomyCoordinate,
 			UUID uuid);
 
 	public abstract void setConcept(

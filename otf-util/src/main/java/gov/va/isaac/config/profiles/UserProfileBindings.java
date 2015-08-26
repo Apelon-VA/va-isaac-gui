@@ -88,10 +88,10 @@ public class UserProfileBindings
 
 	private final ReadOnlyObjectWrapper<ViewCoordinateComponents> viewCoordinateComponents = new ReadOnlyObjectWrapper<>();
 
-	private final ReadOnlyObjectWrapper<StampCoordinate<StampCoordinateImpl>> stampCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<StampCoordinate> stampCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<LanguageCoordinate> languageCoordinate = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<EditCoordinate> editCoordinate = new ReadOnlyObjectWrapper<>();
-	private final ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
 
 	public Property<?>[] getAll() {
 		return new Property<?>[] {
@@ -194,7 +194,7 @@ public class UserProfileBindings
 	/**
 	 * @return the stampCoordinate
 	 */
-	public ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> getStampCoordinate()
+	public ReadOnlyObjectProperty<StampCoordinate> getStampCoordinate()
 	{
 		return stampCoordinate.getReadOnlyProperty();
 	}
@@ -218,7 +218,7 @@ public class UserProfileBindings
 	/**
 	 * @return the taxonomyCoordinate
 	 */
-	public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate()
+	public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate()
 	{
 		return taxonomyCoordinate.getReadOnlyProperty();
 	}
@@ -355,7 +355,7 @@ public class UserProfileBindings
 				if (updateTaxonomyCoordinate.get()) {
 					try {
 
-						TaxonomyCoordinate<?> newCoordinate = null;
+						TaxonomyCoordinate newCoordinate = null;
 						switch (statedInferredPolicy.get()) {
 						case STATED:
 							newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate.get(), languageCoordinate.get());
@@ -367,7 +367,7 @@ public class UserProfileBindings
 							throw new RuntimeException("Unsupported StatedInferredOptions value " + statedInferredPolicy.get() + ".  Expected STATED or INFERRED.");
 						}
 						
-						final TaxonomyCoordinate<?> foo = newCoordinate;
+						final TaxonomyCoordinate foo = newCoordinate;
 
 						CountDownLatch cdl = new CountDownLatch(1);
 						Platform.runLater(() ->
