@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.query.lucene.indexers.SememeIndexer;
@@ -330,11 +329,18 @@ public final class OchreUtility {
 		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = Get.conceptService().getOptionalConcept(conceptNidOrSequence);
 		if (c.isPresent())
 		{
-			if (c.get().isLatestVersionActive(stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord))
+			try
 			{
-				return Optional.of(Get.conceptService().getSnapshot(stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord,
+				return Optional.of(Get.conceptService().getSnapshot(
+						stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord,
 						langCoord == null ? AppContext.getService(UserProfileBindings.class).getLanguageCoordinate().get() : langCoord)
 							.getConceptSnapshot(c.get().getConceptSequence()));
+			}
+			catch (Exception e)
+			{
+				//TODO conceptSnapshot APIs are currently broken, provide no means of detecting if a concept doesn't exist on a given coordinate
+				//See slack convo https://informatics-arch.slack.com/archives/dev-isaac/p1440568057000512
+				return Optional.empty();
 			}
 		}
 		return Optional.empty();
@@ -445,7 +451,7 @@ public final class OchreUtility {
 	/**
 	 * @param nid concept nid (must be a nid)
 	 * @param stamp - optional - defaults to user prefs if not provided
-	 * @param language - optional - defaults to {@link IsaacMetadataAuxiliaryBinding#ENGLISH} if not provided.
+	 * @param language - optional - defaults to the user prefs if not provided.
 	 * If provided, it should be a child of {@link IsaacMetadataAuxiliaryBinding#LANGUAGE}
 	 * @return the text of the description, if found
 	 */
@@ -455,7 +461,8 @@ public final class OchreUtility {
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
 				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
 		
-		int langMatch = language == null ? IsaacMetadataAuxiliaryBinding.ENGLISH.getConceptSequence() : language.getConceptSequence();
+		int langMatch = language == null ? ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().getLanguageConceptSequence() 
+				: language.getConceptSequence();
 		
 		Stream<LatestVersion<DescriptionSememe>> descriptions = ss.getLatestDescriptionVersionsForComponent(nid);
 		Optional<LatestVersion<DescriptionSememe>> desc = descriptions.filter((LatestVersion<DescriptionSememe> d) -> 
