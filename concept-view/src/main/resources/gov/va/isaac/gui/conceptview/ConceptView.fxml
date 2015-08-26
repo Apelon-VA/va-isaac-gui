@@ -30,7 +30,7 @@
                         <Insets right="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <ComboBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <ComboBox fx:id="moduleComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <Label text="Code" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.valignment="CENTER">
                      <GridPane.margin>
                         <Insets right="5.0" />
@@ -48,11 +48,6 @@
                   </Label>
                   <Label fx:id="conceptCodeLabel" maxWidth="1.7976931348623157E308" text="[Concept Code]" GridPane.columnIndex="4" />
                   <Label maxWidth="1.7976931348623157E308" text="[UUID]" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                  <ChoiceBox prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2">
-                     <GridPane.margin>
-                        <Insets bottom="5.0" />
-                     </GridPane.margin>
-                  </ChoiceBox>
                   <Label text="Descriptions" GridPane.columnSpan="2" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="BOTTOM">
                      <font>
                         <Font size="14.0" />
@@ -74,6 +69,7 @@
                         <Insets />
                      </opaqueInsets>
                   </FlowPane>
+                  <ComboBox fx:id="statusComboBox" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2" />
                </children>
             </GridPane>
          </children>

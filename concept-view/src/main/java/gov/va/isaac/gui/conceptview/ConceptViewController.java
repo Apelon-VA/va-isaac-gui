@@ -8,24 +8,30 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.Utility;
 
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -41,8 +47,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -57,6 +65,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+import javafx.util.StringConverter;
 
 public class ConceptViewController {
 	
@@ -81,6 +90,9 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, StampedItem> moduleTableColumn;
 	
 	@FXML private Label conceptCodeLabel;
+
+	@FXML private ComboBox<State> statusComboBox;
+	@FXML private ComboBox<Integer> moduleComboBox;
 	
 	@FXML private Button minusDescriptionButton;
 	@FXML private Button plusDescriptionButton;
@@ -109,6 +121,9 @@ public class ConceptViewController {
 		
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
+		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert moduleComboBox 			!= null : "fx:id=\"moduleComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+
 		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert duplicateDescriptionButton 	!= null : "fx:id=\"editDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert plusDescriptionButton 		!= null : "fx:id=\"plusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -124,6 +139,9 @@ public class ConceptViewController {
 		setColumnWidths();
 		setupColumnTypes();
 		setupDescriptionTable();
+		setupStatusComboBox();
+		setupModuleComboBox();
+		setupConceptCodeLabel();
 		
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
@@ -192,15 +210,159 @@ public class ConceptViewController {
 	private void populateConcept() {
 		ConceptChronology<? extends StampedVersion> concept = conceptNode.getConcept().getChronology();
 		
-		List<UUID> uuids = concept.getUuidList();
-		if (!uuids.isEmpty()) {
-			// Just throwing UUID here to show it
-			conceptCodeLabel.setText(uuids.get(0).toString());
-		}
+//		List<UUID> uuids = concept.getUuidList();
+//		if (!uuids.isEmpty()) {
+//			// Just throwing UUID here to show it
+//			conceptCodeLabel.setText(uuids.get(0).toString());
+//		}
 
 		refreshConceptDescriptions(concept);
 	}
 
+	private void setupConceptCodeLabel() {
+		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				loadConceptCodeFromConcept(newValue);
+			}
+		});
+		loadConceptCodeFromConcept(conceptNode.getConceptNoWait());
+	}
+	private void loadConceptCodeFromConcept(ConceptSnapshot concept) {
+		conceptCodeLabel.setText(null);
+		if (concept != null) {
+			Optional<Long> sctId = Frills.getSctId(concept.getChronology().getNid(), StampCoordinates.getDevelopmentLatest());
+			
+			conceptCodeLabel.setText(sctId.isPresent() ? sctId.get().toString() : null);
+		}
+	}
+
+	private void setupStatusComboBox() {
+		statusComboBox.setCellFactory((param) -> {
+			final ListCell<State> cell = new ListCell<State>() {
+				@Override
+				protected void updateItem(State c, boolean emptyRow) {
+					super.updateItem(c, emptyRow);
+					if(c == null) {
+						setText(null);
+					} else {
+						setText(c.name());
+					}
+				}
+			};
+			return cell;
+		});
+		statusComboBox.setButtonCell(new ListCell<State>() {
+			@Override
+			protected void updateItem(State c, boolean emptyRow) {
+				super.updateItem(c, emptyRow); 
+				if (emptyRow) {
+					setText("");
+				} else {
+					setText(c.name());
+				}
+			}
+		});
+		statusComboBox.setConverter(new StringConverter<State>() {
+			@Override
+			public String toString(State state) {
+				if (state == null){
+					return null;
+				} else {
+					return state.name();
+				}
+			}
+
+			@Override
+			public State fromString(String state) {
+				return State.valueOf(state);
+			}
+		});
+		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				loadStatusComboBoxFromConcept(newValue);
+			}
+		});
+		
+		loadStatusComboBoxFromConcept(conceptNode.getConceptNoWait());
+	}
+	// In read-only view, set contents/choices of statusComboBox
+	// to state of loaded property only
+	private void loadStatusComboBoxFromConcept(ConceptSnapshot concept) {
+		statusComboBox.getItems().clear();
+		if (concept != null) {
+			statusComboBox.getItems().add(concept.getState());
+			statusComboBox.getSelectionModel().clearAndSelect(0);
+		}
+	}
+
+	private void setupModuleComboBox() {
+		moduleComboBox.setCellFactory((param) -> {
+			final ListCell<Integer> cell = new ListCell<Integer>() {
+				@Override
+				protected void updateItem(Integer c, boolean emptyRow) {
+					super.updateItem(c, emptyRow);
+					if(c == null) {
+						setText(null);
+					} else {
+						Platform.runLater(() -> setText(Get.conceptDescriptionText(c)));
+					}
+				}
+			};
+			return cell;
+		});
+		moduleComboBox.setButtonCell(new ListCell<Integer>() {
+			@Override
+			protected void updateItem(Integer c, boolean emptyRow) {
+				super.updateItem(c, emptyRow); 
+				if (emptyRow) {
+					setText("");
+				} else {
+					Platform.runLater(() -> setText(Get.conceptDescriptionText(c)));
+				}
+			}
+		});
+		moduleComboBox.setConverter(new StringConverter<Integer>() {
+			@Override
+			public String toString(Integer moduleSequence) {
+				if (moduleSequence == null){
+					return null;
+				} else {
+					return Get.conceptDescriptionText(moduleSequence);
+				}
+			}
+
+			@Override
+			public Integer fromString(String module) {
+				return null;
+			}
+		});
+		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				loadModuleComboBoxFromConcept(newValue);
+			}
+		});
+		
+		loadModuleComboBoxFromConcept(conceptNode.getConceptNoWait());
+	}
+	// In read-only view, set contents/choices of moduleComboBox
+	// to module of loaded concept only
+	private void loadModuleComboBoxFromConcept(ConceptSnapshot concept) {
+		moduleComboBox.getItems().clear();
+		if (concept != null) {
+			moduleComboBox.getItems().add(concept.getModuleSequence());
+			moduleComboBox.getSelectionModel().clearAndSelect(0);
+		}
+	}
+	
 	private void setupDescriptionTable() 
 	{
 		setDescriptionTableFactories(descriptionTableView.getColumns());
