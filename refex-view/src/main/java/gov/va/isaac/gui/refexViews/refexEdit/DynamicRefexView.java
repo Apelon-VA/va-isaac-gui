@@ -35,6 +35,7 @@ import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
@@ -286,9 +287,10 @@ public class DynamicRefexView implements RefexViewI
 									continue;
 								}
 								
-								int retireStamp = Get.commitService().getRetiredStampSequence(refex.getRefex().getStampSequence());
-								((SememeChronology)refex.getRefex()).createMutableVersion(DynamicSememe.class, retireStamp);
-								
+								MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe>)refex.getRefex().getChronology())
+										.createMutableVersion(MutableDynamicSememe.class, State.INACTIVE, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+								mds.setData(refex.getRefex().getData());
+								Get.commitService().addUncommitted(refex.getRefex().getChronology());
 								Get.commitService().commit("retire dynamic sememe").get();
 							}
 							refresh();

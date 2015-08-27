@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.refexViews.refexEdit;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
@@ -36,6 +37,7 @@ import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.metadata.coordinates.EditCoordinates;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
@@ -688,8 +690,8 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			else
 			{
 				@SuppressWarnings("rawtypes")
-				DynamicSememeImpl ms = (DynamicSememeImpl) ((SememeChronology)editRefex_.getRefex()).createMutableVersion(DynamicSememeImpl.class, Get.commitService()
-						.getActivatedStampSequence(editRefex_.getRefex().getStampSequence()));
+				DynamicSememeImpl ms = (DynamicSememeImpl) ((SememeChronology)editRefex_.getRefex()).createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, 
+						ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 				ms.setData(data);
 				sememe = (SememeChronology<? extends DynamicSememe<?>>) ms;
 			}
