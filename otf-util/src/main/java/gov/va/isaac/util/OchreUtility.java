@@ -369,7 +369,8 @@ public final class OchreUtility {
 			SememeIndexer si = LookupService.get().getService(SememeIndexer.class);
 			if (si != null)
 			{
-				List<SearchResult> result = si.query(Long.parseLong(localIdentifier), 
+				//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+				List<SearchResult> result = si.query(localIdentifier + " ", true, 
 						IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence(), 5, Long.MIN_VALUE);
 				if (result.size() > 0)
 				{
