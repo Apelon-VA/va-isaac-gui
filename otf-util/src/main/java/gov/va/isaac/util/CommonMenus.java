@@ -25,13 +25,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptView2I;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
@@ -80,6 +83,7 @@ public class CommonMenus
 	public static enum CommonMenuItem {
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
+		CONCEPT_TABLE_VIEW("View Concept Table", Images.CONCEPT_VIEW),
 		CONCEPT_VIEW("Model Concept", Images.CONCEPT_VIEW),
 		CONCEPT_VIEW_LEGACY("View Concept", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
@@ -123,6 +127,7 @@ public class CommonMenus
 	
 	// Initialize service call cache
 	static {
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_TABLE_VIEW, ConceptView2I.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW, PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW_LEGACY, PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.TAXONOMY_VIEW, TaxonomyViewI.class, SharedServiceNames.DOCKED);
@@ -435,6 +440,39 @@ public class CommonMenus
 			tmpCommonMenusNIdProvider = CommonMenusNIdProvider.getEmptyCommonMenusNIdProvider();
 		}
 		final CommonMenusNIdProvider commonMenusNIdProvider = tmpCommonMenusNIdProvider;
+		
+		// Menu item to show concept details in table
+		try {
+			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_TABLE_VIEW)) {
+				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
+						CommonMenuItem.CONCEPT_TABLE_VIEW,
+						builder,
+						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						() -> {
+							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_TABLE_VIEW.getText() + "\" menu item to display concept with id \"" 
+									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
+
+							ConceptView2I cv = (ConceptView2I)CommonMenusServices.getService(CommonMenuItem.CONCEPT_TABLE_VIEW);
+							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+
+							cv.showView(null);
+						},
+						() -> {
+							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
+						}
+						);
+				if (legacyConceptViewMenuItem != null)
+				{
+					menuItems.add(legacyConceptViewMenuItem);
+				}
+			} else {
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_TABLE_VIEW) returned false");
+			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_TABLE_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+		}
+
 		
 		// Menu item to show concept details.
 		try {

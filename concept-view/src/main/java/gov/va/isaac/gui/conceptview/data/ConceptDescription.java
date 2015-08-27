@@ -39,29 +39,34 @@ public class ConceptDescription extends StampedItem {
 		return description;
 	}
 
-	public static ObservableList<ConceptDescription> makeDescriptionList(List<? extends SememeChronology<? extends DescriptionSememe>> sememeChronologyList)
+	public static ObservableList<ConceptDescription> makeDescriptionList(List<? extends SememeChronology<? extends DescriptionSememe<?>>> sememeChronologyList, boolean activeOnly)
 	{
 		ObservableList<ConceptDescription> descriptionList = FXCollections.observableArrayList();
 		
-		for (SememeChronology<? extends DescriptionSememe> sememeChronology : sememeChronologyList)
+		for (SememeChronology<? extends DescriptionSememe<?>> sememeChronology : sememeChronologyList)
 		{
-			DescriptionSememe descSememe = extractDescription(sememeChronology);
-			if (descSememe != null) 
-			{
-				ConceptDescription description = new ConceptDescription(descSememe);
-				descriptionList.add(description);
+			if (activeOnly && ! sememeChronology.isLatestVersionActive(Get.configurationService().getDefaultStampCoordinate())) {
+				// Ignore inactive descriptions when activeOnly true
+				continue;
+			} else {
+				DescriptionSememe<?> descSememe = extractDescription(sememeChronology);
+				if (descSememe != null) 
+				{
+					ConceptDescription description = new ConceptDescription(descSememe);
+					descriptionList.add(description);
+				}
 			}
 		}
 		
 		return descriptionList;
 	}
 	
-	public ConceptDescription(DescriptionSememe description)  
+	public ConceptDescription(DescriptionSememe<?> description)  
 	{
 		readDescription(description);
 	}
 	
-	private void readDescription(DescriptionSememe description) 
+	private void readDescription(DescriptionSememe<?> description) 
 	{
 		_description = description;
 		if (description != null) 

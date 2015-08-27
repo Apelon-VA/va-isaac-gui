@@ -30,7 +30,7 @@
                         <Insets right="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <ComboBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <ComboBox fx:id="moduleComboBox" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <Label text="Code" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.valignment="CENTER">
                      <GridPane.margin>
                         <Insets right="5.0" />
@@ -47,12 +47,6 @@
                      </GridPane.margin>
                   </Label>
                   <Label fx:id="conceptCodeLabel" maxWidth="1.7976931348623157E308" text="[Concept Code]" GridPane.columnIndex="4" />
-                  <Label maxWidth="1.7976931348623157E308" text="[UUID]" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                  <ChoiceBox prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2">
-                     <GridPane.margin>
-                        <Insets bottom="5.0" />
-                     </GridPane.margin>
-                  </ChoiceBox>
                   <Label text="Descriptions" GridPane.columnSpan="2" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="BOTTOM">
                      <font>
                         <Font size="14.0" />
@@ -74,6 +68,8 @@
                         <Insets />
                      </opaqueInsets>
                   </FlowPane>
+                  <ComboBox fx:id="statusComboBox" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2" />
+                  <VBox fx:id="uuidsVBox" alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
                </children>
             </GridPane>
          </children>
@@ -83,20 +79,39 @@
       </AnchorPane>
       <AnchorPane fx:id="descriptionsPane" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="100.0">
          <children>
-            <TableView fx:id="descriptionTableView" layoutY="57.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
-              <columns>
-                <TableColumn fx:id="descriptionTypeTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Description Type" />
-                <TableColumn fx:id="descriptionValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Description Value" />
-                  <TableColumn fx:id="dialectTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Language - Dialect" />
-                  <TableColumn fx:id="acceptabilityTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Acceptability" />
-                  <TableColumn fx:id="significanceTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Case Significance" />
-                  <TableColumn fx:id="moduleTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="150.0" text="Module" />
-                  <TableColumn fx:id="statusTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="75.0" resizable="false" text="Status" />
-              </columns>
-            </TableView>
-            <Button fx:id="minusDescriptionButton" disable="true" layoutX="10.0" layoutY="373.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="-" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="46.0" />
-            <Button fx:id="plusDescriptionButton" layoutX="10.0" layoutY="373.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="+" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" />
-            <Button fx:id="duplicateDescriptionButton" disable="true" layoutX="10.0" layoutY="373.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="D" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="82.0" />
+            <VBox layoutX="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="ALWAYS" layoutX="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="370.0" prefViewportWidth="980.0" vbarPolicy="ALWAYS" VBox.vgrow="ALWAYS">
+                     <content>
+                        <TableView fx:id="descriptionTableView" layoutY="57.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                          <columns>
+                            <TableColumn fx:id="descriptionTypeTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Description Type" />
+                            <TableColumn fx:id="descriptionValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Description Value" />
+                              <TableColumn fx:id="dialectTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Language - Dialect" />
+                              <TableColumn fx:id="acceptabilityTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Acceptability" />
+                              <TableColumn fx:id="significanceTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Case Significance" />
+                              <TableColumn fx:id="statusTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="75.0" resizable="false" text="Status" />
+                              <TableColumn fx:id="descriptionTableSTAMPColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="75.0" resizable="false" text="STAMP Columns">
+                                 <columns>
+                                    <TableColumn fx:id="timeTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="75.0" resizable="false" text="Time" />
+                                    <TableColumn fx:id="moduleTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="150.0" text="Module" />
+                                    <TableColumn fx:id="authorTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="75.0" resizable="false" text="Author" />
+                                    <TableColumn fx:id="pathTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="75.0" resizable="false" text="Path" />
+                                 </columns>
+                              </TableColumn>
+                          </columns>
+                        </TableView>
+                     </content>
+                  </ScrollPane>
+                  <HBox>
+                     <children>
+                        <Button fx:id="plusDescriptionButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="+" />
+                        <Button fx:id="minusDescriptionButton" disable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="-" />
+                        <Button fx:id="duplicateDescriptionButton" disable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="D" textAlignment="CENTER" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
          </children>
       </AnchorPane>
       <AnchorPane fx:id="footerPane" prefHeight="100.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
