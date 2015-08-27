@@ -773,20 +773,10 @@ public class SearchViewController implements TaskCompleteCallback
 				else
 				{
 					LOG.debug("Doing a description search on the extended type {}", descriptionTypeSelection.getValue().getDescription());
-					if (descriptionTypeSelection.getValue().getNid() < LuceneDescriptionType.values().length)
-					{
-						ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
-								LuceneDescriptionType.fromOrdinal(descriptionTypeSelection.getValue().getNid()), 
-								((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
-								null, null, null, true, false);
-					}
-					else
-					{
-						ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
-							Get.identifierService().getUuidPrimordialForNid(descriptionTypeSelection.getValue().getNid()).get(), 
-							((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
-							null, null, null, true, false);
-					}
+					ssh = SearchHandler.descriptionSearch(searchText.getText(), searchLimit.getValue(), false, 
+						Get.identifierService().getUuidPrimordialForNid(descriptionTypeSelection.getValue().getNid()).get(), 
+						((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+						null, null, null, true, false);
 				}
 			}
 			else
