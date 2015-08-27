@@ -67,6 +67,7 @@ import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableSememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
@@ -755,9 +756,9 @@ public class BdbInformationModelService implements InformationModelService {
 		{
 			if (!refexUuids.contains(sememeC.getPrimordialUuid()))
 			{
-				int retireStamp = Get.commitService().getRetiredStampSequence(latest.get().value().getStampSequence());
-				Get.sememeBuilderService().getDyanmicSememeBuilder(sememeC.getReferencedComponentNid(), sememeC.getAssemblageSequence())
-					.build(retireStamp, new ArrayList<>());
+				((SememeChronology)latest.get().value().getChronology()).createMutableVersion(MutableSememeVersion.class, 
+						State.INACTIVE, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				Get.commitService().addUncommitted(((SememeChronology)latest.get().value().getChronology()));
 				LOG.debug("  Retire sememe UUID = " + sememeC.getPrimordialUuid());
 			}
 		}
