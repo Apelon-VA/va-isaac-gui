@@ -145,7 +145,6 @@ public class ListBatchViewController
 	@FXML private Button loadListButton;
 	@FXML private VBox operationsList;
 	@FXML private Button clearOperationsButton;
-	@FXML private Tab conceptDisplayTab;
 	@FXML private TableView<SimpleDisplayConcept> conceptTable;
 	@FXML private HBox conceptTableFooter;
 	@FXML private Button addUncommittedListButton;
@@ -165,8 +164,6 @@ public class ListBatchViewController
 	
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	private int uncommittedCount = 0;
-
-	private PopupConceptViewI conceptView;
 
 	protected static ListBatchViewController init() throws IOException
 	{
@@ -190,8 +187,6 @@ public class ListBatchViewController
 	@FXML
 	public void initialize()
 	{
-		conceptView = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
-		
 		operationsList.getChildren().add(new OperationNode(this));
 
 		final ConceptNode cn = new ConceptNode(null, false);
@@ -264,19 +259,6 @@ public class ListBatchViewController
 						}
 					}
 				};
-
-				//TODO this is the wrong listener... what if they keyboard up and down?  
-				cell.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-					@Override
-					public void handle(MouseEvent event) {
-						if (((TableCell<?,?>)event.getSource()).getIndex() < conceptTable.getItems().size()) {
-							SimpleDisplayConcept con = (SimpleDisplayConcept)conceptTable.getItems().get(((TableCell<?,?>)event.getSource()).getIndex());
-							conceptView.setConcept(con.getNid());
-							conceptDisplayTab.setContent(conceptView.getView());
-						}
-					}
-				});
-				
 				return cell;
 			}
 		});
