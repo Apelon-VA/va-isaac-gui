@@ -7,6 +7,7 @@ import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
+import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -145,6 +146,7 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(minusDescriptionButton, 	Images.MINUS.createImageView(), 	"Retire/Unretire Description");
 		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.EDIT.createImageView(), 		"Edit Description");
 
+		setupConceptNode();
 		setColumnWidths();
 		setupColumnTypes();
 		setupDescriptionTable();
@@ -159,7 +161,6 @@ public class ConceptViewController {
 
 		
 		headerGridPane.add(conceptNode.getNode(), 0, 0, 3, 1);
-		conceptNode.getNode().setPadding(new Insets(10,0,10,10));
 
 		// This binding refreshes whenever its bindings change
 		updateableBooleanBinding = new UpdateableBooleanBinding() {
@@ -251,6 +252,10 @@ public class ConceptViewController {
 		refreshConceptDescriptions(concept);
 	}
 
+	private void setupConceptNode() {
+		conceptNode.getNode().setPadding(new Insets(10,0,10,10));
+	}
+
 	private void setupActiveOnlyToggle() {
 		activeOnlyToggle.setSelected(false);
 	}
@@ -295,8 +300,23 @@ public class ConceptViewController {
 	private void loadUuidsVBoxFromConcept(ConceptSnapshot concept) {
 		uuidsVBox.getChildren().clear();
 		if (concept != null) {
-			for (UUID uuid : concept.getUuidList()) {
-				uuidsVBox.getChildren().add(new Label(uuid.toString()));
+			for (final UUID uuid : concept.getUuidList()) {
+				Label label = new Label(uuid.toString());
+				label.setContextMenu(new ContextMenu());
+				CommonMenus.addCommonMenus(label.getContextMenu(),
+					new CommonMenusDataProvider() {
+						@Override
+						public String[] getStrings() {
+							return new String[] {uuid.toString()};
+						}
+					},
+					new CommonMenusNIdProvider() {
+						@Override
+						public Collection<Integer> getNIds() {
+							return Arrays.asList(new Integer[] {concept.getChronology().getNid()});
+						}
+					});
+				uuidsVBox.getChildren().add(label);
 			}
 		}
 	}
@@ -578,16 +598,15 @@ public class ConceptViewController {
 				});
 				mi.setGraphic(Images.COPY.createImageView());
 				cm.getItems().add(mi);
-	
-				if (columnType.isConcept() && conceptSequence != 0) {
-					final int sequence = conceptSequence;
-					CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider() {
-						@Override
-						public Collection<Integer> getNIds() {
-						   return Arrays.asList(new Integer[] {sequence});
-						}
-					});
-				}
+			}
+			if (conceptSequence != 0) {
+				final int sequence = conceptSequence;
+				CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider() {
+					@Override
+					public Collection<Integer> getNIds() {
+						return Arrays.asList(new Integer[] {sequence});
+					}
+				});
 			}
 		} else {
 			cell.setText(null);
