@@ -18,23 +18,21 @@
  */
 package gov.va.isaac.gui.mapping.data;
 
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import java.util.Optional;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link MappingDAO}
@@ -71,15 +69,8 @@ public abstract class MappingDAO
 			}
 			else
 			{
-				if (state == State.ACTIVE) {
-					int retiredStamp = Get.commitService().getRetiredStampSequence(cs.getStampSequence());
-					LookupService.get().getService(ConceptBuilder.class).build(retiredStamp, new ArrayList<>());
-				}
-				else
-				{
-					int activatedStamp =  Get.commitService().getActivatedStampSequence(cs.getStampSequence());
-					LookupService.get().getService(ConceptBuilder.class).build(activatedStamp, new ArrayList<>());
-				}
+				cs.getChronology().createMutableVersion(state, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				Get.commitService().addUncommitted(cs.getChronology());
 				Get.commitService().commit("Changing map concept state");
 			}
 		}
@@ -99,15 +90,12 @@ public abstract class MappingDAO
 		}
 		else
 		{
-			if (state == State.ACTIVE) {
-				int retiredStamp = Get.commitService().getRetiredStampSequence(ds.getStampSequence());
-				LookupService.get().getService(ConceptBuilder.class).build(retiredStamp, new ArrayList<>());
-			}
-			else
-			{
-				int activatedStamp =  Get.commitService().getActivatedStampSequence(ds.getStampSequence());
-				LookupService.get().getService(ConceptBuilder.class).build(activatedStamp, new ArrayList<>());
-			}
+			@SuppressWarnings("unchecked")
+			MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)ds.getChronology()).createMutableVersion(MutableDynamicSememe.class, state,
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			mds.setData(ds.getData());
+			
+			Get.commitService().addUncommitted(ds.getChronology());
 			Get.commitService().commit("Changing sememe state");
 		}
 	}

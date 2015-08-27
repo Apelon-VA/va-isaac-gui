@@ -27,6 +27,7 @@ import gov.va.isaac.search.SearchHandler;
 import gov.va.isaac.search.SearchResultsIntersectionFilter;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.SearchStringProcessor;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -58,20 +59,17 @@ public class MappingUtils
 {
 	protected static final Logger LOG = LoggerFactory.getLogger(MappingUtils.class);
 	
-	public static final UUID SNOMED_UUID = UUID.fromString("8c230474-9f11-30ce-9cad-185a96fd03a2");
-	public static final UUID LOINC_UUID  = UUID.fromString("b2b1cc96-9ca6-5513-aad9-aa21e61ddc29");
-	public static final UUID RXNORM_UUID = UUID.fromString("763c21ad-55e3-5bb3-af1e-3e4fb475de44"); 
-	
 	public static final HashMap<String, ConceptSnapshot> CODE_SYSTEM_CONCEPTS = new HashMap<String, ConceptSnapshot>(); 
 	static {
-		CODE_SYSTEM_CONCEPTS.put("SNOMED CT", OchreUtility.getConceptSnapshot(SNOMED_UUID, 
-				ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(), 
+		//TODO find out from Keith why SCT isn't on its own module
+		CODE_SYSTEM_CONCEPTS.put("SNOMED CT", OchreUtility.getConceptSnapshot(IsaacMetadataAuxiliaryBinding.ISAAC_MODULE.getConceptSequence(), 
+				StampCoordinates.getDevelopmentLatest(), 
 				ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get()).get());
-		CODE_SYSTEM_CONCEPTS.put("LOINC",     OchreUtility.getConceptSnapshot(LOINC_UUID, 
-				ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(), 
+		CODE_SYSTEM_CONCEPTS.put("LOINC",     OchreUtility.getConceptSnapshot(IsaacMetadataAuxiliaryBinding.LOINC.getConceptSequence(), 
+				StampCoordinates.getDevelopmentLatest(), 
 				ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get()).get());
-		CODE_SYSTEM_CONCEPTS.put("RxNorm",    OchreUtility.getConceptSnapshot(RXNORM_UUID, 
-				ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(), 
+		CODE_SYSTEM_CONCEPTS.put("RxNorm",    OchreUtility.getConceptSnapshot(IsaacMetadataAuxiliaryBinding.RXNORM.getConceptSequence(), 
+				StampCoordinates.getDevelopmentLatest(), 
 				ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get()).get());
 	}
 	

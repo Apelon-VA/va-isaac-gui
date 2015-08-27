@@ -1,17 +1,5 @@
 package gov.va.isaac.gui.mapping;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
@@ -28,12 +16,19 @@ import gov.va.isaac.search.CompositeSearchResult;
 import gov.va.isaac.search.SearchHandle;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -67,6 +62,10 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
+import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Controller class for the Create Mapping View.
@@ -291,7 +290,18 @@ public class CreateMappingItemController {
 				codeSystems.add(0, new SimpleDisplayConcept("No Restriction", Integer.MIN_VALUE));
 
 				ArrayList<SimpleDisplayConcept> refsetRestrictions = new ArrayList<>();
-				Get.sememeService().getAssemblageTypes().forEach(assemblageSeq -> refsetRestrictions.add(new SimpleDisplayConcept(assemblageSeq)));
+				Get.sememeService().getAssemblageTypes().forEach(assemblageSeq -> 
+				{
+					try
+					{
+						refsetRestrictions.add(new SimpleDisplayConcept(assemblageSeq));
+					}
+					catch (Exception e)
+					{
+						//TODO temporary, till we work out what is going wrong here...
+						LOG.error("error reading assemblage concept " + assemblageSeq, e);
+					}
+				});
 
 				refsetRestrictions.add(0, new SimpleDisplayConcept("No Restriction", Integer.MIN_VALUE));
 				
@@ -469,9 +479,9 @@ public class CreateMappingItemController {
 	}
 	
 	public void setSourceConcept(UUID sourceConceptID) {
-		ConceptVersionBI sourceConcept = OTFUtility.getConceptVersion(sourceConceptID);
-		if (sourceConcept != null) {
-			sourceConceptNode.set(sourceConcept);
+		Optional<ConceptSnapshot> sourceConcept = OchreUtility.getConceptSnapshot(sourceConceptID, null, null);
+		if (sourceConcept.isPresent()) {
+			sourceConceptNode.set(sourceConcept.get());
 		}
 	}
 	

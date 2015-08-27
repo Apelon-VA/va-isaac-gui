@@ -1,14 +1,5 @@
 package gov.va.isaac.gui.mapping.data;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.Utility;
@@ -28,6 +19,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
@@ -41,7 +33,16 @@ import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import javafx.concurrent.Task;
+import org.apache.commons.lang3.StringUtils;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link MappingSet}
@@ -216,10 +217,10 @@ public class MappingSetDAO extends MappingDAO
 							{
 								if (!mappingSet.getDescription().equals(ds.getText()))
 								{
-									MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds)
+									MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds.getChronology())
 											.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
 									mutable.setText(mappingSet.getDescription());
-									Get.commitService().addUncommitted((SememeChronology<DescriptionSememe>)ds);
+									Get.commitService().addUncommitted(ds.getChronology());
 								}
 							}
 						}
@@ -235,21 +236,23 @@ public class MappingSetDAO extends MappingDAO
 				LOG.error("Couldn't find mapping refex?");
 				throw new RuntimeException("internal error");
 			}
-			Optional<DynamicSememe<?>> latest = ((SememeChronology)mappingSememe.get()).getLatestVersion(DynamicSememe.class, 
+			Optional<LatestVersion<DynamicSememe<?>>> latestVersion = ((SememeChronology)mappingSememe.get()).getLatestVersion(DynamicSememe.class, 
 					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
 			
-			if (latest.get().getData()[0] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.get().getData()[0] != null
-					|| (latest.get().getData()[0] != null && ((DynamicSememeUUID)latest.get().getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
-					|| latest.get().getData()[1] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.get().getData()[1] != null
-					|| (latest.get().getData()[1] != null && ((DynamicSememeString)latest.get().getData()[1]).getDataString().equals(mappingSet.getPurpose())))
+			DynamicSememe<?> latest = latestVersion.get().value();
+			
+			if (latest.getData()[0] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.getData()[0] != null
+					|| (latest.getData()[0] != null && ((DynamicSememeUUID)latest.getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
+					|| latest.getData()[1] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.getData()[1] != null
+					|| (latest.getData()[1] != null && ((DynamicSememeString)latest.getData()[1]).getDataString().equals(mappingSet.getPurpose())))
 			{
-				DynamicSememeImpl mutable = (DynamicSememeImpl) ((SememeChronology)mappingSememe.get()).createMutableVersion(DynamicSememe.class, 
-						latest.get().getStampSequence());
+				DynamicSememeImpl mutable = (DynamicSememeImpl) ((SememeChronology)mappingSememe.get()).createMutableVersion(MutableDynamicSememe.class, 
+						latest.getStampSequence());
 	
 				mutable.setData(new DynamicSememeDataBI[] {
 						(mappingSet.getEditorStatusConcept() == null ? null : new DynamicSememeUUID(mappingSet.getEditorStatusConcept())),
 						(StringUtils.isBlank(mappingSet.getPurpose()) ? null : new DynamicSememeString(mappingSet.getPurpose()))});
-				Get.commitService().addUncommitted(latest.get().getChronology());
+				Get.commitService().addUncommitted(latest.getChronology());
 			}
 			
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
