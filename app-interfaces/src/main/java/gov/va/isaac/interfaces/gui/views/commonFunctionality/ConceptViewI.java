@@ -47,13 +47,13 @@ public interface ConceptViewI extends EmbeddableViewI
 	
 	/**
 	 * Get the selected concept as UUID.
-	 * @return conceptUuid the selected concept as UUID
+	 * @return conceptUuid the selected concept as UUID, or potentially null, if no valid concept is selected
 	 */
 	public UUID getConceptUuid();
 	
 	/**
 	 * Get the selected concept as int.
-	 * @return conceptNid the selected concept as int NID
+	 * @return conceptNid the selected concept as int NID, or potentially minValue, if no concept is set
 	 */
 	public int getConceptNid();
 
@@ -61,11 +61,13 @@ public interface ConceptViewI extends EmbeddableViewI
 	 * Update the view to show the selected concept using the specified ConceptViewMode.
 	 * @param conceptUuid the ConceptViewMode used to show the selected concept
 	 */
+	@Deprecated
 	public void setViewMode(ConceptViewMode mode);
 
 	/**
 	 * Get the ConceptViewMode used to display the selected concept.
 	 * @return conceptUuid the ConceptViewMode used to display the selected concept
 	 */
+	@Deprecated
 	public ConceptViewMode getViewMode();
 }

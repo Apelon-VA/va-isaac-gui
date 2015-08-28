@@ -18,6 +18,7 @@
  */
 package gov.va.isaac.interfaces.gui.constants;
 
+@Deprecated
 public enum ConceptViewMode {
 	SIMPLE_VIEW, DETAIL_VIEW, HISTORICAL_VIEW;
 }
