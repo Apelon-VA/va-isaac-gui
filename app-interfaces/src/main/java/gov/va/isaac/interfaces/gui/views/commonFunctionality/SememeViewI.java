@@ -34,7 +34,7 @@ import org.jvnet.hk2.annotations.Contract;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @Contract
-public interface RefexViewI extends EmbeddableViewI
+public interface SememeViewI extends EmbeddableViewI
 {
 	/**
 	 * Tell this view to display the refexes for a particular component (typically, a concept, but could also 

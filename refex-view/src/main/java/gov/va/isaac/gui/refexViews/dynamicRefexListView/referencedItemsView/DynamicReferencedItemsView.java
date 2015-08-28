@@ -20,7 +20,7 @@ package gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicRefexView;
+import gov.va.isaac.gui.refexViews.refexEdit.DynamicSememeView;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -41,7 +41,7 @@ public class DynamicReferencedItemsView implements PopupViewI
 {
 	private SimpleDisplayConcept assemblageConcept_;
 	private BorderPane root_;
-	private DynamicRefexView drv_;
+	private DynamicSememeView drv_;
 
 	public DynamicReferencedItemsView(SimpleDisplayConcept assemblageConcept)
 	{
@@ -55,7 +55,7 @@ public class DynamicReferencedItemsView implements PopupViewI
 		title.setPadding(new Insets(5, 5, 5, 5));
 		root_.setTop(title);
 		
-		drv_ = AppContext.getService(DynamicRefexView.class);
+		drv_ = AppContext.getService(DynamicSememeView.class);
 		root_.setCenter(drv_.getView());
 	}
 	

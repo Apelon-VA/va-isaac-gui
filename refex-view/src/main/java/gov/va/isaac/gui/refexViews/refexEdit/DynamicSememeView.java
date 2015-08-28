@@ -26,7 +26,7 @@ import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.Dyna
 import gov.va.isaac.gui.refexViews.refexEdit.HeaderNode.Filter;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.gui.util.TableHeaderRowTooltipInstaller;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.RefexViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
@@ -98,15 +98,15 @@ import com.sun.javafx.tk.Toolkit;
 
 /**
  * 
- * Refset View
+ * DynamicSememeView
  * 
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 
 @Service
-@Named (value="DynamicRefexView")
+@Named (value="DynamicSememeView")
 @PerLookup
-public class DynamicRefexView implements RefexViewI
+public class DynamicSememeView implements SememeViewI
 {
 	private VBox rootNode_ = null;
 	private TreeTableView<RefexDynamicGUI> ttv_;
@@ -184,7 +184,7 @@ public class DynamicRefexView implements RefexViewI
 		}
 	}
 
-	private DynamicRefexView() 
+	private DynamicSememeView() 
 	{
 		//Created by HK2 - no op - delay till getView called
 	}
@@ -600,7 +600,7 @@ public class DynamicRefexView implements RefexViewI
 	}
 
 	/**
-	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.RefexViewI#setComponent(int, javafx.beans.property.ReadOnlyBooleanProperty, 
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI#setComponent(int, javafx.beans.property.ReadOnlyBooleanProperty, 
 	 * javafx.beans.property.ReadOnlyBooleanProperty, javafx.beans.property.ReadOnlyBooleanProperty, boolean)
 	 */
 	@Override
@@ -619,7 +619,7 @@ public class DynamicRefexView implements RefexViewI
 	}
 
 	/**
-	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.RefexViewI#setAssemblage(int, javafx.beans.property.ReadOnlyBooleanProperty, 
+	 * @see gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI#setAssemblage(int, javafx.beans.property.ReadOnlyBooleanProperty, 
 	 * javafx.beans.property.ReadOnlyBooleanProperty, javafx.beans.property.ReadOnlyBooleanProperty, boolean)
 	 */
 	@Override
@@ -1267,7 +1267,7 @@ public class DynamicRefexView implements RefexViewI
 			}
 			else
 			{
-				logger_.warn("Unexpected sememe type {}" + sememeC.toUserString());
+				//TODO perhaps, map static sememe types to dynamic ones?  Do nothing, for now.
 			}
 		});
 		
@@ -1338,56 +1338,71 @@ public class DynamicRefexView implements RefexViewI
 		
 		Get.sememeService().getSememesForComponent(componentNid).forEach(sememeC ->
 		{
-			boolean assemblageWasNull = false;
-			for (DynamicSememeColumnInfo column :  DynamicSememeUsageDescription.read(sememeC.getAssemblageSequence()).getColumnInfo())
+			if (sememeC.getSememeType() == SememeType.DYNAMIC)
 			{
-				Hashtable<UUID, List<DynamicSememeColumnInfo>> inner = columns.get(column.getColumnDescriptionConcept());
-				if (inner == null)
+				boolean assemblageWasNull = false;
+				for (DynamicSememeColumnInfo column :  DynamicSememeUsageDescription.read(sememeC.getAssemblageSequence()).getColumnInfo())
 				{
-					inner = new Hashtable<>();
-					columns.put(column.getColumnDescriptionConcept(), inner);
-				}
-				List<DynamicSememeColumnInfo> innerValues = inner.get(column.getAssemblageConcept());
-				if (innerValues == null)
-				{
-					assemblageWasNull = true;
-					innerValues = new ArrayList<>();
-					inner.put(column.getAssemblageConcept(), innerValues);
-				}
-				if (assemblageWasNull)  //We only want to populate this on the first pass - the columns on an assemblage will never change from one pass to another.
-				{
-					innerValues.add(column);
-				}
-			}
-			
-			Get.sememeService().getSememesForComponent(Get.identifierService().getSememeNid(sememeC.getSememeSequence())).forEach(nestedSememeC ->
-			{
-				//recurse
-				Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nested = getUniqueColumns(Get.identifierService()
-						.getSememeNid(nestedSememeC.getSememeSequence()));
-				for (Entry<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nestedItem : nested.entrySet())
-				{
-					if (columns.get(nestedItem.getKey()) == null)
+					Hashtable<UUID, List<DynamicSememeColumnInfo>> inner = columns.get(column.getColumnDescriptionConcept());
+					if (inner == null)
 					{
-						columns.put(nestedItem.getKey(), nestedItem.getValue());
+						inner = new Hashtable<>();
+						columns.put(column.getColumnDescriptionConcept(), inner);
 					}
-					else
+					List<DynamicSememeColumnInfo> innerValues = inner.get(column.getAssemblageConcept());
+					if (innerValues == null)
 					{
-						Hashtable<UUID, List<DynamicSememeColumnInfo>> mergeInto = columns.get(nestedItem.getKey());
-						for (Entry<UUID, List<DynamicSememeColumnInfo>> toMergeItem : nestedItem.getValue().entrySet())
+						assemblageWasNull = true;
+						innerValues = new ArrayList<>();
+						inner.put(column.getAssemblageConcept(), innerValues);
+					}
+					if (assemblageWasNull)  //We only want to populate this on the first pass - the columns on an assemblage will never change from one pass to another.
+					{
+						innerValues.add(column);
+					}
+				}
+				
+				Get.sememeService().getSememesForComponent(Get.identifierService().getSememeNid(sememeC.getSememeSequence())).forEach(nestedSememeC ->
+				{
+					if (nestedSememeC.getSememeType() == SememeType.DYNAMIC)
+					{
+						//recurse
+						Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nested = getUniqueColumns(Get.identifierService()
+								.getSememeNid(nestedSememeC.getSememeSequence()));
+						for (Entry<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nestedItem : nested.entrySet())
 						{
-							if (mergeInto.get(toMergeItem.getKey()) == null)
+							if (columns.get(nestedItem.getKey()) == null)
 							{
-								mergeInto.put(toMergeItem.getKey(), toMergeItem.getValue());
+								columns.put(nestedItem.getKey(), nestedItem.getValue());
 							}
 							else
 							{
-								//don't care - we already have this assemblage concept - the column values will be the same as what we already have.
+								Hashtable<UUID, List<DynamicSememeColumnInfo>> mergeInto = columns.get(nestedItem.getKey());
+								for (Entry<UUID, List<DynamicSememeColumnInfo>> toMergeItem : nestedItem.getValue().entrySet())
+								{
+									if (mergeInto.get(toMergeItem.getKey()) == null)
+									{
+										mergeInto.put(toMergeItem.getKey(), toMergeItem.getValue());
+									}
+									else
+									{
+										//don't care - we already have this assemblage concept - the column values will be the same as what we already have.
+									}
+								}
 							}
 						}
 					}
-				}
-			});
+					else
+					{
+						//TODO, perhaps, adapt static sememes to look like dynamic sememes, on the fly?  For now, don't show
+					}
+				});
+			}
+			else
+			{
+				//TODO, perhaps, adapt static sememes to look like dynamic sememes, on the fly?  For now, don't show
+			}
+			
 		});
 			
 		return columns;
@@ -1487,7 +1502,7 @@ public class DynamicRefexView implements RefexViewI
 	}
 	
 
-	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int assemblageNid) 
+	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int nid) 
 			throws IOException, InterruptedException, NumberFormatException, ParseException
 	{
 		Platform.runLater(() ->
@@ -1497,7 +1512,9 @@ public class DynamicRefexView implements RefexViewI
 		});
 		
 		
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(Get.sememeService().getSememesFromAssemblage(assemblageNid));
+		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(viewFocus_ == ViewFocus.ASSEMBLAGE ? 
+				Get.sememeService().getSememesFromAssemblage(nid) :
+					Get.sememeService().getSememesForComponent(nid));
 
 		if (rowData.size() == 0)
 		{

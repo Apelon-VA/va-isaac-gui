@@ -32,6 +32,7 @@ import gov.va.isaac.gui.treeview.SctTreeViewIsaacView;
 import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
@@ -110,6 +111,7 @@ public class ConceptViewController {
 	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
 
 	private SctTreeViewIsaacView sctTree;
+	private SememeViewI sememeView;
 	private DescriptionTableView dtv;
 	private RelationshipTableView rtv;
 	
@@ -194,7 +196,7 @@ public class ConceptViewController {
 		return anchorPane;
 	}
 
-	public <T extends ConceptVersion<T>> void setConcept(ConceptChronology<T> concept) {
+	public void setConcept(ConceptChronology<?> concept) {
 		conceptUuid = concept.getPrimordialUuid();
 
 		// Update text of labels.
@@ -338,7 +340,7 @@ public class ConceptViewController {
 			Label summary = new Label();
 			HBox.setMargin(summary, new Insets(0, 0, 0, 5.0));
 			sourceRelTitleHBox.getChildren().add(summary);
-//			summary.textProperty().bind(rtv.getSummaryText());
+			summary.textProperty().bind(rtv.getSummaryText());
 			
 		}
 		catch (Exception e)
@@ -418,11 +420,11 @@ public class ConceptViewController {
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring relationships view"));
 				}
 
-//				refexView = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
-//				refexView.setComponent(conceptVersion.getChronology().getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
-//				refexView.getView().setMinHeight(100.0);
-//				VBox.setVgrow(refexView.getView(), Priority.ALWAYS);
-//				annotationsRegion.getChildren().add(refexView.getView());
+				sememeView = LookupService.getNamedServiceIfPossible(SememeViewI.class, "DynamicRefexView");
+				sememeView.setComponent(conceptSnapshot.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
+				sememeView.getView().setMinHeight(100.0);
+				VBox.setVgrow(sememeView.getView(), Priority.ALWAYS);
+				annotationsRegion.getChildren().add(sememeView.getView());
 
 				stampToggle.setSelected(false);
 			});
@@ -454,9 +456,9 @@ public class ConceptViewController {
 		if (sctTree != null) {
 			sctTree.viewDiscarded();
 		}
-//		if (refexView != null) {
-//			refexView.viewDiscarded();
-//		}
+		if (sememeView != null) {
+			sememeView.viewDiscarded();
+		}
 		if (dtv != null) {
 			dtv.viewDiscarded();
 		}

@@ -109,7 +109,7 @@ import com.sun.javafx.collections.ObservableListWrapper;
 @PerLookup
 public class AddRefexPopup extends Stage implements PopupViewI
 {
-	private DynamicRefexView callingView_;
+	private DynamicSememeView callingView_;
 	private ViewFocus createRefexFocus_;
 	private int focusNid_;
 	private RefexDynamicGUI editRefex_;
@@ -393,7 +393,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		setScene(scene);
 	}
 	
-	public void finishInit(RefexDynamicGUI refexToEdit, DynamicRefexView viewToRefresh)
+	public void finishInit(RefexDynamicGUI refexToEdit, DynamicSememeView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = null;
@@ -427,7 +427,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		}
 	}
 
-	public void finishInit(ViewFocus viewFocus, int focusNid, DynamicRefexView viewToRefresh)
+	public void finishInit(ViewFocus viewFocus, int focusNid, DynamicSememeView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = viewFocus;
