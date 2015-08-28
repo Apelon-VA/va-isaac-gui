@@ -19,22 +19,19 @@
 package gov.va.isaac.gui.dialog;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.ConceptViewMode;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
@@ -44,9 +41,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-
 import javax.inject.Named;
-
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -95,8 +90,9 @@ public class ConceptView implements PopupConceptViewI {
 			{
 				LOG.info("Loading concept with UUID " + conceptUUID);
 				ConceptSnapshot concept = Get.conceptService().getSnapshot(
-						StampCoordinates.getDevelopmentLatest(),
-						LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate()).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID));
+						ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(),
+						ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get())
+							.getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID));
 				LOG.info("Finished loading concept with UUID " + conceptUUID);
 
 				return concept.getChronology();
@@ -146,8 +142,8 @@ public class ConceptView implements PopupConceptViewI {
 			{
 				LOG.info("Loading concept with nid " + conceptNid);
 				ConceptSnapshot concept = Get.conceptService().getSnapshot(
-						StampCoordinates.getDevelopmentLatest(),
-						LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate()).getConceptSnapshot(conceptNid);
+						ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get(),
+						ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get()).getConceptSnapshot(conceptNid);
 				LOG.info("Finished loading concept with nid " + conceptNid);
 				return concept.getChronology();
 			}
