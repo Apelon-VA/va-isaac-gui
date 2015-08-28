@@ -1,9 +1,15 @@
 package gov.va.isaac.gui.conceptview;
 
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.constants.ConceptViewMode;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
-import javax.inject.Named;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -12,20 +18,13 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.interfaces.gui.constants.ConceptViewMode;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
-import gov.va.isaac.interfaces.gui.views.PopupViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptViewI;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import javax.inject.Named;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 
 @Service @Named(value=SharedServiceNames.DIAGRAM_STYLE)
 @PerLookup
-public class ConceptView implements PopupViewI, EmbeddableViewI, ConceptViewI  {
+public class ConceptView implements EmbeddableViewI, PopupConceptViewI  {
 
 	private ConceptViewController controller;
 
