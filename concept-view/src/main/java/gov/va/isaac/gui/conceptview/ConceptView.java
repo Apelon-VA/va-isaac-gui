@@ -3,7 +3,7 @@ package gov.va.isaac.gui.conceptview;
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
-
+import javax.inject.Named;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -13,16 +13,19 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.constants.ConceptViewMode;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptView2I;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptViewI;
 import gov.va.isaac.util.Utility;
-
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 
-@Service
+@Service @Named(value=SharedServiceNames.DIAGRAM_STYLE)
 @PerLookup
-public class ConceptView implements ConceptView2I {
+public class ConceptView implements PopupViewI, EmbeddableViewI, ConceptViewI  {
 
 	private ConceptViewController controller;
 
@@ -55,30 +58,40 @@ public class ConceptView implements ConceptView2I {
 	public Region getView() {
 		return controller.getRoot();
 	}
-	
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.conceptview.ConceptView2I#getConcept()
-	 */
-	//@Override
-	public Integer getConcept() {
-		return controller.getConcept();
-	}
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.conceptview.ConceptView2I#setConcept(int)
-	 */
-	//@Override
+
+	@Override
 	public void setConcept(int conceptId) {
 		Utility.execute(() -> controller.setConcept(conceptId));
 	}
-	/* (non-Javadoc)
-	 * @see gov.va.isaac.gui.conceptview.ConceptView2I#setConcept(java.util.UUID)
-	 */
-	//@Override
+
+	@Override
 	public void setConcept(UUID conceptUuid) {
 		Utility.execute(() -> controller.setConcept(conceptUuid));
 	}
 	@Override
 	public void viewDiscarded() {
-		// TODO Auto-generated method stub
+		// TODO need to stop any background operations, dispose of any javaFX hooks that might cause leaks
+	}
+	@Override
+	public UUID getConceptUuid()
+	{
+		ConceptSnapshot cs = controller.getConceptSnapshot();
+		return (cs == null ? null : cs.getPrimordialUuid());
+	}
+	@Override
+	public int getConceptNid()
+	{
+		ConceptSnapshot cs = controller.getConceptSnapshot();
+		return (cs == null ? Integer.MIN_VALUE : cs.getNid());
+	}
+	@Override
+	public void setViewMode(ConceptViewMode mode)
+	{
+		throw new UnsupportedOperationException();
+	}
+	@Override
+	public ConceptViewMode getViewMode()
+	{
+		throw new UnsupportedOperationException();
 	}
 }

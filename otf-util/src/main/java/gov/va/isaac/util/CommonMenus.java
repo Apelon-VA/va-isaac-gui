@@ -18,29 +18,16 @@
  */
 package gov.va.isaac.util;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.BooleanSupplier;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptView2I;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphViewBaseViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
@@ -54,6 +41,13 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BooleanSupplier;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -65,6 +59,8 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link CommonMenus}
@@ -83,9 +79,9 @@ public class CommonMenus
 	public static enum CommonMenuItem {
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
-		CONCEPT_TABLE_VIEW("View Concept Table", Images.CONCEPT_VIEW),
+		CONCEPT_DIAGRAM_VIEW("Concept Diagraming View", Images.CONCEPT_VIEW),
 		CONCEPT_VIEW("Model Concept", Images.CONCEPT_VIEW),
-		CONCEPT_VIEW_LEGACY("View Concept", Images.CONCEPT_VIEW),
+		CONCEPT_VIEW_LEGACY("Concept Table View", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
 		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
@@ -127,7 +123,7 @@ public class CommonMenus
 	
 	// Initialize service call cache
 	static {
-		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_TABLE_VIEW, ConceptView2I.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_DIAGRAM_VIEW, PopupConceptViewI.class, SharedServiceNames.DIAGRAM_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW, PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW_LEGACY, PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.TAXONOMY_VIEW, TaxonomyViewI.class, SharedServiceNames.DOCKED);
@@ -443,17 +439,17 @@ public class CommonMenus
 		
 		// Menu item to show concept details in table
 		try {
-			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_TABLE_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_DIAGRAM_VIEW)) {
 				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
-						CommonMenuItem.CONCEPT_TABLE_VIEW,
+						CommonMenuItem.CONCEPT_DIAGRAM_VIEW,
 						builder,
 						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
 						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
 						() -> {
-							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_TABLE_VIEW.getText() + "\" menu item to display concept with id \"" 
+							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_DIAGRAM_VIEW.getText() + "\" menu item to display concept with id \"" 
 									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-							ConceptView2I cv = (ConceptView2I)CommonMenusServices.getService(CommonMenuItem.CONCEPT_TABLE_VIEW);
+							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getService(CommonMenuItem.CONCEPT_DIAGRAM_VIEW);
 							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 
 							cv.showView(null);

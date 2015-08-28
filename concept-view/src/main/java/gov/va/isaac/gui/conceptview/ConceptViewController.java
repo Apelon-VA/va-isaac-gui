@@ -232,10 +232,12 @@ public class ConceptViewController {
 			Platform.runLater(work);
 		}
 	}
-	public Integer getConcept() {
-		return (conceptNode.isValid().get() && conceptNode.getConcept() != null) ? conceptNode.getConcept().getChronology().getConceptSequence() : null;
+	public ConceptSnapshot getConceptSnapshot() {
+		return (conceptNode.isValid().get()) ? conceptNode.getConcept() : null;
 	}
 	public void setConcept(int conceptId) {
+		//TODO don't do DB hits in the JavaFX thread!  This call was already made in a background thread, the lookup should be completed there.
+		//The conceptNode.set (only) should be done in the fx thread
 		runLaterIfNotFXApplicationThread(() -> conceptNode.set(Get.conceptSnapshot().getConceptSnapshot(conceptId)));
 	}
 	public void setConcept(UUID conceptUuid) {
