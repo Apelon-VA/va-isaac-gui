@@ -4,6 +4,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gov.va.isaac.gui.conceptview.ConceptViewController;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -15,6 +19,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class ConceptDescription extends StampedItem {
+	private static final Logger LOG = LoggerFactory.getLogger(ConceptDescription.class);
 
 
 	private DescriptionSememe<?> _description;
@@ -75,16 +80,23 @@ public class ConceptDescription extends StampedItem {
 
 			Utility.execute(() ->
 			{
-				String typeName			 = Get.conceptDescriptionText(getAuthorSequence());
-				String valueName 		 = Get.conceptDescriptionText(_description.getSememeSequence());
+				String typeName			= Get.conceptDescriptionText(_description.getDescriptionTypeConceptSequence());
+				String valueName 		= null;
+				try {
+					valueName 			= Get.conceptDescriptionText(_description.getSememeSequence());
+				} catch (RuntimeException e) {
+					valueName = "Error loading description (seq=" + _description.getSememeSequence() + ")"; 
+					LOG.error("Failed getting description text for description sememe sequence for " + _description.toString() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
+					e.printStackTrace();
+				}
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
 				String acceptabilityName = "";
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
 				
-				
+				final String finalValueName = valueName;
 				Platform.runLater(() -> {
 					typeSSP.set(typeName);
-					valueSSP.set(valueName);
+					valueSSP.set(finalValueName);
 					languageSSP.set(languageName);
 					acceptabilitySSP.set(acceptabilityName);
 					significanceSSP.set(significanceName);
