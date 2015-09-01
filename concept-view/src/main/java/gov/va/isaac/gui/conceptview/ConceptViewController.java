@@ -10,6 +10,7 @@ import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
+import javafx.concurrent.Task;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -159,7 +161,6 @@ public class ConceptViewController {
 		
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
-		
 		headerGridPane.add(conceptNode.getNode(), 0, 0, 3, 1);
 
 		// This binding refreshes whenever its bindings change
@@ -224,25 +225,30 @@ public class ConceptViewController {
 		authorTableColumn.setUserData(ConceptViewColumnType.STAMP_AUTHOR);
 		pathTableColumn.setUserData(ConceptViewColumnType.STAMP_PATH);
 	}
-	
-	public static void runLaterIfNotFXApplicationThread(Runnable work) {
-		if (Platform.isFxApplicationThread()) {
-			work.run();
-		} else {
-			Platform.runLater(work);
-		}
-	}
+
 	public ConceptSnapshot getConceptSnapshot() {
 		return (conceptNode.isValid().get()) ? conceptNode.getConcept() : null;
 	}
 	public void setConcept(int conceptId) {
-		//TODO don't do DB hits in the JavaFX thread!  This call was already made in a background thread, the lookup should be completed there.
-		//The conceptNode.set (only) should be done in the fx thread
-		runLaterIfNotFXApplicationThread(() -> conceptNode.set(Get.conceptSnapshot().getConceptSnapshot(conceptId)));
+		Task<ConceptSnapshot> task = new Task<ConceptSnapshot>() {
+			@Override
+			protected ConceptSnapshot call() throws Exception {
+				return Get.conceptSnapshot().getConceptSnapshot(conceptId);
+			}
+
+			@Override
+			protected void succeeded() {
+				Platform.runLater(() -> conceptNode.set(getValue()));
+			}
+		};
+		
+		Utility.execute(task);
 	}
 	public void setConcept(UUID conceptUuid) {
-		ConceptChronology<?> concept = Get.conceptService().getConcept(conceptUuid);
-		setConcept(concept.getConceptSequence());
+		Utility.execute(() -> {
+			ConceptChronology<?> concept = Get.conceptService().getConcept(conceptUuid);
+			setConcept(concept.getConceptSequence());
+		});
 	}
 	
 	private void refresh() {
@@ -282,9 +288,19 @@ public class ConceptViewController {
 	private void loadConceptCodeFromConcept(ConceptSnapshot concept) {
 		conceptCodeLabel.setText(null);
 		if (concept != null) {
-			Optional<Long> sctId = Frills.getSctId(concept.getChronology().getNid(), StampCoordinates.getDevelopmentLatest());
+			Task<Optional<Long>> task = new Task<Optional<Long>>() {
+				@Override
+				protected Optional<Long> call() throws Exception {
+					return Frills.getSctId(concept.getChronology().getNid(), StampCoordinates.getDevelopmentLatest());
+				}
+
+				@Override
+				protected void succeeded() {
+					conceptCodeLabel.setText(getValue().isPresent() ? getValue().get().toString() : null);
+				}
+			};
 			
-			conceptCodeLabel.setText(sctId.isPresent() ? sctId.get().toString() : null);
+			Utility.execute(task);
 		}
 	}
 	
@@ -306,18 +322,18 @@ public class ConceptViewController {
 				Label label = new Label(uuid.toString());
 				label.setContextMenu(new ContextMenu());
 				CommonMenus.addCommonMenus(label.getContextMenu(),
-					new CommonMenusDataProvider() {
-						@Override
-						public String[] getStrings() {
-							return new String[] {uuid.toString()};
-						}
-					},
-					new CommonMenusNIdProvider() {
-						@Override
-						public Collection<Integer> getNIds() {
-							return Arrays.asList(new Integer[] {concept.getChronology().getNid()});
-						}
-					});
+						new CommonMenusDataProvider() {
+					@Override
+					public String[] getStrings() {
+						return new String[] {uuid.toString()};
+					}
+				},
+				new CommonMenusNIdProvider() {
+					@Override
+					public Collection<Integer> getNIds() {
+						return Arrays.asList(new Integer[] {concept.getChronology().getNid()});
+					}
+				});
 				uuidsVBox.getChildren().add(label);
 			}
 		}
@@ -396,7 +412,19 @@ public class ConceptViewController {
 					if(c == null) {
 						setText(null);
 					} else {
-						Platform.runLater(() -> setText(Get.conceptDescriptionText(c)));
+						Task<String> task = new Task<String>() {
+							@Override
+							protected String call() throws Exception {
+								return Get.conceptDescriptionText(c);
+							}
+
+							@Override
+							protected void succeeded() {
+								Platform.runLater(() -> setText(getValue()));
+							}
+						};
+						
+						Utility.execute(task);
 					}
 				}
 			};
@@ -409,7 +437,19 @@ public class ConceptViewController {
 				if (emptyRow) {
 					setText("");
 				} else {
-					Platform.runLater(() -> setText(Get.conceptDescriptionText(c)));
+					Task<String> task = new Task<String>() {
+						@Override
+						protected String call() throws Exception {
+							return Get.conceptDescriptionText(c);
+						}
+
+						@Override
+						protected void succeeded() {
+							Platform.runLater(() -> setText(getValue()));
+						}
+					};
+					
+					Utility.execute(task);
 				}
 			}
 		});
@@ -464,19 +504,6 @@ public class ConceptViewController {
 		statusTableColumn.setComparator(StampedItem.statusComparator);
 		descriptionValueTableColumn.setComparator(ConceptDescription.valueComparator);
 		moduleTableColumn.setComparator(StampedItem.moduleComparator);
-
-		/*
-		mappingSetTableView.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<MappingSet>()
-		{
-			@Override
-			public void onChanged(javafx.collections.ListChangeListener.Change<? extends MappingSet> c)
-			{
-				updateMappingItemsList(getSelectedMappingSet());
-			}
-		});
-		
-		mappingSetSTAMPTableColumn.setVisible(false);
-		*/
 	}
 	
 	private void setDescriptionTableFactories(ObservableList<TableColumn<ConceptDescription,?>> tableColumns)

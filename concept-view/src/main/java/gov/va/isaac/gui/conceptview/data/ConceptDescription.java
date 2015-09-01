@@ -1,22 +1,22 @@
 package gov.va.isaac.gui.conceptview.data;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import gov.va.isaac.gui.conceptview.ConceptViewController;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConceptDescription extends StampedItem {
 	private static final Logger LOG = LoggerFactory.getLogger(ConceptDescription.class);
