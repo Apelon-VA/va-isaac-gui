@@ -1,13 +1,16 @@
 package gov.va.isaac.gui.conceptview.data;
 
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javafx.application.Platform;
@@ -83,7 +86,7 @@ public class ConceptDescription extends StampedItem {
 				String typeName			= Get.conceptDescriptionText(_description.getDescriptionTypeConceptSequence());
 				String valueName		= _description.getText();
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
-				String acceptabilityName = "";
+				String acceptabilityName = getAcceptabilities(_description);
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
 				
 				final String finalValueName = valueName;
@@ -152,5 +155,17 @@ public class ConceptDescription extends StampedItem {
 		}
 	};
 	
-
+	private static String getAcceptabilities(DescriptionSememe<?> description) {
+		Map<Integer, Integer> dialectSequenceToAcceptabilityNidMap = Frills.getAcceptabilities(description.getNid(), StampCoordinates.getDevelopmentLatest());
+		
+		StringBuilder builder = new StringBuilder();
+		for (Map.Entry<Integer, Integer> entry : dialectSequenceToAcceptabilityNidMap.entrySet()) {
+			if (builder.toString().length() > 0) {
+				builder.append(",\n");
+			}
+			builder.append(Get.conceptDescriptionText(entry.getKey()) + ":" + Get.conceptDescriptionText(entry.getValue()));
+		}
+		
+		return builder.toString();
+	}
 }

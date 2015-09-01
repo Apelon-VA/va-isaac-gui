@@ -103,6 +103,9 @@ public class ConceptViewController {
 	
 	@FXML private ToggleButton activeOnlyToggle;
 	@FXML private ToggleButton stampToggle;
+
+	@FXML private Button cancelButton;
+	@FXML private Button commitButton;
 	
 	private ConceptNode conceptNode = new ConceptNode(null, false);
 	
@@ -142,6 +145,9 @@ public class ConceptViewController {
 		assert activeOnlyToggle 			!= null : "fx:id=\"activeOnlyToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert stampToggle 					!= null : "fx:id=\"stampToggleToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
+		assert cancelButton 	!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert commitButton 	!= null : "fx:id=\"commitButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+
 		FxUtils.assignImageToButton(activeOnlyToggle, 		Images.FILTER_16.createImageView(), "Show Active Only / Show All");
 		FxUtils.assignImageToButton(stampToggle, 			Images.STAMP.createImageView(), 	"Show/Hide STAMP Columns");
 		FxUtils.assignImageToButton(plusDescriptionButton, 	Images.PLUS.createImageView(), 		"Create Description");
@@ -158,6 +164,8 @@ public class ConceptViewController {
 		setupUuidsVBox();
 		setupActiveOnlyToggle();
 		setupStampToggle();
+		setupCancelButton();
+		setupCommitButton();
 		
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
@@ -199,6 +207,25 @@ public class ConceptViewController {
 
 	public StringProperty getTitle() {
 		return new SimpleStringProperty("Concept Viewer");
+	}
+	
+	private void setupCancelButton() {
+		cancelButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				// TODO setupCancelButton()
+				LOG.debug("Cancel button pressed");
+			}
+		});
+	}
+	private void setupCommitButton() {
+		commitButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				// TODO setupCommitButton()
+				LOG.debug("Commit button pressed");
+			}
+		});
 	}
 	
 	void setColumnWidths() {
@@ -554,6 +581,7 @@ public class ConceptViewController {
 
 			cell.setText(null);
 			cell.setGraphic(null);
+			cell.setTooltip(null);
 
 			switch (columnType) {
 			case STATE_CONDENSED:
@@ -617,6 +645,10 @@ public class ConceptViewController {
 				text.textProperty().bind(property);
 				text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
 				cell.setGraphic(text);
+				
+				Tooltip tooltip = new Tooltip();
+				tooltip.textProperty().bind(property);
+				cell.setTooltip(tooltip);
 	
 				MenuItem mi = new MenuItem("Copy Value");
 				mi.setOnAction(new EventHandler<ActionEvent>() {
@@ -640,6 +672,7 @@ public class ConceptViewController {
 		} else {
 			cell.setText(null);
 			cell.setGraphic(null);
+			cell.setTooltip(null);
 		}
 	}
 
