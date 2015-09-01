@@ -81,14 +81,7 @@ public class ConceptDescription extends StampedItem {
 			Utility.execute(() ->
 			{
 				String typeName			= Get.conceptDescriptionText(_description.getDescriptionTypeConceptSequence());
-				String valueName 		= null;
-				try {
-					valueName 			= Get.conceptDescriptionText(_description.getSememeSequence());
-				} catch (RuntimeException e) {
-					valueName = "Error loading description (seq=" + _description.getSememeSequence() + ")"; 
-					LOG.error("Failed getting description text for description sememe sequence for " + _description.toString() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage());
-					e.printStackTrace();
-				}
+				String valueName		= _description.getText();
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
 				String acceptabilityName = "";
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
