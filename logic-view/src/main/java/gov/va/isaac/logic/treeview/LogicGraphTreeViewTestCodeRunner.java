@@ -78,7 +78,7 @@ public class LogicGraphTreeViewTestCodeRunner extends Application
 	private LogicalExpressionTreeGraph graph = new LogicalExpressionTreeGraph(
 			true, 
 			true,
-			200, 100);
+			150, 75, 12);
 	private Label textGraph = new Label();
 
 	protected void init(Stage primaryStage) {

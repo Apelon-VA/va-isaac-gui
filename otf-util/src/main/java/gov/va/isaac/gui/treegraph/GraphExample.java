@@ -12,41 +12,42 @@ import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.stage.Stage;
 
 public class GraphExample extends Application {
-	private final static int defaultWidth = 200;
-	private final static int defaultHeight = 100;
+	private final static int defaultWidth = 150;
+	private final static int defaultHeight = 75;
+	private final static double defaultFontSize = TreeNodeUtils.DEFAULT_FONT_SIZE;
 	
 	private <T extends TreeNode<T>> void populateGraph(TreeGraph graph, BiFunction<T, Region, T> factory) {
 		Label label1 = new Label("Node 1");
-		TreeNodeUtils.setFxNodeSizes(label1, defaultWidth, defaultHeight);
+		TreeNodeUtils.configureFxNode(label1, defaultWidth, defaultHeight, defaultFontSize);
 		T node1 = factory.apply(null, label1);
 
 		Label label2 = new Label("Node 2");
-		TreeNodeUtils.setFxNodeSizes(label2, 100, 50);
+		TreeNodeUtils.configureFxNode(label2, 75, 38, defaultFontSize);
 		T node2 = factory.apply(node1, label2);
 		node1.addChildTreeNodeBelow(node2);
 		
 		Label label4 = new Label("Node 4");
-		TreeNodeUtils.setFxNodeSizes(label4, 100, 50);
+		TreeNodeUtils.configureFxNode(label4, 75, 38, defaultFontSize);
 		T node4 = factory.apply(node2, label4);
 		node2.addChildTreeNodeBelow(node4);
 
 		Label label7 = new Label("Node 7");
-		TreeNodeUtils.setFxNodeSizes(label7, defaultWidth, defaultHeight);
+		TreeNodeUtils.configureFxNode(label7, defaultWidth, defaultHeight, defaultFontSize);
 		T node7 = factory.apply(node4, label7);
 		node4.setChildToRight(node7);
 		Label label5 = new Label("Node 5");
-		TreeNodeUtils.setFxNodeSizes(label5, defaultWidth, defaultHeight);
+		TreeNodeUtils.configureFxNode(label5, defaultWidth, defaultHeight, defaultFontSize);
 		T node5 = factory.apply(node2, label5);
 		node2.addChildTreeNodeBelow(node5);
 		
 		Label label6 = new Label("Node 6");
-		TreeNodeUtils.setFxNodeSizes(label6, defaultWidth, defaultHeight);
+		TreeNodeUtils.configureFxNode(label6, defaultWidth, defaultHeight, defaultFontSize);
 		T node6 = factory.apply(node1, label6);
 		node1.addChildTreeNodeBelow(node6);
 
 		Label label3 = new Label("Node 3");
 		label3.setShape(new Circle(50));
-		TreeNodeUtils.setFxNodeSizes(label3, 100, 100);
+		TreeNodeUtils.configureFxNode(label3, 75, 75, defaultFontSize);
 		T node3 = factory.apply(node1, label3);
 		node1.setChildToRight(node3);	
 
@@ -77,7 +78,7 @@ public class GraphExample extends Application {
 		node1.addChildTreeNodeBelow(node6);
 
 		Label label3 = new Label("Node 3");
-		label3.setShape(new Circle(50));
+		label3.setShape(new Circle(38));
 		ResizableTreeNodeImpl node3 = new ResizableTreeNodeImpl(node1, label3);
 		node1.setChildToRight(node3);	
 

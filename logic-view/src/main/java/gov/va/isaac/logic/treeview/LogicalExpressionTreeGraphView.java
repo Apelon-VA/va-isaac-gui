@@ -165,7 +165,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			logicalExpressionTreeGraph = new LogicalExpressionTreeGraph(
 					true, 
 					true, 
-					200, 100);
+					150, 75, 12);
 			textGraph = new Label();
 			textGraph.setAlignment(Pos.CENTER);
 			

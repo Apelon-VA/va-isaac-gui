@@ -11,7 +11,7 @@ public class SufficientSetNodeFxNode extends Label {
 	public SufficientSetNodeFxNode(SufficientSetNode logicalNode) {
 		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
 
-		setShape(new Circle(50));
-		TreeNodeUtils.setFxNodeSizes(this, 125, 50);
+		setShape(new Circle(38));
+		TreeNodeUtils.configureFxNode(this, 94, 38);
 	}
 }

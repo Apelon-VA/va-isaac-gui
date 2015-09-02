@@ -56,23 +56,28 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 	
 	private final int defaultNodeWidth;
 	private final int defaultNodeHeight;
+	private final double defaultFontSize;
 
 	public LogicalExpressionTreeGraph() {
 		this(
 				false, 
 				false,
-				200, 50);
+				150, 38,
+				TreeNodeUtils.DEFAULT_FONT_SIZE);
 	}
 
 	public LogicalExpressionTreeGraph(
 			boolean ignoreSingleChildConjunctions,
 			boolean ignoreSingleChildRoleGroups,
 			int defaultNodeWidth,
-			int defaultNodeHeight) {
+			int defaultNodeHeight,
+			double defaultFontSize) {
+		super();
 		this.ignoreSingleChildConjunctions = ignoreSingleChildConjunctions;
 		this.ignoreSingleChildRoleGroups = ignoreSingleChildRoleGroups;
 		this.defaultNodeWidth = defaultNodeWidth;
 		this.defaultNodeHeight = defaultNodeHeight;
+		this.defaultFontSize = defaultFontSize;
 	}
 	
 	public boolean isIgnoreSingleChildConjunctions() {
@@ -160,7 +165,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		RootNode rootNode = (RootNode)logicalExpression.getNode(0);
 		
 		RootNodeFxNode label = new RootNodeFxNode(logicalExpression, rootNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
-		TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+		TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 
 		label.setTooltip(new Tooltip(label.getText()));
 		
@@ -171,28 +176,28 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		
 		if (logicalNode instanceof ConceptNodeWithSequences) {
 			label = new ConceptNodeFxNode((ConceptNodeWithSequences)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof ConceptNodeWithUuids) {
 			label = new ConceptNodeFxNode((ConceptNodeWithSequences)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof FeatureNodeWithSequences) {
 			label = new FeatureNodeFxNode((FeatureNodeWithSequences)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof FeatureNodeWithUuids) {
 			label = new FeatureNodeFxNode((FeatureNodeWithUuids)logicalNode, TreeNodeFxNodeUtils.newDescriptionRenderer(stampCoordinate, languageCoordinate));
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof RoleNodeAllWithSequences) {
 			label = new RoleNodeFxNode((RoleNodeAllWithSequences)logicalNode);
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof RoleNodeSomeWithSequences) {
 			label = new RoleNodeFxNode((RoleNodeSomeWithSequences)logicalNode);
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof RoleNodeAllWithUuids) {
 			label = new RoleNodeFxNode((RoleNodeAllWithUuids)logicalNode);
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof RoleNodeSomeWithUuids) {
 			label = new RoleNodeFxNode((RoleNodeSomeWithUuids)logicalNode);
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		} else if (logicalNode instanceof NecessarySetNode) {
 			label = new NecessarySetNodeFxNode((NecessarySetNode)logicalNode);
 		} else if (logicalNode instanceof SufficientSetNode) {
@@ -204,7 +209,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		}
 		else {
 			label = new Label(logicalNode.getNodeSemantic().name() + "\n" + logicalNodeTypeToString(logicalNode));
-			TreeNodeUtils.setFxNodeSizes(label, defaultNodeWidth, defaultNodeHeight);
+			TreeNodeUtils.configureFxNode(label, defaultNodeWidth, defaultNodeHeight, defaultFontSize);
 		}
 		
 		label.setTooltip(new Tooltip(label.getText()));

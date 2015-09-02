@@ -10,7 +10,7 @@ import javafx.scene.shape.Circle;
 public class OrNodeFxNode extends Label {
 	public OrNodeFxNode(OrNode logicalNode) {
 		super(logicalNode.getNodeSemantic().name());
-		setShape(new Circle(25));
-		TreeNodeUtils.setFxNodeSizes(this, 50, 50);
+		setShape(new Circle(18));
+		TreeNodeUtils.configureFxNode(this, 38, 38);
 	}
 }

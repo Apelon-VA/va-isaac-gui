@@ -12,7 +12,7 @@ public class NecessarySetNodeFxNode extends Label {
 	public NecessarySetNodeFxNode(NecessarySetNode logicalNode) {
 		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
 
-		setShape(new Circle(50));
-		TreeNodeUtils.setFxNodeSizes(this, 125, 50);
+		setShape(new Circle(18));
+		TreeNodeUtils.configureFxNode(this, 94, 38);
 	}
 }
