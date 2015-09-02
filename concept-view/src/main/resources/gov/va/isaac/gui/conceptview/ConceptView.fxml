@@ -86,7 +86,7 @@
                         <TableView fx:id="descriptionTableView" layoutY="57.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
                           <columns>
                             <TableColumn fx:id="descriptionTypeTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Type" />
-                            <TableColumn fx:id="descriptionValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Value" />
+                            <TableColumn fx:id="descriptionValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Term" />
                               <TableColumn fx:id="dialectTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Language" />
                               <TableColumn fx:id="acceptabilityTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Acceptability" />
                               <TableColumn fx:id="significanceTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="125.0" text="Case Significance" />
