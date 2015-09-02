@@ -256,7 +256,7 @@ public class DynamicSememeView implements SememeViewI
 					if (ttv_.getSelectionModel().getSelectedItems().size() > 0 && ttv_.getSelectionModel().getSelectedItem() != null 
 							&& ttv_.getSelectionModel().getSelectedItem().getValue() != null)
 					{
-						return ttv_.getSelectionModel().getSelectedItem().getValue().getRefex().getState() == State.ACTIVE;
+						return ttv_.getSelectionModel().getSelectedItem().getValue().getSememe().getState() == State.ACTIVE;
 					}
 					else
 					{
@@ -282,16 +282,23 @@ public class DynamicSememeView implements SememeViewI
 							for (TreeItem<RefexDynamicGUI> refexTreeItem : selected)
 							{
 								RefexDynamicGUI refex = refexTreeItem.getValue();
-								if (refex.getRefex().getState() == State.INACTIVE)
+								if (refex.getSememe().getState() == State.INACTIVE)
 								{
 									continue;
 								}
-								
-								MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe>)refex.getRefex().getChronology())
-										.createMutableVersion(MutableDynamicSememe.class, State.INACTIVE, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-								mds.setData(refex.getRefex().getData());
-								Get.commitService().addUncommitted(refex.getRefex().getChronology());
-								Get.commitService().commit("retire dynamic sememe").get();
+								if (refex.getSememe().getChronology().getSememeType() == SememeType.DYNAMIC)
+								{
+									MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe>)refex.getSememe().getChronology())
+											.createMutableVersion(MutableDynamicSememe.class, State.INACTIVE, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+									mds.setData(((DynamicSememe<?>)refex.getSememe()).getData());
+									Get.commitService().addUncommitted(refex.getSememe().getChronology());
+									Get.commitService().commit("retire dynamic sememe").get();
+								}
+								else
+								{
+									//TODO
+									throw new RuntimeException("Not yet supported");
+								}
 							}
 							refresh();
 						}
@@ -911,13 +918,13 @@ public class DynamicSememeView implements SememeViewI
 									for (UUID uuid : col.keySet())
 									{
 										assert source != null;
-										assert source.getRefex() != null;
+										assert source.getSememe() != null;
 										
-										if (Get.identifierService().getConceptSequenceForUuids(uuid) == source.getRefex().getAssemblageSequence())
+										if (Get.identifierService().getConceptSequenceForUuids(uuid) == source.getSememe().getAssemblageSequence())
 										{
 											List<DynamicSememeColumnInfo> colInfo =  col.get(uuid);
 											Integer refexColumnOrder = (colInfo.size() > listItem ? 
-													(source.getRefex().getData().length <= colInfo.get(listItem).getColumnOrder() ? null 
+													(RefexDynamicGUI.getData(source.getSememe()).length <= colInfo.get(listItem).getColumnOrder() ? null 
 														: colInfo.get(listItem).getColumnOrder()): null);
 											
 											if (refexColumnOrder != null)
@@ -948,13 +955,13 @@ public class DynamicSememeView implements SememeViewI
 									for (UUID uuid : col.keySet())
 									{
 										assert o1 != null;
-										assert o1.getRefex() != null;
+										assert o1.getSememe() != null;
 										
-										if (Get.identifierService().getConceptSequenceForUuids(uuid) == o1.getRefex().getAssemblageSequence())
+										if (Get.identifierService().getConceptSequenceForUuids(uuid) == o1.getSememe().getAssemblageSequence())
 										{
 											List<DynamicSememeColumnInfo> colInfo =  col.get(uuid);
 											Integer refexColumnOrder = (colInfo.size() > listItem ? 
-													(o1.getRefex().getData().length <= colInfo.get(listItem).getColumnOrder() ? null 
+													(RefexDynamicGUI.getData(o1.getSememe()).length <= colInfo.get(listItem).getColumnOrder() ? null 
 														: colInfo.get(listItem).getColumnOrder()): null);
 											
 											if (refexColumnOrder != null)
@@ -1254,28 +1261,21 @@ public class DynamicSememeView implements SememeViewI
 	private ArrayList<TreeItem<RefexDynamicGUI>> createFilteredRowData(Stream<SememeChronology<? extends SememeVersion<?>>> sememes) throws IOException
 	{
 		ArrayList<TreeItem<RefexDynamicGUI>> rowData = new ArrayList<>();
-		ArrayList<DynamicSememe<?>> allVersions = new ArrayList<>();
+		ArrayList<SememeVersion<?>> allVersions = new ArrayList<>();
 		
 		sememes.forEach(sememeC ->
 		{
-			if (sememeC.getSememeType() == SememeType.DYNAMIC)
+			for (SememeVersion<?> ds :  sememeC.getVersionList())
 			{
-				for (SememeVersion<?> ds :  sememeC.getVersionList())
-				{
-					allVersions.add((DynamicSememe<?>)ds);
-				}
-			}
-			else
-			{
-				//TODO perhaps, map static sememe types to dynamic ones?  Do nothing, for now.
+				allVersions.add(ds);
 			}
 		});
 		
 		//Sort the newest to the top.
-		Collections.sort(allVersions, new Comparator<DynamicSememe<?>>()
+		Collections.sort(allVersions, new Comparator<SememeVersion<?>>()
 		{
 			@Override
-			public int compare(DynamicSememe<?> o1, DynamicSememe<?> o2)
+			public int compare(SememeVersion<?> o1, SememeVersion<?> o2)
 			{
 				if (o1.getPrimordialUuid().equals(o2.getPrimordialUuid()))
 				{
@@ -1290,7 +1290,7 @@ public class DynamicSememeView implements SememeViewI
 		
 		UUID lastSeenRefex = null;
 		
-		for (DynamicSememe<?> r : allVersions)
+		for (SememeVersion<?> r : allVersions)
 		{
 			if (!showFullHistory_.get() && r.getPrimordialUuid().equals(lastSeenRefex))
 			{
@@ -1338,71 +1338,53 @@ public class DynamicSememeView implements SememeViewI
 		
 		Get.sememeService().getSememesForComponent(componentNid).forEach(sememeC ->
 		{
-			if (sememeC.getSememeType() == SememeType.DYNAMIC)
+			boolean assemblageWasNull = false;
+			for (DynamicSememeColumnInfo column :  DynamicSememeUsageDescription.mockOrRead(sememeC).getColumnInfo())
 			{
-				boolean assemblageWasNull = false;
-				for (DynamicSememeColumnInfo column :  DynamicSememeUsageDescription.read(sememeC.getAssemblageSequence()).getColumnInfo())
+				Hashtable<UUID, List<DynamicSememeColumnInfo>> inner = columns.get(column.getColumnDescriptionConcept());
+				if (inner == null)
 				{
-					Hashtable<UUID, List<DynamicSememeColumnInfo>> inner = columns.get(column.getColumnDescriptionConcept());
-					if (inner == null)
-					{
-						inner = new Hashtable<>();
-						columns.put(column.getColumnDescriptionConcept(), inner);
-					}
-					List<DynamicSememeColumnInfo> innerValues = inner.get(column.getAssemblageConcept());
-					if (innerValues == null)
-					{
-						assemblageWasNull = true;
-						innerValues = new ArrayList<>();
-						inner.put(column.getAssemblageConcept(), innerValues);
-					}
-					if (assemblageWasNull)  //We only want to populate this on the first pass - the columns on an assemblage will never change from one pass to another.
-					{
-						innerValues.add(column);
-					}
+					inner = new Hashtable<>();
+					columns.put(column.getColumnDescriptionConcept(), inner);
 				}
-				
-				Get.sememeService().getSememesForComponent(Get.identifierService().getSememeNid(sememeC.getSememeSequence())).forEach(nestedSememeC ->
+				List<DynamicSememeColumnInfo> innerValues = inner.get(column.getAssemblageConcept());
+				if (innerValues == null)
 				{
-					if (nestedSememeC.getSememeType() == SememeType.DYNAMIC)
-					{
-						//recurse
-						Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nested = getUniqueColumns(Get.identifierService()
-								.getSememeNid(nestedSememeC.getSememeSequence()));
-						for (Entry<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nestedItem : nested.entrySet())
-						{
-							if (columns.get(nestedItem.getKey()) == null)
-							{
-								columns.put(nestedItem.getKey(), nestedItem.getValue());
-							}
-							else
-							{
-								Hashtable<UUID, List<DynamicSememeColumnInfo>> mergeInto = columns.get(nestedItem.getKey());
-								for (Entry<UUID, List<DynamicSememeColumnInfo>> toMergeItem : nestedItem.getValue().entrySet())
-								{
-									if (mergeInto.get(toMergeItem.getKey()) == null)
-									{
-										mergeInto.put(toMergeItem.getKey(), toMergeItem.getValue());
-									}
-									else
-									{
-										//don't care - we already have this assemblage concept - the column values will be the same as what we already have.
-									}
-								}
-							}
-						}
-					}
-					else
-					{
-						//TODO, perhaps, adapt static sememes to look like dynamic sememes, on the fly?  For now, don't show
-					}
-				});
-			}
-			else
-			{
-				//TODO, perhaps, adapt static sememes to look like dynamic sememes, on the fly?  For now, don't show
+					assemblageWasNull = true;
+					innerValues = new ArrayList<>();
+					inner.put(column.getAssemblageConcept(), innerValues);
+				}
+				if (assemblageWasNull)  //We only want to populate this on the first pass - the columns on an assemblage will never change from one pass to another.
+				{
+					innerValues.add(column);
+				}
 			}
 			
+			//recurse
+			Hashtable<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nested = getUniqueColumns(Get.identifierService()
+					.getSememeNid(sememeC.getSememeSequence()));
+			for (Entry<UUID, Hashtable<UUID, List<DynamicSememeColumnInfo>>> nestedItem : nested.entrySet())
+			{
+				if (columns.get(nestedItem.getKey()) == null)
+				{
+					columns.put(nestedItem.getKey(), nestedItem.getValue());
+				}
+				else
+				{
+					Hashtable<UUID, List<DynamicSememeColumnInfo>> mergeInto = columns.get(nestedItem.getKey());
+					for (Entry<UUID, List<DynamicSememeColumnInfo>> toMergeItem : nestedItem.getValue().entrySet())
+					{
+						if (mergeInto.get(toMergeItem.getKey()) == null)
+						{
+							mergeInto.put(toMergeItem.getKey(), toMergeItem.getValue());
+						}
+						else
+						{
+							//don't care - we already have this assemblage concept - the column values will be the same as what we already have.
+						}
+					}
+				}
+			}
 		});
 			
 		return columns;
@@ -1420,7 +1402,7 @@ public class DynamicSememeView implements SememeViewI
 		}
 		for (TreeItem<RefexDynamicGUI> item : items)
 		{
-			if (item.getValue() != null && item.getValue().getRefex().isUncommitted())
+			if (item.getValue() != null && item.getValue().getSememe().isUncommitted())
 			{
 				//TODO add some indication that this is either running / finished
 				Platform.runLater(() ->
@@ -1444,7 +1426,7 @@ public class DynamicSememeView implements SememeViewI
 		{
 			if (item.getValue() != null)
 			{
-				DynamicSememe<?> refex = item.getValue().getRefex();
+				SememeVersion<?> refex = item.getValue().getSememe();
 				results.add(refex.getAssemblageSequence());
 			}
 			results.addAll(getAllAssemblageSequences(item.getChildren()));
@@ -1493,7 +1475,7 @@ public class DynamicSememeView implements SememeViewI
 		{
 			if (item.getValue() != null)
 			{
-				DynamicSememe<?> refex = item.getValue().getRefex();
+				SememeVersion<?> refex = item.getValue().getSememe();
 				results.add(refex.getReferencedComponentNid());
 			}
 			results.addAll(getAllComponentNids(item.getChildren()));

@@ -84,13 +84,13 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 			{
 				for (UUID uuid : columnInfo_.keySet())
 				{
-					if (Get.identifierService().getConceptSequenceForUuids(uuid) == item.getRefex().getAssemblageSequence())
+					if (Get.identifierService().getConceptSequenceForUuids(uuid) == item.getSememe().getAssemblageSequence())
 					{
 						List<DynamicSememeColumnInfo> colInfo =  columnInfo_.get(uuid);
 						Integer refexColumnOrder = (colInfo.size() > listItem_ ? 
-								(item.getRefex().getData().length <= colInfo.get(listItem_).getColumnOrder() ? null 
+								(RefexDynamicGUI.getData(item.getSememe()).length <= colInfo.get(listItem_).getColumnOrder() ? null 
 									: colInfo.get(listItem_).getColumnOrder()): null);
-						DynamicSememeDataBI data = (refexColumnOrder == null ? null : item.getRefex().getData()[refexColumnOrder]); 
+						DynamicSememeDataBI data = (refexColumnOrder == null ? null : RefexDynamicGUI.getData(item.getSememe())[refexColumnOrder]); 
 						if (data != null)
 						{
 							if (data instanceof DynamicSememeNidBI)
@@ -170,7 +170,7 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 				@Override
 				public Collection<Integer> getNIds()
 				{
-					int nid = item.getNidFetcher(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getRefex());
+					int nid = item.getNidFetcher(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getSememe());
 
 					ArrayList<Integer> nids = new ArrayList<>();
 					if (nid != 0)
@@ -204,7 +204,7 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 					@Override
 					public String getConceptId()
 					{
-						return item.getNidFetcher(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getRefex()) +"";
+						return item.getNidFetcher(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getSememe()) +"";
 					}
 				});
 				setText(null);

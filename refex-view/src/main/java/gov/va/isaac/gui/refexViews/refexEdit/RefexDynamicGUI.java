@@ -34,9 +34,13 @@ import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.LongSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArrayBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeByteArrayBI;
@@ -46,6 +50,10 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeLongBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNidBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUIDBI;
+import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLong;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 /**
  * {@link DynamicSememeGUI}
@@ -64,7 +72,7 @@ public class RefexDynamicGUI
 	private static Logger logger_ = LoggerFactory.getLogger(RefexDynamicGUI.class);
 	
 	//These variables are used when we are working with a refex that already exists
-	private DynamicSememe<?> refex_;
+	private SememeVersion<?> refex_;
 	private boolean isCurrent_;
 	private HashMap<String, AbstractMap.SimpleImmutableEntry<String, String>> stringCache_ = new HashMap<>();
 	
@@ -72,7 +80,7 @@ public class RefexDynamicGUI
 	private Integer buildFromReferenceNid_;
 	private boolean referenceIsAssemblyNid_;
 	
-	protected RefexDynamicGUI(DynamicSememe<?> refex, boolean isCurrent)
+	protected RefexDynamicGUI(SememeVersion<?> refex, boolean isCurrent)
 	{
 		refex_ = refex;
 		isCurrent_ = isCurrent;
@@ -89,14 +97,14 @@ public class RefexDynamicGUI
 	/**
 	 * Contains the refex reference when this object was constructed based on an existing refex
 	 */
-	public DynamicSememe<?> getRefex()
+	public SememeVersion<?> getSememe()
 	{
 		return refex_;
 	}
 
 	/**
 	 * If this was constructed based off of an existing refex, is this the most current refex?  Or a historical one?
-	 * This is meaningless if {@link #getRefex()} return null.
+	 * This is meaningless if {@link #getSememe()} return null.
 	 */
 	public boolean isCurrent()
 	{
@@ -132,11 +140,11 @@ public class RefexDynamicGUI
 			case STATUS_CONDENSED:
 			{
 				//sort by uncommitted first, then current / historical, then active / inactive
-				if (this.getRefex().getTime() == Long.MAX_VALUE)
+				if (this.getSememe().getTime() == Long.MAX_VALUE)
 				{
 					return -1;
 				}
-				else if (other.getRefex().getTime() == Long.MAX_VALUE)
+				else if (other.getSememe().getTime() == Long.MAX_VALUE)
 				{
 					return 1;
 				}
@@ -150,11 +158,11 @@ public class RefexDynamicGUI
 					return 1;
 				}
 				
-				if (this.getRefex().getState() == State.ACTIVE && other.getRefex().getState() == State.INACTIVE)
+				if (this.getSememe().getState() == State.ACTIVE && other.getSememe().getState() == State.INACTIVE)
 				{
 					return -1;
 				}
-				else if (this.getRefex().getState() == State.INACTIVE && other.getRefex().getState() == State.ACTIVE)
+				else if (this.getSememe().getState() == State.INACTIVE && other.getSememe().getState() == State.ACTIVE)
 				{
 					return 1;
 				}
@@ -162,11 +170,11 @@ public class RefexDynamicGUI
 			}
 			case TIME:
 			{
-				if (this.getRefex().getTime() < other.getRefex().getTime())
+				if (this.getSememe().getTime() < other.getSememe().getTime())
 				{
 					return -1;
 				}
-				else if (this.getRefex().getTime() > other.getRefex().getTime())
+				else if (this.getSememe().getTime() > other.getSememe().getTime())
 				{
 					return -1;
 				}
@@ -187,8 +195,8 @@ public class RefexDynamicGUI
 				{
 					throw new RuntimeException("API misuse");
 				}
-				DynamicSememeDataBI myData = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
-				DynamicSememeDataBI otherData = other.refex_.getData().length > attachedDataColumn ? other.refex_.getData()[attachedDataColumn] : null;
+				DynamicSememeDataBI myData = getData(this.refex_).length > attachedDataColumn ? getData(this.refex_)[attachedDataColumn] : null;
+				DynamicSememeDataBI otherData = getData(other.refex_).length > attachedDataColumn ? getData(other.refex_)[attachedDataColumn] : null;
 				
 				if (myData == null && otherData != null)
 				{
@@ -276,7 +284,7 @@ public class RefexDynamicGUI
 				{
 					throw new RuntimeException("API misuse");
 				}
-				DynamicSememeDataBI data = this.refex_.getData().length > attachedDataColumn ? this.refex_.getData()[attachedDataColumn] : null;
+				DynamicSememeDataBI data = getData(this.refex_).length > attachedDataColumn ? getData(this.refex_)[attachedDataColumn] : null;
 				if (data != null)
 				{
 					if (data instanceof DynamicSememeByteArrayBI)
@@ -369,7 +377,7 @@ public class RefexDynamicGUI
 		
 	}
 	
-	private String getComponentText(ToIntFunction<DynamicSememe<?>> nidFetcher)
+	private String getComponentText(ToIntFunction<SememeVersion<?>> nidFetcher)
 	{
 		return getComponentText(nidFetcher.applyAsInt(this.refex_));
 	}
@@ -433,7 +441,7 @@ public class RefexDynamicGUI
 	 * @param attachedDataColumn null for most types - applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
 	 * @return
 	 */
-	public ToIntFunction<DynamicSememe<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
+	public ToIntFunction<SememeVersion<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
 	{
 		switch (desiredColumn)
 		{
@@ -443,10 +451,10 @@ public class RefexDynamicGUI
 			}
 			case COMPONENT:
 			{
-				return new ToIntFunction<DynamicSememe<?>>()
+				return new ToIntFunction<SememeVersion<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememe<?> value)
+					public int applyAsInt(SememeVersion<?> value)
 					{
 						return refex_.getReferencedComponentNid();
 					}
@@ -454,10 +462,10 @@ public class RefexDynamicGUI
 			}
 			case ASSEMBLAGE:
 			{
-				return new ToIntFunction<DynamicSememe<?>>()
+				return new ToIntFunction<SememeVersion<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememe<?> value)
+					public int applyAsInt(SememeVersion<?> value)
 					{
 						return Get.identifierService().getConceptNid(refex_.getAssemblageSequence());
 					}
@@ -465,10 +473,10 @@ public class RefexDynamicGUI
 			}
 			case AUTHOR:
 			{
-				return new ToIntFunction<DynamicSememe<?>>()
+				return new ToIntFunction<SememeVersion<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememe<?> value)
+					public int applyAsInt(SememeVersion<?> value)
 					{
 						return Get.identifierService().getConceptNid(refex_.getAuthorSequence());
 					}
@@ -476,10 +484,10 @@ public class RefexDynamicGUI
 			}
 			case MODULE:
 			{
-				return new ToIntFunction<DynamicSememe<?>>()
+				return new ToIntFunction<SememeVersion<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememe<?> value)
+					public int applyAsInt(SememeVersion<?> value)
 					{
 						return Get.identifierService().getConceptNid(refex_.getModuleSequence());
 					}
@@ -487,10 +495,10 @@ public class RefexDynamicGUI
 			}
 			case PATH:
 			{
-				return new ToIntFunction<DynamicSememe<?>>()
+				return new ToIntFunction<SememeVersion<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememe<?> value)
+					public int applyAsInt(SememeVersion<?> value)
 					{
 						return Get.identifierService().getConceptNid(refex_.getPathSequence());
 					}
@@ -503,12 +511,12 @@ public class RefexDynamicGUI
 				{
 					throw new RuntimeException("API misuse");
 				}
-				return new ToIntFunction<DynamicSememe<?>>()
+				return new ToIntFunction<SememeVersion<?>>()
 				{
 					@Override
-					public int applyAsInt(DynamicSememe<?> value)
+					public int applyAsInt(SememeVersion<?> value)
 					{
-						DynamicSememeDataBI data = refex_.getData().length > attachedDataColumn ? refex_.getData()[attachedDataColumn] : null;
+						DynamicSememeDataBI data = getData(refex_).length > attachedDataColumn ? getData(refex_)[attachedDataColumn] : null;
 						if (data != null)
 						{
 							if (data instanceof DynamicSememeNidBI)
@@ -532,5 +540,36 @@ public class RefexDynamicGUI
 			default:
 				throw new RuntimeException("Missing implementation: " + desiredColumn);
 		}
+	}
+	
+	/**
+	 * A method to read the data from a sememe of an arbitrary type, mocking up static sememes as dynamic sememems, if necessary
+	 * @param sememe
+	 */
+	public static DynamicSememeDataBI[] getData(SememeVersion<?> sememe)
+	{
+		switch (sememe.getChronology().getSememeType())
+		{
+			case COMPONENT_NID:
+				return new DynamicSememeDataBI[] {new DynamicSememeNid(((ComponentNidSememe<?>)sememe).getComponentNid())};
+			case DESCRIPTION:
+				return new DynamicSememeDataBI[] {new DynamicSememeString(((DescriptionSememe<?>)sememe).getText())};
+			case DYNAMIC:
+				return ((DynamicSememe<?>)sememe).getData();
+			case LONG:
+				return new DynamicSememeDataBI[] {new DynamicSememeLong(((LongSememe<?>)sememe).getLongValue())};
+			case MEMBER:
+				return new DynamicSememeDataBI[] {};
+			case STRING:
+				return new DynamicSememeDataBI[] {new DynamicSememeString(((StringSememe<?>)sememe).getString())};
+			case RELATIONSHIP_ADAPTOR:
+				return new DynamicSememeDataBI[] {new DynamicSememeString(((RelationshipVersionAdaptor<?>)sememe).toString())};
+			case LOGIC_GRAPH:
+				return new DynamicSememeDataBI[] {new DynamicSememeString(((LogicGraphSememe<?>)sememe).toString())};
+			case UNKNOWN:
+			default :
+				throw new UnsupportedOperationException();
+		}
+			
 	}
 }

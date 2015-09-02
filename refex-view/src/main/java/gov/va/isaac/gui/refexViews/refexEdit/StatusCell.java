@@ -58,7 +58,7 @@ public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 
 			try
 			{
-				if (item.getRefex().getState() == State.ACTIVE)
+				if (item.getSememe().getState() == State.ACTIVE)
 				{
 					sizeAndPosition(Images.BLACK_DOT, sp, Pos.TOP_LEFT);
 					tooltipText += "Active";
@@ -79,7 +79,7 @@ public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 					tooltipText += " and Current";
 				}
 				
-				if (item.getRefex().getTime() == Long.MAX_VALUE)
+				if (item.getSememe().getTime() == Long.MAX_VALUE)
 				{
 					sizeAndPosition(Images.YELLOW_DOT, sp, Pos.TOP_RIGHT);
 					tooltipText += " - Uncommitted";

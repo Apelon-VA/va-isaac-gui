@@ -18,11 +18,25 @@
  */
 package gov.va.isaac.gui.dialog;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.controlsfx.control.PopOver;
+import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.tk.Toolkit;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
+import gov.va.isaac.gui.refexViews.refexEdit.DynamicSememeView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
@@ -40,16 +54,6 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -61,8 +65,10 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -73,17 +79,12 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.javafx.tk.Toolkit;
 
 /**
  * {@link RelationshipTableView}
@@ -209,50 +210,50 @@ public class RelationshipTableView implements EmbeddableViewI
 											sizeAndPosition(Images.YELLOW_DOT.createImageView(), sp, Pos.TOP_RIGHT);
 											tooltipText += " - Uncommitted";
 										}
-//										if (ref.hasDynamicRefex())
-//										{
-//											//I can't seem to get just and image view to pick up mouse clicks
-//											//but it works in a button... sigh.
-//											Button b = new Button();
-//											b.setPadding(new Insets(0));
-//											b.setPrefHeight(12.0);
-//											b.setPrefWidth(12.0);
-//											ImageView iv = Images.ATTACH.createImageView();
-//											iv.setFitHeight(12.0);
-//											iv.setFitWidth(12.0);
-//											b.setGraphic(iv);
-//											b.setOnAction((event) ->
-//											{
-//												DynamicRefexView drv = AppContext.getService(DynamicRefexView.class);
-//												drv.setComponent(ref.getRelationshipVersion().getNid(), null, null, null, true);
-//												
-//												BorderPane bp = new BorderPane();
-//												
-//												Label title = new Label("Sememes attached to Description ");
-//												title.setMaxWidth(Double.MAX_VALUE);
-//												title.setAlignment(Pos.CENTER);
-//												title.setPadding(new Insets(10));
-//												title.getStyleClass().add("boldLabel");
-//												title.getStyleClass().add("headerBackground");
-//												
-//												bp.setTop(title);
-//												bp.setCenter(drv.getView());
-//												
-//												
-//												PopOver po = new PopOver();
-//												po.setContentNode(bp);
-//												po.setAutoHide(true);
-//												po.detachedTitleProperty().set("Sememes attached to Description");
-//												po.detachedProperty().addListener((change) ->
-//												{
-//													po.setAutoHide(false);
-//												});
-//												
-//												Point2D point = b.localToScreen(b.getWidth(), -32);
-//												po.show(b.getScene().getWindow(), point.getX(), point.getY());
-//											});
-//											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
-//										}
+										if (ref.hasNestedSememe())
+										{
+											//I can't seem to get just and image view to pick up mouse clicks
+											//but it works in a button... sigh.
+											Button b = new Button();
+											b.setPadding(new Insets(0));
+											b.setPrefHeight(12.0);
+											b.setPrefWidth(12.0);
+											ImageView iv = Images.ATTACH.createImageView();
+											iv.setFitHeight(12.0);
+											iv.setFitWidth(12.0);
+											b.setGraphic(iv);
+											b.setOnAction((event) ->
+											{
+												DynamicSememeView drv = AppContext.getService(DynamicSememeView.class);
+												drv.setComponent(ref.getRelationshipVersion().getNid(), null, null, null, true);
+												
+												BorderPane bp = new BorderPane();
+												
+												Label title = new Label("Sememes attached to Description ");
+												title.setMaxWidth(Double.MAX_VALUE);
+												title.setAlignment(Pos.CENTER);
+												title.setPadding(new Insets(10));
+												title.getStyleClass().add("boldLabel");
+												title.getStyleClass().add("headerBackground");
+												
+												bp.setTop(title);
+												bp.setCenter(drv.getView());
+												
+												
+												PopOver po = new PopOver();
+												po.setContentNode(bp);
+												po.setAutoHide(true);
+												po.detachedTitleProperty().set("Sememes attached to Description");
+												po.detachedProperty().addListener((change) ->
+												{
+													po.setAutoHide(false);
+												});
+												
+												Point2D point = b.localToScreen(b.getWidth(), -32);
+												po.show(b.getScene().getWindow(), point.getX(), point.getY());
+											});
+											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
+										}
 									}
 									catch (Exception e)
 									{

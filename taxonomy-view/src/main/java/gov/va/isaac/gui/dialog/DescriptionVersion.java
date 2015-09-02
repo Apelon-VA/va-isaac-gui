@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.dialog;
 
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import java.util.AbstractMap;
 import java.util.Date;
@@ -59,22 +60,10 @@ public class DescriptionVersion
 		return dv_;
 	}
 	
-//	public boolean hasDynamicRefex()
-//	{
-//		try
-//		{
-//			Collection<? extends DynamicSememeChronicleBI<?>> foo = dv_.getDynamicSememeAnnotations();
-//			if (foo != null && foo.size() > 0)
-//			{
-//				return true;
-//			}
-//		}
-//		catch (IOException e)
-//		{
-//			LOG.error("Unexpeted", e);
-//		}
-//		return false;
-//	}
+	public boolean hasNestedSememe()
+	{
+		return !dv_.getChronology().getSememeList().isEmpty();
+	}
 	
 	/**
 	 * Returns the string for display, and the tooltip, if applicable.  Either / or may be null.

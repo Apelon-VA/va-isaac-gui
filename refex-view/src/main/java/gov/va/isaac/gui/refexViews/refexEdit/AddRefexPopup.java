@@ -18,6 +18,16 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.UUID;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.hk2.api.PerLookup;
+import org.glassfish.hk2.runlevel.RunLevelException;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableListWrapper;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
@@ -42,7 +52,9 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
@@ -55,9 +67,6 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.UUID;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -90,13 +99,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.StringConverter;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.hk2.api.PerLookup;
-import org.glassfish.hk2.runlevel.RunLevelException;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * 
@@ -133,6 +135,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 	private ObservableList<SimpleDisplayConcept> refexDropDownOptions = FXCollections.observableArrayList();
 	private GridPane gp_;
 	private Label title_;
+	private SememeType st_;
 
 	private AddRefexPopup()
 	{
@@ -169,7 +172,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			}
 			else
 			{
-				return Get.identifierService().getConceptNid(editRefex_.getRefex().getAssemblageSequence()) + "";
+				return Get.identifierService().getConceptNid(editRefex_.getSememe().getAssemblageSequence()) + "";
 			}
 		});
 		//delay adding till we know which row
@@ -398,27 +401,28 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = null;
 		editRefex_ = refexToEdit;
+		st_ = refexToEdit.getSememe().getChronology().getSememeType();
 		
 		title_.setText("Edit existing sememe instance");
 		
 		gp_.add(unselectableComponentLabel_, 1, 1);
-		unselectableComponentLabel_.setText(Get.conceptDescriptionText(editRefex_.getRefex().getAssemblageSequence()));
+		unselectableComponentLabel_.setText(Get.conceptDescriptionText(editRefex_.getSememe().getAssemblageSequence()));
 		
 		//TODO this assuming that the referenced component is a concept,  which I don't think is a safe assumption.
 		
 		//don't actually put this in the view
-		selectableConcept_.set(new SimpleDisplayConcept(editRefex_.getRefex().getReferencedComponentNid()));
+		selectableConcept_.set(new SimpleDisplayConcept(editRefex_.getSememe().getReferencedComponentNid()));
 		
-		Label refComp = new CopyableLabel(Get.conceptDescriptionText(editRefex_.getRefex().getReferencedComponentNid()));
+		Label refComp = new CopyableLabel(Get.conceptDescriptionText(editRefex_.getSememe().getReferencedComponentNid()));
 		refComp.setWrapText(true);
-		AppContext.getService(DragRegistry.class).setupDragOnly(refComp, () -> {return editRefex_.getRefex().getReferencedComponentNid() + "";});
+		AppContext.getService(DragRegistry.class).setupDragOnly(refComp, () -> {return editRefex_.getSememe().getReferencedComponentNid() + "";});
 		gp_.add(refComp, 1, 0);
 		refexDropDownOptions.clear();
 		try
 		{
-			assemblageInfo_ = DynamicSememeUsageDescription.read(editRefex_.getRefex().getAssemblageSequence());
+			assemblageInfo_ = DynamicSememeUsageDescription.mockOrRead(((SememeVersion<?>)editRefex_.getSememe()).getChronology());
 			assemblageIsValid_.set(true);
-			buildDataFields(true, editRefex_.getRefex().getData());
+			buildDataFields(true, RefexDynamicGUI.getData(editRefex_.getSememe()));
 		}
 		catch (Exception e)
 		{
@@ -433,6 +437,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		createRefexFocus_ = viewFocus;
 		focusNid_ = focusNid;
 		editRefex_ = null;
+		st_ = SememeType.DYNAMIC;  //TODO add to the GUI, the option to choose other types
 		
 		title_.setText("Create new sememe instance");
 
@@ -652,8 +657,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 				data[i] = RefexDataTypeFXNodeBuilder.getDataForType(currentDataFields_.get(i++).getDataField(), ci);
 			}
 			
-			
-			SememeChronology<? extends DynamicSememe<?>> sememe;
+			SememeChronology<?> sememe;
 			if (createRefexFocus_ != null)
 			{
 				int componentNid;
@@ -684,20 +688,37 @@ public class AddRefexPopup extends Stage implements PopupViewI
 					componentNid = focusNid_;
 					assemblageSequence =  selectableConcept_.getConcept().getConceptSequence();
 				}
-				sememe = Get.sememeBuilderService().getDyanmicSememeBuilder(componentNid, assemblageSequence, data)
+				
+				if (st_ == SememeType.DYNAMIC)
+				{
+					sememe = Get.sememeBuilderService().getDyanmicSememeBuilder(componentNid, assemblageSequence, data)
 						.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
+				}
+				else
+				{
+					//TODO implement
+					throw new RuntimeException("Edit of non-dynamic sememe types not yet implemented");
+				}
 			}
 			else
 			{
-				@SuppressWarnings("rawtypes")
-				DynamicSememeImpl ms = (DynamicSememeImpl) ((SememeChronology)editRefex_.getRefex()).createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, 
-						ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-				ms.setData(data);
-				sememe = (SememeChronology<? extends DynamicSememe<?>>) ms;
+				if (st_ == SememeType.DYNAMIC)
+				{
+					@SuppressWarnings("rawtypes")
+					DynamicSememeImpl ms = (DynamicSememeImpl) ((SememeChronology)editRefex_.getSememe()).createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, 
+							ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+					ms.setData(data);
+					sememe = (SememeChronology<? extends DynamicSememe<?>>) ms;
+				}
+				else
+				{
+					//TODO implement
+					throw new RuntimeException("Edit of non-dynamic sememe types not yet implemented");
+				}
 			}
 
 			Get.commitService().addUncommitted(sememe);
-			Get.commitService().commit("Adding a new Dynamic Sememe Type").get();
+			Get.commitService().commit("Editing / adding a sememe").get();
 			
 			
 			if (callingView_ != null)

@@ -661,7 +661,9 @@ class SctTreeView {
         synchronized (refreshInProgress_) {  //hack way to disable future refresh calls
             refreshInProgress_.set(true);
         }
-        refreshRequiredListenerHack.clearBindings();
+        if (refreshRequiredListenerHack != null) {
+            refreshRequiredListenerHack.clearBindings();
+        }
 
         if (rootTreeItem != null)
         {

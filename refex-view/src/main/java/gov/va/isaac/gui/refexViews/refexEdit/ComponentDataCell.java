@@ -95,7 +95,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 			boolean setStyle = false;
 			boolean configureDragAndDrop = false;
 			ContextMenu cm = new ContextMenu();
-			int nid = item.getNidFetcher(type_, null).applyAsInt(item.getRefex());
+			int nid = item.getNidFetcher(type_, null).applyAsInt(item.getSememe());
 			
 			@Override
 			protected Void call() throws Exception
@@ -136,7 +136,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 								@Override
 								public Collection<Integer> getNIds()
 								{
-									return Arrays.asList(new Integer[] {item.getNidFetcher(type_, null).applyAsInt(item.getRefex())});
+									return Arrays.asList(new Integer[] {item.getNidFetcher(type_, null).applyAsInt(item.getSememe())});
 								}
 							});
 							setStyle = true;
