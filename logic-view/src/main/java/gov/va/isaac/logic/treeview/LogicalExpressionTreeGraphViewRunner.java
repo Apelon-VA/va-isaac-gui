@@ -69,8 +69,8 @@ public class LogicalExpressionTreeGraphViewRunner extends Application
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
 			System.exit(-1);
 		}
-		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		LookupService.startupIsaac();
+		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		launch(args);
 	}
 
