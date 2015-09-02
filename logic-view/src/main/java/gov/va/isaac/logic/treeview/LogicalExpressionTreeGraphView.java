@@ -12,6 +12,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
 import gov.vha.isaac.ochre.model.logic.LogicalExpressionOchreImpl;
 import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
@@ -66,6 +68,8 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 	Integer conceptId = null;
 
+	//private ObservableTaxonomyCoordinate passedObservableTaxonomyCoordinate = null;
+	
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	
 	
@@ -217,27 +221,35 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			noRefresh_.getAndIncrement();
 		}
 
-		Platform.runLater(() ->
-		{
-			try
-			{
-				loadData();
+		Task<LogicalExpression> task = new Task<LogicalExpression>() {
+			@Override
+			protected LogicalExpression call() throws Exception {
+				return loadData();
 			}
-			catch (Exception e)
-			{
-				logger_.error("Unexpected error building the LogicalExpressionTreeGraphView display", e);
-				//null check, as the error may happen before the scene is visible
-				AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the LogicalExpressionTreeGraphView display", e.getMessage(), 
-						(rootScrollPane.getScene() == null ? null : rootScrollPane.getScene().getWindow()));
-			}
-			finally
-			{
+			
+			@Override
+			public void succeeded() {
+				Platform.runLater(() -> displayData(getValue()));
 				noRefresh_.decrementAndGet();
 			}
-		});
+			@Override
+			public void failed() {
+				logger_.error("Unexpected error building the LogicalExpressionTreeGraphView display", getException());
+				//null check, as the error may happen before the scene is visible
+				Platform.runLater(() ->
+					AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the LogicalExpressionTreeGraphView display", getException().getMessage(), 
+						(rootScrollPane.getScene() == null ? null : rootScrollPane.getScene().getWindow())));
+				noRefresh_.decrementAndGet();
+			}
+			@Override
+			public void cancelled() {
+				noRefresh_.decrementAndGet();
+			}
+		};
+		Utility.execute(task);
 	}
 	
-	private void loadData() {
+	private LogicalExpression loadData() {
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
 
 		SememeChronology rawDefChronology = defChronologyOptional.get();
@@ -246,11 +258,15 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		
 		LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(latestGraph.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(latestGraph.getReferencedComponentNid()));
 
+		return lg;
+	}
+	
+	private void displayData(LogicalExpression le) {
 		title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " Logic Graph for Concept " + Get.conceptDescriptionText(conceptId));
 		
-		logicalExpressionTreeGraph.displayLogicalExpression(lg, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
+		logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
 		
-		textGraph.setText(lg.toString());
+		textGraph.setText(le.toString());
 	}
 
 	@Override
