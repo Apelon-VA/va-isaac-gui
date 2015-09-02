@@ -20,7 +20,7 @@ package gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicSememeView;
+import gov.va.isaac.gui.refexViews.refexEdit.SememeView;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -41,21 +41,21 @@ public class DynamicReferencedItemsView implements PopupViewI
 {
 	private SimpleDisplayConcept assemblageConcept_;
 	private BorderPane root_;
-	private DynamicSememeView drv_;
+	private SememeView drv_;
 
 	public DynamicReferencedItemsView(SimpleDisplayConcept assemblageConcept)
 	{
 		assemblageConcept_ = assemblageConcept;
 		root_ = new BorderPane();
 		
-		Label title = new Label("Dynamic Sememe Usage - " + assemblageConcept.getDescription());
+		Label title = new Label("Sememe Usage - " + assemblageConcept.getDescription());
 		title.getStyleClass().add("titleLabel");
 		title.setAlignment(Pos.CENTER);
 		title.setMaxWidth(Double.MAX_VALUE);
 		title.setPadding(new Insets(5, 5, 5, 5));
 		root_.setTop(title);
 		
-		drv_ = AppContext.getService(DynamicSememeView.class);
+		drv_ = AppContext.getService(SememeView.class);
 		root_.setCenter(drv_.getView());
 	}
 	
@@ -71,7 +71,7 @@ public class DynamicReferencedItemsView implements PopupViewI
 		stage.initOwner(parent);
 		Scene scene = new Scene(root_);
 		stage.setScene(scene);
-		stage.setTitle("Dynamic Sememe Usage - " + assemblageConcept_.getDescription());
+		stage.setTitle("Sememe Usage - " + assemblageConcept_.getDescription());
 		stage.getScene().getStylesheets().add(DynamicReferencedItemsView.class.getResource("/isaac-shared-styles.css").toString());
 		stage.setWidth(800);
 		stage.setHeight(600);

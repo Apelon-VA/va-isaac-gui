@@ -31,12 +31,12 @@ import java.util.UUID;
 
 /**
  * 
- * {@link RefexData}
+ * {@link SememeGUIData}
  *
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class RefexData
+public class SememeGUIData
 {
 	private String refexName_;
 	private String refexDescription_;
@@ -45,7 +45,7 @@ public class RefexData
 	private SememeType componentTypeSubRestriction_;
 	private ArrayList<DynamicSememeColumnInfo> columnInfo_ = new ArrayList<>();
 
-	public RefexData(String name, String description, ConceptSnapshot parentConcept, int extendedFieldsCount, ObjectChronologyType componentTypeRestriction,
+	public SememeGUIData(String name, String description, ConceptSnapshot parentConcept, int extendedFieldsCount, ObjectChronologyType componentTypeRestriction,
 			SememeType componentTypeSubRestriction)
 	{
 		this.refexName_ = name;

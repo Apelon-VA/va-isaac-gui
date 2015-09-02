@@ -33,7 +33,7 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
-import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
+import gov.va.isaac.gui.refexViews.util.DynamicSememeDataColumnListCell;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
@@ -64,12 +64,12 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
 /**
- * {@link DynamicRefexListViewController}
+ * {@link DynamicSememeListViewController}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 
-public class DynamicRefexListViewController
+public class DynamicSememeListViewController
 {
 	@FXML private ResourceBundle resources;
 	@FXML private URL location;
@@ -104,12 +104,12 @@ public class DynamicRefexListViewController
 
 	private HashSet<SimpleDisplayConcept> allRefexDefinitions;
 
-	private final Logger log = LoggerFactory.getLogger(DynamicRefexListViewController.class);
+	private final Logger log = LoggerFactory.getLogger(DynamicSememeListViewController.class);
 
-	protected static DynamicRefexListViewController construct() throws IOException
+	protected static DynamicSememeListViewController construct() throws IOException
 	{
 		// Load from FXML.
-		URL resource = DynamicRefexListViewController.class.getResource("DynamicRefexListView.fxml");
+		URL resource = DynamicSememeListViewController.class.getResource("DynamicRefexListView.fxml");
 		FXMLLoader loader = new FXMLLoader(resource);
 		loader.load();
 		return loader.getController();
@@ -140,7 +140,7 @@ public class DynamicRefexListViewController
 			ConceptSnapshot cv = conceptNode.getConceptProperty().get();  //Need to do a get after each invalidation, otherwise, we won't get the next invalidation
 			if (cv != null)
 			{
-				//see if it is a valid Dynamic Refex Assemblage
+				//see if it is a valid Dynamic Sememe Assemblage
 				try
 				{
 					DynamicSememeUsageDescription.read(cv.getNid());
@@ -233,7 +233,7 @@ public class DynamicRefexListViewController
 			@Override
 			public ListCell<DynamicSememeColumnInfo> call(ListView<DynamicSememeColumnInfo> param)
 			{
-				return new DynamicRefexDataColumnListCell();
+				return new DynamicSememeDataColumnListCell();
 			}
 		});
 
@@ -297,7 +297,7 @@ public class DynamicRefexListViewController
 				}
 				
 				//This code for adding the concept from the concept filter panel can be removed, if we fix the above code to actually
-				//find all dynamic refexes in the system.
+				//find all dynamic sememes in the system.
 				boolean conceptFromOutsideTheList = true;
 				SimpleDisplayConcept enteredConcept = null;
 				if (conceptNode.getConcept() != null && conceptNode.isValid().get())

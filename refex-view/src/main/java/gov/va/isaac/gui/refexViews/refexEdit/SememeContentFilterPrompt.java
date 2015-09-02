@@ -24,14 +24,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
-public class RefexContentFilterPrompt extends UserPrompt {
+public class SememeContentFilterPrompt extends UserPrompt {
     final ListView<String> selectedValues = new ListView<>();
 	private String columnName;
 	private List<String> allValues = new ArrayList<String>();
 
 	final List<String> alreadySelectedValues = new ArrayList<>();
 
-	protected RefexContentFilterPrompt(String columnName, List<String> allValues, List<?> alreadySelectedValues) {
+	protected SememeContentFilterPrompt(String columnName, List<String> allValues, List<?> alreadySelectedValues) {
 		super("Apply");
 		this.columnName = columnName;
 		for (String s : allValues) {

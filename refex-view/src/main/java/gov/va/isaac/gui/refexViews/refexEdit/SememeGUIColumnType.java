@@ -19,11 +19,11 @@
 package gov.va.isaac.gui.refexViews.refexEdit;
 
 /**
- * {@link DynamicRefexColumnType}
+ * {@link SememeGUIColumnType}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public enum DynamicRefexColumnType
+public enum SememeGUIColumnType
 {
 	STATUS_CONDENSED("s"),
 	COMPONENT("Component"),
@@ -37,7 +37,7 @@ public enum DynamicRefexColumnType
 	
 	private String niceName_;
 	
-	private DynamicRefexColumnType(String name)
+	private SememeGUIColumnType(String name)
 	{
 		niceName_ = name;
 	}

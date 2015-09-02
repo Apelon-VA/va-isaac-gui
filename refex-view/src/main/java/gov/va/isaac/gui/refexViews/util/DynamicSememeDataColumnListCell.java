@@ -19,8 +19,8 @@
 package gov.va.isaac.gui.refexViews.util;
 
 import org.slf4j.LoggerFactory;
-import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
-import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
+import gov.va.isaac.drools.refexUtils.SememeDroolsValidator;
+import gov.va.isaac.drools.refexUtils.SememeDroolsValidatorImplInfo;
 import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
@@ -41,13 +41,13 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 
 /**
- * {@link DynamicRefexDataColumnListCell}
+ * {@link DynamicSememeDataColumnListCell}
  *
- * Display code for a data column of a Dynamic Refex, when shown within a list view (one cell per refex column)
+ * Display code for a data column of a Dynamic Sememe, when shown within a list view (one cell per refex column)
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumnInfo>
+public class DynamicSememeDataColumnListCell extends ListCell<DynamicSememeColumnInfo>
 {
 	/**
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
@@ -161,7 +161,7 @@ public class DynamicRefexDataColumnListCell extends ListCell<DynamicSememeColumn
 				}
 				else if (valUnwrap(item) == DynamicSememeValidatorType.EXTERNAL)
 				{
-					RefexDroolsValidatorImplInfo rdvi = RefexDroolsValidator.readFromData(valDataUnwrap(item));
+					SememeDroolsValidatorImplInfo rdvi = SememeDroolsValidator.readFromData(valDataUnwrap(item));
 					if (rdvi == null)
 					{
 						//this should be impossible....

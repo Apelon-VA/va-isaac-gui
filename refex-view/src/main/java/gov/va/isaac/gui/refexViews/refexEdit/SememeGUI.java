@@ -29,11 +29,14 @@ import org.slf4j.LoggerFactory;
 import gov.va.isaac.util.AlphanumComparator;
 import gov.va.isaac.util.NumberUtilities;
 import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
@@ -67,9 +70,9 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class RefexDynamicGUI
+public class SememeGUI
 {
-	private static Logger logger_ = LoggerFactory.getLogger(RefexDynamicGUI.class);
+	private static Logger logger_ = LoggerFactory.getLogger(SememeGUI.class);
 	
 	//These variables are used when we are working with a refex that already exists
 	private SememeVersion<?> refex_;
@@ -80,13 +83,13 @@ public class RefexDynamicGUI
 	private Integer buildFromReferenceNid_;
 	private boolean referenceIsAssemblyNid_;
 	
-	protected RefexDynamicGUI(SememeVersion<?> refex, boolean isCurrent)
+	protected SememeGUI(SememeVersion<?> refex, boolean isCurrent)
 	{
 		refex_ = refex;
 		isCurrent_ = isCurrent;
 	}
 	
-	protected RefexDynamicGUI(int buildFromReferenceNid, boolean referenceIsAssemblyNid)
+	protected SememeGUI(int buildFromReferenceNid, boolean referenceIsAssemblyNid)
 	{
 		refex_ = null;
 		isCurrent_ = false;
@@ -131,9 +134,9 @@ public class RefexDynamicGUI
 	
 	/**
 	 * For cases when it was built from an existing refex only
-	 * @param attachedDataColumn - optional - ignored (can be null) except applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
+	 * @param attachedDataColumn - optional - ignored (can be null) except applicable to {@link SememeGUIColumnType#ATTACHED_DATA}
 	 */
-	public int compareTo(DynamicRefexColumnType columnTypeToCompare, Integer attachedDataColumn, RefexDynamicGUI other)
+	public int compareTo(SememeGUIColumnType columnTypeToCompare, Integer attachedDataColumn, SememeGUI other)
 	{
 		switch (columnTypeToCompare)
 		{
@@ -242,9 +245,9 @@ public class RefexDynamicGUI
 	/**
 	 * Returns the string for display, and the tooltip, if applicable.  Either / or may be null.
 	 * Key is for the display, value is for the tooltip.
-	 * @param attachedDataColumn should be null for most types - applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
+	 * @param attachedDataColumn should be null for most types - applicable to {@link SememeGUIColumnType#ATTACHED_DATA}
 	 */
-	public AbstractMap.SimpleImmutableEntry<String, String> getDisplayStrings(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
+	public AbstractMap.SimpleImmutableEntry<String, String> getDisplayStrings(SememeGUIColumnType desiredColumn, Integer attachedDataColumn)
 	{
 		String cacheKey = desiredColumn.name() + attachedDataColumn;  //null is ok on the attachedDataColumn...
 		
@@ -382,50 +385,73 @@ public class RefexDynamicGUI
 		return getComponentText(nidFetcher.applyAsInt(this.refex_));
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private String getComponentText(int nid)
 	{
 		String text;
 		
 		try
 		{
-			Optional<ConceptSnapshot> c = OchreUtility.getConceptSnapshot(nid, null, null);
-			if (!c.isPresent()) 
+			//This may be a different component - like a description, or another refex... need to handle.
+			Optional<? extends ObjectChronology<? extends StampedVersion>> oc = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
+			if (!oc.isPresent())
 			{
-				//This may be a different component - like a description, or another refex... need to handle.
-				Optional<? extends ObjectChronology<? extends StampedVersion>> oc = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
-
-				if (!oc.isPresent())
-				{
-					text = "[NID] " + nid + " not on path";
+				text = "[NID] " + nid + " not on path";
+			}
+			else if (oc.get() instanceof ConceptChronology<?>)
+			{
+				Optional<String> conDesc = OchreUtility.getDescription(oc.get().getNid(), StampCoordinates.getDevelopmentLatest(), null);
+				text = (conDesc.isPresent() ? conDesc.get() : "off path [NID]:" + oc.get().getNid());
+			}
+			else if (oc.get() instanceof SememeChronology<?>)
+			{
+				SememeChronology sc = (SememeChronology)oc.get();
+				switch (sc.getSememeType()) {
+					case COMPONENT_NID:
+						text = "Component NID Sememe using assemblage: " + OchreUtility.getDescription(sc.getAssemblageSequence());
+						break;
+					case DESCRIPTION:
+						Optional<LatestVersion<DescriptionSememe>> ds = sc.getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatest());
+						text = "Description Sememe: " + (ds.isPresent() ? ds.get().value().getText() : "off path [NID]: " + sc.getNid());
+						break;
+					case DYNAMIC:
+						text = "Dynamic Sememe using assemblage: " + OchreUtility.getDescription(sc.getAssemblageSequence());
+						break;
+					case LOGIC_GRAPH:
+						text = "Logic Graph Sememe [NID]: " + oc.get().getNid();
+						break;
+					case LONG:
+						Optional<LatestVersion<LongSememe>> sl = sc.getLatestVersion(LongSememe.class, StampCoordinates.getDevelopmentLatest());
+						text = "String Sememe: " + (sl.isPresent() ? sl.get().value().getLongValue() : "off path [NID]: " + sc.getNid());
+						break;
+					case MEMBER:
+						text = "Member Sememe using assemblage: " + OchreUtility.getDescription(sc.getAssemblageSequence());
+						break;
+					case RELATIONSHIP_ADAPTOR:
+						text = "Relationship Adapter Sememe [NID]: " + oc.get().getNid();
+						break;
+					case STRING:
+						Optional<LatestVersion<StringSememe>> ss = sc.getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatest());
+						text = "String Sememe: " + (ss.isPresent() ? ss.get().value().getString() : "off path [NID]: " + sc.getNid());
+						break;
+					case UNKNOWN:
+					default :
+						logger_.warn("The sememe type " + sc.getSememeType() + " is not handled yet!");
+						//TODO should handle other types of common sememes
+						text = oc.get().toUserString();
+						break;
 				}
-				
-				else if (oc.get() instanceof DescriptionSememe<?>)
-				{
-					DescriptionSememe<?> dv = (DescriptionSememe<?>) oc.get();
-					text = "Description: " + dv.getText();
-				}
-				else if (oc.get() instanceof LogicGraphSememe<?>)
-				{
-					LogicGraphSememe<?> lg = (LogicGraphSememe<?>) oc.get();
-					
-					//TODO Dan talk to Joel about how to turn a logic graph into a rel type thing
-					text = "Logic Graph: " + lg.toUserString();
-				}
-				else if (oc.get() instanceof DynamicSememe<?>)
-				{
-					DynamicSememe<?> nds = (DynamicSememe<?>) oc.get();
-					text = "Nested Sememe Dynamic: using assemblage " + OchreUtility.getDescription(nds.getAssemblageSequence());
-				}
-				else
-				{
-					logger_.warn("The component type " + oc + " is not handled yet!");
-					//TODO should handle other types of common sememes
-					text = oc.get().toUserString();
-				}
+			}
+			else if (oc.get() instanceof DynamicSememe<?>)
+			{
+				DynamicSememe<?> nds = (DynamicSememe<?>) oc.get();
+				text = "Nested Sememe Dynamic: using assemblage " + OchreUtility.getDescription(nds.getAssemblageSequence());
 			}
 			else
 			{
-				text = OchreUtility.getDescription(c.get().getConceptSequence()).get();
+				logger_.warn("The component type " + oc.get().getClass() + " is not handled yet!");
+				//TODO should handle other types of common sememes
+				text = oc.get().toUserString();
 			}
 		}
 		catch (Exception e)
@@ -438,10 +464,10 @@ public class RefexDynamicGUI
 	
 	/**
 	 * 
-	 * @param attachedDataColumn null for most types - applicable to {@link DynamicRefexColumnType#ATTACHED_DATA}
+	 * @param attachedDataColumn null for most types - applicable to {@link SememeGUIColumnType#ATTACHED_DATA}
 	 * @return
 	 */
-	public ToIntFunction<SememeVersion<?>> getNidFetcher(DynamicRefexColumnType desiredColumn, Integer attachedDataColumn)
+	public ToIntFunction<SememeVersion<?>> getNidFetcher(SememeGUIColumnType desiredColumn, Integer attachedDataColumn)
 	{
 		switch (desiredColumn)
 		{

@@ -33,10 +33,10 @@ import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.SimpleDisplayConceptComparator;
 import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
-import gov.va.isaac.gui.refexViews.util.RefexDataTypeFXNodeBuilder;
-import gov.va.isaac.gui.refexViews.util.RefexDataTypeNodeDetails;
-import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeFXNodeBuilder;
-import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeNodeDetails;
+import gov.va.isaac.gui.refexViews.util.SememeGUIDataTypeFXNodeBuilder;
+import gov.va.isaac.gui.refexViews.util.SememeGUIDataTypeNodeDetails;
+import gov.va.isaac.gui.refexViews.util.SememeGUIValidatorTypeFXNodeBuilder;
+import gov.va.isaac.gui.refexViews.util.SememeGUIValidatorTypeNodeDetails;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
@@ -96,7 +96,7 @@ public class ColumnController implements PanelControllersI {
 	@FXML private ChoiceBox<DynamicSememeValidatorType> validatorType;
 	@FXML private HBox validatorDataHolder;
 	
-	private RefexValidatorTypeNodeDetails validatorTypeNode = new RefexValidatorTypeNodeDetails();
+	private SememeGUIValidatorTypeNodeDetails validatorTypeNode = new SememeGUIValidatorTypeNodeDetails();
 
 	private ScreensController processController_;
 	private Region sceneParent_;
@@ -106,7 +106,7 @@ public class ColumnController implements PanelControllersI {
 	private UpdateableBooleanBinding allValid_;
 	private StringBinding typeValueInvalidReason_;
 	private SimpleStringProperty defaultValueInvalidReason_ = new SimpleStringProperty("");
-	private RefexDataTypeNodeDetails currentDefaultNodeDetails_;
+	private SememeGUIDataTypeNodeDetails currentDefaultNodeDetails_;
 
 	private ObservableList<SimpleDisplayConcept> columnNameChoices = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 	private Function<ConceptSnapshot, String> colNameReader_ = (conceptVersion) -> 
@@ -332,7 +332,7 @@ public class ColumnController implements PanelControllersI {
 						updateValidationValues(newValue);
 					}
 					
-					currentDefaultNodeDetails_ = RefexDataTypeFXNodeBuilder.buildNodeForType(newValue, null, 
+					currentDefaultNodeDetails_ = SememeGUIDataTypeFXNodeBuilder.buildNodeForType(newValue, null, 
 							processController_.getWizardData().getColumnInfo().get(columnNumber_).getDefaultColumnValue(), null, null, null, allValid_,
 							validatorType.valueProperty(), validatorTypeNode.getValidatorDataProperty());
 					defaultValueHolder.getChildren().add(currentDefaultNodeDetails_.getNodeForDisplay());
@@ -386,7 +386,7 @@ public class ColumnController implements PanelControllersI {
 					//If the validator type has changed, clear the stored value.
 					processController_.getWizardData().getColumnInfo().get(columnNumber_).setValidatorData(null);
 				}
-				validatorTypeNode.update(RefexValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
+				validatorTypeNode.update(SememeGUIValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
 						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidatorData()[0],
 						typeOption.valueProperty(), allValid_));
 				validatorDataHolder.getChildren().add(validatorTypeNode.getNodeForDisplay());
@@ -501,7 +501,7 @@ public class ColumnController implements PanelControllersI {
 			}
 			else 
 			{
-				currentDefaultNodeDetails_ = RefexDataTypeFXNodeBuilder.buildNodeForType(typeOption.getSelectionModel().getSelectedItem(), null, rdci.getDefaultColumnValue(), 
+				currentDefaultNodeDetails_ = SememeGUIDataTypeFXNodeBuilder.buildNodeForType(typeOption.getSelectionModel().getSelectedItem(), null, rdci.getDefaultColumnValue(), 
 					null, null, null, allValid_, validatorType.valueProperty(), validatorTypeNode.getValidatorDataProperty());
 				defaultValueHolder.getChildren().add(currentDefaultNodeDetails_.getNodeForDisplay());
 				HBox.setHgrow(currentDefaultNodeDetails_.getNodeForDisplay(), Priority.ALWAYS);
@@ -520,7 +520,7 @@ public class ColumnController implements PanelControllersI {
 		validatorDataHolder.getChildren().clear();
 		if (validatorType.getSelectionModel().getSelectedItem() != DynamicSememeValidatorType.UNKNOWN)
 		{
-			validatorTypeNode.update(RefexValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
+			validatorTypeNode.update(SememeGUIValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
 					rdci.getValidatorData()[0], 
 					typeOption.valueProperty(), allValid_));
 			validatorDataHolder.getChildren().add(validatorTypeNode.getNodeForDisplay());
@@ -536,7 +536,7 @@ public class ColumnController implements PanelControllersI {
 		rdci.setColumnDefaultData(null);//make sure it doesn't read this when parsing below
 		if (currentDefaultNodeDetails_ != null)
 		{
-			rdci.setColumnDefaultData(RefexDataTypeFXNodeBuilder.getDataForType(currentDefaultNodeDetails_.getDataField(), rdci));
+			rdci.setColumnDefaultData(SememeGUIDataTypeFXNodeBuilder.getDataForType(currentDefaultNodeDetails_.getDataField(), rdci));
 		}
 		rdci.setColumnRequired(isMandatory.isSelected());
 		rdci.setValidatorType((validatorType.getValue() == DynamicSememeValidatorType.UNKNOWN ? null : new DynamicSememeValidatorType[] 

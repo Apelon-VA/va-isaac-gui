@@ -45,13 +45,13 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
  * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  *
  */
-public class DynamicRefexHelper {
-	private static final Logger LOG = LoggerFactory.getLogger(DynamicRefexHelper.class);
+public class DynamicSememeHelper {
+	private static final Logger LOG = LoggerFactory.getLogger(DynamicSememeHelper.class);
 
 	/**
 	 * Do not instantiate
 	 */
-	private DynamicRefexHelper() {}
+	private DynamicSememeHelper() {}
 	
 	public static void displayDynamicRefexes(int componentNid) {
 		Get.sememeService().getSememesForComponent(componentNid).forEach(sememeC ->
@@ -64,7 +64,7 @@ public class DynamicRefexHelper {
 			
 				if (latest.isPresent())
 				{
-					DynamicRefexHelper.displayDynamicRefex(latest.get().value());
+					DynamicSememeHelper.displayDynamicRefex(latest.get().value());
 				}
 			}
 		});

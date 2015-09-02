@@ -33,8 +33,8 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
-import gov.va.isaac.gui.refexViews.util.RefexDataTypeFXNodeBuilder;
-import gov.va.isaac.gui.refexViews.util.RefexDataTypeNodeDetails;
+import gov.va.isaac.gui.refexViews.util.SememeGUIDataTypeFXNodeBuilder;
+import gov.va.isaac.gui.refexViews.util.SememeGUIDataTypeNodeDetails;
 import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.gui.util.FxUtils;
@@ -109,12 +109,12 @@ import javafx.util.StringConverter;
 
 @Service
 @PerLookup
-public class AddRefexPopup extends Stage implements PopupViewI
+public class AddSememePopup extends Stage implements PopupViewI
 {
-	private DynamicSememeView callingView_;
+	private SememeView callingView_;
 	private ViewFocus createRefexFocus_;
 	private int focusNid_;
-	private RefexDynamicGUI editRefex_;
+	private SememeGUI editRefex_;
 	private Label unselectableComponentLabel_;;
 	private ScrollPane sp_;
 	//TODO (artf231426) improve 'ConceptNode' - this mess of Conceptnode or TextField will work for now, if they set a component type restriction
@@ -131,13 +131,13 @@ public class AddRefexPopup extends Stage implements PopupViewI
 	private UpdateableBooleanBinding allValid_;
 
 	private ArrayList<ReadOnlyStringProperty> currentDataFieldWarnings_ = new ArrayList<>();
-	private ArrayList<RefexDataTypeNodeDetails> currentDataFields_ = new ArrayList<>();
+	private ArrayList<SememeGUIDataTypeNodeDetails> currentDataFields_ = new ArrayList<>();
 	private ObservableList<SimpleDisplayConcept> refexDropDownOptions = FXCollections.observableArrayList();
 	private GridPane gp_;
 	private Label title_;
 	private SememeType st_;
 
-	private AddRefexPopup()
+	private AddSememePopup()
 	{
 		super();
 		BorderPane root = new BorderPane();
@@ -392,11 +392,11 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		root.setBottom(bottomRow);
 
 		Scene scene = new Scene(root);
-		scene.getStylesheets().add(AddRefexPopup.class.getResource("/isaac-shared-styles.css").toString());
+		scene.getStylesheets().add(AddSememePopup.class.getResource("/isaac-shared-styles.css").toString());
 		setScene(scene);
 	}
 	
-	public void finishInit(RefexDynamicGUI refexToEdit, DynamicSememeView viewToRefresh)
+	public void finishInit(SememeGUI refexToEdit, SememeView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = null;
@@ -422,7 +422,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		{
 			assemblageInfo_ = DynamicSememeUsageDescription.mockOrRead(((SememeVersion<?>)editRefex_.getSememe()).getChronology());
 			assemblageIsValid_.set(true);
-			buildDataFields(true, RefexDynamicGUI.getData(editRefex_.getSememe()));
+			buildDataFields(true, SememeGUI.getData(editRefex_.getSememe()));
 		}
 		catch (Exception e)
 		{
@@ -431,7 +431,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 		}
 	}
 
-	public void finishInit(ViewFocus viewFocus, int focusNid, DynamicSememeView viewToRefresh)
+	public void finishInit(ViewFocus viewFocus, int focusNid, SememeView viewToRefresh)
 	{
 		callingView_ = viewToRefresh;
 		createRefexFocus_ = viewFocus;
@@ -492,7 +492,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 				allValid_.removeBinding(ssp);
 			}
 			currentDataFieldWarnings_.clear();
-			for (RefexDataTypeNodeDetails nd : currentDataFields_)
+			for (SememeGUIDataTypeNodeDetails nd : currentDataFields_)
 			{
 				nd.cleanupListener();
 			}
@@ -551,7 +551,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 						(currentValues[row] == null ? DynamicSememeDataType.STRING : currentValues[row].getDynamicSememeDataType())));
 				}
 				
-				RefexDataTypeNodeDetails nd = RefexDataTypeFXNodeBuilder.buildNodeForType(ci.getColumnDataType(), ci.getDefaultColumnValue(), 
+				SememeGUIDataTypeNodeDetails nd = SememeGUIDataTypeFXNodeBuilder.buildNodeForType(ci.getColumnDataType(), ci.getDefaultColumnValue(), 
 						(currentValues == null ? null : currentValues[row]),valueIsRequired, defaultValueTooltip, 
 						(polymorphicType == null ? null : polymorphicType.getSelectionModel().selectedItemProperty()), allValid_,
 						ci.getValidator(), ci.getValidatorData());
@@ -654,7 +654,7 @@ public class AddRefexPopup extends Stage implements PopupViewI
 			int i = 0;
 			for (DynamicSememeColumnInfo ci : assemblageInfo_.getColumnInfo())
 			{
-				data[i] = RefexDataTypeFXNodeBuilder.getDataForType(currentDataFields_.get(i++).getDataField(), ci);
+				data[i] = SememeGUIDataTypeFXNodeBuilder.getDataForType(currentDataFields_.get(i++).getDataField(), ci);
 			}
 			
 			SememeChronology<?> sememe;

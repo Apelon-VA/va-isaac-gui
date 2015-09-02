@@ -36,7 +36,7 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicSememeView;
+import gov.va.isaac.gui.refexViews.refexEdit.SememeView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
@@ -93,7 +93,7 @@ import javafx.util.Callback;
  */
 public class RelationshipTableView implements EmbeddableViewI
 {
-	//TODO there is lots of duplicate / copy-paste code that should be condensed / reused between rel view, description view, and the dynamic refex view code.
+	//TODO there is lots of duplicate / copy-paste code that should be condensed / reused between rel view, description view, and the dynamic sememe view code.
 	private static final Logger LOG = LoggerFactory.getLogger(RelationshipTableView.class);
 	
 	private TableView<RelationshipVersion> relationshipsTable = new TableView<>();
@@ -224,7 +224,7 @@ public class RelationshipTableView implements EmbeddableViewI
 											b.setGraphic(iv);
 											b.setOnAction((event) ->
 											{
-												DynamicSememeView drv = AppContext.getService(DynamicSememeView.class);
+												SememeView drv = AppContext.getService(SememeView.class);
 												drv.setComponent(ref.getRelationshipVersion().getNid(), null, null, null, true);
 												
 												BorderPane bp = new BorderPane();

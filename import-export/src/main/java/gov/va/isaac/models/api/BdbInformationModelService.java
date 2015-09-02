@@ -712,7 +712,7 @@ public class BdbInformationModelService implements InformationModelService {
     LOG.debug("  Found " + propertyRefset.getDyanmicSememeName());
     // Iterate through information model properties and add refexes
     LOG.debug("  Iterate through properties");
-    // Create a dynamic refex CAB for each entry
+    // Create a dynamic sememe CAB for each entry
     // If these already exist, then the construct will have no practical effect
     Set<UUID> refexUuids = new HashSet<>();
     for (InformationModelProperty property : model.getProperties()) {
@@ -739,7 +739,7 @@ public class BdbInformationModelService implements InformationModelService {
       
       Get.commitService().commit("Creating info model");
 
-      // Construct and wire the dynamic refex
+      // Construct and wire the dynamic sememe
       refexUuids.add(sc.getPrimordialUuid());
       LOG.debug("    UUID = " + sc.getPrimordialUuid());
     }

@@ -318,7 +318,7 @@ public class EnhancedConceptBuilder {
 			public void handle(ActionEvent event)
 			{
 				EnhancedConceptDynamicRefexPopup.showDynamicRefexForConcept((Stage)enhancedConceptPane.getScene().getWindow(), 
-																			"Dynamic Refexes", con.getNid());
+																			"Dynamic Sememes", con.getNid());
 			}
 		});
 

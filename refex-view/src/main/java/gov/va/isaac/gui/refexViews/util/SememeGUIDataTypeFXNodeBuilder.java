@@ -21,8 +21,8 @@ package gov.va.isaac.gui.refexViews.util;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
-import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
-import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
+import gov.va.isaac.drools.refexUtils.SememeDroolsValidator;
+import gov.va.isaac.drools.refexUtils.SememeDroolsValidatorImplInfo;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.OchreUtility;
@@ -75,13 +75,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link RefexDataTypeFXNodeBuilder}
+ * {@link SememeGUIDataTypeFXNodeBuilder}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class RefexDataTypeFXNodeBuilder
+public class SememeGUIDataTypeFXNodeBuilder
 {
-	private static Logger logger = LoggerFactory.getLogger(RefexDataTypeFXNodeBuilder.class);
+	private static Logger logger = LoggerFactory.getLogger(SememeGUIDataTypeFXNodeBuilder.class);
 	
 	/**
 	 * @param dt - The datatype of the node to be built
@@ -99,14 +99,14 @@ public class RefexDataTypeFXNodeBuilder
 	 * @param validatorData - if not null (and validatorType is not null) data entered into the field will be validated against the validator.
 	 * 
 	 */
-	public static RefexDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
+	public static SememeGUIDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
 			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueTooltip, ReadOnlyObjectProperty<DynamicSememeDataType> polymorphicSelection, 
 			UpdateableBooleanBinding allValid, ObjectProperty<DynamicSememeValidatorType> validatorType, ObjectProperty<DynamicSememeDataBI> validatorData)
 	{
 		return buildNodeForType(dt, defaultValue, currentValue, valueIsRequired, defaultValueTooltip, polymorphicSelection, allValid, validatorType, validatorData, true);
 	}
 	
-	public static RefexDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
+	public static SememeGUIDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
 			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueTooltip, ReadOnlyObjectProperty<DynamicSememeDataType> polymorphicSelection, 
 			UpdateableBooleanBinding allValid, DynamicSememeValidatorType[] validatorType, DynamicSememeDataBI[] validatorData)
 	{
@@ -125,7 +125,7 @@ public class RefexDataTypeFXNodeBuilder
 	 * when valueIsRequired is null, it is understood to be optional.  If it is not null, need to tie it in to the listeners on the field - setting
 	 * an appropriate message if the field is empty.
 	 */
-	private static RefexDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
+	private static SememeGUIDataTypeNodeDetails buildNodeForType(DynamicSememeDataType dt, DynamicSememeDataBI defaultValue, DynamicSememeDataBI currentValue, 
 			SimpleStringProperty valueIsRequired, SimpleStringProperty defaultValueAndValidatorTooltip, ReadOnlyObjectProperty<DynamicSememeDataType> polymorphicSelection, 
 			UpdateableBooleanBinding allValid, ObjectProperty<DynamicSememeValidatorType> validatorType, ObjectProperty<DynamicSememeDataBI> validatorData,
 			boolean isFirstLevel)
@@ -135,7 +135,7 @@ public class RefexDataTypeFXNodeBuilder
 			throw new RuntimeException("If a validator type is supplied, you need a validator data reference");
 		}
 		
-		RefexDataTypeNodeDetails returnValue = new RefexDataTypeNodeDetails();;
+		SememeGUIDataTypeNodeDetails returnValue = new SememeGUIDataTypeNodeDetails();;
 		if (DynamicSememeDataType.BOOLEAN == dt)
 		{
 			ChoiceBox<String> cb = new ChoiceBox<>();
@@ -760,7 +760,7 @@ public class RefexDataTypeFXNodeBuilder
 					{
 						if (validatorType.get() == DynamicSememeValidatorType.EXTERNAL)
 						{
-							RefexDroolsValidatorImplInfo rdvii = RefexDroolsValidator.readFromData(validatorData.get());
+							SememeDroolsValidatorImplInfo rdvii = SememeDroolsValidator.readFromData(validatorData.get());
 							if (rdvii != null)
 							{
 								temp = "'" + rdvii.getDisplayName() + "'";

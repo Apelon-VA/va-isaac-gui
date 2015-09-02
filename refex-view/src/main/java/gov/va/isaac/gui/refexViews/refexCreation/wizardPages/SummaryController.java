@@ -20,9 +20,9 @@ package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
-import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
+import gov.va.isaac.gui.refexViews.refexCreation.SememeGUIData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
-import gov.va.isaac.gui.refexViews.util.DynamicRefexDataColumnListCell;
+import gov.va.isaac.gui.refexViews.util.DynamicSememeDataColumnListCell;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
@@ -100,12 +100,12 @@ public class SummaryController implements PanelControllersI {
 			@Override
 			public ListCell<DynamicSememeColumnInfo> call(ListView<DynamicSememeColumnInfo> param)
 			{
-				return new DynamicRefexDataColumnListCell();
+				return new DynamicSememeDataColumnListCell();
 			}
 		});
 	}
 
-	private void setupRefexContent(RefexData refexData) {
+	private void setupRefexContent(SememeGUIData refexData) {
 		actualRefexName.setText(refexData.getRefexName());
 		actualRefexDescription.setText(refexData.getRefexDescription());
 		actualParentConcept.setText(refexData.getParentConcept().getConceptDescriptionText());
@@ -119,7 +119,7 @@ public class SummaryController implements PanelControllersI {
 
 	public void storeValues() {
 		try {
-			RefexData refexData = processController_.getWizardData();
+			SememeGUIData refexData = processController_.getWizardData();
 			DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(refexData.getRefexName(),
 					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new DynamicSememeColumnInfo[0]), 
 					refexData.getParentConcept().getNid(), 
@@ -131,7 +131,7 @@ public class SummaryController implements PanelControllersI {
 		}
 	}
 	
-	public void updateValues(RefexData refexData)
+	public void updateValues(SememeGUIData refexData)
 	{
 		setupRefexContent(refexData);
 	}

@@ -22,31 +22,31 @@ import gov.va.isaac.drools.manager.DroolsExecutorsManager;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 
 /**
- * {@link RefexDroolsValidatorImplInfo}
+ * {@link SememeDroolsValidatorImplInfo}
  * 
  * Stores various information and mappings about the known .drl files that are shipped with the application, so that the
  * GUI can dynamically do useful things with them.
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public enum RefexDroolsValidatorImplInfo
+public enum SememeDroolsValidatorImplInfo
 {
-	REFEX_STRING_RULES("builtin.refex-string-rules", "Drools Rules for String values", DynamicSememeDataType.STRING),
-	REFEX_CONCEPT_RULES("builtin.refex-concept-rules", "Drools Rules for Concept values", DynamicSememeDataType.UUID, DynamicSememeDataType.NID);
+	SEMEME_STRING_RULES("builtin.refex-string-rules", "Drools Rules for String values", DynamicSememeDataType.STRING),
+	SEMEME_CONCEPT_RULES("builtin.refex-concept-rules", "Drools Rules for Concept values", DynamicSememeDataType.UUID, DynamicSememeDataType.NID);
 	
 	private String droolsPackageName_, displayName_;
 	private DynamicSememeDataType[] applicableDataTypes_;
 	
-	private RefexDroolsValidatorImplInfo(String droolsPackageName, String displayName, DynamicSememeDataType ... applicableDataTypes)
+	private SememeDroolsValidatorImplInfo(String droolsPackageName, String displayName, DynamicSememeDataType ... applicableDataTypes)
 	{
 		displayName_ = displayName;
 		droolsPackageName_ = droolsPackageName;
 		applicableDataTypes_ = applicableDataTypes;
 	}
 	
-	public static RefexDroolsValidatorImplInfo getByDroolsPackageName(String droolsPackageName)
+	public static SememeDroolsValidatorImplInfo getByDroolsPackageName(String droolsPackageName)
 	{
-		for (RefexDroolsValidatorImplInfo rdv : RefexDroolsValidatorImplInfo.values())
+		for (SememeDroolsValidatorImplInfo rdv : SememeDroolsValidatorImplInfo.values())
 		{
 			if (rdv.getDroolsPackageName().equals(droolsPackageName))
 			{

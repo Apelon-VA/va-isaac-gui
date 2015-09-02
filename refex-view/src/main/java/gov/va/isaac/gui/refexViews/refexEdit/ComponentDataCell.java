@@ -52,13 +52,13 @@ import javafx.scene.text.Text;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
+public class ComponentDataCell extends TreeTableCell<SememeGUI, SememeGUI>
 {
 	private static Logger logger_ = LoggerFactory.getLogger(ComponentDataCell.class);
 	
-	private DynamicRefexColumnType type_;
+	private SememeGUIColumnType type_;
 	
-	protected ComponentDataCell(DynamicRefexColumnType type)
+	protected ComponentDataCell(SememeGUIColumnType type)
 	{
 		type_ = type;
 	}
@@ -67,7 +67,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicGUI item, boolean empty)
+	protected void updateItem(SememeGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		
@@ -82,7 +82,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 		}
 	}
 	
-	private void conceptLookup(RefexDynamicGUI item)
+	private void conceptLookup(SememeGUI item)
 	{
 		ProgressBar pb = new ProgressBar();
 		pb.setMaxWidth(Double.MAX_VALUE);
@@ -108,7 +108,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 					{
 						case CONCEPT:
 						{
-							if (DynamicRefexColumnType.ASSEMBLAGE == type_)
+							if (SememeGUIColumnType.ASSEMBLAGE == type_)
 							{
 								MenuItem mi = new MenuItem("View Sememe Assemblage Usage");
 								mi.setOnAction((action) ->
@@ -163,6 +163,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 									}
 								});
 							}
+							break;
 						}
 						default :
 						{

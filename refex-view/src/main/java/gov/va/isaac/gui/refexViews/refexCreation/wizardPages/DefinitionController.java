@@ -24,7 +24,7 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dialog.YesNoDialog;
 import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
-import gov.va.isaac.gui.refexViews.refexCreation.RefexData;
+import gov.va.isaac.gui.refexViews.refexCreation.SememeGUIData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.interfaces.utility.DialogResponse;
@@ -90,7 +90,7 @@ public class DefinitionController implements PanelControllersI {
 	private StringProperty refexNameInvalidReason;
 	private BooleanBinding allValid;
 	
-	private RefexData wizardData;
+	private SememeGUIData wizardData;
 	
 	private static final Logger logger = LoggerFactory.getLogger(DefinitionController.class);
 
@@ -329,7 +329,7 @@ public class DefinitionController implements PanelControllersI {
 	
 		if (wizardData == null)
 		{
-			wizardData = new RefexData(refexName.getText().trim(), refexDescription.getText().trim(), parentConcept.getConcept(), count, 
+			wizardData = new SememeGUIData(refexName.getText().trim(), refexDescription.getText().trim(), parentConcept.getConcept(), count, 
 					componentType.getValue(), null);
 		}
 		else
@@ -342,7 +342,7 @@ public class DefinitionController implements PanelControllersI {
 		}
 	}
 	
-	public RefexData getWizardData() {
+	public SememeGUIData getWizardData() {
 		return wizardData;
 	}
 

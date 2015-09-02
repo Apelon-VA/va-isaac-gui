@@ -35,7 +35,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
-import gov.va.isaac.gui.refexViews.refexEdit.DynamicSememeView;
+import gov.va.isaac.gui.refexViews.refexEdit.SememeView;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
@@ -199,7 +199,7 @@ public class DescriptionTableView implements EmbeddableViewI
 											b.setGraphic(iv);
 											b.setOnAction((event) ->
 											{
-												DynamicSememeView drv = AppContext.getService(DynamicSememeView.class);
+												SememeView drv = AppContext.getService(SememeView.class);
 												drv.setComponent(ref.getDescriptionVersion().getNid(), null, null, null, true);
 												
 												BorderPane bp = new BorderPane();

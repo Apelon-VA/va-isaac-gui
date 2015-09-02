@@ -34,7 +34,7 @@ public class ResultsToRefset {
 //																									 prompt.getAnnot().isSelected(),
 //																									 null,
 //																									 ViewCoordinates.getMetadataViewCoordinate());
-		    // Create a dynamic refex CAB for each result
+		    // Create a dynamic sememe CAB for each result
 //			for (CompositeSearchResult con : tableView.getItems()) {
 //				DynamicSememeCAB refexBlueprint = new DynamicSememeCAB(con.getContainingConcept().get().getNid(), refset.getRefexUsageDescriptorNid());
 //				OTFUtility.getBuilder().construct(refexBlueprint);

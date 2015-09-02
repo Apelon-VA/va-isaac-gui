@@ -27,10 +27,10 @@ import javafx.scene.Node;
 import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
- * {@link RefexDataTypeNodeDetails}
+ * {@link SememeGUIDataTypeNodeDetails}
  * 
  * A helper class that contains all of the return details for the structured created by a static call to 
- * {@link RefexDataTypeFXNodeBuilder}.
+ * {@link SememeGUIDataTypeFXNodeBuilder}.
  * 
  * *** WARNING *** boundToAllValid is an Observable List - because its contents will change based on user input if this 
  * was created for a Polymorphic node!  You must add a listener to the list in this case!  A utility method is provided
@@ -41,7 +41,7 @@ import com.sun.javafx.collections.ObservableListWrapper;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class RefexDataTypeNodeDetails
+public class SememeGUIDataTypeNodeDetails
 {
 	protected Object dataField;
 	protected Node nodeForDisplay;

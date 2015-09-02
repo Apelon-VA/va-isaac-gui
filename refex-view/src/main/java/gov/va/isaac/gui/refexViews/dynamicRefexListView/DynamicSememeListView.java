@@ -40,18 +40,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link DynamicRefexListView}
+ * {@link DynamicSememeListView}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service @Named(value=SharedServiceNames.DOCKED)
 @Singleton
-public class DynamicRefexListView implements DockedViewI
+public class DynamicSememeListView implements DockedViewI
 {
-	DynamicRefexListViewController drlvc_;
+	DynamicSememeListViewController drlvc_;
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 	
-	private DynamicRefexListView()
+	private DynamicSememeListView()
 	{
 		// created by HK2
 		LOG.debug(this.getClass().getSimpleName() + " construct time (blocking GUI): {}", 0);
@@ -119,7 +119,7 @@ public class DynamicRefexListView implements DockedViewI
 	@Override
 	public String getViewTitle()
 	{
-		return "Dynamic Sememe Viewer";
+		return "Sememe Viewer";
 	}
 
 	/**
@@ -132,7 +132,7 @@ public class DynamicRefexListView implements DockedViewI
 		{
 			try
 			{
-				drlvc_ = DynamicRefexListViewController.construct();
+				drlvc_ = DynamicSememeListViewController.construct();
 			}
 			catch (IOException e)
 			{

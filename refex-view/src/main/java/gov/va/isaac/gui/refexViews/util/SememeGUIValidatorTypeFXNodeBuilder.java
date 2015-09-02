@@ -21,8 +21,8 @@ package gov.va.isaac.gui.refexViews.util;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.drools.manager.DroolsExecutor;
 import gov.va.isaac.drools.manager.DroolsExecutorsManager;
-import gov.va.isaac.drools.refexUtils.RefexDroolsValidator;
-import gov.va.isaac.drools.refexUtils.RefexDroolsValidatorImplInfo;
+import gov.va.isaac.drools.refexUtils.SememeDroolsValidator;
+import gov.va.isaac.drools.refexUtils.SememeDroolsValidatorImplInfo;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.NumberUtilities;
@@ -50,18 +50,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link RefexValidatorTypeFXNodeBuilder}
+ * {@link SememeGUIValidatorTypeFXNodeBuilder}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class RefexValidatorTypeFXNodeBuilder
+public class SememeGUIValidatorTypeFXNodeBuilder
 {
-	private static Logger logger = LoggerFactory.getLogger(RefexValidatorTypeFXNodeBuilder.class);
+	private static Logger logger = LoggerFactory.getLogger(SememeGUIValidatorTypeFXNodeBuilder.class);
 	
-	public static RefexValidatorTypeNodeDetails buildNodeForType(DynamicSememeValidatorType dt, DynamicSememeDataBI currentValue, 
+	public static SememeGUIValidatorTypeNodeDetails buildNodeForType(DynamicSememeValidatorType dt, DynamicSememeDataBI currentValue, 
 			ObjectProperty<DynamicSememeDataType> refexDataType, UpdateableBooleanBinding allValid)
 	{
-		RefexValidatorTypeNodeDetails returnValue = new RefexValidatorTypeNodeDetails();
+		SememeGUIValidatorTypeNodeDetails returnValue = new SememeGUIValidatorTypeNodeDetails();
 		if (DynamicSememeValidatorType.GREATER_THAN == dt || DynamicSememeValidatorType.GREATER_THAN_OR_EQUAL == dt || DynamicSememeValidatorType.INTERVAL == dt
 				|| DynamicSememeValidatorType.LESS_THAN == dt || DynamicSememeValidatorType.LESS_THAN_OR_EQUAL == dt || DynamicSememeValidatorType.REGEXP == dt)
 		{
@@ -179,18 +179,18 @@ public class RefexValidatorTypeFXNodeBuilder
 		}
 		else if (DynamicSememeValidatorType.EXTERNAL == dt)
 		{
-			ChoiceBox<RefexDroolsValidatorImplInfo> cb = new ChoiceBox<>();
+			ChoiceBox<SememeDroolsValidatorImplInfo> cb = new ChoiceBox<>();
 			cb.setMaxWidth(Double.MAX_VALUE);
-			cb.setConverter(new StringConverter<RefexDroolsValidatorImplInfo>()
+			cb.setConverter(new StringConverter<SememeDroolsValidatorImplInfo>()
 			{
 				@Override
-				public String toString(RefexDroolsValidatorImplInfo object)
+				public String toString(SememeDroolsValidatorImplInfo object)
 				{
 					return object.getDisplayName();
 				}
 
 				@Override
-				public RefexDroolsValidatorImplInfo fromString(String string)
+				public SememeDroolsValidatorImplInfo fromString(String string)
 				{
 					//not needed
 					return null;
@@ -209,7 +209,7 @@ public class RefexValidatorTypeFXNodeBuilder
 			{
 				DroolsExecutorsManager dem = AppContext.getService(DroolsExecutorsManager.class);
 				
-				for (RefexDroolsValidatorImplInfo rdvii : RefexDroolsValidatorImplInfo.values())
+				for (SememeDroolsValidatorImplInfo rdvii : SememeDroolsValidatorImplInfo.values())
 				{
 					cb.getItems().add(rdvii);
 					StringBuilder temp = new StringBuilder();
@@ -279,7 +279,7 @@ public class RefexValidatorTypeFXNodeBuilder
 						{
 							valueInvalidReason.set("");
 						}
-						returnValue.validatorData.set(RefexDroolsValidator.createValidatorDefinitionData(cb.getValue()));
+						returnValue.validatorData.set(SememeDroolsValidator.createValidatorDefinitionData(cb.getValue()));
 						tt.setText(longDescriptions.get(cb.getSelectionModel().getSelectedIndex()));
 					}
 					catch (Exception e)
@@ -288,7 +288,7 @@ public class RefexValidatorTypeFXNodeBuilder
 					}
 				});
 				
-				RefexDroolsValidatorImplInfo rdvii = RefexDroolsValidator.readFromData(currentValue);
+				SememeDroolsValidatorImplInfo rdvii = SememeDroolsValidator.readFromData(currentValue);
 				
 				if (rdvii != null)
 				{

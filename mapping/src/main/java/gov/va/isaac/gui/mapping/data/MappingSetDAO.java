@@ -72,7 +72,7 @@ public class MappingSetDAO extends MappingDAO
 		{
 			AppContext.getRuntimeGlobals().disableAllCommitListeners();
 
-			//We need to create a new concept - which itself is defining a dynamic refex - so set that up here.
+			//We need to create a new concept - which itself is defining a dynamic sememe - so set that up here.
 			DynamicSememeUsageDescription rdud = DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(
 					mappingName, mappingName, description, 
 					new DynamicSememeColumnInfo[] {

@@ -33,7 +33,7 @@ import javafx.scene.layout.Region;
 /**
  * {@link ResultsItemListCell}
  *
- * Display code for a data column of a Dynamic Refex, when shown within a list view (one cell per refex column)
+ * Display code for a data column of a Dynamic Sememe, when shown within a list view (one cell per sememe column)
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */

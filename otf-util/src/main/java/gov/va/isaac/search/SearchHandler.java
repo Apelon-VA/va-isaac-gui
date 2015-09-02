@@ -414,7 +414,7 @@ public class SearchHandler
 	
 	
 	/**
-	 * Execute a Query against the dynamic refex indexes in a background thread, hand back a handle to the search object which will 
+	 * Execute a Query against the dynamic sememe indexes in a background thread, hand back a handle to the search object which will 
 	 * allow you to get the results (when they are ready) and also cancel an in-progress query.
 	 * 
 	 * If there is a problem with the internal indexes - an error will be logged, and the exception will be re-thrown when the 

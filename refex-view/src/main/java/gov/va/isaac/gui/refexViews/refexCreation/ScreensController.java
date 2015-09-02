@@ -227,7 +227,7 @@ public class ScreensController extends StackPane
 		}
 	}
 	
-	public RefexData getWizardData() 
+	public SememeGUIData getWizardData() 
 	{
 		return definitionController_.getWizardData();
 	}

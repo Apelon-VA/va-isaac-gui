@@ -20,7 +20,7 @@ package gov.va.isaac.gui.refexViews.refexCreation;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.gui.refexViews.refexCreation.RefexCreationWizard;
+import gov.va.isaac.gui.refexViews.refexCreation.SememeCreationWizard;
 import gov.va.isaac.init.SystemInit;
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +39,7 @@ import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class RefexPanelCreationWizardRunner extends Application
+public class SememePanelCreationWizardRunner extends Application
 {
 	UUID diastolicBP = UUID.fromString("215fd598-e21d-3e27-a0a2-8e23b1b36dfc");
 
@@ -51,7 +51,7 @@ public class RefexPanelCreationWizardRunner extends Application
 	{
 		primaryStage.setTitle("Refset Panel");
 
-		RefexCreationWizard refsetPanel = AppContext.getService(RefexCreationWizard.class);
+		SememeCreationWizard refsetPanel = AppContext.getService(SememeCreationWizard.class);
 //		refsetPanel.setRefsetAndComponent(gov.va.isaac.models.cem.importer.CEMMetadataBinding.CEM_DATA_REFSET.getUuids()[0], diastolicBP);
 
 		primaryStage.setScene(new Scene(new Label("hello world"), 200, 100));

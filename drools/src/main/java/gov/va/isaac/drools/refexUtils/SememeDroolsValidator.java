@@ -47,17 +47,17 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUID;
 
 /**
- * {@link RefexDroolsValidator}
+ * {@link SememeDroolsValidator}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 
 @Service
 @Singleton
-@Named("RefexDroolsValidator")
-public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
+@Named("SememeDroolsValidator")
+public class SememeDroolsValidator implements DynamicSememeExternalValidatorBI
 {
-	private static Logger logger = LoggerFactory.getLogger(RefexDroolsValidator.class);
+	private static Logger logger = LoggerFactory.getLogger(SememeDroolsValidator.class);
 
 	/**
 	 * Returns true if the data is valid, otherwise, throws an error
@@ -138,22 +138,22 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 		return true;
 	}
 
-	public static DynamicSememeArray<DynamicSememeString> createValidatorDefinitionData(RefexDroolsValidatorImplInfo rdvii)
+	public static DynamicSememeArray<DynamicSememeString> createValidatorDefinitionData(SememeDroolsValidatorImplInfo rdvii)
 	{
 		return new DynamicSememeArray<DynamicSememeString>(
-				new DynamicSememeString[]{new DynamicSememeString("RefexDroolsValidator"), new DynamicSememeString(rdvii.name())});
+				new DynamicSememeString[]{new DynamicSememeString("SememeDroolsValidator"), new DynamicSememeString(rdvii.name())});
 	}
 
 	/**
 	 * In our implementation - the validatorDefinitionData contains two things - the first - is the @name of this implementation of an
-	 * {@link DynamicSememeExternalValidatorBI} - for example "RefexDroolsValidator" - the rest is corresponding name from the 
-	 * {@link RefexDroolsValidatorImplInfo} enum String[]{"RefexDroolsValidator", "REFEX_STRING_RULES"}
+	 * {@link DynamicSememeExternalValidatorBI} - for example "SememeDroolsValidator" - the rest is corresponding name from the 
+	 * {@link SememeDroolsValidatorImplInfo} enum String[]{"SememeDroolsValidator", "SEMEME_STRING_RULES"}
 	 * 
 	 * @param validatorDefinitionData
 	 * @throws RuntimeException if the input data can't be parsed as expected.
 	 * @return - null, if input is null, or no drools impl is mapped to the 2nd part of the data. 
 	 */
-	public static RefexDroolsValidatorImplInfo readFromData(DynamicSememeDataBI validatorDefinitionData) throws RuntimeException
+	public static SememeDroolsValidatorImplInfo readFromData(DynamicSememeDataBI validatorDefinitionData) throws RuntimeException
 	{
 		try
 		{
@@ -163,9 +163,9 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 			}
 			@SuppressWarnings("unchecked")
 			DynamicSememeStringBI[] validatorInfo = ((DynamicSememeArrayBI<DynamicSememeStringBI>)validatorDefinitionData).getDataArray();
-			if (validatorInfo[0].getDataString().equals("RefexDroolsValidator"))
+			if (validatorInfo[0].getDataString().equals("SememeDroolsValidator"))
 			{
-				return RefexDroolsValidatorImplInfo.valueOf(validatorInfo[1].getDataString());
+				return SememeDroolsValidatorImplInfo.valueOf(validatorInfo[1].getDataString());
 			}
 			else
 			{
@@ -190,7 +190,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	public boolean validate(DynamicSememeDataBI userData, DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, StampCoordinate sc, 
 			TaxonomyCoordinate tc) throws RuntimeException
 	{
-		RefexDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
+		SememeDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
 		if (rdvi == null)
 		{
 			throw new RuntimeException("The specified validator is not mapped - cannot validate");
@@ -200,7 +200,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 		{
 			if (userData.getDynamicSememeDataType() == rddt)
 			{
-				return RefexDroolsValidator.validate(rdvi.getDroolsPackageName(), userData);
+				return SememeDroolsValidator.validate(rdvi.getDroolsPackageName(), userData);
 			}
 		}
 
@@ -213,7 +213,7 @@ public class RefexDroolsValidator implements DynamicSememeExternalValidatorBI
 	@Override
 	public boolean validatorSupportsType(DynamicSememeArrayBI<DynamicSememeStringBI> validatorDefinitionData, DynamicSememeDataType dataType)
 	{
-		RefexDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
+		SememeDroolsValidatorImplInfo rdvi = readFromData(validatorDefinitionData);
 		if (rdvi == null)
 		{
 			throw new RuntimeException("The specified validator is not mapped - cannot validate");

@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 
- * {@link RefexCreationWizard}
+ * {@link SememeCreationWizard}
  *
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
@@ -47,10 +47,10 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @Singleton
-public class RefexCreationWizard implements RefexCreationViewI, IsaacViewWithMenusI
+public class SememeCreationWizard implements RefexCreationViewI, IsaacViewWithMenusI
 {
-	private final Logger logger = LoggerFactory.getLogger(RefexCreationWizard.class);
-	private RefexCreationWizard() throws IOException
+	private final Logger logger = LoggerFactory.getLogger(SememeCreationWizard.class);
+	private SememeCreationWizard() throws IOException
 	{
 		//created by HK2
 	}
@@ -117,7 +117,7 @@ public class RefexCreationWizard implements RefexCreationViewI, IsaacViewWithMen
 			ScreensController sc = new ScreensController();
 			stage.setScene(new Scene(sc, 600, 400));
 			stage.setTitle("Define Sememe Assemblage");
-			stage.getScene().getStylesheets().add(RefexCreationWizard.class.getResource("/isaac-shared-styles.css").toString());
+			stage.getScene().getStylesheets().add(SememeCreationWizard.class.getResource("/isaac-shared-styles.css").toString());
 			stage.show();
 			sc.showFirstScreen();
 		}

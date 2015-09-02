@@ -28,12 +28,12 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 
 /**
- * {@link RefexValidatorTypeNodeDetails}
+ * {@link SememeGUIValidatorTypeNodeDetails}
  *
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class RefexValidatorTypeNodeDetails
+public class SememeGUIValidatorTypeNodeDetails
 {
 	protected Node nodeForDisplay;
 	protected ObservableList<ReadOnlyStringProperty> boundToAllValid = new ObservableListWrapper<>(new ArrayList<>());
@@ -61,7 +61,7 @@ public class RefexValidatorTypeNodeDetails
 		return validatorData;
 	}
 	
-	public void update(RefexValidatorTypeNodeDetails newValues)
+	public void update(SememeGUIValidatorTypeNodeDetails newValues)
 	{
 		nodeForDisplay = newValues == null ? null : newValues.nodeForDisplay;
 		boundToAllValid.clear();

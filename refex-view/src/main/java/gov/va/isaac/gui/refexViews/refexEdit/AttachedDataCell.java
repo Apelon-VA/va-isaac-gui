@@ -52,7 +52,7 @@ import javafx.scene.text.Text;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
+public class AttachedDataCell extends TreeTableCell<SememeGUI, SememeGUI>
 {
 	private Hashtable<UUID, List<DynamicSememeColumnInfo>> columnInfo_;
 	private int listItem_;
@@ -69,7 +69,7 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicGUI item, boolean empty)
+	protected void updateItem(SememeGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		
@@ -88,9 +88,9 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 					{
 						List<DynamicSememeColumnInfo> colInfo =  columnInfo_.get(uuid);
 						Integer refexColumnOrder = (colInfo.size() > listItem_ ? 
-								(RefexDynamicGUI.getData(item.getSememe()).length <= colInfo.get(listItem_).getColumnOrder() ? null 
+								(SememeGUI.getData(item.getSememe()).length <= colInfo.get(listItem_).getColumnOrder() ? null 
 									: colInfo.get(listItem_).getColumnOrder()): null);
-						DynamicSememeDataBI data = (refexColumnOrder == null ? null : RefexDynamicGUI.getData(item.getSememe())[refexColumnOrder]); 
+						DynamicSememeDataBI data = (refexColumnOrder == null ? null : SememeGUI.getData(item.getSememe())[refexColumnOrder]); 
 						if (data != null)
 						{
 							if (data instanceof DynamicSememeNidBI)
@@ -103,7 +103,7 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 							}
 							else
 							{
-								AbstractMap.SimpleImmutableEntry<String, String> texts = item.getDisplayStrings(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder);
+								AbstractMap.SimpleImmutableEntry<String, String> texts = item.getDisplayStrings(SememeGUIColumnType.ATTACHED_DATA, refexColumnOrder);
 								
 								if (texts == null || texts.getKey() == null)
 								{
@@ -155,14 +155,14 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 		}
 	}
 	
-	private void conceptLookup(final RefexDynamicGUI item, final Integer refexColumnOrder)
+	private void conceptLookup(final SememeGUI item, final Integer refexColumnOrder)
 	{
 		setGraphic(new ProgressBar());
 		setText(null);
 		ContextMenu cm = new ContextMenu();
 		Utility.execute(() ->
 		{
-			AbstractMap.SimpleImmutableEntry<String, String> value = item.getDisplayStrings(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder);
+			AbstractMap.SimpleImmutableEntry<String, String> value = item.getDisplayStrings(SememeGUIColumnType.ATTACHED_DATA, refexColumnOrder);
 				
 			CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider()
 			{
@@ -170,7 +170,7 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 				@Override
 				public Collection<Integer> getNIds()
 				{
-					int nid = item.getNidFetcher(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getSememe());
+					int nid = item.getNidFetcher(SememeGUIColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getSememe());
 
 					ArrayList<Integer> nids = new ArrayList<>();
 					if (nid != 0)
@@ -204,7 +204,7 @@ public class AttachedDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynami
 					@Override
 					public String getConceptId()
 					{
-						return item.getNidFetcher(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getSememe()) +"";
+						return item.getNidFetcher(SememeGUIColumnType.ATTACHED_DATA, refexColumnOrder).applyAsInt(item.getSememe()) +"";
 					}
 				});
 				setText(null);

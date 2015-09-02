@@ -29,11 +29,11 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /**
- * {@link DynamicRefexViewRunner}
+ * {@link DynamicSememeViewRunner}
  * 
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class DynamicRefexViewRunner extends Application
+public class DynamicSememeViewRunner extends Application
 {
 
 	/**
@@ -44,7 +44,7 @@ public class DynamicRefexViewRunner extends Application
 	{
 		primaryStage.setTitle("Sememe View");
 
-		DynamicSememeView refexView = AppContext.getService(DynamicSememeView.class);
+		SememeView refexView = AppContext.getService(SememeView.class);
 		refexView.setComponent(IsaacMetadataConstants.DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), null, null, null, true);
 
 		primaryStage.setScene(new Scene(refexView.getView(), 800, 600));

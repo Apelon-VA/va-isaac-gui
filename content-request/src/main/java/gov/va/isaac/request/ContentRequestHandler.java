@@ -28,7 +28,7 @@ public interface ContentRequestHandler {
    * automated request system to get the current status so it can be
    * effectively updated in ISAAC.  Presumably, this would involve
    * storing information about the tracking info in the DB somewhere
-   * (e.g. dynamic refex).
+   * (e.g. dynamic sememe).
    * 
    * @param info the tracking info
    * @return the content request status

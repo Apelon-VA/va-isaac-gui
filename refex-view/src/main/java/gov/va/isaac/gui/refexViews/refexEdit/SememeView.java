@@ -18,6 +18,29 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+import javax.inject.Named;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.glassfish.hk2.api.PerLookup;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableMapWrapper;
+import com.sun.javafx.tk.Toolkit;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
@@ -40,20 +63,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -86,14 +95,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javax.inject.Named;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.glassfish.hk2.api.PerLookup;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableMapWrapper;
-import com.sun.javafx.tk.Toolkit;
 
 
 /**
@@ -106,18 +107,18 @@ import com.sun.javafx.tk.Toolkit;
 @Service
 @Named (value="DynamicSememeView")
 @PerLookup
-public class DynamicSememeView implements SememeViewI
+public class SememeView implements SememeViewI
 {
 	private VBox rootNode_ = null;
-	private TreeTableView<RefexDynamicGUI> ttv_;
-	private TreeItem<RefexDynamicGUI> treeRoot_;
+	private TreeTableView<SememeGUI> ttv_;
+	private TreeItem<SememeGUI> treeRoot_;
 	private Button retireButton_, addButton_, commitButton_, cancelButton_, editButton_, viewUsageButton_;
 	private Label summary_ = new Label("");
 	private ToggleButton stampButton_, activeOnlyButton_, historyButton_;
 	private Button displayFSNButton_;
 	private UpdateableBooleanBinding currentRowSelected_, selectedRowIsActive_;
 	private UpdateableBooleanBinding showStampColumns_, showActiveOnly_, showFullHistory_, showViewUsageButton_;
-	private TreeTableColumn<RefexDynamicGUI, String> stampColumn_;
+	private TreeTableColumn<SememeGUI, String> stampColumn_;
 	private BooleanProperty hasUncommitted_ = new SimpleBooleanProperty(false);
 
 	private Text placeholderText = new Text("No Dynamic Sememes were found associated with the component");
@@ -184,7 +185,7 @@ public class DynamicSememeView implements SememeViewI
 		}
 	}
 
-	private DynamicSememeView() 
+	private SememeView() 
 	{
 		//Created by HK2 - no op - delay till getView called
 	}
@@ -276,12 +277,12 @@ public class DynamicSememeView implements SememeViewI
 					DialogResponse dr = dialog.showYesNoDialog("Retire?", "Do you want to retire the selected sememe entries?");
 					if (DialogResponse.YES == dr)
 					{
-						ObservableList<TreeItem<RefexDynamicGUI>> selected = ttv_.getSelectionModel().getSelectedItems();
+						ObservableList<TreeItem<SememeGUI>> selected = ttv_.getSelectionModel().getSelectedItems();
 						if (selected != null && selected.size() > 0)
 						{
-							for (TreeItem<RefexDynamicGUI> refexTreeItem : selected)
+							for (TreeItem<SememeGUI> refexTreeItem : selected)
 							{
-								RefexDynamicGUI refex = refexTreeItem.getValue();
+								SememeGUI refex = refexTreeItem.getValue();
 								if (refex.getSememe().getState() == State.INACTIVE)
 								{
 									continue;
@@ -317,7 +318,7 @@ public class DynamicSememeView implements SememeViewI
 			addButton_.setTooltip(new Tooltip("Add a new Sememe Extension"));
 			addButton_.setOnAction((action) ->
 			{
-				AddRefexPopup arp = AppContext.getService(AddRefexPopup.class);
+				AddSememePopup arp = AppContext.getService(AddSememePopup.class);
 				arp.finishInit(viewFocus_, viewFocusNid_, this);
 				arp.showView(rootNode_.getScene().getWindow());
 			});
@@ -330,7 +331,7 @@ public class DynamicSememeView implements SememeViewI
 			editButton_.disableProperty().bind(currentRowSelected_.not());
 			editButton_.setOnAction((action) ->
 			{
-				AddRefexPopup arp = AppContext.getService(AddRefexPopup.class);
+				AddSememePopup arp = AppContext.getService(AddSememePopup.class);
 				arp.finishInit(ttv_.getSelectionModel().getSelectedItem().getValue(), this);
 				arp.showView(rootNode_.getScene().getWindow());
 			});
@@ -364,7 +365,7 @@ public class DynamicSememeView implements SememeViewI
 					boolean show = false;
 					if (viewFocus_ != null && viewFocus_ == ViewFocus.REFERENCED_COMPONENT && Get.conceptService().getOptionalConcept(viewFocusNid_).isPresent())
 					{
-						//Need to find out if this component has a the dynamic refex definition annotation on it.
+						//Need to find out if this component has a the dynamic sememe definition annotation on it.
 						try
 						{
 							DynamicSememeUsageDescription.read(viewFocusNid_);
@@ -372,7 +373,7 @@ public class DynamicSememeView implements SememeViewI
 						}
 						catch (Exception e)
 						{
-							//noop - this concept simply isn't configured as a dynamic refex concept.
+							//noop - this concept simply isn't configured as a dynamic sememe concept.
 						}
 					}
 					return show;
@@ -411,7 +412,7 @@ public class DynamicSememeView implements SememeViewI
 					if (stampColumn_ != null)
 					{
 						stampColumn_.setVisible(visible);
-						for (TreeTableColumn<RefexDynamicGUI, ?> nested : stampColumn_.getColumns())
+						for (TreeTableColumn<SememeGUI, ?> nested : stampColumn_.getColumns())
 						{
 							nested.setVisible(visible);
 						}
@@ -553,7 +554,7 @@ public class DynamicSememeView implements SememeViewI
 //							ExtendedAppContext.getDataStore().commit();
 //						}
 //					}
-					Get.commitService().commit("commit of dynamic refex").get();
+					Get.commitService().commit("commit of dynamic sememe").get();
 				}
 				catch (Exception e)
 				{
@@ -698,7 +699,7 @@ public class DynamicSememeView implements SememeViewI
 	{
 		if (noRefresh_.get() > 0)
 		{
-			logger_.info("Skip refresh of dynamic refex due to wait count {}", noRefresh_.get());
+			logger_.info("Skip refresh of dynamic sememe due to wait count {}", noRefresh_.get());
 			return;
 		}
 		else
@@ -745,20 +746,20 @@ public class DynamicSememeView implements SememeViewI
 			{
 				removeFilterCacheListeners();
 				
-				final ArrayList<TreeTableColumn<RefexDynamicGUI, ?>> treeColumns = new ArrayList<>();
+				final ArrayList<TreeTableColumn<SememeGUI, ?>> treeColumns = new ArrayList<>();
 				Map<String, List<String>> toolTipStore = new HashMap<>();
 				
-				TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> ttStatusCol = new TreeTableColumn<>(DynamicRefexColumnType.STATUS_CONDENSED.toString());
+				TreeTableColumn<SememeGUI, SememeGUI> ttStatusCol = new TreeTableColumn<>(SememeGUIColumnType.STATUS_CONDENSED.toString());
 				storeTooltip(toolTipStore, ttStatusCol.getText(), "Status Markers - for active / inactive and current / historical and uncommitted");
 
 				ttStatusCol.setSortable(true);
 				ttStatusCol.setResizable(true);
-				ttStatusCol.setComparator(new Comparator<RefexDynamicGUI>()
+				ttStatusCol.setComparator(new Comparator<SememeGUI>()
 				{
 					@Override
-					public int compare(RefexDynamicGUI o1, RefexDynamicGUI o2)
+					public int compare(SememeGUI o1, SememeGUI o2)
 					{
-						return o1.compareTo(DynamicRefexColumnType.STATUS_CONDENSED, null, o2);
+						return o1.compareTo(SememeGUIColumnType.STATUS_CONDENSED, null, o2);
 					}
 				});
 				ttStatusCol.setCellFactory((colInfo) -> 
@@ -767,7 +768,7 @@ public class DynamicSememeView implements SememeViewI
 				});
 				ttStatusCol.setCellValueFactory((callback) ->
 				{
-					return new ReadOnlyObjectWrapper<RefexDynamicGUI>(callback.getValue().getValue());
+					return new ReadOnlyObjectWrapper<SememeGUI>(callback.getValue().getValue());
 				});
 				treeColumns.add(ttStatusCol);
 				
@@ -775,17 +776,17 @@ public class DynamicSememeView implements SememeViewI
 				if (viewFocus_ == ViewFocus.ASSEMBLAGE)
 				{
 					//the assemblage is always the same - don't show.
-					TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>  ttCol = buildComponentCellColumn(DynamicRefexColumnType.COMPONENT);
+					TreeTableColumn<SememeGUI, SememeGUI>  ttCol = buildComponentCellColumn(SememeGUIColumnType.COMPONENT);
 					storeTooltip(toolTipStore, ttCol.getText(), "The Referenced component of this Sememe");
 					HeaderNode<String> headerNode = new HeaderNode<String>(
 							filterCache_,
 							ttCol,
-							ColumnId.getInstance(DynamicRefexColumnType.COMPONENT),
+							ColumnId.getInstance(SememeGUIColumnType.COMPONENT),
 							rootNode_.getScene(),
 							new HeaderNode.DataProvider<String>() {
 						@Override
-						public String getData(RefexDynamicGUI source) {
-							return source.getDisplayStrings(DynamicRefexColumnType.COMPONENT, null).getKey();
+						public String getData(SememeGUI source) {
+							return source.getDisplayStrings(SememeGUIColumnType.COMPONENT, null).getKey();
 						}
 					});
 					ttCol.setGraphic(headerNode.getNode());
@@ -795,17 +796,17 @@ public class DynamicSememeView implements SememeViewI
 				else
 				{
 					//the component is always the same - don't show.
-					TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>  ttCol = buildComponentCellColumn(DynamicRefexColumnType.ASSEMBLAGE);
+					TreeTableColumn<SememeGUI, SememeGUI>  ttCol = buildComponentCellColumn(SememeGUIColumnType.ASSEMBLAGE);
 					storeTooltip(toolTipStore, ttCol.getText(), "The Assemblage concept that defines this Sememe");
 					HeaderNode<String> headerNode = new HeaderNode<>(
 							filterCache_,
 							ttCol,
-							ColumnId.getInstance(DynamicRefexColumnType.ASSEMBLAGE),
+							ColumnId.getInstance(SememeGUIColumnType.ASSEMBLAGE),
 							rootNode_.getScene(),
 							new HeaderNode.DataProvider<String>() {
 						@Override
-						public String getData(RefexDynamicGUI source) {
-							return source.getDisplayStrings(DynamicRefexColumnType.ASSEMBLAGE, null).getKey();
+						public String getData(SememeGUI source) {
+							return source.getDisplayStrings(SememeGUIColumnType.ASSEMBLAGE, null).getKey();
 						}
 					});
 					ttCol.setGraphic(headerNode.getNode());
@@ -813,9 +814,9 @@ public class DynamicSememeView implements SememeViewI
 					treeColumns.add(ttCol);
 				}
 				
-				TreeTableColumn<RefexDynamicGUI, String> ttStringCol = new TreeTableColumn<>();
+				TreeTableColumn<SememeGUI, String> ttStringCol = new TreeTableColumn<>();
 				ttStringCol = new TreeTableColumn<>();
-				ttStringCol.setText(DynamicRefexColumnType.ATTACHED_DATA.toString());
+				ttStringCol.setText(SememeGUIColumnType.ATTACHED_DATA.toString());
 				storeTooltip(toolTipStore, ttStringCol.getText(), "The various data fields attached to this Sememe instance");
 				ttStringCol.setSortable(false);
 				ttStringCol.setResizable(true);
@@ -848,7 +849,29 @@ public class DynamicSememeView implements SememeViewI
 					//want to rework it at this point... might come back and cleanup this mess later.
 					uniqueColumns = new Hashtable<>();
 					
-					DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(viewFocusNid_);
+					DynamicSememeUsageDescription rdud;
+					//Normally, we can read the info necessary from the assemblage - but in the case where we are displaying a non-dynamic sememe
+					//I need to read an instance of the sememe, to find out what type it is (and then assume, that it is only used as that type)
+					//yes, dangerous, bad code... the static sememes need work....
+					
+					try
+					{
+						rdud = DynamicSememeUsageDescription.read(viewFocusNid_);
+					}
+					catch (Exception e)
+					{
+						//Its either a mis-configured dynamic sememe, or its a static sememe.  Check and see...
+						Optional<SememeChronology<? extends SememeVersion<?>>> sc = Get.sememeService().getSememesFromAssemblage(Get.identifierService()
+								.getConceptSequence(viewFocusNid_)).findAny();
+						if (sc.isPresent())
+						{
+							rdud = DynamicSememeUsageDescription.mockOrRead(sc.get());
+						}
+						else
+						{
+							throw e;
+						}
+					}
 					for (DynamicSememeColumnInfo col : rdud.getColumnInfo())
 					{
 						Hashtable<UUID, List<DynamicSememeColumnInfo>> nested = uniqueColumns.get(col.getColumnDescriptionConcept());
@@ -895,7 +918,7 @@ public class DynamicSememeView implements SememeViewI
 					for (int i = 0; i < max; i++)
 					{
 						final String name = col.values().iterator().next().get(0).getColumnName(); //all the same, just pick the first
-						TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> nestedCol = new TreeTableColumn<>(name);
+						TreeTableColumn<SememeGUI, SememeGUI> nestedCol = new TreeTableColumn<>(name);
 						storeTooltip(toolTipStore, nestedCol.getText(), col.values().iterator().next().get(0).getColumnDescription());
 						
 						// FILTER ID
@@ -909,7 +932,7 @@ public class DynamicSememeView implements SememeViewI
 								rootNode_.getScene(),
 								new HeaderNode.DataProvider<String>() {
 							@Override
-							public String getData(RefexDynamicGUI source) {
+							public String getData(SememeGUI source) {
 								if (source == null) {
 									return null;
 								}
@@ -924,12 +947,12 @@ public class DynamicSememeView implements SememeViewI
 										{
 											List<DynamicSememeColumnInfo> colInfo =  col.get(uuid);
 											Integer refexColumnOrder = (colInfo.size() > listItem ? 
-													(RefexDynamicGUI.getData(source.getSememe()).length <= colInfo.get(listItem).getColumnOrder() ? null 
+													(SememeGUI.getData(source.getSememe()).length <= colInfo.get(listItem).getColumnOrder() ? null 
 														: colInfo.get(listItem).getColumnOrder()): null);
 											
 											if (refexColumnOrder != null)
 											{
-												return source.getDisplayStrings(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder).getKey();
+												return source.getDisplayStrings(SememeGUIColumnType.ATTACHED_DATA, refexColumnOrder).getKey();
 											}
 										}
 									}
@@ -945,10 +968,10 @@ public class DynamicSememeView implements SememeViewI
 						
 						nestedCol.setSortable(true);
 						nestedCol.setResizable(true);
-						nestedCol.setComparator(new Comparator<RefexDynamicGUI>()
+						nestedCol.setComparator(new Comparator<SememeGUI>()
 						{
 							@Override
-							public int compare(RefexDynamicGUI o1, RefexDynamicGUI o2)
+							public int compare(SememeGUI o1, SememeGUI o2)
 							{
 								try
 								{
@@ -961,12 +984,12 @@ public class DynamicSememeView implements SememeViewI
 										{
 											List<DynamicSememeColumnInfo> colInfo =  col.get(uuid);
 											Integer refexColumnOrder = (colInfo.size() > listItem ? 
-													(RefexDynamicGUI.getData(o1.getSememe()).length <= colInfo.get(listItem).getColumnOrder() ? null 
+													(SememeGUI.getData(o1.getSememe()).length <= colInfo.get(listItem).getColumnOrder() ? null 
 														: colInfo.get(listItem).getColumnOrder()): null);
 											
 											if (refexColumnOrder != null)
 											{
-												return o1.compareTo(DynamicRefexColumnType.ATTACHED_DATA, refexColumnOrder, o2);
+												return o1.compareTo(SememeGUIColumnType.ATTACHED_DATA, refexColumnOrder, o2);
 											}
 										}
 									}
@@ -1006,18 +1029,18 @@ public class DynamicSememeView implements SememeViewI
 				stampColumn_ = ttStringCol;
 				treeColumns.add(ttStringCol);
 				
-				TreeTableColumn<RefexDynamicGUI, String> nestedCol = new TreeTableColumn<>();
-				nestedCol.setText(DynamicRefexColumnType.STATUS_STRING.toString());
+				TreeTableColumn<SememeGUI, String> nestedCol = new TreeTableColumn<>();
+				nestedCol.setText(SememeGUIColumnType.STATUS_STRING.toString());
 				storeTooltip(toolTipStore, nestedCol.getText(), "The status of the instance");
 				HeaderNode<String> nestedColHeaderNode = new HeaderNode<>(
 						filterCache_,
 						nestedCol,
-						ColumnId.getInstance(DynamicRefexColumnType.STATUS_STRING),
+						ColumnId.getInstance(SememeGUIColumnType.STATUS_STRING),
 						rootNode_.getScene(),
 						new HeaderNode.DataProvider<String>() {
 							@Override
-							public String getData(RefexDynamicGUI source) {
-								return source.getDisplayStrings(DynamicRefexColumnType.STATUS_STRING, null).getKey();
+							public String getData(SememeGUI source) {
+								return source.getDisplayStrings(SememeGUIColumnType.STATUS_STRING, null).getKey();
 							}
 						});
 				nestedCol.setGraphic(nestedColHeaderNode.getNode());
@@ -1025,23 +1048,23 @@ public class DynamicSememeView implements SememeViewI
 				nestedCol.setResizable(true);
 				nestedCol.setCellValueFactory((callback) ->
 				{
-					return new ReadOnlyStringWrapper(callback.getValue().getValue().getDisplayStrings(DynamicRefexColumnType.STATUS_STRING, null).getKey());
+					return new ReadOnlyStringWrapper(callback.getValue().getValue().getDisplayStrings(SememeGUIColumnType.STATUS_STRING, null).getKey());
 				});
 				ttStringCol.getColumns().add(nestedCol);
 				
 
 				nestedCol = new TreeTableColumn<>();
-				nestedCol.setText(DynamicRefexColumnType.TIME.toString());
+				nestedCol.setText(SememeGUIColumnType.TIME.toString());
 				storeTooltip(toolTipStore, nestedCol.getText(), "The time when the instance was created or edited");
 				nestedColHeaderNode = new HeaderNode<>(
 						filterCache_,
 						nestedCol,
-						ColumnId.getInstance(DynamicRefexColumnType.TIME),
+						ColumnId.getInstance(SememeGUIColumnType.TIME),
 						rootNode_.getScene(),
 						new HeaderNode.DataProvider<String>() {
 							@Override
-							public String getData(RefexDynamicGUI source) {
-								return source.getDisplayStrings(DynamicRefexColumnType.TIME, null).getKey();
+							public String getData(SememeGUI source) {
+								return source.getDisplayStrings(SememeGUIColumnType.TIME, null).getKey();
 							}
 						});
 				nestedCol.setGraphic(nestedColHeaderNode.getNode());
@@ -1049,25 +1072,25 @@ public class DynamicSememeView implements SememeViewI
 				nestedCol.setResizable(true);
 				nestedCol.setCellValueFactory((callback) ->
 				{
-					return new ReadOnlyStringWrapper(callback.getValue().getValue().getDisplayStrings(DynamicRefexColumnType.TIME, null).getKey());
+					return new ReadOnlyStringWrapper(callback.getValue().getValue().getDisplayStrings(SememeGUIColumnType.TIME, null).getKey());
 				});
 				ttStringCol.getColumns().add(nestedCol);
 				
-				TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> nestedIntCol = buildComponentCellColumn(DynamicRefexColumnType.AUTHOR); 
+				TreeTableColumn<SememeGUI, SememeGUI> nestedIntCol = buildComponentCellColumn(SememeGUIColumnType.AUTHOR); 
 				storeTooltip(toolTipStore, nestedIntCol.getText(), "The author of the instance");
 				ttStringCol.getColumns().add(nestedIntCol);
 				
-				nestedIntCol = buildComponentCellColumn(DynamicRefexColumnType.MODULE);
+				nestedIntCol = buildComponentCellColumn(SememeGUIColumnType.MODULE);
 				storeTooltip(toolTipStore, nestedIntCol.getText(), "The module of the instance");
 				ttStringCol.getColumns().add(nestedIntCol);
 				
-				nestedIntCol = buildComponentCellColumn(DynamicRefexColumnType.PATH); 
+				nestedIntCol = buildComponentCellColumn(SememeGUIColumnType.PATH); 
 				storeTooltip(toolTipStore, nestedIntCol.getText(), "The path of the instance");
 				ttStringCol.getColumns().add(nestedIntCol);
 
 				Platform.runLater(() ->
 				{
-					for (TreeTableColumn<RefexDynamicGUI, ?> tc : treeColumns)
+					for (TreeTableColumn<SememeGUI, ?> tc : treeColumns)
 					{
 						ttv_.getColumns().add(tc);
 					}
@@ -1075,9 +1098,9 @@ public class DynamicSememeView implements SememeViewI
 					//Horrible hack to set a reasonable default size on the columns.
 					//Min width to the width of the header column.
 					Font f = new Font("System Bold", 13.0);
-					for (final TreeTableColumn<RefexDynamicGUI, ?> col : ttv_.getColumns())
+					for (final TreeTableColumn<SememeGUI, ?> col : ttv_.getColumns())
 					{
-						for (TreeTableColumn<RefexDynamicGUI, ?> nCol : col.getColumns())
+						for (TreeTableColumn<SememeGUI, ?> nCol : col.getColumns())
 						{
 							String text = (nCol.getGraphic() != null 
 									&& (nCol.getGraphic() instanceof Label || nCol.getGraphic() instanceof HBox) 
@@ -1092,7 +1115,7 @@ public class DynamicSememeView implements SememeViewI
 							FloatBinding binding = new FloatBinding()
 							{
 								{
-									for (TreeTableColumn<RefexDynamicGUI, ?> nCol : col.getColumns())
+									for (TreeTableColumn<SememeGUI, ?> nCol : col.getColumns())
 									{
 										bind(nCol.widthProperty());
 										bind(nCol.visibleProperty());
@@ -1102,7 +1125,7 @@ public class DynamicSememeView implements SememeViewI
 								protected float computeValue()
 								{
 									float temp = 0;
-									for (TreeTableColumn<RefexDynamicGUI, ?> nCol : col.getColumns())
+									for (TreeTableColumn<SememeGUI, ?> nCol : col.getColumns())
 									{
 										if (nCol.isVisible())
 										{
@@ -1130,8 +1153,8 @@ public class DynamicSememeView implements SememeViewI
 										: col.getText());
 							}
 							
-							if (text.equalsIgnoreCase(DynamicRefexColumnType.ASSEMBLAGE.toString()) 
-									|| text.equalsIgnoreCase(DynamicRefexColumnType.COMPONENT.toString()))
+							if (text.equalsIgnoreCase(SememeGUIColumnType.ASSEMBLAGE.toString()) 
+									|| text.equalsIgnoreCase(SememeGUIColumnType.COMPONENT.toString()))
 							{
 								col.setPrefWidth(250);
 							}
@@ -1188,9 +1211,9 @@ public class DynamicSememeView implements SememeViewI
 		}
 
 		//Now add the data
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = getDataRows(viewFocusNid_);
+		ArrayList<TreeItem<SememeGUI>> rowData = getDataRows(viewFocusNid_);
 		
-		logger_.info("Found {} rows of data in a dynamic refex", rowData.size());
+		logger_.info("Found {} rows of data in a dynamic sememe", rowData.size());
 		
 		Utility.execute(() ->
 		{
@@ -1210,9 +1233,9 @@ public class DynamicSememeView implements SememeViewI
 		addFilterCacheListeners();
 	}
 	
-	private TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> buildComponentCellColumn(DynamicRefexColumnType type)
+	private TreeTableColumn<SememeGUI, SememeGUI> buildComponentCellColumn(SememeGUIColumnType type)
 	{
-		TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> ttCol = new TreeTableColumn<>(type.toString());
+		TreeTableColumn<SememeGUI, SememeGUI> ttCol = new TreeTableColumn<>(type.toString());
 		HeaderNode<String> headerNode = new HeaderNode<>(
 				filterCache_,
 				ttCol,
@@ -1220,7 +1243,7 @@ public class DynamicSememeView implements SememeViewI
 				rootNode_.getScene(),
 				new HeaderNode.DataProvider<String>() {
 					@Override
-					public String getData(RefexDynamicGUI source) {
+					public String getData(SememeGUI source) {
 						return source.getDisplayStrings(type, null).getKey();
 					}
 				});
@@ -1228,24 +1251,24 @@ public class DynamicSememeView implements SememeViewI
 		
 		ttCol.setSortable(true);
 		ttCol.setResizable(true);
-		ttCol.setComparator(new Comparator<RefexDynamicGUI>()
+		ttCol.setComparator(new Comparator<SememeGUI>()
 		{
 			@Override
-			public int compare(RefexDynamicGUI o1, RefexDynamicGUI o2)
+			public int compare(SememeGUI o1, SememeGUI o2)
 			{
 				return o1.compareTo(type, null, o2);
 			}
 		});
 		ttCol.setCellFactory((colInfo) -> {return new ComponentDataCell(type);});
-		ttCol.setCellValueFactory((callback) -> {return new ReadOnlyObjectWrapper<RefexDynamicGUI>(callback.getValue().getValue());});
+		ttCol.setCellValueFactory((callback) -> {return new ReadOnlyObjectWrapper<SememeGUI>(callback.getValue().getValue());});
 		return ttCol;
 	}
 
 	
-	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int componentNid, TreeItem<RefexDynamicGUI> nestUnder) 
+	private ArrayList<TreeItem<SememeGUI>> getDataRows(int componentNid, TreeItem<SememeGUI> nestUnder) 
 			throws IOException
 	{
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(Get.sememeService().getSememesForComponent(componentNid));
+		ArrayList<TreeItem<SememeGUI>> rowData = createFilteredRowData(Get.sememeService().getSememesForComponent(componentNid));
 		
 		if (nestUnder != null)
 		{
@@ -1258,9 +1281,9 @@ public class DynamicSememeView implements SememeViewI
 		}
 	}
 	
-	private ArrayList<TreeItem<RefexDynamicGUI>> createFilteredRowData(Stream<SememeChronology<? extends SememeVersion<?>>> sememes) throws IOException
+	private ArrayList<TreeItem<SememeGUI>> createFilteredRowData(Stream<SememeChronology<? extends SememeVersion<?>>> sememes) throws IOException
 	{
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = new ArrayList<>();
+		ArrayList<TreeItem<SememeGUI>> rowData = new ArrayList<>();
 		ArrayList<SememeVersion<?>> allVersions = new ArrayList<>();
 		
 		sememes.forEach(sememeC ->
@@ -1298,7 +1321,7 @@ public class DynamicSememeView implements SememeViewI
 			}
 			if (showActiveOnly_.get() == false || r.getState() == State.ACTIVE)
 			{
-				RefexDynamicGUI newRefexDynamicGUI = new RefexDynamicGUI(r, !r.getPrimordialUuid().equals(lastSeenRefex));  //first one we see with a new UUID is current, others are historical
+				SememeGUI newRefexDynamicGUI = new SememeGUI(r, !r.getPrimordialUuid().equals(lastSeenRefex));  //first one we see with a new UUID is current, others are historical
 				
 				// HeaderNode FILTERING DONE HERE
 				boolean filterOut = false;
@@ -1312,7 +1335,7 @@ public class DynamicSememeView implements SememeViewI
 				}
 				
 				if (! filterOut) {
-					TreeItem<RefexDynamicGUI> ti = new TreeItem<>();
+					TreeItem<SememeGUI> ti = new TreeItem<>();
 
 					ti.setValue(newRefexDynamicGUI);
 					//recurse
@@ -1390,7 +1413,7 @@ public class DynamicSememeView implements SememeViewI
 		return columns;
 	}
 	
-	private void checkForUncommittedRefexes(List<TreeItem<RefexDynamicGUI>> items)
+	private void checkForUncommittedRefexes(List<TreeItem<SememeGUI>> items)
 	{
 		if (hasUncommitted_.get())
 		{
@@ -1400,7 +1423,7 @@ public class DynamicSememeView implements SememeViewI
 		{
 			return;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<SememeGUI> item : items)
 		{
 			if (item.getValue() != null && item.getValue().getSememe().isUncommitted())
 			{
@@ -1415,14 +1438,14 @@ public class DynamicSememeView implements SememeViewI
 		}
 	}
 	
-	private HashSet<Integer> getAllAssemblageSequences(List<TreeItem<RefexDynamicGUI>> items)
+	private HashSet<Integer> getAllAssemblageSequences(List<TreeItem<SememeGUI>> items)
 	{
 		HashSet<Integer> results = new HashSet<Integer>();
 		if (items == null)
 		{
 			return results;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<SememeGUI> item : items)
 		{
 			if (item.getValue() != null)
 			{
@@ -1434,7 +1457,7 @@ public class DynamicSememeView implements SememeViewI
 		return results;
 	}
 	
-	private void forgetAllUncommitted(List<TreeItem<RefexDynamicGUI>> items) throws IOException
+	private void forgetAllUncommitted(List<TreeItem<SememeGUI>> items) throws IOException
 	{
 		
 		if (items == null)
@@ -1464,14 +1487,14 @@ public class DynamicSememeView implements SememeViewI
 //		}
 	}
 	
-	private HashSet<Integer> getAllComponentNids(List<TreeItem<RefexDynamicGUI>> items)
+	private HashSet<Integer> getAllComponentNids(List<TreeItem<SememeGUI>> items)
 	{
 		HashSet<Integer> results = new HashSet<Integer>();
 		if (items == null)
 		{
 			return results;
 		}
-		for (TreeItem<RefexDynamicGUI> item : items)
+		for (TreeItem<SememeGUI> item : items)
 		{
 			if (item.getValue() != null)
 			{
@@ -1484,7 +1507,7 @@ public class DynamicSememeView implements SememeViewI
 	}
 	
 
-	private ArrayList<TreeItem<RefexDynamicGUI>> getDataRows(int nid) 
+	private ArrayList<TreeItem<SememeGUI>> getDataRows(int nid) 
 			throws IOException, InterruptedException, NumberFormatException, ParseException
 	{
 		Platform.runLater(() ->
@@ -1494,7 +1517,7 @@ public class DynamicSememeView implements SememeViewI
 		});
 		
 		
-		ArrayList<TreeItem<RefexDynamicGUI>> rowData = createFilteredRowData(viewFocus_ == ViewFocus.ASSEMBLAGE ? 
+		ArrayList<TreeItem<SememeGUI>> rowData = createFilteredRowData(viewFocus_ == ViewFocus.ASSEMBLAGE ? 
 				Get.sememeService().getSememesFromAssemblage(nid) :
 					Get.sememeService().getSememesForComponent(nid));
 
