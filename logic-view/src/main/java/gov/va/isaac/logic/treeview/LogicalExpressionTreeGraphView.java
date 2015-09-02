@@ -68,7 +68,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 	Integer conceptId = null;
 
-	//private ObservableTaxonomyCoordinate passedObservableTaxonomyCoordinate = null;
+	private ObservableTaxonomyCoordinate passedObservableTaxonomyCoordinate = null;
 	
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	
@@ -274,6 +274,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		title.setText(null);
 		logicalExpressionTreeGraph.setRootNode(null);
 		textGraph.setText(null);
+
+		if (passedObservableTaxonomyCoordinate != null) {
+			unbindFromPassedObservableTaxonomyCoordinate();
+			passedObservableTaxonomyCoordinate = null;
+		}
 	}
 
 	@Override
@@ -294,6 +299,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	public void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,
 			int componentNid) {
+		if (passedObservableTaxonomyCoordinate != null) {
+			unbindFromPassedObservableTaxonomyCoordinate();
+		}
+		passedObservableTaxonomyCoordinate = null;
+		
 		this.taxonomyCoordinate.get().languageCoordinateProperty().set(new ObservableLanguageCoordinateImpl(taxonomyCoordinate.getLanguageCoordinate()));
 		this.taxonomyCoordinate.get().stampCoordinateProperty().set(new ObservableStampCoordinateImpl(taxonomyCoordinate.getStampCoordinate()));
 		this.taxonomyCoordinate.get().logicCoordinateProperty().set(new ObservableLogicCoordinateImpl(taxonomyCoordinate.getLogicCoordinate()));
@@ -303,10 +313,21 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		setConcept(componentNid);
 	}
 
+	private void unbindFromPassedObservableTaxonomyCoordinate() {
+		this.taxonomyCoordinate.get().languageCoordinateProperty().bind(passedObservableTaxonomyCoordinate.languageCoordinateProperty());
+		this.taxonomyCoordinate.get().stampCoordinateProperty().bind(passedObservableTaxonomyCoordinate.stampCoordinateProperty());
+		this.taxonomyCoordinate.get().logicCoordinateProperty().bind(passedObservableTaxonomyCoordinate.logicCoordinateProperty());
+		this.taxonomyCoordinate.get().premiseTypeProperty().bind(passedObservableTaxonomyCoordinate.premiseTypeProperty());
+		this.taxonomyCoordinate.get().uuidProperty().bind(passedObservableTaxonomyCoordinate.uuidProperty());
+	}
 	@Override
 	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
 			int componentNid) {
-
+		if (passedObservableTaxonomyCoordinate != null) {
+			unbindFromPassedObservableTaxonomyCoordinate();
+		}
+		passedObservableTaxonomyCoordinate = taxonomyCoordinate;
+		
 		this.taxonomyCoordinate.get().languageCoordinateProperty().bind(taxonomyCoordinate.languageCoordinateProperty());
 		this.taxonomyCoordinate.get().stampCoordinateProperty().bind(taxonomyCoordinate.stampCoordinateProperty());
 		this.taxonomyCoordinate.get().logicCoordinateProperty().bind(taxonomyCoordinate.logicCoordinateProperty());
