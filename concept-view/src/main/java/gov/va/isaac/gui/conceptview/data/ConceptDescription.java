@@ -1,17 +1,21 @@
 package gov.va.isaac.gui.conceptview.data;
 
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -23,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 public class ConceptDescription extends StampedItem {
 	private static final Logger LOG = LoggerFactory.getLogger(ConceptDescription.class);
-
 
 	private DescriptionSememe<?> _description;
 	
@@ -86,7 +89,7 @@ public class ConceptDescription extends StampedItem {
 				String typeName			= Get.conceptDescriptionText(_description.getDescriptionTypeConceptSequence());
 				String valueName		= _description.getText();
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
-				String acceptabilityName = getAcceptabilities(_description);
+				String acceptabilityName = getAcceptabilities(_description, CUSTOM_ACCEPTABILITY_NID_RENDERER);
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
 				
 				final String finalValueName = valueName;
@@ -156,14 +159,40 @@ public class ConceptDescription extends StampedItem {
 	};
 	
 	private static String getAcceptabilities(DescriptionSememe<?> description) {
+		return getAcceptabilities(description, null);
+	}
+	private final static Function<Integer, String> DEFAULT_ACCEPTABILITY_NID_RENDERER = new Function<Integer, String>() {
+		@Override
+		public String apply(Integer t) {
+			return Get.conceptDescriptionText(t);
+		}
+	};
+	private final static Function<Integer, String> CUSTOM_ACCEPTABILITY_NID_RENDERER = new Function<Integer, String>() {
+		@Override
+		public String apply(Integer t) {
+			if (t == IsaacMetadataAuxiliaryBinding.PREFERRED.getNid()) {
+				return "PT";
+			} else if (t == IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getNid()) {
+				return "AC";
+			} else {
+				String error = "Unexpected acceptability NID " + t + "(" + Get.conceptDescriptionText(t) + ")";
+				LOG.error(error);
+				throw new RuntimeException(error);
+			}
+		}
+	};
+	private static String getAcceptabilities(DescriptionSememe<?> description, Function<Integer, String> passedAcceptabilityRenderer) {
+		final Function<Integer, String> acceptabilityRenderer = passedAcceptabilityRenderer != null ? passedAcceptabilityRenderer : DEFAULT_ACCEPTABILITY_NID_RENDERER;
 		Map<Integer, Integer> dialectSequenceToAcceptabilityNidMap = Frills.getAcceptabilities(description.getNid(), StampCoordinates.getDevelopmentLatest());
 		
 		StringBuilder builder = new StringBuilder();
 		for (Map.Entry<Integer, Integer> entry : dialectSequenceToAcceptabilityNidMap.entrySet()) {
-			if (builder.toString().length() > 0) {
-				builder.append(",\n");
+			if (entry.getKey() != null && entry.getValue() != null) {
+				if (builder.toString().length() > 0) {
+					builder.append(",\n");
+				}
+				builder.append(Get.conceptDescriptionText(entry.getKey()) + "-" + acceptabilityRenderer.apply(entry.getValue()));
 			}
-			builder.append(Get.conceptDescriptionText(entry.getKey()) + ":" + Get.conceptDescriptionText(entry.getValue()));
 		}
 		
 		return builder.toString();
