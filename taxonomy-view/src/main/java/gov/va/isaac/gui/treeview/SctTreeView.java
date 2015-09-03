@@ -351,15 +351,24 @@ class SctTreeView {
         }
 
         // Do work in background.
-        Task<ConceptChronology<? extends ConceptVersion<?>>> task = new Task<ConceptChronology<? extends ConceptVersion<?>>>() {
+        Task<Void> task = new Task<Void>() {
 
             @Override
-            protected ConceptChronology<? extends ConceptVersion<?>> call() throws Exception {
+            protected Void call() throws Exception {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
 
-                ConceptChronology<? extends ConceptVersion<?>> rootConceptCV = Get.conceptService().getConcept(rootConcept);
-               
-                return rootConceptCV;
+                try
+                {
+                    ConceptChronology<? extends ConceptVersion<?>> rootConceptCV = Get.conceptService().getConcept(rootConcept);
+                    rootTreeItem = new SctTreeItem(rootConceptCV, displayPolicies, getTaxonomyCoordinate(), getTaxonomyTree(), getConceptSnapshotService(), 
+                            Images.ROOT.createImageView());
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Error loading root concept of tree", e);
+                    throw e;
+                }
             }
 
             @Override
@@ -367,8 +376,43 @@ class SctTreeView {
             {
                 LOG.debug("getConceptVersion() (called by init()) succeeded");
 
-                ConceptChronology<? extends ConceptVersion<?>> result = this.getValue();
-                SctTreeView.this.finishTreeSetup(result);
+                treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+
+                treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion<?>>>, TreeCell<ConceptChronology<? extends ConceptVersion<?>>>>() {
+                    @Override
+                    public TreeCell<ConceptChronology<? extends ConceptVersion<?>>> call(TreeView<ConceptChronology<? extends ConceptVersion<?>>> p) {
+                        return new SctTreeCell();
+                    }
+                });
+                treeView_.setRoot(rootTreeItem);
+                
+                Utility.execute(() -> rootTreeItem.addChildren());
+
+                // put this event handler on the root
+                rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>>branchCollapsedEvent(),
+                        new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
+                            @Override
+                            public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
+                                // remove grandchildren
+                                ((SctTreeItem) t.getSource()).removeGrandchildren();
+                            }
+                        });
+
+                rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>> branchExpandedEvent(),
+                        new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
+                            @Override
+                            public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
+                                // add grandchildren
+                                SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
+                                Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
+                            }
+                        });
+                sp_.getChildren().add(treeView_);
+                sp_.getChildren().remove(0);  //remove the progress indicator
+
+                // Final decrement of initializationCountDownLatch_ to 0,
+                // indicating that initial init() is complete
+                initializationCountDownLatch_.countDown();
 
                 refreshRequiredListenerHack = new UpdateableBooleanBinding()
                 {
@@ -404,7 +448,6 @@ class SctTreeView {
                 Throwable ex = getException();
                 String title = "Unexpected error loading root concept";
                 String msg = ex.getClass().getName();
-                LOG.error(title, ex);
                 if (!shutdownRequested)
                 {
                     AppContext.getCommonDialogs().showErrorDialog(title, msg, ex.getMessage());
@@ -413,61 +456,6 @@ class SctTreeView {
         };
 
         Utility.execute(task);
-    }
-    
-    /**
-     * @param rootConcept
-     * 
-     * This method should be called only by init() and only a single time.
-     * The only reason this is its own method is to make the init() more readable.
-     * 
-     */
-    private void finishTreeSetup(ConceptChronology<? extends ConceptVersion<?>> rootConcept) {
-        LOG.debug("Running finishTreeSetup()...");
-        
-        treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-
-        treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion<?>>>, TreeCell<ConceptChronology<? extends ConceptVersion<?>>>>() {
-            @Override
-            public TreeCell<ConceptChronology<? extends ConceptVersion<?>>> call(TreeView<ConceptChronology<? extends ConceptVersion<?>>> p) {
-                return new SctTreeCell();
-            }
-        });
-
-        ConceptChronology<? extends ConceptVersion<?>> visibleRootConcept = rootConcept;
-        
-        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, getTaxonomyCoordinate(), getTaxonomyTree(), getConceptSnapshotService(), Images.ROOT.createImageView());
-
-        treeView_.setRoot(rootTreeItem);
-        
-        
-        Utility.execute(() -> rootTreeItem.addChildren());
-
-        // put this event handler on the root
-        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>>branchCollapsedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
-                    @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
-                        // remove grandchildren
-                        ((SctTreeItem) t.getSource()).removeGrandchildren();
-                    }
-                });
-
-        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>> branchExpandedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
-                    @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
-                        // add grandchildren
-                        SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
-                        Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
-                    }
-                });
-        sp_.getChildren().add(treeView_);
-        sp_.getChildren().remove(0);  //remove the progress indicator
-
-        // Final decrement of initializationCountDownLatch_ to 0,
-        // indicating that initial init() is complete
-        initializationCountDownLatch_.countDown();
     }
 
     public void showConcept(final UUID conceptUUID, final BooleanProperty workingIndicator) {
