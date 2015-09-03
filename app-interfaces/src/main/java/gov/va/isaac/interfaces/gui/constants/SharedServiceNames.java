@@ -31,7 +31,6 @@ public class SharedServiceNames
 {
 	public static final String DOCKED = "Docked";
 	public static final String EMBEDDED = "Embedded";
-	public static final String MODERN_STYLE = "ModernStyle";
 	public static final String LEGACY_STYLE = "LegacyStyle";
 	public static final String DIAGRAM_STYLE = "DiagramStyle";
     public static final String USCRS = "USCRS";

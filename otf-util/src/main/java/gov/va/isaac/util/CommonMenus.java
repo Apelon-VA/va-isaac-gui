@@ -18,12 +18,20 @@
  */
 package gov.va.isaac.util;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
@@ -41,13 +49,6 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.impl.utility.Frills;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.BooleanSupplier;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -59,8 +60,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CommonMenus}
@@ -80,7 +79,6 @@ public class CommonMenus
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
 		CONCEPT_DIAGRAM_VIEW("Concept Diagraming View", Images.CONCEPT_VIEW),
-		CONCEPT_VIEW("Model Concept", Images.CONCEPT_VIEW),
 		CONCEPT_VIEW_LEGACY("Concept Table View", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
 		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
@@ -124,7 +122,6 @@ public class CommonMenus
 	// Initialize service call cache
 	static {
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_DIAGRAM_VIEW, PopupConceptViewI.class, SharedServiceNames.DIAGRAM_STYLE);
-		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW, PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW_LEGACY, PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.TAXONOMY_VIEW, TaxonomyViewI.class, SharedServiceNames.DOCKED);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW, WorkflowTaskDetailsViewI.class);
@@ -467,37 +464,6 @@ public class CommonMenus
 			}
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_TABLE_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-		}
-
-		
-		// Menu item to show concept details.
-		try {
-			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_VIEW)) {
-				MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
-						CommonMenuItem.CONCEPT_VIEW,
-						builder, 
-						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-						() -> { // onHandlable
-							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
-									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
-
-							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getService(CommonMenuItem.CONCEPT_VIEW);
-							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
-							cv.showView(null);
-						},
-						() -> { // onNotHandlable
-							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
-						});
-				if (enhancedConceptViewMenuItem != null)
-				{
-					menuItems.add(enhancedConceptViewMenuItem);
-				}
-			} else {
-				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
-			}
-		} catch (Exception e) {
-			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to show concept details. (legacy)

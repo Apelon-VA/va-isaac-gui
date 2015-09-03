@@ -249,7 +249,7 @@ public class WorkflowTaskDetailsViewController {
 	}
 	
 	private void openConceptPanel() {
-		PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class);
 		cv.setConcept(conceptId);
 		cv.showView(null);
 	}

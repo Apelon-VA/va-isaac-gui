@@ -58,8 +58,6 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  */
-@Service @Named(value=SharedServiceNames.MODERN_STYLE)
-@PerLookup
 public class EnhancedConceptView implements PopupConceptViewI {
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 	
