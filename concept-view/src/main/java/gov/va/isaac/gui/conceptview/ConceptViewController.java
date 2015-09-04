@@ -14,9 +14,12 @@ import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
@@ -27,6 +30,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javafx.concurrent.Task;
 import javafx.application.Platform;
@@ -109,7 +114,16 @@ public class ConceptViewController {
 	@FXML private Button cancelButton;
 	@FXML private Button commitButton;
 	
-	private ConceptNode conceptNode = new ConceptNode(null, false);
+	// CONCEPTNODE_DESCRIPTION_READER always gets FSN, regardless of preferences
+	private static final Function<ConceptSnapshot, String> CONCEPTNODE_DESCRIPTION_READER = new Function<ConceptSnapshot, String>() {
+		@Override
+		public String apply(ConceptSnapshot t) {
+			Optional<LatestVersion<DescriptionSememe<?>>> fsn = t.getLanguageCoordinate().getFullySpecifiedDescription(Get.sememeService().getDescriptionsForComponent(t.getChronology().getNid()).collect(Collectors.toList()), t.getStampCoordinate());
+			
+			return fsn.isPresent() ? fsn.get().value().getText() : null;
+		}
+	};
+	private ConceptNode conceptNode = new ConceptNode(null, false, null, CONCEPTNODE_DESCRIPTION_READER);
 	
 	private UpdateableBooleanBinding updateableBooleanBinding;
 	
