@@ -18,7 +18,6 @@
  */
 package gov.va.isaac.associations;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +26,6 @@ import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
@@ -56,9 +53,14 @@ public class AssociationUtilities
 		return associationSequence;
 	}
 
-	public static List<Association> getSourceAssociations(int componentNid, StampCoordinate stamp) throws IOException
+	/**
+	 * Get all associations that originate on the specified componentNid
+	 * @param componentNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 */
+	public static List<AssociationInstance> getSourceAssociations(int componentNid, StampCoordinate stamp)
 	{
-		ArrayList<Association> results = new ArrayList<>();
+		ArrayList<AssociationInstance> results = new ArrayList<>();
 		Get.sememeService().getSememesForComponentFromAssemblage(componentNid, getAssociationSequence())
 			.forEach(associationC -> 
 				{
@@ -67,16 +69,21 @@ public class AssociationUtilities
 							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
 					if (latest.isPresent())
 					{
-						results.add(new Association(latest.get().value()));
+						results.add(AssociationInstance.read(latest.get().value()));
 					}
 					
 				});
 		return results;
 	}
 
-	public static List<Association> getTargetAssociations(int componentNid, StampCoordinate stamp)
+	/**
+	 * Get all association instances that have a target of the specified componentNid
+	 * @param componentNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 */
+	public static List<AssociationInstance> getTargetAssociations(int componentNid, StampCoordinate stamp)
 	{
-		ArrayList<Association> result = new ArrayList<>();
+		ArrayList<AssociationInstance> result = new ArrayList<>();
 
 		DynamicSememeIndexer indexer = LookupService.getService(DynamicSememeIndexer.class);
 		if (indexer == null)
@@ -84,14 +91,14 @@ public class AssociationUtilities
 			throw new RuntimeException("Required index is not available");
 		}
 		
-		for (ConceptChronology<? extends ConceptVersion<?>> associationType : getAssociationTypes())
+		for (Integer associationTypeSequenece : getAssociationConceptSequences())
 		{
 			try
 			{
-				int colIndex = findTargetColumnIndex(associationType.getNid());
+				int colIndex = findTargetColumnIndex(associationTypeSequenece);
 				UUID uuid = Get.identifierService().getUuidPrimordialForNid(componentNid).orElse(null);
 				List<SearchResult> refexes = indexer.query(new DynamicSememeString(componentNid + (uuid == null ? "" : " OR " + uuid)),
-						associationType.getNid(), false, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
+						associationTypeSequenece, false, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
 				for (SearchResult sr : refexes)
 				{
 					@SuppressWarnings("rawtypes")
@@ -100,7 +107,7 @@ public class AssociationUtilities
 					
 					if (latest.isPresent())
 					{
-						result.add(new Association(latest.get().value()));
+						result.add(AssociationInstance.read(latest.get().value()));
 					}
 				}
 			}
@@ -112,9 +119,15 @@ public class AssociationUtilities
 		return result;
 	}
 
-	public static List<Association> getAssociationsOfType(int associationTypeConceptNid, StampCoordinate stamp)
+	/**
+	 * 
+	 * @param associationTypeConceptNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 * @return
+	 */
+	public static List<AssociationInstance> getAssociationsOfType(int associationTypeConceptNid, StampCoordinate stamp)
 	{
-		ArrayList<Association> results = new ArrayList<>();
+		ArrayList<AssociationInstance> results = new ArrayList<>();
 		Get.sememeService().getSememesFromAssemblage(associationTypeConceptNid)
 			.forEach(associationC -> 
 				{
@@ -123,16 +136,20 @@ public class AssociationUtilities
 							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
 					if (latest.isPresent())
 					{
-						results.add(new Association(latest.get().value()));
+						results.add(AssociationInstance.read(latest.get().value()));
 					}
 					
 				});
 		return results;
 	}
 
-	public static List<ConceptChronology<? extends ConceptVersion<?>>> getAssociationTypes()
+	/**
+	 * Get a list of all of the concepts that identify a type of association - returning their concept sequence identifier.
+	 * @return
+	 */
+	public static List<Integer> getAssociationConceptSequences()
 	{
-		ArrayList<ConceptChronology<? extends ConceptVersion<?>>> result = new ArrayList<>();
+		ArrayList<Integer> result = new ArrayList<>();
 
 		DynamicSememeIndexer indexer = LookupService.getService(DynamicSememeIndexer.class);
 		if (indexer == null)
@@ -141,17 +158,17 @@ public class AssociationUtilities
 		}
 		Get.sememeService().getSememesFromAssemblage(IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).forEach(associationC ->
 		{
-			result.add(Get.conceptService().getConcept(associationC.getReferencedComponentNid()));
+			result.add(Get.identifierService().getConceptSequence(associationC.getReferencedComponentNid()));
 		});
 		return result;
 	}
 
 	/**
-	 * @param assemblageSequence
+	 * @param assemblageNidOrSequence
 	 */
-	protected static int findTargetColumnIndex(int assemblageSequence)
+	protected static int findTargetColumnIndex(int assemblageNidOrSequence)
 	{
-		DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(assemblageSequence);
+		DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(assemblageNidOrSequence);
 
 		for (DynamicSememeColumnInfo rdci : rdud.getColumnInfo())
 		{
@@ -162,4 +179,6 @@ public class AssociationUtilities
 		}
 		return Integer.MIN_VALUE;
 	}
+	
+	
 }
