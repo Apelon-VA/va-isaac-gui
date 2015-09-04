@@ -89,7 +89,7 @@ public class ConceptDescription extends StampedItem {
 				String typeName			= Get.conceptDescriptionText(_description.getDescriptionTypeConceptSequence());
 				String valueName		= _description.getText();
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
-				String acceptabilityName = getAcceptabilities(_description, CUSTOM_DIALECT_SEQUENCE_RENDERER, CUSTOM_ACCEPTABILITY_NID_RENDERER);
+				String acceptabilityName = AcceptabilitiesHelper.getFormattedAcceptabilities(_description);
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
 				
 				final String finalValueName = valueName;
@@ -157,72 +157,4 @@ public class ConceptDescription extends StampedItem {
 			return Utility.compareStringsIgnoreCase(o1.getSignificance(), o2.getSignificance());
 		}
 	};
-	
-	private static String getAcceptabilities(DescriptionSememe<?> description) {
-		return getAcceptabilities(description, null, null);
-	}
-	private final static Function<Integer, String> DEFAULT_DIALECT_SEQUENCE_RENDERER = new Function<Integer, String>() {
-		@Override
-		public String apply(Integer t) {
-			return Get.conceptDescriptionText(t);
-		}
-	};
-	private final static Function<Integer, String> CUSTOM_DIALECT_SEQUENCE_RENDERER = new Function<Integer, String>() {
-		@Override
-		public String apply(Integer t) {
-			String dialectDesc = null;
-			Optional<UUID> uuidForDialectSequence = Get.identifierService().getUuidPrimordialFromConceptSequence(t);
-			if (uuidForDialectSequence.isPresent()) {
-				LanguageCode code = LanguageCode.safeValueOf(uuidForDialectSequence.get());
-				if (code != null) {
-					dialectDesc = code.getFormatedLanguageCode();
-				}
-			}
-			
-			if (dialectDesc == null) {
-				dialectDesc = Get.conceptDescriptionText(t);
-			}
-
-			return dialectDesc;
-		}
-	};
-	private final static Function<Integer, String> DEFAULT_ACCEPTABILITY_NID_RENDERER = new Function<Integer, String>() {
-		@Override
-		public String apply(Integer t) {
-			return Get.conceptDescriptionText(t);
-		}
-	};
-	private final static Function<Integer, String> CUSTOM_ACCEPTABILITY_NID_RENDERER = new Function<Integer, String>() {
-		@Override
-		public String apply(Integer t) {
-			if (t == IsaacMetadataAuxiliaryBinding.PREFERRED.getNid()) {
-				return "PT";
-			} else if (t == IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getNid()) {
-				return "AC";
-			} else {
-				String error = "Unexpected acceptability NID " + t + "(" + Get.conceptDescriptionText(t) + ")";
-				LOG.error(error);
-				throw new RuntimeException(error);
-			}
-		}
-	};
-	private static String getAcceptabilities(DescriptionSememe<?> description, Function<Integer, String> passedDialectSequenceRenderer, Function<Integer, String> passedAcceptabilityRenderer) {
-		final Function<Integer, String> acceptabilityRenderer = passedAcceptabilityRenderer != null ? passedAcceptabilityRenderer : DEFAULT_ACCEPTABILITY_NID_RENDERER;
-		final Function<Integer, String> dialectSequenceRenderer = passedDialectSequenceRenderer != null ? passedDialectSequenceRenderer : DEFAULT_DIALECT_SEQUENCE_RENDERER;
-		
-		Map<Integer, Integer> dialectSequenceToAcceptabilityNidMap = Frills.getAcceptabilities(description.getNid(), StampCoordinates.getDevelopmentLatest());
-		
-		StringBuilder builder = new StringBuilder();
-		for (Map.Entry<Integer, Integer> entry : dialectSequenceToAcceptabilityNidMap.entrySet()) {
-			if (entry.getKey() != null && entry.getValue() != null) {
-				if (builder.toString().length() > 0) {
-					builder.append(", ");
-				}
-				
-				builder.append(passedDialectSequenceRenderer.apply(entry.getKey()) + ":" + acceptabilityRenderer.apply(entry.getValue()));
-			}
-		}
-		
-		return builder.toString();
-	}
 }
