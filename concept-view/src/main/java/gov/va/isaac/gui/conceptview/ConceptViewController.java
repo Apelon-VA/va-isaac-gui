@@ -20,8 +20,10 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
@@ -94,7 +96,7 @@ public class ConceptViewController {
 	@FXML private Label conceptCodeLabel;
 
 	@FXML private ComboBox<State> statusComboBox;
-	@FXML private ComboBox<Integer> moduleComboBox;
+	@FXML private VBox modulesVBox;
 	@FXML private VBox uuidsVBox;
 	
 	@FXML private Button minusDescriptionButton;
@@ -136,7 +138,7 @@ public class ConceptViewController {
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert moduleComboBox 			!= null : "fx:id=\"moduleComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert modulesVBox 			!= null : "fx:id=\"modulesVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert uuidsVBox 			!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -159,7 +161,7 @@ public class ConceptViewController {
 		setupColumnTypes();
 		setupDescriptionTable();
 		setupStatusComboBox();
-		setupModuleComboBox();
+		setupModulesVBox();
 		setupConceptCodeLabel();
 		setupUuidsVBox();
 		setupActiveOnlyToggle();
@@ -430,91 +432,50 @@ public class ConceptViewController {
 		}
 	}
 
-	private void setupModuleComboBox() {
-		moduleComboBox.setCellFactory((param) -> {
-			final ListCell<Integer> cell = new ListCell<Integer>() {
-				@Override
-				protected void updateItem(Integer c, boolean emptyRow) {
-					super.updateItem(c, emptyRow);
-					if(c == null) {
-						setText(null);
-					} else {
-						Task<String> task = new Task<String>() {
-							@Override
-							protected String call() throws Exception {
-								return Get.conceptDescriptionText(c);
-							}
-
-							@Override
-							protected void succeeded() {
-								Platform.runLater(() -> setText(getValue()));
-							}
-						};
-						
-						Utility.execute(task);
-					}
-				}
-			};
-			return cell;
-		});
-		moduleComboBox.setButtonCell(new ListCell<Integer>() {
-			@Override
-			protected void updateItem(Integer c, boolean emptyRow) {
-				super.updateItem(c, emptyRow); 
-				if (emptyRow) {
-					setText("");
-				} else {
-					Task<String> task = new Task<String>() {
-						@Override
-						protected String call() throws Exception {
-							return Get.conceptDescriptionText(c);
-						}
-
-						@Override
-						protected void succeeded() {
-							Platform.runLater(() -> setText(getValue()));
-						}
-					};
-					
-					Utility.execute(task);
-				}
-			}
-		});
-		moduleComboBox.setConverter(new StringConverter<Integer>() {
-			@Override
-			public String toString(Integer moduleSequence) {
-				if (moduleSequence == null){
-					return null;
-				} else {
-					return Get.conceptDescriptionText(moduleSequence);
-				}
-			}
-
-			@Override
-			public Integer fromString(String module) {
-				return null;
-			}
-		});
+	private void setupModulesVBox() {
 		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
-				loadModuleComboBoxFromConcept(newValue);
+				loadModulesVBoxFromConcept(newValue);
 			}
 		});
-		
-		loadModuleComboBoxFromConcept(conceptNode.getConcept());
+		loadModulesVBoxFromConcept(conceptNode.getConcept());
 	}
-	// In read-only view, set contents/choices of moduleComboBox
-	// to module of loaded concept only
-	private void loadModuleComboBoxFromConcept(ConceptSnapshot concept) {
-		moduleComboBox.getItems().clear();
+	
+	// TODO replace with not-yet-existing call to API to return list of latest version per each module
+	private Collection<Integer> tempGetModulesUntilGetLatestPerModuleAvailable(ConceptSnapshot concept) {
+		List<Integer> modules = new ArrayList<>();
+		
+		modules.add(concept.getModuleSequence());
+		
+		return modules;
+	}
+	// In read-only view, load contents of modulesVBox
+	private void loadModulesVBoxFromConcept(ConceptSnapshot concept) {
+		modulesVBox.getChildren().clear();
 		if (concept != null) {
-			moduleComboBox.getItems().add(concept.getModuleSequence());
-			moduleComboBox.getSelectionModel().clearAndSelect(0);
-		} else {
-			moduleComboBox.buttonCellProperty().set(null);
+			for (final Integer moduleSequence : tempGetModulesUntilGetLatestPerModuleAvailable(concept)) {
+				
+				Label label = new Label(Get.conceptDescriptionText(moduleSequence));
+				label.setContextMenu(new ContextMenu());
+				
+				CommonMenus.addCommonMenus(label.getContextMenu(),
+						new CommonMenusDataProvider() {
+					@Override
+					public String[] getStrings() {
+						return new String[] {label.getText()};
+					}
+				},
+				new CommonMenusNIdProvider() {
+					@Override
+					public Collection<Integer> getNIds() {
+						return Arrays.asList(new Integer[] {Get.identifierService().getConceptNid(moduleSequence)});
+					}
+				});
+				modulesVBox.getChildren().add(label);
+			}
 		}
 	}
 	
