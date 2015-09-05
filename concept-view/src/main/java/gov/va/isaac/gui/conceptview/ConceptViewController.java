@@ -1,14 +1,18 @@
 package gov.va.isaac.gui.conceptview;
 
+import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
+import gov.va.isaac.gui.dragAndDrop.DragRegistry;
+import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
@@ -17,6 +21,7 @@ import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
@@ -35,6 +40,7 @@ import java.util.stream.Collectors;
 
 import javafx.concurrent.Task;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -97,8 +103,9 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, StampedItem> timeTableColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem> authorTableColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem> pathTableColumn;
-	
+
 	@FXML private Label conceptCodeLabel;
+	@FXML private Label conceptLabel;
 
 	@FXML private ComboBox<State> statusComboBox;
 	@FXML private VBox modulesVBox;
@@ -113,18 +120,8 @@ public class ConceptViewController {
 
 	@FXML private Button cancelButton;
 	@FXML private Button commitButton;
-	
-	// CONCEPTNODE_DESCRIPTION_READER always gets FSN, regardless of preferences
-	private static final Function<ConceptSnapshot, String> CONCEPTNODE_DESCRIPTION_READER = new Function<ConceptSnapshot, String>() {
-		@Override
-		public String apply(ConceptSnapshot t) {
-			Optional<LatestVersion<DescriptionSememe<?>>> fsn = t.getLanguageCoordinate().getFullySpecifiedDescription(Get.sememeService().getDescriptionsForComponent(t.getChronology().getNid()).collect(Collectors.toList()), t.getStampCoordinate());
-			
-			return fsn.isPresent() ? fsn.get().value().getText() : null;
-		}
-	};
-	private ConceptNode conceptNode = new ConceptNode(null, false, null, CONCEPTNODE_DESCRIPTION_READER);
-	
+
+	private ObjectProperty<ConceptSnapshot> conceptProperty = new SimpleObjectProperty<ConceptSnapshot>();
 	private UpdateableBooleanBinding updateableBooleanBinding;
 	
 	@FXML
@@ -150,6 +147,7 @@ public class ConceptViewController {
 		assert headerGridPane 				!= null : "fx:id=\"headerGridPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert conceptLabel 			!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert modulesVBox 			!= null : "fx:id=\"modulesVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -170,7 +168,6 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(minusDescriptionButton, 	Images.MINUS.createImageView(), 	"Retire/Unretire Description");
 		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.EDIT.createImageView(), 		"Edit Description");
 
-		setupConceptNode();
 		setColumnWidths();
 		setupColumnTypes();
 		setupDescriptionTable();
@@ -182,10 +179,9 @@ public class ConceptViewController {
 		setupStampToggle();
 		setupCancelButton();
 		setupCommitButton();
+		setupConceptLabel();
 		
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
-
-		headerGridPane.add(conceptNode.getNode(), 0, 0, 3, 1);
 
 		// This binding refreshes whenever its bindings change
 		updateableBooleanBinding = new UpdateableBooleanBinding() {
@@ -193,7 +189,7 @@ public class ConceptViewController {
             {
                 setComputeOnInvalidate(true);
                 addBinding(
-                		conceptNode.getConceptProperty(),
+                		conceptProperty,
                 		activeOnlyToggle.selectedProperty(),
                 		stampToggle.selectedProperty());
                 enabled = true;
@@ -270,7 +266,7 @@ public class ConceptViewController {
 	}
 
 	public ConceptSnapshot getConceptSnapshot() {
-		return (conceptNode.isValid().get()) ? conceptNode.getConcept() : null;
+		return (conceptProperty.get() != null) ? conceptProperty.get() : null;
 	}
 	public void setConcept(int conceptId) {
 		Task<ConceptSnapshot> task = new Task<ConceptSnapshot>() {
@@ -281,7 +277,7 @@ public class ConceptViewController {
 
 			@Override
 			protected void succeeded() {
-				Platform.runLater(() -> conceptNode.set(getValue()));
+				Platform.runLater(() -> conceptProperty.set(getValue()));
 			}
 		};
 		
@@ -296,17 +292,90 @@ public class ConceptViewController {
 	
 	private void refresh() {
 		ConceptChronology<? extends StampedVersion> concept = null;
-		if (conceptNode.getConceptProperty().get() != null) {
-			concept = conceptNode.getConcept().getChronology();
+		if (conceptProperty.get() != null) {
+			concept = conceptProperty.get().getChronology();
 		}
 
 		refreshConceptDescriptions(concept);
 	}
 
-	private void setupConceptNode() {
-		conceptNode.getNode().setPadding(new Insets(10,0,10,10));
-	}
+	private void setupConceptLabel() {
+		conceptLabel.setPadding(new Insets(10,0,10,10));
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				if (newValue != null) {
+					Task<String> task = new Task<String>() {
+						@Override
+						protected String call() throws Exception {
+							Optional<LatestVersion<DescriptionSememe<?>>> desc = newValue.getLanguageCoordinate().getFullySpecifiedDescription(newValue.getChronology().getConceptDescriptionList(), newValue.getStampCoordinate());
+							return desc.isPresent() ? desc.get().value().getText() : null;
+						}
+						@Override
+						public void succeeded() {
+							Platform.runLater(() -> conceptLabel.setText(getValue()));
+						}
+						@Override
+						public void failed() {
+							LOG.error("Failed setting concept label on conceptProperty change", getException());
+						}
+					};
 
+					Utility.execute(task);
+				} else {
+					conceptLabel.setText("Drop a concept here");
+				}
+			}
+		});
+		AppContext.getService(DragRegistry.class).setupDragAndDrop(
+				conceptLabel,
+				new SingleConceptIdProvider()
+				{
+					@Override
+					public String getConceptId()
+					{
+						return conceptProperty.getValue().getNid() + "";
+					}
+				},
+				true,
+				new Function<String, String>() {
+					@Override
+					public String apply(String t) {
+						int nid = 0;
+						if (t != null) {
+							try {
+								nid = Integer.parseInt(t);
+							} catch (Exception e1) {
+								LOG.debug("Dropped non-integer text value \"{}\" on concept label", t);
+
+								try {
+									UUID uuid = UUID.fromString(t);
+
+									nid = Get.identifierService().getNidForUuids(uuid);
+								} catch (Exception e2) {
+									LOG.warn("Dropped non-integer, non-uuid text value \"{}\" on concept label", t);
+								}
+							}
+						}
+
+						LOG.debug("Text \"{}\" dropped on concept label resulting in use of concept nid={}", t, nid);
+
+						if (nid == 0) {
+							Platform.runLater(() -> conceptProperty.set(null));
+							return null;
+						} else {
+							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, StampCoordinates.getDevelopmentLatest(), Get.configurationService().getDefaultLanguageCoordinate());
+							
+							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
+							return desc.isPresent() ? desc.get().value().getText() : null;
+						}
+					}
+				});
+
+	}
 	private void setupActiveOnlyToggle() {
 		activeOnlyToggle.setSelected(false);
 	}
@@ -318,15 +387,15 @@ public class ConceptViewController {
 	}
 
 	private void setupConceptCodeLabel() {
-		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
-				loadConceptCodeFromConcept(newValue);
+				Platform.runLater(() -> loadConceptCodeFromConcept(newValue));
 			}
 		});
-		loadConceptCodeFromConcept(conceptNode.getConcept());
+		loadConceptCodeFromConcept(conceptProperty.get());
 	}
 	private void loadConceptCodeFromConcept(ConceptSnapshot concept) {
 		conceptCodeLabel.setText(null);
@@ -348,15 +417,15 @@ public class ConceptViewController {
 	}
 	
 	private void setupUuidsVBox() {
-		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
-				loadUuidsVBoxFromConcept(newValue);
+				Platform.runLater(() -> loadUuidsVBoxFromConcept(newValue));
 			}
 		});
-		loadUuidsVBoxFromConcept(conceptNode.getConcept());
+		loadUuidsVBoxFromConcept(conceptProperty.get());
 	}
 	private void loadUuidsVBoxFromConcept(ConceptSnapshot concept) {
 		uuidsVBox.getChildren().clear();
@@ -423,7 +492,7 @@ public class ConceptViewController {
 				return State.valueOf(state);
 			}
 		});
-		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
@@ -432,7 +501,7 @@ public class ConceptViewController {
 			}
 		});
 		
-		loadStatusComboBoxFromConcept(conceptNode.getConcept());
+		loadStatusComboBoxFromConcept(conceptProperty.get());
 	}
 	// In read-only view, set contents/choices of statusComboBox
 	// to state of loaded property only
@@ -447,7 +516,7 @@ public class ConceptViewController {
 	}
 
 	private void setupModulesVBox() {
-		conceptNode.getConceptProperty().addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
@@ -455,7 +524,7 @@ public class ConceptViewController {
 				loadModulesVBoxFromConcept(newValue);
 			}
 		});
-		loadModulesVBoxFromConcept(conceptNode.getConcept());
+		loadModulesVBoxFromConcept(conceptProperty.get());
 	}
 	
 	// TODO replace with not-yet-existing call to API to return list of latest version per each module

@@ -61,8 +61,9 @@ public class AcceptabilitiesHelper {
 			} else if (t == IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getNid()) {
 				return "AC";
 			} else {
-				String error = "Unexpected acceptability NID " + t + "(" + Get.conceptDescriptionText(t) + ")";
-				throw new RuntimeException(error);
+//				String error = "Unexpected acceptability NID " + t + "(" + Get.conceptDescriptionText(t) + ")";
+//				throw new RuntimeException(error);
+				return Get.conceptDescriptionText(t);
 			}
 		}
 	};

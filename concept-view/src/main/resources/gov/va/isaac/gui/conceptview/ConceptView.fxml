@@ -70,6 +70,7 @@
                   <ComboBox fx:id="statusComboBox" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2" />
                   <VBox fx:id="uuidsVBox" alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
                   <VBox fx:id="modulesVBox" alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label fx:id="conceptLabel" text="Drop concept here" GridPane.columnIndex="1" />
                </children>
             </GridPane>
          </children>
