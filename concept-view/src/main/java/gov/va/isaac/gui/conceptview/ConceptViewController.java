@@ -108,7 +108,7 @@ public class ConceptViewController {
 	@FXML private Label conceptLabel;
 
 	@FXML private ComboBox<State> statusComboBox;
-	@FXML private VBox modulesVBox;
+	@FXML private ComboBox<Integer> modulesComboBox;
 	@FXML private VBox uuidsVBox;
 	
 	@FXML private Button minusDescriptionButton;
@@ -150,7 +150,7 @@ public class ConceptViewController {
 		assert conceptLabel 			!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert modulesVBox 			!= null : "fx:id=\"modulesVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert modulesComboBox 			!= null : "fx:id=\"modulesComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert uuidsVBox 			!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -172,7 +172,7 @@ public class ConceptViewController {
 		setupColumnTypes();
 		setupDescriptionTable();
 		setupStatusComboBox();
-		setupModulesVBox();
+		setupModulesComboBox();
 		setupConceptCodeLabel();
 		setupUuidsVBox();
 		setupActiveOnlyToggle();
@@ -374,8 +374,8 @@ public class ConceptViewController {
 						}
 					}
 				});
-
 	}
+	
 	private void setupActiveOnlyToggle() {
 		activeOnlyToggle.setSelected(false);
 	}
@@ -515,18 +515,6 @@ public class ConceptViewController {
 		}
 	}
 
-	private void setupModulesVBox() {
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
-			@Override
-			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
-				loadModulesVBoxFromConcept(newValue);
-			}
-		});
-		loadModulesVBoxFromConcept(conceptProperty.get());
-	}
-	
 	// TODO replace with not-yet-existing call to API to return list of latest version per each module
 	private Collection<Integer> tempGetModulesUntilGetLatestPerModuleAvailable(ConceptSnapshot concept) {
 		List<Integer> modules = new ArrayList<>();
@@ -535,33 +523,96 @@ public class ConceptViewController {
 		
 		return modules;
 	}
-	// In read-only view, load contents of modulesVBox
-	private void loadModulesVBoxFromConcept(ConceptSnapshot concept) {
-		modulesVBox.getChildren().clear();
-		if (concept != null) {
-			for (final Integer moduleSequence : tempGetModulesUntilGetLatestPerModuleAvailable(concept)) {
-				
-				Label label = new Label(Get.conceptDescriptionText(moduleSequence));
-				label.setContextMenu(new ContextMenu());
-				
-				CommonMenus.addCommonMenus(label.getContextMenu(),
-						new CommonMenusDataProvider() {
-					@Override
-					public String[] getStrings() {
-						return new String[] {label.getText()};
+	
+	private void setupModulesComboBox() {
+		modulesComboBox.setCellFactory((param) -> {
+			final ListCell<Integer> cell = new ListCell<Integer>() {
+				@Override
+				protected void updateItem(Integer c, boolean emptyRow) {
+					super.updateItem(c, emptyRow);
+					if(c == null) {
+						setText(null);
+					} else {
+						Task<String> task = new Task<String>() {
+							@Override
+							protected String call() throws Exception {
+								return Get.conceptDescriptionText(c);
+							}
+
+							@Override
+							protected void succeeded() {
+								Platform.runLater(() -> setText(getValue()));
+							}
+						};
+						
+						Utility.execute(task);
 					}
-				},
-				new CommonMenusNIdProvider() {
-					@Override
-					public Collection<Integer> getNIds() {
-						return Arrays.asList(new Integer[] {Get.identifierService().getConceptNid(moduleSequence)});
-					}
-				});
-				modulesVBox.getChildren().add(label);
+				}
+			};
+			return cell;
+		});
+		modulesComboBox.setButtonCell(new ListCell<Integer>() {
+			@Override
+			protected void updateItem(Integer c, boolean emptyRow) {
+				super.updateItem(c, emptyRow); 
+				if (emptyRow) {
+					setText("");
+				} else {
+					Task<String> task = new Task<String>() {
+						@Override
+						protected String call() throws Exception {
+							return Get.conceptDescriptionText(c);
+						}
+
+						@Override
+						protected void succeeded() {
+							Platform.runLater(() -> setText(getValue()));
+						}
+					};
+					
+					Utility.execute(task);
+				}
 			}
+		});
+		modulesComboBox.setConverter(new StringConverter<Integer>() {
+			@Override
+			public String toString(Integer moduleSequence) {
+				if (moduleSequence == null){
+					return null;
+				} else {
+					return Get.conceptDescriptionText(moduleSequence);
+				}
+			}
+
+			@Override
+			public Integer fromString(String module) {
+				return null;
+			}
+		});
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				loadModulesComboBoxFromConcept(newValue);
+			}
+		});
+		
+		loadModulesComboBoxFromConcept(conceptProperty.get());
+	}
+	// In read-only view, set contents/choices of moduleComboBox
+	// to module of loaded concepts only
+	private void loadModulesComboBoxFromConcept(ConceptSnapshot concept) {
+		modulesComboBox.getItems().clear();
+		if (concept != null) {
+			
+			modulesComboBox.getItems().addAll(tempGetModulesUntilGetLatestPerModuleAvailable(concept));
+			modulesComboBox.getSelectionModel().clearAndSelect(0);
+		} else {
+			modulesComboBox.buttonCellProperty().set(null);
 		}
 	}
-	
+
 	private void setupDescriptionTable() 
 	{
 		//descriptionTableView.setTableMenuButtonVisible(true);

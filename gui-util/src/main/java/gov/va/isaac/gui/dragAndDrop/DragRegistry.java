@@ -235,7 +235,7 @@ public class DragRegistry
 									n.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
 
 									logger.error("Error dropping snomed concept", getException());
-									AppContext.getCommonDialogs().showErrorDialog("Unexpected Error", "There was an unexpected error dropping the concept", getException().toString());
+									AppContext.getCommonDialogs().showErrorDialog("Unexpected Error", "There was an unexpected error dropping concept " + str, getException().toString());
 
 									/*
 									 * let the source know whether the string was successfully transferred and used
