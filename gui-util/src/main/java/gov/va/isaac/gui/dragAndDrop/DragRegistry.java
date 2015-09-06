@@ -21,16 +21,21 @@ package gov.va.isaac.gui.dragAndDrop;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.util.Utility;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+
+import javafx.concurrent.Task;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.TextField;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.DragEvent;
@@ -38,7 +43,9 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,6 +144,7 @@ public class DragRegistry
 	public void setupDragAndDrop(final TextField n, SingleConceptIdProvider singleConceptIdProvider, boolean allowDrop)
 	{
 		logger.trace("Configure drag and drop for node {} - allow Drop {}", n, allowDrop);
+		
 		if (allowDrop)
 		{
 			addConceptDropTargetInternal((Node) n);
@@ -176,7 +184,89 @@ public class DragRegistry
 		n.setOnDragDetected(new DragDetectedEventHandler(n, singleConceptIdProvider));
 		n.setOnDragDone(new DragDoneEventHandler());
 	}
+	
+	public void setupDragAndDrop(final Labeled n, SingleConceptIdProvider singleConceptIdProvider, boolean allowDrop) {
+		setupDragAndDrop(n, singleConceptIdProvider, allowDrop, null);
+	}
+	public void setupDragAndDrop(final Labeled n, SingleConceptIdProvider singleConceptIdProvider, boolean allowDrop, Function<String, String> passedDroppedStringHandler)
+	{
+		logger.trace("Configure drag and drop for node {} - allow Drop {}", n, allowDrop);
+		
+		Function<String, String> droppedStringHandler = passedDroppedStringHandler != null ? passedDroppedStringHandler : (str) -> str;
+		if (allowDrop)
+		{
+			addConceptDropTargetInternal((Node) n);
+			setDropShadows(n);
+			n.setOnDragDropped(new EventHandler<DragEvent>()
+			{
+				@Override
+				public void handle(DragEvent event)
+				{
+					/* data dropped */
+					Dragboard db = event.getDragboard();
+					if (db.hasString())
+					{
+						final String str = db.getString();
+						
+						Task<String> task = new Task<String>() {
+							@Override
+							protected String call() throws Exception {
+								return droppedStringHandler.apply(str);
+							}
 
+							@Override
+							public void succeeded() {
+								Platform.runLater(() -> {
+									n.setText(getValue());
+
+									n.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
+									n.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
+									/*
+									 * let the source know whether the string was successfully transferred and used
+									 */
+									event.setDropCompleted(true);
+									event.consume();
+								});
+							}
+							@Override
+							public void failed() {
+								Platform.runLater(() -> {
+									n.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
+									n.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
+
+									logger.error("Error dropping snomed concept", getException());
+									AppContext.getCommonDialogs().showErrorDialog("Unexpected Error", "There was an unexpected error dropping concept " + str, getException().toString());
+
+									/*
+									 * let the source know whether the string was successfully transferred and used
+									 */
+									event.setDropCompleted(false);
+									event.consume();
+								});
+							}
+							@Override
+							public void cancelled() {
+								Platform.runLater(() -> {
+									n.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
+									n.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, KeyEvent.CHAR_UNDEFINED, null, KeyCode.ENTER, false, false, false, false));
+									/*
+									 * let the source know whether the string was successfully transferred and used
+									 */
+									event.setDropCompleted(false);
+									event.consume();
+								});
+							}
+						};
+						
+						Utility.execute(task);
+					}
+				}
+			});
+		}
+		n.setOnDragDetected(new DragDetectedEventHandler(n, singleConceptIdProvider));
+		n.setOnDragDone(new DragDoneEventHandler());
+	}
+	
 	private void setDropShadows(final Node n)
 	{
 		n.setOnDragOver(new EventHandler<DragEvent>()
