@@ -18,6 +18,11 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
@@ -30,38 +35,30 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import javafx.concurrent.Task;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.text.Text;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
-import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link ComponentDataCell}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
+public class ComponentDataCell extends TreeTableCell<SememeGUI, SememeGUI>
 {
 	private static Logger logger_ = LoggerFactory.getLogger(ComponentDataCell.class);
 	
-	private DynamicRefexColumnType type_;
+	private SememeGUIColumnType type_;
 	
-	protected ComponentDataCell(DynamicRefexColumnType type)
+	protected ComponentDataCell(SememeGUIColumnType type)
 	{
 		type_ = type;
 	}
@@ -70,7 +67,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicGUI item, boolean empty)
+	protected void updateItem(SememeGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		
@@ -85,7 +82,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 		}
 	}
 	
-	private void conceptLookup(RefexDynamicGUI item)
+	private void conceptLookup(SememeGUI item)
 	{
 		ProgressBar pb = new ProgressBar();
 		pb.setMaxWidth(Double.MAX_VALUE);
@@ -98,7 +95,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 			boolean setStyle = false;
 			boolean configureDragAndDrop = false;
 			ContextMenu cm = new ContextMenu();
-			int nid = item.getNidFetcher(type_, null).applyAsInt(item.getRefex());
+			int nid = item.getNidFetcher(type_, null).applyAsInt(item.getSememe());
 			
 			@Override
 			protected Void call() throws Exception
@@ -106,89 +103,17 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 				try
 				{
 					text = item.getDisplayStrings(type_, null).getKey();
-					ConceptVersionBI c = OTFUtility.getConceptVersion(nid);
-					if (c == null) 
+					
+					switch (Get.identifierService().getChronologyTypeForNid(nid))
 					{
-						//This may be a different component - like a description, or another refex... need to handle.
-						Optional<? extends ComponentVersionBI> cv = ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinate(), nid);
-						if (cv.isPresent())
+						case CONCEPT:
 						{
-						
-							if (cv.get() instanceof DescriptionVersionBI<?>)
-							{
-								DescriptionVersionBI<?> dv = (DescriptionVersionBI<?>) cv.get();
-								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-								
-								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-								{
-									
-									@Override
-									public Collection<Integer> getNIds()
-									{
-										return Arrays.asList(new Integer[] {dv.getNid()});
-									}
-								});
-							}
-							else if (cv.get() instanceof RelationshipVersionBI<?>)
-							{
-								RelationshipVersionBI<?> rv = (RelationshipVersionBI<?>) cv.get();
-								
-								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-								
-								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-								{
-									
-									@Override
-									public Collection<Integer> getNIds()
-									{
-										return Arrays.asList(new Integer[] {rv.getNid()});
-									}
-								});
-							}
-							else if (cv.get() instanceof RefexDynamicVersionBI<?>)
-							{
-								RefexDynamicVersionBI<?> rdv = (RefexDynamicVersionBI<?>) cv.get();
-								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-								
-								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-								{
-									
-									@Override
-									public Collection<Integer> getNIds()
-									{
-										return Arrays.asList(new Integer[] {rdv.getNid()});
-									}
-								});
-							}
-							else if (cv.get() instanceof RefexVersionBI<?>)
-							{
-								RefexVersionBI<?> rv = (RefexVersionBI<?>) cv.get();
-								
-								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
-								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
-								
-								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
-								{
-									
-									@Override
-									public Collection<Integer> getNIds()
-									{
-										return Arrays.asList(new Integer[] {rv.getNid()});
-									}
-								});
-							}
-						}
-						else
-						{
-							if (DynamicRefexColumnType.ASSEMBLAGE == type_)
+							if (SememeGUIColumnType.ASSEMBLAGE == type_)
 							{
 								MenuItem mi = new MenuItem("View Sememe Assemblage Usage");
 								mi.setOnAction((action) ->
 								{
-									SimpleDisplayConcept sdc = new SimpleDisplayConcept(c);
+									SimpleDisplayConcept sdc = new SimpleDisplayConcept(nid);
 									DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
 									driv.showView(null);
 								});
@@ -198,7 +123,7 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 								mi = new MenuItem("Configure Sememe Indexing");
 								mi.setOnAction((action) ->
 								{
-									new ConfigureDynamicRefexIndexingView(c).showView(null);
+									new ConfigureDynamicRefexIndexingView(nid).showView(null);
 								});
 								mi.setGraphic(Images.CONFIGURE.createImageView());
 								cm.getItems().add(mi);
@@ -211,11 +136,41 @@ public class ComponentDataCell extends TreeTableCell<RefexDynamicGUI, RefexDynam
 								@Override
 								public Collection<Integer> getNIds()
 								{
-									return Arrays.asList(new Integer[] {item.getNidFetcher(type_, null).applyAsInt(item.getRefex())});
+									return Arrays.asList(new Integer[] {item.getNidFetcher(type_, null).applyAsInt(item.getSememe())});
 								}
 							});
 							setStyle = true;
+							break;
 						}
+						case SEMEME:
+						{
+							@SuppressWarnings({ "unchecked", "rawtypes" })
+							Optional<LatestVersion<SememeVersion<?>>> sv = ((SememeChronology)Get.sememeService().getSememe(nid))
+									.getLatestVersion(SememeVersion.class,
+									ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get());
+							if (sv.isPresent())
+							{
+								CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
+								menuBuilder.setMenuItemsToExclude(CommonMenuItem.COPY_SCTID);
+								
+								CommonMenus.addCommonMenus(cm, menuBuilder, new CommonMenusNIdProvider()
+								{
+									
+									@Override
+									public Collection<Integer> getNIds()
+									{
+										return Arrays.asList(new Integer[] {sv.get().value().getNid()});
+									}
+								});
+							}
+							break;
+						}
+						default :
+						{
+							logger_.warn("Unexpected chronology type!");
+							return null;
+						}
+						
 					}
 				}
 				catch (Exception e)

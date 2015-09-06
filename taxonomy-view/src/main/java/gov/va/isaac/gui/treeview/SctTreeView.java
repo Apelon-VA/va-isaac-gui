@@ -26,7 +26,6 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.SctTreeItemDisplayPolicies;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
@@ -42,14 +41,15 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -69,7 +69,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
-
 import org.apache.mahout.math.Arrays;
 import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
 import org.slf4j.Logger;
@@ -114,8 +113,10 @@ class SctTreeView {
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
     
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
-    private ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
+    
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
         if (taxonomyCoordinate.get() == null) {
             taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
         }
@@ -137,7 +138,7 @@ class SctTreeView {
     private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
     public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
         if (conceptSnapshotService.get() == null) {
-            ReadOnlyObjectProperty<StampCoordinate<StampCoordinateImpl>> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+            ReadOnlyObjectProperty<StampCoordinate> stampCoord = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
             ReadOnlyObjectProperty<LanguageCoordinate> langCoord = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
             stampCoord.addListener(change -> 
             {
@@ -158,13 +159,19 @@ class SctTreeView {
         treeView_ = new TreeView<>();
         bp_ = new BorderPane();
         
+        //Listen to changes to global - but no longer push local changes back to global
+        ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().addListener(change -> 
+        {
+            displayFSN_.set(ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().isFSNPreferred());
+        });
+        
         Button descriptionType = new Button();
         descriptionType.setPadding(new Insets(2.0));
         ImageView displayFsn = Images.DISPLAY_FSN.createImageView();
         Tooltip.install(displayFsn, new Tooltip("Displaying the Fully Specified Name - click to display the Preferred Term"));
-        displayFsn.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+        displayFsn.visibleProperty().bind(displayFSN_);
         ImageView displayPreferred = Images.DISPLAY_PREFERRED.createImageView();
-        displayPreferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not());
+        displayPreferred.visibleProperty().bind(displayFSN_.not());
         Tooltip.install(displayPreferred, new Tooltip("Displaying the Preferred Term - click to display the Fully Specified Name"));
         descriptionType.setGraphic(new StackPane(displayFsn, displayPreferred));
         descriptionType.setOnAction(new EventHandler<ActionEvent>()
@@ -172,16 +179,7 @@ class SctTreeView {
             @Override
             public void handle(ActionEvent event)
             {
-                try
-                {
-                    UserProfile up = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-                    up.setDisplayFSN(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not().get());
-                    ExtendedAppContext.getService(UserProfileManager.class).saveChanges(up);
-                }
-                catch (Exception e)
-                {
-                    LOG.error("Unexpected error storing pref change", e);
-                }
+                displayFSN_.set(displayFSN_.not().get());
             }
         });
         
@@ -353,15 +351,24 @@ class SctTreeView {
         }
 
         // Do work in background.
-        Task<ConceptChronology<? extends ConceptVersion<?>>> task = new Task<ConceptChronology<? extends ConceptVersion<?>>>() {
+        Task<Void> task = new Task<Void>() {
 
             @Override
-            protected ConceptChronology<? extends ConceptVersion<?>> call() throws Exception {
+            protected Void call() throws Exception {
                 LOG.debug("Loading concept {} as the root of a tree view", rootConcept);
 
-                ConceptChronology<? extends ConceptVersion<?>> rootConceptCV = Get.conceptService().getConcept(rootConcept);
-               
-                return rootConceptCV;
+                try
+                {
+                    ConceptChronology<? extends ConceptVersion<?>> rootConceptCV = Get.conceptService().getConcept(rootConcept);
+                    rootTreeItem = new SctTreeItem(rootConceptCV, displayPolicies, getTaxonomyCoordinate(), getTaxonomyTree(), getConceptSnapshotService(), 
+                            Images.ROOT.createImageView());
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Error loading root concept of tree", e);
+                    throw e;
+                }
             }
 
             @Override
@@ -369,8 +376,43 @@ class SctTreeView {
             {
                 LOG.debug("getConceptVersion() (called by init()) succeeded");
 
-                ConceptChronology<? extends ConceptVersion<?>> result = this.getValue();
-                SctTreeView.this.finishTreeSetup(result);
+                treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+
+                treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion<?>>>, TreeCell<ConceptChronology<? extends ConceptVersion<?>>>>() {
+                    @Override
+                    public TreeCell<ConceptChronology<? extends ConceptVersion<?>>> call(TreeView<ConceptChronology<? extends ConceptVersion<?>>> p) {
+                        return new SctTreeCell();
+                    }
+                });
+                treeView_.setRoot(rootTreeItem);
+                
+                Utility.execute(() -> rootTreeItem.addChildren());
+
+                // put this event handler on the root
+                rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>>branchCollapsedEvent(),
+                        new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
+                            @Override
+                            public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
+                                // remove grandchildren
+                                ((SctTreeItem) t.getSource()).removeGrandchildren();
+                            }
+                        });
+
+                rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>> branchExpandedEvent(),
+                        new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
+                            @Override
+                            public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
+                                // add grandchildren
+                                SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
+                                Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
+                            }
+                        });
+                sp_.getChildren().add(treeView_);
+                sp_.getChildren().remove(0);  //remove the progress indicator
+
+                // Final decrement of initializationCountDownLatch_ to 0,
+                // indicating that initial init() is complete
+                initializationCountDownLatch_.countDown();
 
                 refreshRequiredListenerHack = new UpdateableBooleanBinding()
                 {
@@ -380,7 +422,9 @@ class SctTreeView {
                         addBinding(
                                 getTaxonomyCoordinate(),
                                 getTaxonomyTree(),
-                                getConceptSnapshotService());
+                                getConceptSnapshotService(),
+                                displayFSN_);  //TODO Dan broke this button, this code needs to be more properly rewritten, so that this code actually has its own coordinates, 
+                        //instead of only referencing the global ones.
                         enabled = true;
                     }
 
@@ -404,7 +448,6 @@ class SctTreeView {
                 Throwable ex = getException();
                 String title = "Unexpected error loading root concept";
                 String msg = ex.getClass().getName();
-                LOG.error(title, ex);
                 if (!shutdownRequested)
                 {
                     AppContext.getCommonDialogs().showErrorDialog(title, msg, ex.getMessage());
@@ -413,61 +456,6 @@ class SctTreeView {
         };
 
         Utility.execute(task);
-    }
-    
-    /**
-     * @param rootConcept
-     * 
-     * This method should be called only by init() and only a single time.
-     * The only reason this is its own method is to make the init() more readable.
-     * 
-     */
-    private void finishTreeSetup(ConceptChronology<? extends ConceptVersion<?>> rootConcept) {
-        LOG.debug("Running finishTreeSetup()...");
-        
-        treeView_.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-
-        treeView_.setCellFactory(new Callback<TreeView<ConceptChronology<? extends ConceptVersion<?>>>, TreeCell<ConceptChronology<? extends ConceptVersion<?>>>>() {
-            @Override
-            public TreeCell<ConceptChronology<? extends ConceptVersion<?>>> call(TreeView<ConceptChronology<? extends ConceptVersion<?>>> p) {
-                return new SctTreeCell();
-            }
-        });
-
-        ConceptChronology<? extends ConceptVersion<?>> visibleRootConcept = rootConcept;
-        
-        rootTreeItem = new SctTreeItem(visibleRootConcept, displayPolicies, getTaxonomyCoordinate(), getTaxonomyTree(), getConceptSnapshotService(), Images.ROOT.createImageView());
-
-        treeView_.setRoot(rootTreeItem);
-        
-        
-        Utility.execute(() -> rootTreeItem.addChildren());
-
-        // put this event handler on the root
-        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>>branchCollapsedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
-                    @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
-                        // remove grandchildren
-                        ((SctTreeItem) t.getSource()).removeGrandchildren();
-                    }
-                });
-
-        rootTreeItem.addEventHandler(TreeItem.<ConceptChronology<? extends ConceptVersion<?>>> branchExpandedEvent(),
-                new EventHandler<TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>>>() {
-                    @Override
-                    public void handle(TreeItem.TreeModificationEvent<ConceptChronology<? extends ConceptVersion<?>>> t) {
-                        // add grandchildren
-                        SctTreeItem sourceTreeItem = (SctTreeItem) t.getSource();
-                        Utility.execute(() -> sourceTreeItem.addChildrenConceptsAndGrandchildrenItems());
-                    }
-                });
-        sp_.getChildren().add(treeView_);
-        sp_.getChildren().remove(0);  //remove the progress indicator
-
-        // Final decrement of initializationCountDownLatch_ to 0,
-        // indicating that initial init() is complete
-        initializationCountDownLatch_.countDown();
     }
 
     public void showConcept(final UUID conceptUUID, final BooleanProperty workingIndicator) {
@@ -507,9 +495,10 @@ class SctTreeView {
                     
                     // Look for an IS_A relationship to origin.
                     boolean found = false;
-                    for (ConceptChronology<? extends ConceptVersion<?>> parent : OchreUtility.getParentsAsConceptChronologies(concept, getTaxonomyTree().get())) {
-                        pathToRoot.add(parent.getPrimordialUuid());
-                        current = parent.getPrimordialUuid();
+                    for (int parent : getTaxonomyTree().get().getParentSequences(concept.getConceptSequence())) {
+                        current = Get.identifierService().getUuidPrimordialFromConceptSequence(parent).get();
+                        pathToRoot.add(current);
+                        
                         found = true;
                         break;
                     }
@@ -660,7 +649,9 @@ class SctTreeView {
         synchronized (refreshInProgress_) {  //hack way to disable future refresh calls
             refreshInProgress_.set(true);
         }
-        refreshRequiredListenerHack.clearBindings();
+        if (refreshRequiredListenerHack != null) {
+            refreshRequiredListenerHack.clearBindings();
+        }
 
         if (rootTreeItem != null)
         {
@@ -725,7 +716,8 @@ class SctTreeView {
         if (expandedUUIDs_.contains(item.getConceptUuid())) {
             item.blockUntilChildrenReady();
             Platform.runLater(() -> item.setExpanded(true));
-            for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : item.getChildren()) {
+            List<TreeItem<ConceptChronology<? extends ConceptVersion<?>>>> list = new ArrayList<>(item.getChildren());
+            for (TreeItem<ConceptChronology<? extends ConceptVersion<?>>> child : list) {
                 restoreExpanded((SctTreeItem) child, scrollTo);
             }
         }

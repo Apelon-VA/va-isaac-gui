@@ -1,15 +1,10 @@
 package gov.va.isaac.gui.mapping.data;
 
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
-
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.UUID;
-
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 
@@ -19,8 +14,6 @@ public class MappingObject extends StampedItem {
 	protected int editorStatusConceptNid = 0;
 	protected final SimpleStringProperty editorStatusConceptProperty = new SimpleStringProperty();
 	protected HashMap<UUID, String> cachedValues = new HashMap<>();
-	
-	protected static TerminologyStoreDI dataStore = ExtendedAppContext.getDataStore();
 	
 	/**
 	 * @return the editorStatusConcept
@@ -63,7 +56,7 @@ public class MappingObject extends StampedItem {
 			} else {
 				property.set("-");
 				Utility.execute(() -> {
-					String s = OTFUtility.getDescription(uuid);
+					String s =  Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(uuid));
 					cachedValues.put(uuid, s);
 					Platform.runLater(() -> {
 						property.set(s);
@@ -74,7 +67,7 @@ public class MappingObject extends StampedItem {
 	}
 	
 	public static int getNidForUuidSafe(UUID uuid) {
-		return (uuid == null)? 0 : dataStore.getNidForUuids(new UUID[] { uuid });
+		return (uuid == null)? 0 : Get.identifierService().getNidForUuids(uuid);
 	}
 
 	public static final Comparator<MappingObject> editorStatusComparator = new Comparator<MappingObject>() {

@@ -25,6 +25,7 @@
 package gov.va.isaac.gui.querybuilder;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.querybuilder.node.AssertionNode;
 import gov.va.isaac.gui.querybuilder.node.InvertableNode;
@@ -43,14 +44,12 @@ import gov.va.isaac.util.ComponentDescriptionHelper;
 import gov.va.isaac.util.OTFUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.collections.NidSet;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -62,7 +61,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.GridPane;
-
 import org.ihtsdo.otf.query.implementation.Clause;
 import org.ihtsdo.otf.query.implementation.ComponentCollectionTypes;
 import org.ihtsdo.otf.query.implementation.ForSetSpecification;
@@ -601,17 +599,6 @@ public class QueryBuilderHelper {
 		if (component != null) {
 			componentDescription = ComponentDescriptionHelper.getComponentDescription(component);
 		}
-		if (componentDescription == null) {
-			componentDescription = OTFUtility.getDescriptionIfConceptExists(nid);
-		}
-		if (componentDescription == null) {
-			try {
-				componentDescription = OTFUtility.getConPrefTerm(nid);
-			} catch (Exception e) {
-				//
-			}
-		}
-		
 		return componentDescription;
 	}
 	
@@ -639,8 +626,7 @@ public class QueryBuilderHelper {
 			throw new RuntimeException(error);
 		}
 
-		ViewCoordinate viewCoordinate = OTFUtility.getViewCoordinate();
-		Query syntheticQuery = new Query(viewCoordinate) {
+		Query syntheticQuery = new Query(ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get()) {
 			
 			// TODO test change made to conform with new Query OCHRE interface
 //			@Override

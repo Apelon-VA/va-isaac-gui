@@ -32,6 +32,7 @@ import gov.va.isaac.gui.treeview.SctTreeViewIsaacView;
 import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
@@ -44,10 +45,9 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import java.util.Optional;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -74,7 +74,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +97,8 @@ public class ConceptViewController {
 	@FXML private SplitPane splitPane;
 	@FXML private VBox splitRight;
 	@FXML private Label uuidLabel;
+	@FXML private Label idLabel;
+	@FXML private Label idLabelValue;
 	@FXML private VBox annotationsRegion;
 	@FXML private ToggleButton stampToggle;
 	@FXML private ToggleButton historyToggle;
@@ -110,17 +111,19 @@ public class ConceptViewController {
 	private final BooleanProperty treeViewSearchRunning = new SimpleBooleanProperty(false);
 
 	private SctTreeViewIsaacView sctTree;
-//	private RefexViewI refexView;
+	private SememeViewI sememeView;
 	private DescriptionTableView dtv;
 	private RelationshipTableView rtv;
 	
 	private UUID conceptUuid;
 	private int conceptNid = 0;
+	
+	private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate<?>> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
     
-    public ReadOnlyObjectProperty<TaxonomyCoordinate<?>> getTaxonomyCoordinate() {
+    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
     	if (taxonomyCoordinate.get() == null) {
     		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
     	}
@@ -160,12 +163,18 @@ public class ConceptViewController {
 		historyToggle.setGraphic(Images.HISTORY.createImageView());
 		historyToggle.setTooltip(new Tooltip("Shows full history when pressed, Only shows current items when not pressed"));
 		
+		//Listen to changes to global - but no longer push local changes back to global
+		ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().addListener(change -> 
+		{
+			displayFSN_.set(ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().isFSNPreferred());
+		});
+		
 		descriptionTypeButton.setText("");
 		ImageView displayFsn = Images.DISPLAY_FSN.createImageView();
 		Tooltip.install(displayFsn, new Tooltip("Displaying the Fully Specified Name - click to display the Preferred Term"));
-		displayFsn.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN());
+		displayFsn.visibleProperty().bind(displayFSN_);
 		ImageView displayPreferred = Images.DISPLAY_PREFERRED.createImageView();
-		displayPreferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not());
+		displayPreferred.visibleProperty().bind(displayFSN_.not());
 		Tooltip.install(displayPreferred, new Tooltip("Displaying the Preferred Term - click to display the Fully Specified Name"));
 		descriptionTypeButton.setGraphic(new StackPane(displayFsn, displayPreferred));
 		descriptionTypeButton.prefHeightProperty().bind(historyToggle.heightProperty());
@@ -175,16 +184,7 @@ public class ConceptViewController {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				try
-				{
-					UserProfile up = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-					up.setDisplayFSN(AppContext.getService(UserProfileBindings.class).getDisplayFSN().not().get());
-					ExtendedAppContext.getService(UserProfileManager.class).saveChanges(up);
-				}
-				catch (Exception e)
-				{
-					LOG.error("Unexpected error storing pref change", e);
-				}
+				displayFSN_.set(displayFSN_.not().get());
 			}
 		});
 		
@@ -196,7 +196,7 @@ public class ConceptViewController {
 		return anchorPane;
 	}
 
-	public <T extends ConceptVersion<T>> void setConcept(ConceptChronology<T> concept) {
+	public void setConcept(ConceptChronology<?> concept) {
 		conceptUuid = concept.getPrimordialUuid();
 
 		// Update text of labels.
@@ -229,6 +229,11 @@ public class ConceptViewController {
 			}
 		});
 		CopyableLabel.addCopyMenu(uuidLabel);
+		
+		final SimpleStringProperty conceptID = new SimpleStringProperty("");
+		idLabel.setVisible(false);
+		idLabelValue.textProperty().bind(conceptID);
+		CopyableLabel.addCopyMenu(idLabelValue);
 
 		
 		dtv = new DescriptionTableView(stampToggle.selectedProperty(), historyToggle.selectedProperty(), activeOnlyToggle.selectedProperty());
@@ -335,7 +340,7 @@ public class ConceptViewController {
 			Label summary = new Label();
 			HBox.setMargin(summary, new Insets(0, 0, 0, 5.0));
 			sourceRelTitleHBox.getChildren().add(summary);
-//			summary.textProperty().bind(rtv.getSummaryText());
+			summary.textProperty().bind(rtv.getSummaryText());
 			
 		}
 		catch (Exception e)
@@ -380,15 +385,24 @@ public class ConceptViewController {
 		}
 		
 		Utility.execute(() -> {
-			String conceptDescription = OchreUtility.getDescription(concept, getConceptSnapshotService().get().getLanguageCoordinate(), getConceptSnapshotService().get().getStampCoordinate());
+			String conceptDescription = OchreUtility.getDescription(concept.getConceptSequence(), getConceptSnapshotService().get().getStampCoordinate(), 
+					getConceptSnapshotService().get().getLanguageCoordinate()).get();
 			
 			ConceptSnapshot conceptSnapshot = getConceptSnapshotService().get().getConceptSnapshot(concept.getNid());
 			conceptNid = concept.getNid();
 			AppContext.getService(CommonlyUsedConcepts.class).addConcept(new SimpleDisplayConcept(concept.getConceptSequence()));
 
+			
+			Optional<Long> sctID = Frills.getSctId(concept.getNid(), conceptSnapshot.getStampCoordinate());
+
 			Platform.runLater(() -> {
 				conceptDescriptionSSP.set(conceptDescription);
 				fsnLabel.setGraphic(null);
+				if (sctID.isPresent())
+				{
+					idLabel.setVisible(true);
+					conceptID.set(sctID.get() + "");
+				}
 
 				copyFull.setOnAction(e -> CustomClipboard.set(conceptSnapshot.toUserString()));
 				
@@ -406,11 +420,11 @@ public class ConceptViewController {
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring relationships view"));
 				}
 
-//				refexView = LookupService.getNamedServiceIfPossible(RefexViewI.class, "DynamicRefexView");
-//				refexView.setComponent(conceptVersion.getChronology().getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
-//				refexView.getView().setMinHeight(100.0);
-//				VBox.setVgrow(refexView.getView(), Priority.ALWAYS);
-//				annotationsRegion.getChildren().add(refexView.getView());
+				sememeView = LookupService.getNamedServiceIfPossible(SememeViewI.class, "DynamicRefexView");
+				sememeView.setComponent(conceptSnapshot.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
+				sememeView.getView().setMinHeight(100.0);
+				VBox.setVgrow(sememeView.getView(), Priority.ALWAYS);
+				annotationsRegion.getChildren().add(sememeView.getView());
 
 				stampToggle.setSelected(false);
 			});
@@ -442,9 +456,9 @@ public class ConceptViewController {
 		if (sctTree != null) {
 			sctTree.viewDiscarded();
 		}
-//		if (refexView != null) {
-//			refexView.viewDiscarded();
-//		}
+		if (sememeView != null) {
+			sememeView.viewDiscarded();
+		}
 		if (dtv != null) {
 			dtv.viewDiscarded();
 		}

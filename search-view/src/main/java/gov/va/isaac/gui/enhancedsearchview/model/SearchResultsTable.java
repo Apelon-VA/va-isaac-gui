@@ -220,7 +220,7 @@ public class SearchResultsTable  {
 		
 		matchingDescTypeCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OchreUtility.getConceptChronology(param.getValue().getMatchingDescriptionComponents().iterator().next()
+				return new SimpleStringProperty(Get.conceptService().getOptionalConcept(param.getValue().getMatchingDescriptionComponents().iterator().next()
 						.getLatestVersion(DescriptionSememe.class, AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get()
 						.value().getDescriptionTypeConceptSequence()).get().getConceptDescriptionText());
 			} catch (Exception e) {
@@ -278,7 +278,7 @@ public class SearchResultsTable  {
 		preferredTermCol.setCellFactory(new MyTableCellCallback<String>());
 		preferredTermCol.setCellValueFactory((param) -> {
 			try {
-				return new SimpleStringProperty(OchreUtility.getPreferredTermForConceptNid(param.getValue().getContainingConcept().get().getNid(), null).get());
+				return new SimpleStringProperty(OchreUtility.getPreferredTermForConceptNid(param.getValue().getContainingConcept().get().getNid(), null, null).get());
 			} catch (RuntimeException e) {
 				LOG.error("initializePrefTermColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 
@@ -334,7 +334,7 @@ public class SearchResultsTable  {
 
 							List<DescriptionSememe<?>> matchingDescComponents = new ArrayList<DescriptionSememe<?>>();
 							
-							for (SememeChronology<DescriptionSememe> ds : result.getMatchingDescriptionComponents())
+							for (@SuppressWarnings("rawtypes") SememeChronology<DescriptionSememe> ds : result.getMatchingDescriptionComponents())
 							{
 								matchingDescComponents.add(ds.getLatestVersion(DescriptionSememe.class, 
 										AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()).get().value());
@@ -342,7 +342,7 @@ public class SearchResultsTable  {
 							
 							Collections.sort(matchingDescComponents, new DescriptionSememeTypeComparator());
 							for (DescriptionSememe<?> descComp : matchingDescComponents) {
-								String type = OchreUtility.getConceptChronology(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
+								String type = Get.conceptService().getOptionalConcept(descComp.getDescriptionTypeConceptSequence()).get().getConceptDescriptionText();
 								buffer.append(type + ": " + descComp.getText() + "\n");
 							}
 							Tooltip tooltip = new Tooltip("Matching descriptions for \"" + fsn + "\":\n" + buffer.toString());
@@ -441,7 +441,7 @@ public class SearchResultsTable  {
 			try {
 				SememeSearchResult sememeParam = (SememeSearchResult)param.getValue();
 				
-				return new SimpleStringProperty(sememeParam.getAssembCon().getPreferredDescription().getText().trim());
+				return new SimpleStringProperty(Get.conceptDescriptionText(sememeParam.getAssembSequence()));
 			} catch (RuntimeException e) {
 				LOG.error("initializeAssembConColumn Cell value factory failed to handle value " + (param != null && param.getValue() != null ? param.getValue().toShortString() : null) + ". Caught " + e.getClass().getName() + " \"" + e.getLocalizedMessage() + "\"", e);
 

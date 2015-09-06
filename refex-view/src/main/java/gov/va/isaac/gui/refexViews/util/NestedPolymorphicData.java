@@ -18,16 +18,16 @@
  */
 package gov.va.isaac.gui.refexViews.util;
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 
 /**
- * Just a helper class for {@link RefexDataTypeFXNodeBuilder}.  Ignore.
+ * Just a helper class for {@link SememeGUIDataTypeFXNodeBuilder}.  Ignore.
  * {@link NestedPolymorphicData}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 class NestedPolymorphicData
 {
-	RefexDynamicDataType dataType;
-	RefexDataTypeNodeDetails nestedNode;
+	DynamicSememeDataType dataType;
+	SememeGUIDataTypeNodeDetails nestedNode;
 }

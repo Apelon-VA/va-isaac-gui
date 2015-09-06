@@ -54,7 +54,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
     }
 
     public GetSctTreeItemConceptCallable(SctTreeItem treeItem, boolean addChildren) {
-    	this.treeItem = treeItem;
+        this.treeItem = treeItem;
         this.concept = treeItem != null ? treeItem.getValue() : null;
         this.addChildren = addChildren;
         if (addChildren) {
@@ -82,7 +82,7 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 return false;
             }
 
-            int numParentsFromTree = OchreUtility.getParentsAsConceptNids(treeItem.getValue(), treeItem.getTaxonomyTree().get()).size();
+            int numParentsFromTree = treeItem.getTaxonomyTree().get().getParentSequences(treeItem.getValue().getConceptSequence()).length;
             if (numParentsFromTree > 1) {
                 treeItem.setMultiParent(true);
             }
@@ -92,24 +92,25 @@ public class GetSctTreeItemConceptCallable extends Task<Boolean> {
                 //progress indicator in the SctTreeItem - However -that progress indicator displays at 16x16,
                 //and ProgressIndicator has a bug, that is vanishes for anything other than indeterminate for anything less than 32x32
                 //need a progress indicator that works at 16x16
-            	for (ConceptChronology<? extends ConceptVersion<?>> destRel : OchreUtility.getChildrenAsConceptChronologies(concept, treeItem.getTaxonomyTree().get(), treeItem.getTaxonomyCoordinate().get())) {
-            		if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
-            			return false;
-            		}
-            		SctTreeItem childItem = new SctTreeItem(destRel, treeItem.getDisplayPolicies(), treeItem.getTaxonomyCoordinate(), treeItem.getTaxonomyTree(), treeItem.getConceptSnapshotService());
-            		if (childItem.shouldDisplay()) {
-                        int numParents = OchreUtility.getParentsAsConceptNids(childItem.getValue(), childItem.getTaxonomyTree().get()).size();
+                for (int destRelSequence : treeItem.getTaxonomyTree().get().getChildrenSequences(concept.getConceptSequence())) {
+                    if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
+                        return false;
+                    }
+                    SctTreeItem childItem = new SctTreeItem(destRelSequence, treeItem.getDisplayPolicies(), treeItem.getTaxonomyCoordinate(), 
+                            treeItem.getTaxonomyTree(), treeItem.getConceptSnapshotService());
+                    if (childItem.shouldDisplay()) {
+                        int numParents = childItem.getTaxonomyTree().get().getParentSequences(childItem.getValue().getConceptSequence()).length;
                         if (numParents > 1) {
-                        	childItem.setMultiParent(true);
+                            childItem.setMultiParent(true);
                         }
-            			childrenToAdd.add(childItem);
-            		}
-            		if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
-            			return false;
-            		}
+                        childrenToAdd.add(childItem);
+                    }
+                    if (SctTreeView.wasGlobalShutdownRequested() || treeItem.isCancelRequested()) {
+                        return false;
+                    }
 
-            	}
-            	Collections.sort(childrenToAdd);
+                }
+                Collections.sort(childrenToAdd);
             }
             
             CountDownLatch temp = new CountDownLatch(1);

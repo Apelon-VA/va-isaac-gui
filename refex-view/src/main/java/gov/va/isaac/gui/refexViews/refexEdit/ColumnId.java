@@ -30,7 +30,7 @@ public class ColumnId {
 	private final String columnDescriptionUuidOrColumnType;
 	private final Integer columnOrder;
 
-	public static ColumnId getInstance(DynamicRefexColumnType aDynamicRefexColumnType) {
+	public static ColumnId getInstance(SememeGUIColumnType aDynamicRefexColumnType) {
 		return getInstance(aDynamicRefexColumnType.toString(), null);
 	}
 	public static ColumnId getInstance(UUID columnDescriptionUuid, Integer columnOrder) {

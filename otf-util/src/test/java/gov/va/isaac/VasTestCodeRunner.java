@@ -1,55 +1,26 @@
 package gov.va.isaac;
 
-import gov.va.isaac.util.CommonMenus;
-
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
-import gov.va.isaac.interfaces.utility.DialogResponse;
+import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.UuidGenerator;
-
-import java.io.BufferedWriter;
+import gov.va.isaac.util.OchreUtility;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.UUID;
-
-import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.Window;
-
-import javax.inject.Named;
-
-import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
-import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,9 +57,9 @@ public class VasTestCodeRunner {
 		sb.append("1A - FSN: " + testRunner.getFSN(concept));
 		sb.append("\r\n");
 		
-		//1B Preferred Term
-		sb.append("1B - Preferred Term: " + testRunner.getPreferredTerm(concept));
-		sb.append("\r\n");
+//		//1B Preferred Term
+//		sb.append("1B - Preferred Term: " + testRunner.getPreferredTerm(concept));
+//		sb.append("\r\n");
 		
 		//1C Description Object (to string'ed)
 		sb.append("1C - Descriptions \r\n " + testRunner.getDescriptions(concept));
@@ -148,10 +119,10 @@ public class VasTestCodeRunner {
 		
 	}
 	
-	private String getFSN2(ConceptChronicleBI concept) {
-			String fsn = OTFUtility.getFullySpecifiedName(concept);
-	return fsn;
-	}
+//	private String getFSN2(ConceptChronicleBI concept) {
+//			String fsn = OTFUtility.getFullySpecifiedName(concept);
+//	return fsn;
+//	}
 	
 	public String getFSN(ConceptChronicleBI concept) throws ContradictionException {
 	try {
@@ -174,9 +145,9 @@ public class VasTestCodeRunner {
 	return null;
 }
 	
-	private String getPreferredTerm(ConceptChronicleBI concept) {
-		return OTFUtility.getConPrefTerm(concept.getNid());
-	}
+//	private String getPreferredTerm(ConceptChronicleBI concept) {
+//		return OTFUtility.getConPrefTerm(concept.getNid());
+//	}
 	
 	private String getCapitalSignificance(ConceptChronicleBI concept) throws IOException, ContradictionException {
 		
@@ -265,7 +236,7 @@ public class VasTestCodeRunner {
 			RelationshipVersionBI<?> relVersion = rel.getVersion(OTFUtility.getViewCoordinate()).get();
 			
 			if(relVersion != null) {
-				sb.append("Relationship Type " + count++ + ": " + OTFUtility.getDescription(relVersion.getTypeNid()));
+				sb.append("Relationship Type " + count++ + ": " + OchreUtility.getDescription(relVersion.getTypeNid()).get());
 			}
 			sb.append("\r\n");
 		}
@@ -282,7 +253,7 @@ public class VasTestCodeRunner {
 			
 			if(relVersion != null) {
 				if(relVersion.getTypeNid() == Snomed.IS_A.getNid()) {
-					sb.append("IS-A Relationship: " + OTFUtility.getDescription(relVersion.getConceptNid()) + " \r\n");
+					sb.append("IS-A Relationship: " + OchreUtility.getDescription(relVersion.getConceptNid()).get() + " \r\n");
 				}
 			}
 		}
@@ -300,7 +271,7 @@ public class VasTestCodeRunner {
 		 if(relVersion != null) {
 			 if(relVersion.getTypeNid() == Snomed.FINDING_SITE.getNid()) {
 				 // Every relationship has a triple: source, destination and type
-					sb.append("Finding Site Relationship (Destination) " + count + ": " + OTFUtility.getDescription(relVersion.getDestinationNid()) + " \r\n");
+					sb.append("Finding Site Relationship (Destination) " + count + ": " + OchreUtility.getDescription(relVersion.getDestinationNid()).get() + " \r\n");
 			 }
 		 }
 	 }

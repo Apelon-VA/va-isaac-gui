@@ -34,6 +34,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,7 +206,7 @@ public class EnhancedConceptViewController {
 			public void handle(ActionEvent arg0) {
 				try
 				{
-					ExtendedAppContext.getDataStore().commit(/* concept */);
+					Ts.get().commit(/* concept */);
 					clearContents();
 					commitButton.setDisable(true);
 					cancelButton.setDisable(true);
@@ -224,7 +225,7 @@ public class EnhancedConceptViewController {
 			@Override
 			public void handle(ActionEvent arg0) {
 				try {
-					ExtendedAppContext.getDataStore().forget(concept.getChronicle());
+					Ts.get().forget(concept.getChronicle());
 
 					clearContents();
 					commitButton.setDisable(true);

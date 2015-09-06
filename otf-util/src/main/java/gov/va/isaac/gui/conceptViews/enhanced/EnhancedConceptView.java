@@ -44,6 +44,7 @@ import javafx.stage.Window;
 import javax.inject.Named;
 import org.glassfish.hk2.api.PerLookup;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.ihtsdo.otf.tcc.ddo.concept.ConceptChronicleDdo;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RefexPolicy;
 import org.ihtsdo.otf.tcc.ddo.fetchpolicy.RelationshipPolicy;
@@ -57,8 +58,6 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  */
-@Service @Named(value=SharedServiceNames.MODERN_STYLE)
-@PerLookup
 public class EnhancedConceptView implements PopupConceptViewI {
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 	
@@ -170,7 +169,7 @@ public class EnhancedConceptView implements PopupConceptViewI {
 		//TODO fix threading issues on this too...
 		try
 		{
-			ConceptChronicleBI concept = ExtendedAppContext.getDataStore().getConcept(conceptNid);
+			ConceptChronicleBI concept = Ts.get().getConcept(conceptNid);
 			if (concept != null)
 			{
 				setConcept(concept.getPrimordialUuid());

@@ -20,10 +20,10 @@ package gov.va.isaac.gui.refsetview;
 
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.CEMCompositRefestInstance;
 import gov.va.isaac.gui.refsetview.RefsetInstanceAccessor.RefsetInstance;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -48,6 +48,7 @@ import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.refex.RefexChronicleBI;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +105,7 @@ public class RefsetViewController {
 				public void handle(ActionEvent e) {
 					try
 					{
-						ExtendedAppContext.getDataStore().commit();
+						Ts.get().commit();
 						reloadData();
 					}
 					catch (IOException ex)
@@ -132,7 +133,7 @@ public class RefsetViewController {
 //			e.printStackTrace();
 //		}
 		
-		String refsetFsn = OTFUtility.getDescription(refsetUUID);
+		String refsetFsn = OchreUtility.getDescription(refsetUUID).get();
 		refsetLabel.setText("Refset: " + refsetFsn);
 		refsetLabel.setFont(new Font("Arial", 14));
 		

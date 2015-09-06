@@ -18,19 +18,10 @@
  */
 package gov.va.isaac.isaacDbProcessingRules;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.init.SystemInit;
-import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
-import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
-import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,11 +30,26 @@ import javax.inject.Named;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
 import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.description.DescriptionChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicUUIDBI;
 import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileManager;
+import gov.va.isaac.init.SystemInit;
+import gov.va.isaac.isaacDbProcessingRules.spreadsheet.Operand;
+import gov.va.isaac.isaacDbProcessingRules.spreadsheet.RuleDefinition;
+import gov.va.isaac.isaacDbProcessingRules.spreadsheet.SelectionCriteria;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.mojo.termstore.transforms.TransformConceptIterateI;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUIDBI;
 
 /**
  * {@link RxNormSpreadsheetRules}
@@ -159,12 +165,12 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 		}
 		
 		//passed all criteria
-		ruleHits.get(rd.getId()).add(cc.getPrimordialUuid() + "," + OTFUtility.getFullySpecifiedName(cc));
+		ruleHits.get(rd.getId()).add(cc.getPrimordialUuid() + "," + OchreUtility.getFSNForConceptNid(cc.getNid(), null).get());
 		Set<Integer> rules = conceptHitsByRule.get(cc.getPrimordialUuid());
 		if (rules == null)
 		{
 			rules = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
-			Set<Integer> oldRules = conceptHitsByRule.put(cc.getPrimordialUuid().toString() + "," + OTFUtility.getFullySpecifiedName(cc), rules);
+			Set<Integer> oldRules = conceptHitsByRule.put(cc.getPrimordialUuid().toString() + "," + OchreUtility.getFSNForConceptNid(cc.getNid(), null).get(), rules);
 			if (oldRules != null)
 			{
 				//two different threads tried to do this at the same time.  merge
@@ -194,35 +200,38 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 	
 	private boolean rxCuiIs(String component, ConceptChronicleBI cc) throws IOException, ContradictionException
 	{
-		for (RefexDynamicVersionBI<?> rdv : cc.getRefexesDynamicActive(vc_))
+		return Get.sememeService().getSememesForComponentFromAssemblage(cc.getNid(), 
+				Get.identifierService().getConceptSequenceForUuids(RXCUI)).anyMatch(sememe ->
 		{
-			if (rdv.getAssemblageNid() == getNid(RXCUI))
+			if (sememe.getSememeType() == SememeType.DYNAMIC)
 			{
-				if (rdv.getData(0).getDataObject().toString().equals(component))
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe>>  latest = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, StampCoordinates.getDevelopmentLatest());
+				if (latest.isPresent() && latest.get().value().getData()[0].getDataObject().toString().equals(component))
 				{
 					return true;
 				}
 			}
-		}
-		return false;
+			return false;
+		});
 	}
 	
 	private boolean ttyIs(UUID tty, ConceptChronicleBI cc) throws IOException, ContradictionException
 	{
-		for (DescriptionChronicleBI d : cc.getDescriptions())
+		return Get.sememeService().getSememesForComponentFromAssemblage(cc.getNid(), 
+				Get.identifierService().getConceptSequenceForUuids(RxNormDescType)).anyMatch(sememe ->
 		{
-			for (RefexDynamicVersionBI<?> rdv : d.getRefexesDynamicActive(vc_))
+			if (sememe.getSememeType() == SememeType.DYNAMIC)
 			{
-				if (rdv.getAssemblageNid() == getNid(RxNormDescType))
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				Optional<LatestVersion<DynamicSememe>>  latest = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, StampCoordinates.getDevelopmentLatest());
+				if (latest.isPresent() && ((DynamicSememeUUIDBI)latest.get().value().getData()[0]).getDataUUID().equals(tty))
 				{
-					if (((RefexDynamicUUIDBI)rdv.getData(0)).getDataUUID().equals(IN))
-					{
-						return true;
-					}
+					return true;
 				}
 			}
-		}
-		return false;
+			return false;
+		});
 	}
 
 	/**
@@ -245,8 +254,8 @@ public class RxNormSpreadsheetRules extends BaseSpreadsheetCode implements Trans
 		AppContext.getService(UserProfileManager.class).configureAutomationMode(new File("profiles"));
 		
 		RxNormSpreadsheetRules lsr = new RxNormSpreadsheetRules();
-		lsr.configure((File)null, ExtendedAppContext.getDataStore());
-		lsr.transform(ExtendedAppContext.getDataStore(), ExtendedAppContext.getDataStore().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
+		lsr.configure((File)null, Ts.get());
+		lsr.transform(Ts.get(), Ts.get().getConcept(UUID.fromString("b8a86aff-a33d-5ab9-88fe-bb3cfd8dce39")));
 		System.out.println(lsr.getWorkResultSummary());
 	}
 }

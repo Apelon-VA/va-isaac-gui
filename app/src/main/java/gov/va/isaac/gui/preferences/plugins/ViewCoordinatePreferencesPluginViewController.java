@@ -152,7 +152,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	
 	private PersistenceInterface persistenceInterface = null;
 
-	final private TaxonomyCoordinate<?> panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+	final private TaxonomyCoordinate panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 	
 	final private ProgressIndicator progressIndicator = new ProgressIndicator();
 	{
@@ -347,7 +347,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					if(c == null) {
 						setText(null);
 					} else {
-						String desc = OchreUtility.getDescription(c, panelViewCoordinate);
+						String desc = OchreUtility.getDescription(c, panelViewCoordinate).get();
 						setText(desc);
 					}
 				}
@@ -361,7 +361,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (emptyRow) {
 					setText("");
 				} else {
-					String desc = OchreUtility.getDescription(c, panelViewCoordinate);
+					String desc = OchreUtility.getDescription(c, panelViewCoordinate).get();
 					//					log.debug("Setting path button cell to \"" + desc + "\"");
 					setText(desc);
 				}
@@ -373,7 +373,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 				if (uuid == null){
 					return null;
 				} else {
-					return OchreUtility.getDescription(uuid, panelViewCoordinate);
+					return OchreUtility.getDescription(uuid, panelViewCoordinate).get();
 				}
 			}
 
@@ -581,21 +581,11 @@ public class ViewCoordinatePreferencesPluginViewController {
 						contentLoaded = true;
 
 						// Populate selectableModules
-						//final ConceptVersionBI moduleRootConcept = OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid(), panelViewCoordinate);
-						ConceptChronology<? extends ConceptVersion<?>> moduleRootConcept = Get.conceptSnapshot().getConceptSnapshot(Get.identifierService().getNidForUuids(IsaacMetadataAuxiliaryBinding.MODULE.getPrimodialUuid())).getChronology();
-						
-						Set<ConceptSnapshot> children = OchreUtility.getChildrenAsConceptSnapshots(moduleRootConcept, Get.taxonomyService().getTaxonomyTree(TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate())), StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
-						final Set<ConceptSnapshot> moduleConcepts = new HashSet<>();
-						try {
-							moduleConcepts.addAll(children);
-						} catch (Exception e) {
-							log.error("Failed loading module concepts as children of " + moduleRootConcept, e);
-							e.printStackTrace();
-							AppContext.getCommonDialogs().showErrorDialog("Failed loading module concepts as children of " + moduleRootConcept + ". See logs.", e);
-						}
+						Set<Integer> moduleConceptSequences = OchreUtility.getAllChildrenOfConcept(IsaacMetadataAuxiliaryBinding.MODULE.getConceptSequence(), false, false);
+
 						List<SelectableModule> modules = new ArrayList<>();
-						for (ConceptSnapshot cv : moduleConcepts) {
-							modules.add(new SelectableModule(cv.getNid()));
+						for (int sequence : moduleConceptSequences) {
+							modules.add(new SelectableModule(sequence));
 						}
 						selectableModules.clear();
 						selectableModules.addAll(modules);
@@ -630,7 +620,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 						Collections.sort(selectableModules);
 						selectableModuleListView.getItems().addAll(selectableModules);
 
-						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" + OchreUtility.getDescription(getDefaultPath(), panelViewCoordinate) + "\"")));
+						runLaterIfNotFXApplicationThread(() -> pathComboBox.setTooltip(new Tooltip("Default path is \"" 
+								+ Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(getDefaultPath())) + "\"")));
 						
 						pathComboBox.getItems().clear();
 						runLaterIfNotFXApplicationThread(() -> {
@@ -874,7 +865,6 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	private class SelectableModule implements Comparable<SelectableModule> {
-		private final IntegerProperty nid = new SimpleIntegerProperty();
 		private final BooleanProperty selected = new SimpleBooleanProperty(false);
 		private final String description;
 		private final UUID uuid;
@@ -883,35 +873,30 @@ public class ViewCoordinatePreferencesPluginViewController {
 		 * Constructor for returning SelectableModule representing ALL modules
 		 */
 		private SelectableModule() {
-			nid.set(0);
 			description = "ALL";
 			uuid = null;
 		}
 
-		public SelectableModule(Integer nid) {
-			this.nid.set(nid);
+		public SelectableModule(int conceptId) {
 
 			String desc = null;
 			try {
-				desc = OchreUtility.getDescription(nid);
+				desc = Get.conceptDescriptionText(conceptId);
 			} catch (Exception e) {
-				log.error("Failed to set description for concept with nid={}", nid);
+				log.error("Failed to set description for concept with nid={}", conceptId);
 			}
 			description = desc;
 
 			UUID aUuid = null;
 			try {
-				ConceptSnapshot cv = Get.conceptSnapshot().getConceptSnapshot(nid);
+				ConceptSnapshot cv = Get.conceptSnapshot().getConceptSnapshot(conceptId);
 				aUuid = cv.getPrimordialUuid();
 			} catch (Exception e) {
-				log.error("Failed to set uuid for concept with nid={} and desc={}", nid, description);
+				log.error("Failed to set uuid for concept with nid={} and desc={}", conceptId, description);
 			}
 			uuid = aUuid;
 		}
 
-//		public Integer getNid() {
-//			return nid.get();
-//		}
 		public BooleanProperty selectedProperty() {
 			return selected;
 		}

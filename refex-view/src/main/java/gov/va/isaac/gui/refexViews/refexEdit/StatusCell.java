@@ -18,29 +18,30 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.gui.util.Images;
+import gov.vha.isaac.ochre.api.State;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link StatusCell}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
+public class StatusCell extends TreeTableCell<SememeGUI, SememeGUI>
 {
 	private static Logger logger_ = LoggerFactory.getLogger(StatusCell.class);
 	/**
 	 * @see javafx.scene.control.Cell#updateItem(java.lang.Object, boolean)
 	 */
 	@Override
-	protected void updateItem(RefexDynamicGUI item, boolean empty)
+	protected void updateItem(SememeGUI item, boolean empty)
 	{
 		super.updateItem(item, empty);
 		
@@ -57,7 +58,7 @@ public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 
 			try
 			{
-				if (item.getRefex().isActive())
+				if (item.getSememe().getState() == State.ACTIVE)
 				{
 					sizeAndPosition(Images.BLACK_DOT, sp, Pos.TOP_LEFT);
 					tooltipText += "Active";
@@ -78,7 +79,7 @@ public class StatusCell extends TreeTableCell<RefexDynamicGUI, RefexDynamicGUI>
 					tooltipText += " and Current";
 				}
 				
-				if (item.getRefex().getTime() == Long.MAX_VALUE)
+				if (item.getSememe().getTime() == Long.MAX_VALUE)
 				{
 					sizeAndPosition(Images.YELLOW_DOT, sp, Pos.TOP_RIGHT);
 					tooltipText += " - Uncommitted";

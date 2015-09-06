@@ -18,8 +18,30 @@
  */
 package gov.va.isaac.gui.listview;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.controlsfx.dialog.Dialogs;
+import org.ihtsdo.otf.tcc.api.store.Ts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.listview.operations.CustomTask;
@@ -33,30 +55,14 @@ import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.UpdateableDoubleBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -107,11 +113,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
-import org.controlsfx.dialog.Dialogs;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
 
 /**
  * {@link ListBatchViewController}
@@ -144,7 +145,6 @@ public class ListBatchViewController
 	@FXML private Button loadListButton;
 	@FXML private VBox operationsList;
 	@FXML private Button clearOperationsButton;
-	@FXML private Tab conceptDisplayTab;
 	@FXML private TableView<SimpleDisplayConcept> conceptTable;
 	@FXML private HBox conceptTableFooter;
 	@FXML private Button addUncommittedListButton;
@@ -164,8 +164,6 @@ public class ListBatchViewController
 	
 	private Logger logger_ = LoggerFactory.getLogger(this.getClass());
 	private int uncommittedCount = 0;
-
-	private PopupConceptViewI conceptView;
 
 	protected static ListBatchViewController init() throws IOException
 	{
@@ -189,8 +187,6 @@ public class ListBatchViewController
 	@FXML
 	public void initialize()
 	{
-		conceptView = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
-		
 		operationsList.getChildren().add(new OperationNode(this));
 
 		final ConceptNode cn = new ConceptNode(null, false);
@@ -263,19 +259,6 @@ public class ListBatchViewController
 						}
 					}
 				};
-
-				//TODO this is the wrong listener... what if they keyboard up and down?  
-				cell.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-					@Override
-					public void handle(MouseEvent event) {
-						if (((TableCell<?,?>)event.getSource()).getIndex() < conceptTable.getItems().size()) {
-							SimpleDisplayConcept con = (SimpleDisplayConcept)conceptTable.getItems().get(((TableCell<?,?>)event.getSource()).getIndex());
-							conceptView.setConcept(con.getNid());
-							conceptDisplayTab.setContent(conceptView.getView());
-						}
-					}
-				});
-				
 				return cell;
 			}
 		});
@@ -367,7 +350,7 @@ public class ListBatchViewController
 					{
 						try
 						{
-							ExtendedAppContext.getDataStore().commit(/* row.getItem().getNid() */);
+							Ts.get().commit(/* row.getItem().getNid() */);
 							updateTableItem(row.getItem(), false);
 						}
 						catch (IOException ex)
@@ -387,7 +370,7 @@ public class ListBatchViewController
 					{
 						//TODO this should be presented to the user... not silently logged
 						try {
-							ExtendedAppContext.getDataStore().forget(ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinate(), row.getItem().getNid()));
+							Ts.get().forget(Ts.get().getConceptVersion(OTFUtility.getViewCoordinate(), row.getItem().getNid()));
 							updateTableItem(row.getItem(), false);
 						} catch (IOException e) {
 							logger_.error("Unable to cancel comp: " + row.getItem().getNid(), e);
@@ -473,7 +456,7 @@ public class ListBatchViewController
 			{
 				try
 				{
-					ExtendedAppContext.getDataStore().commit();
+					Ts.get().commit();
 					uncommitAllTableItems();
 				}
 				catch (IOException ex)
@@ -491,10 +474,10 @@ public class ListBatchViewController
 			{
 				try
 				{
-					OTFUtility.cancel();
+					Get.commitService().cancel().get();
 					uncommitAllTableItems();
 				}
-				catch (IOException e)
+				catch (ExecutionException | InterruptedException e)
 				{
 					// TODO OCHRE
 					e.printStackTrace();
@@ -1039,7 +1022,7 @@ public class ListBatchViewController
 			//TODO Jesse - this is broken, and I have no idea why it is being called here.  I don't know why the above code is doing things with 
 			//committed / uncommitted either... all very strange.
 //			try {
-//				ExtendedAppContext.getDataStore().forget(con);
+//				Ts.get().forget(con);
 //				newCon.setUncommitted(false);
 //
 //				if (!isUncommitted && oldCon.isUncommitted()) {

@@ -18,10 +18,7 @@
  */
 package gov.va.legoEdit.storage.wb;
 
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.Utility;
 import gov.va.legoEdit.model.schemaModel.Assertion;
 import gov.va.legoEdit.model.schemaModel.AssertionComponent;
 import gov.va.legoEdit.model.schemaModel.Concept;
@@ -32,13 +29,13 @@ import gov.va.legoEdit.model.schemaModel.Measurement;
 import gov.va.legoEdit.model.schemaModel.Relation;
 import gov.va.legoEdit.model.schemaModel.RelationGroup;
 import gov.va.legoEdit.model.schemaModel.Type;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.id.IdBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,8 +49,6 @@ import org.slf4j.LoggerFactory;
 public class LegoWBUtility
 {
 	private static Logger logger = LoggerFactory.getLogger(LegoWBUtility.class);
-	private static UUID snomedIdType = TermAux.SNOMED_IDENTIFIER.getUuids()[0]; // SNOMED integer id
-	private static Integer snomedIdTypeNid = null;
 
 	public static Concept convertConcept(ConceptSnapshot concept)
 	{
@@ -65,7 +60,7 @@ public class LegoWBUtility
 			c.setUuid(concept.getPrimordialUuid().toString());
 			try
 			{
-				Optional<Long> sctId = OchreUtility.getSctId(concept.getNid());
+				Optional<Long> sctId = Frills.getSctId(concept.getNid(), null);
 				if (sctId.isPresent())
 				{
 					c.setSctid(sctId.get());
@@ -81,15 +76,6 @@ public class LegoWBUtility
 			}
 		}
 		return c;
-	}
-
-	private static int getSnomedIdTypeNid()
-	{
-		if (snomedIdTypeNid == null)
-		{
-			snomedIdTypeNid = ExtendedAppContext.getDataStore().getNidForUuids(snomedIdType);
-		}
-		return snomedIdTypeNid;
 	}
 
 	/**
@@ -132,14 +118,22 @@ public class LegoWBUtility
 		}
 		if (e.getConcept() != null)
 		{
-			Concept result = convertConcept(OTFUtility.lookupIdentifier(e.getConcept().getUuid()));
-			if (result == null)
+			Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cc = OchreUtility.getConceptForUnknownIdentifier(e.getConcept().getUuid());
+			if (!cc.isPresent())
 			{
-				result = convertConcept(OTFUtility.lookupIdentifier(e.getConcept().getSctid() + ""));
+				cc = OchreUtility.getConceptForUnknownIdentifier(e.getConcept().getSctid() + "");
 			}
-			if (result != null)
+			if (cc.isPresent())
 			{
-				e.setConcept(result);
+				Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(cc.get().getNid(), null, null);
+				if (cs.isPresent())
+				{
+					e.setConcept(convertConcept(cs.get()));
+				}
+				else
+				{
+					failures.add(e.getConcept());
+				}
 			}
 			else
 			{
@@ -186,19 +180,28 @@ public class LegoWBUtility
 		{
 			return failures;
 		}
-		Concept result = convertConcept(OTFUtility.lookupIdentifier(t.getConcept().getUuid()));
-		if (result == null)
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cc = OchreUtility.getConceptForUnknownIdentifier(t.getConcept().getUuid());
+		if (!cc.isPresent())
 		{
-			result = convertConcept(OTFUtility.lookupIdentifier(t.getConcept().getSctid() + ""));
+			cc = OchreUtility.getConceptForUnknownIdentifier(t.getConcept().getSctid() + "");
 		}
-		if (result != null)
+		if (cc.isPresent())
 		{
-			t.setConcept(result);
+			Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(cc.get().getNid(), null, null);
+			if (cs.isPresent())
+			{
+				t.setConcept(convertConcept(cs.get()));
+			}
+			else
+			{
+				failures.add(t.getConcept());
+			}
 		}
 		else
 		{
 			failures.add(t.getConcept());
 		}
+		
 		return failures;
 	}
 
@@ -209,19 +212,29 @@ public class LegoWBUtility
 		{
 			return failures;
 		}
-		Concept result = convertConcept(OTFUtility.lookupIdentifier(m.getUnits().getConcept().getUuid()));
-		if (result == null)
+		
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cc = OchreUtility.getConceptForUnknownIdentifier(m.getUnits().getConcept().getUuid());
+		if (!cc.isPresent())
 		{
-			result = convertConcept(OTFUtility.lookupIdentifier(m.getUnits().getConcept().getSctid() + ""));
+			cc = OchreUtility.getConceptForUnknownIdentifier(m.getUnits().getConcept().getSctid() + "");
 		}
-		if (result != null)
+		if (cc.isPresent())
 		{
-			m.getUnits().setConcept(result);
+			Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(cc.get().getNid(), null, null);
+			if (cs.isPresent())
+			{
+				m.getUnits().setConcept(convertConcept(cs.get()));
+			}
+			else
+			{
+				failures.add(m.getUnits().getConcept());
+			}
 		}
 		else
 		{
 			failures.add(m.getUnits().getConcept());
 		}
+		
 		return failures;
 	}
 }

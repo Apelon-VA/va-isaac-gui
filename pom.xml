@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>gov.vha.isaac</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>1.8</version>
+		<version>1.9</version>
 	</parent>
 	
 	<groupId>gov.vha.isaac.gui</groupId>
 	<artifactId>isaac-gui-parent</artifactId>
-	<version>23.3</version>
+	<version>23.4</version>
 	<packaging>pom</packaging>
 	
 	<name>ISAAC Modules Parent</name>
@@ -32,12 +32,12 @@
 	</distributionManagement>
 
 	<properties>
-		<logic.version>1.15</logic.version>
-		<query.version>2.15</query.version>
-		<ochre.version>2.30</ochre.version>
-		<isaac-mojo.version>1.9</isaac-mojo.version>
-		<isaac-metadata.version>1.32</isaac-metadata.version>
-		<newtons-cradle.version>1.20</newtons-cradle.version>
+		<logic.version>1.16</logic.version>
+		<query.version>2.16</query.version>
+		<ochre.version>2.32</ochre.version>
+		<isaac-mojo.version>1.11</isaac-mojo.version>
+		<isaac-metadata.version>1.35</isaac-metadata.version>
+		<newtons-cradle.version>1.21</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>
@@ -106,6 +106,12 @@
 				<groupId>org.apache.poi</groupId>
 				<artifactId>poi-ooxml</artifactId>
 				<version>${apache.poi.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.google.code.gson</groupId>
+				<artifactId>gson</artifactId>
+				<version>2.3.1</version>
 			</dependency>
 			
 			<!-- TODO get rid of this dependency... we only use one thing from it... -->
@@ -185,7 +191,6 @@
 		<module>data-model</module>
 		<module>import-export</module>
 		<module>content-request</module>
-		<module>classifier</module>
 		<module>taxonomy-view</module>
 		<module>lego-view</module>
 		<module>search-view</module>
@@ -196,7 +201,6 @@
 		<module>mojos</module>
 		<module>refex-view</module>
 		<module>concept-wizard-view</module>
-		<module>constants</module>
 		<module>drools</module>
 		<module>sync-view</module>
 		<module>sync-git</module>
@@ -204,5 +208,6 @@
 		<module>db-processing-rules</module>
 		<module>mapping</module>
 		<module>logic-view</module>
+		<module>concept-view</module>
 	</modules>
 </project>

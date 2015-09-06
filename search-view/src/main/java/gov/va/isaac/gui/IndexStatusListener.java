@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import javax.inject.Singleton;
-import org.ihtsdo.otf.tcc.model.index.service.IndexStatusListenerBI;
-import org.ihtsdo.otf.tcc.model.index.service.IndexerBI;
+import gov.vha.isaac.ochre.api.index.IndexServiceBI;
+import gov.vha.isaac.ochre.api.index.IndexStatusListenerBI;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +47,9 @@ public class IndexStatusListener implements IndexStatusListenerBI
 {
 	private static final Logger LOG = LoggerFactory.getLogger(IndexStatusListener.class);
 
-	Set<Consumer<IndexerBI>> callbackOnIndexConfigChanged = Collections.newSetFromMap(new WeakHashMap<Consumer<IndexerBI>, Boolean>());
-	Set<Consumer<IndexerBI>> callbackOnReindexStarted = Collections.newSetFromMap(new WeakHashMap<Consumer<IndexerBI>, Boolean>());
-	Set<Consumer<IndexerBI>> callbackOnReindexComplete = Collections.newSetFromMap(new WeakHashMap<Consumer<IndexerBI>, Boolean>());
+	Set<Consumer<IndexServiceBI>> callbackOnIndexConfigChanged = Collections.newSetFromMap(new WeakHashMap<Consumer<IndexServiceBI>, Boolean>());
+	Set<Consumer<IndexServiceBI>> callbackOnReindexStarted = Collections.newSetFromMap(new WeakHashMap<Consumer<IndexServiceBI>, Boolean>());
+	Set<Consumer<IndexServiceBI>> callbackOnReindexComplete = Collections.newSetFromMap(new WeakHashMap<Consumer<IndexServiceBI>, Boolean>());
 
 	private IndexStatusListener()
 	{
@@ -60,7 +60,7 @@ public class IndexStatusListener implements IndexStatusListenerBI
 	 * This uses weak references - you must hold onto your own consumer reference.
 	 * @return the passed in reference, for convenience.
 	 */
-	public Consumer<IndexerBI> onIndexConfigChanged(Consumer<IndexerBI> callback)
+	public Consumer<IndexServiceBI> onIndexConfigChanged(Consumer<IndexServiceBI> callback)
 	{
 		callbackOnIndexConfigChanged.add(callback);
 		return callback;
@@ -70,7 +70,7 @@ public class IndexStatusListener implements IndexStatusListenerBI
 	 * This uses weak references - you must hold onto your own consumer reference.
 	 * @return the passed in reference, for convenience.
 	 */
-	public void onReindexStarted(Consumer<IndexerBI> callback)
+	public void onReindexStarted(Consumer<IndexServiceBI> callback)
 	{
 		callbackOnReindexStarted.add(callback);
 	}
@@ -79,45 +79,45 @@ public class IndexStatusListener implements IndexStatusListenerBI
 	 * This uses weak references - you must hold onto your own consumer reference.
 	 * @return the passed in reference, for convenience.
 	 */
-	public void onReindexCompleted(Consumer<IndexerBI> callback)
+	public void onReindexCompleted(Consumer<IndexServiceBI> callback)
 	{
 		callbackOnReindexComplete.add(callback);
 	}
 
 	/**
-	 * @see org.ihtsdo.otf.tcc.model.index.service.IndexStatusListenerBI#indexConfigurationChanged(org.ihtsdo.otf.tcc.model.index.service.IndexerBI)
+	 * @see gov.vha.isaac.ochre.api.index.IndexStatusListenerBI#indexConfigurationChanged(gov.vha.isaac.ochre.api.index.IndexServiceBI)
 	 */
 	@Override
-	public void indexConfigurationChanged(IndexerBI indexConfigurationThatChanged)
+	public void indexConfigurationChanged(IndexServiceBI indexConfigurationThatChanged)
 	{
 		LOG.info("Index config changed {}", indexConfigurationThatChanged.getIndexerName());
-		for (Consumer<IndexerBI> callback : callbackOnIndexConfigChanged)
+		for (Consumer<IndexServiceBI> callback : callbackOnIndexConfigChanged)
 		{
 			callback.accept(indexConfigurationThatChanged);
 		}
 	}
 
 	/**
-	 * @see org.ihtsdo.otf.tcc.model.index.service.IndexStatusListenerBI#reindexBegan(org.ihtsdo.otf.tcc.model.index.service.IndexerBI)
+	 * @see gov.vha.isaac.ochre.api.index.IndexStatusListenerBI#reindexBegan(gov.vha.isaac.ochre.api.index.IndexServiceBI)
 	 */
 	@Override
-	public void reindexBegan(IndexerBI index)
+	public void reindexBegan(IndexServiceBI index)
 	{
 		LOG.info("Reindex Began {}", index.getIndexerName());
-		for (Consumer<IndexerBI> callback : callbackOnReindexStarted)
+		for (Consumer<IndexServiceBI> callback : callbackOnReindexStarted)
 		{
 			callback.accept(index);
 		}
 	}
 
 	/**
-	 * @see org.ihtsdo.otf.tcc.model.index.service.IndexStatusListenerBI#reindexCompleted(org.ihtsdo.otf.tcc.model.index.service.IndexerBI)
+	 * @see gov.vha.isaac.ochre.api.index.IndexStatusListenerBI#reindexCompleted(gov.vha.isaac.ochre.api.index.IndexServiceBI)
 	 */
 	@Override
-	public void reindexCompleted(IndexerBI index)
+	public void reindexCompleted(IndexServiceBI index)
 	{
 		LOG.info("Reindex Completed {}", index.getIndexerName());
-		for (Consumer<IndexerBI> callback : callbackOnReindexComplete)
+		for (Consumer<IndexServiceBI> callback : callbackOnReindexComplete)
 		{
 			callback.accept(index);
 		}

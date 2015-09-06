@@ -20,6 +20,7 @@ package gov.va.isaac.gui.dialog;
 
 import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 
 import java.util.AbstractMap;
@@ -62,22 +63,10 @@ public class RelationshipVersion
 		return rv_;
 	}
 	
-//	public boolean hasDynamicRefex()
-//	{
-//		try
-//		{
-//			Collection<? extends RefexDynamicChronicleBI<?>> foo = rv_.getRefexDynamicAnnotations();
-//			if (foo != null && foo.size() > 0)
-//			{
-//				return true;
-//			}
-//		}
-//		catch (IOException e)
-//		{
-//			LOG.error("Unexpeted", e);
-//		}
-//		return false;
-//	}
+	public boolean hasNestedSememe()
+	{
+		return !rv_.getChronology().getSememeList().isEmpty();
+	}
 	
 	/**
 	 * Returns the string for display, and the tooltip, if applicable.  Either / or may be null.
@@ -218,7 +207,7 @@ public class RelationshipVersion
 	{
 		try
 		{
-			return OchreUtility.getDescription(css.getConceptSnapshot(nidFetcher.applyAsInt(rv_)).getChronology(), css.getLanguageCoordinate(), css.getStampCoordinate());
+			return OchreUtility.getDescription(nidFetcher.applyAsInt(rv_), css.getStampCoordinate(), css.getLanguageCoordinate()).get();
 		}
 		catch (Exception e)
 		{

@@ -65,7 +65,8 @@ public class SimpleDisplayConcept implements Comparable<SimpleDisplayConcept>
 	public SimpleDisplayConcept(ConceptSnapshot c, Function<ConceptSnapshot, String> descriptionReader)
 	{
 		Function<ConceptSnapshot, String> dr = (descriptionReader == null ? (conceptVersion) -> 
-			{return (conceptVersion == null ? "" : OchreUtility.getDescription(conceptVersion.getChronology(), conceptVersion.getLanguageCoordinate(), conceptVersion.getStampCoordinate()));} : descriptionReader);
+			{return (conceptVersion == null ? "" : OchreUtility.getDescription(conceptVersion.getConceptSequence(), 
+					conceptVersion.getStampCoordinate(), conceptVersion.getLanguageCoordinate()).get());} : descriptionReader);
 		description_ = dr.apply(c);
 		nid_ = c == null ? 0 : c.getNid();
 		ignoreChange_ = false;

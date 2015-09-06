@@ -19,7 +19,7 @@
 package gov.va.isaac.gui.refexViews.util;
 
 /**
- *  * Just a helper class for {@link RefexDataTypeFXNodeBuilder}.  Ignore.
+ *  * Just a helper class for {@link SememeGUIDataTypeFXNodeBuilder}.  Ignore.
  * {@link ByteArrayDataHolder}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>

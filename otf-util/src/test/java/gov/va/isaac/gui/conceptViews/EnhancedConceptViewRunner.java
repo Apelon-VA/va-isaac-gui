@@ -52,12 +52,12 @@ public class EnhancedConceptViewRunner extends Application
 	{
 		primaryStage.setTitle("New Concept Panel");
 
-		PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
-
-		primaryStage.setScene(new Scene(new Label("hello world"), 200, 100));
-		primaryStage.show();
-		cv.setConcept(UUID.fromString("49064bb7-cda5-3cb3-b8f7-085139486fa8"));
-		cv.showView(primaryStage);
+//		PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+//
+//		primaryStage.setScene(new Scene(new Label("hello world"), 200, 100));
+//		primaryStage.show();
+//		cv.setConcept(UUID.fromString("49064bb7-cda5-3cb3-b8f7-085139486fa8"));
+//		cv.showView(primaryStage);
 	}
 
 	public static void main(String[] args) throws Exception

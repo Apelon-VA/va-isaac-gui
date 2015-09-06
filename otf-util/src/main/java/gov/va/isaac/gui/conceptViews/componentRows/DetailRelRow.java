@@ -2,6 +2,7 @@ package gov.va.isaac.gui.conceptViews.componentRows;
 
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
@@ -26,14 +27,14 @@ public class DetailRelRow extends RelRow {
 		Rectangle rec = createAnnotRectangle(rel);
 		Label relLabel;
 		if (isDetailed) {
-			relLabel = labelHelper.createLabel(rel, OTFUtility.getConPrefTerm(rel.getConceptNid()), ComponentType.RELATIONSHIP, rel.getConceptNid());
+			relLabel = labelHelper.createLabel(rel, OchreUtility.getDescription(rel.getConceptNid()), ComponentType.RELATIONSHIP, rel.getConceptNid());
 		} else {
-			relLabel = labelHelper.createLabel(rel, OTFUtility.getConPrefTerm(rel.getDestinationNid()), ComponentType.RELATIONSHIP, rel.getDestinationNid());
+			relLabel = labelHelper.createLabel(rel, OchreUtility.getDescription(rel.getDestinationNid()), ComponentType.RELATIONSHIP, rel.getDestinationNid());
 		}
-		Label relTypeLabel = labelHelper.createLabel(rel, OTFUtility.getConPrefTerm(rel.getTypeNid()), ComponentType.RELATIONSHIP, rel.getTypeNid());
+		Label relTypeLabel = labelHelper.createLabel(rel, OchreUtility.getDescription(rel.getTypeNid()), ComponentType.RELATIONSHIP, rel.getTypeNid());
 		Label relGroupLabel = labelHelper.createLabel(rel, String.valueOf(rel.getGroup()), ComponentType.RELATIONSHIP, 0);
-		Label relCharLabel = labelHelper.createLabel(rel, OTFUtility.getConPrefTerm(rel.getCharacteristicNid()), ComponentType.RELATIONSHIP, rel.getCharacteristicNid());
-		Label relRefLabel = labelHelper.createLabel(rel, OTFUtility.getConPrefTerm(rel.getRefinabilityNid()), ComponentType.RELATIONSHIP, rel.getRefinabilityNid());
+		Label relCharLabel = labelHelper.createLabel(rel, OchreUtility.getDescription(rel.getCharacteristicNid()), ComponentType.RELATIONSHIP, rel.getCharacteristicNid());
+		Label relRefLabel = labelHelper.createLabel(rel, OchreUtility.getDescription(rel.getRefinabilityNid()), ComponentType.RELATIONSHIP, rel.getRefinabilityNid());
 		
 		if (rel.isUncommitted()) {
 			if (rel.getVersions().size() == 1) {
@@ -56,19 +57,19 @@ public class DetailRelRow extends RelRow {
 				RelationshipVersionBI<?> origVersion = (RelationshipVersionBI<?>) OTFUtility.getLastCommittedVersion(chronicle);
 ;
 	
-				if (!relLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getDestinationNid()))) {
+				if (!relLabel.getText().equals(OchreUtility.getDescription(origVersion.getDestinationNid()))) {
 					relLabel.setUnderline(true);
 				}
 				
-				if (!relTypeLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getTypeNid()))) {
+				if (!relTypeLabel.getText().equals(OchreUtility.getDescription(origVersion.getTypeNid()))) {
 					relTypeLabel.setUnderline(true);
 				}
 	
-				if (!relCharLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getCharacteristicNid()))) {
+				if (!relCharLabel.getText().equals(OchreUtility.getDescription(origVersion.getCharacteristicNid()))) {
 					relCharLabel.setUnderline(true);
 				}
 				
-				if (!relRefLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getRefinabilityNid()))) {
+				if (!relRefLabel.getText().equals(OchreUtility.getDescription(origVersion.getRefinabilityNid()))) {
 					relRefLabel.setUnderline(true);
 				}
 				

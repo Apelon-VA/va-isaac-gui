@@ -48,6 +48,7 @@ import javax.inject.Inject;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -247,7 +248,7 @@ public class WorkflowAdvancementViewController
 			}
 		} else {
 			try {
-				containingConcept = ExtendedAppContext.getDataStore().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate()).get();
+				containingConcept = Ts.get().getConceptForNid(componentChronicle.getNid()).getVersion(OTFUtility.getViewCoordinate()).get();
 			} catch (Exception e) {
 				String details = "Failed getting version from ComponentChronicleBI task " + initialTask.getId() + ".  Caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
 

@@ -4,7 +4,7 @@ import gov.va.isaac.drools.testmodel.DrDescription
 import gov.va.isaac.drools.helper.templates.DescriptionTemplate
 import gov.va.isaac.drools.helper.ResultsItemError
 
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.dataTypes.RefexDynamicStringBI
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeStringBI
 
 global gov.va.isaac.drools.helper.ResultsCollector resultsCollector
 global gov.va.isaac.drools.helper.TerminologyHelperDrools terminologyHelper
@@ -35,7 +35,7 @@ rule "Text should not have double spaces"
 	@RULE_CODE(107)
 	dialect "mvel"
 	when
-		text : RefexDynamicStringBI( dataString matches ".*\\s\\s+.*" )
+		text : DynamicSememeStringBI( dataString matches ".*\\s\\s+.*" )
 	then
 		ResultsItemError fact1 = new ResultsItemError();
 		fact1.setErrorCode( 108 );

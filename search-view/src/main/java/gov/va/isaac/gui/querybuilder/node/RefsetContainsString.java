@@ -25,10 +25,12 @@
 package gov.va.isaac.gui.querybuilder.node;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import java.util.Optional;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
@@ -133,9 +135,9 @@ public class RefsetContainsString extends AssertionNode {
 
 	@Override
 	public String getDescription() {
-		String refsetConceptDescription = null;
+		Optional<String> refsetConceptDescription = null;
 		if (getRefsetConceptNid() != null && getRefsetConceptNid() != 0) {
-			refsetConceptDescription = OTFUtility.getDescriptionIfConceptExists(getRefsetConceptNid());
+			refsetConceptDescription = OchreUtility.getDescription(getRefsetConceptNid());
 		}
 
 		String queryText = getQueryText() != null ? "\"" + getQueryText() + "\"" : null;

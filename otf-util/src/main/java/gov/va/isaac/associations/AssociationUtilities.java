@@ -18,28 +18,22 @@
  */
 package gov.va.isaac.associations;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.constants.ISAAC;
-import gov.vha.isaac.ochre.api.index.SearchResult;
-import java.beans.PropertyVetoException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicUsageDescription;
-import org.ihtsdo.otf.tcc.api.spec.ValidationException;
-import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicString;
+import java.util.UUID;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 
 /**
  * {@link AssociationUtilities}
@@ -48,125 +42,143 @@ import org.ihtsdo.otf.tcc.model.cc.refexDynamic.data.dataTypes.RefexDynamicStrin
  */
 public class AssociationUtilities
 {
-	private static int associationNid = Integer.MIN_VALUE;
+	private static int associationSequence = Integer.MIN_VALUE;
 
-	private static int getAssociationNid() throws ValidationException, IOException
+	private static int getAssociationSequence()
 	{
-		if (associationNid == Integer.MIN_VALUE)
+		if (associationSequence == Integer.MIN_VALUE)
 		{
-			associationNid = ISAAC.ASSOCIATION_SEMEME.getNid();
+			associationSequence = IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence();
 		}
-		return associationNid;
+		return associationSequence;
 	}
 
-	public static List<Association> getSourceAssociations(ComponentChronicleBI<?> component, ViewCoordinate vc) throws IOException
+	/**
+	 * Get all associations that originate on the specified componentNid
+	 * @param componentNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 */
+	public static List<AssociationInstance> getSourceAssociations(int componentNid, StampCoordinate stamp)
 	{
-		ArrayList<Association> result = new ArrayList<>();
-		for (RefexDynamicVersionBI<?> refex : component.getRefexesDynamicActive(vc))
-		{
-			ConceptVersionBI refexAssemblageType = ExtendedAppContext.getDataStore().getConceptVersion(vc, refex.getAssemblageNid());
-
-			for (RefexDynamicChronicleBI<?> refexAttachedToAssemblage : refexAssemblageType.getRefexesDynamic())
-			{
-				if (refexAttachedToAssemblage.getAssemblageNid() == getAssociationNid())
+		ArrayList<AssociationInstance> results = new ArrayList<>();
+		Get.sememeService().getSememesForComponentFromAssemblage(componentNid, getAssociationSequence())
+			.forEach(associationC -> 
 				{
-					result.add(new Association(refex));
-					break;
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)associationC).getLatestVersion(DynamicSememe.class, 
+							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
+					if (latest.isPresent())
+					{
+						results.add(AssociationInstance.read(latest.get().value()));
+					}
+					
+				});
+		return results;
+	}
+
+	/**
+	 * Get all association instances that have a target of the specified componentNid
+	 * @param componentNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 */
+	public static List<AssociationInstance> getTargetAssociations(int componentNid, StampCoordinate stamp)
+	{
+		ArrayList<AssociationInstance> result = new ArrayList<>();
+
+		DynamicSememeIndexer indexer = LookupService.getService(DynamicSememeIndexer.class);
+		if (indexer == null)
+		{
+			throw new RuntimeException("Required index is not available");
+		}
+		
+		for (Integer associationTypeSequenece : getAssociationConceptSequences())
+		{
+			try
+			{
+				int colIndex = findTargetColumnIndex(associationTypeSequenece);
+				UUID uuid = Get.identifierService().getUuidPrimordialForNid(componentNid).orElse(null);
+				List<SearchResult> refexes = indexer.query(new DynamicSememeString(componentNid + (uuid == null ? "" : " OR " + uuid)),
+						associationTypeSequenece, false, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
+				for (SearchResult sr : refexes)
+				{
+					@SuppressWarnings("rawtypes")
+					Optional<LatestVersion<DynamicSememe>> latest = Get.sememeService().getSnapshot(DynamicSememe.class, 
+							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp).getLatestSememeVersion(sr.getNid());
+					
+					if (latest.isPresent())
+					{
+						result.add(AssociationInstance.read(latest.get().value()));
+					}
 				}
 			}
-
-		}
-		return result;
-	}
-
-	public static List<Association> getTargetAssociations(ComponentChronicleBI<?> component, ViewCoordinate vc) throws IOException, ContradictionException, ParseException, PropertyVetoException
-	{
-		ArrayList<Association> result = new ArrayList<>();
-		
-		//TODO validate the concept is annotated for association?
-
-		LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-		if (indexer == null)
-		{
-			throw new RuntimeException("Required index is not available");
-		}
-		
-		for (ConceptChronicleBI associationType : getAssociationTypes())
-		{
-			int colIndex = findTargetColumnIndex(associationType.getNid());
-			List<SearchResult> refexes = indexer.query(new RefexDynamicString(component.getNid() + " OR " + component.getPrimordialUuid()),
-					associationType.getNid(), false, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
-			for (SearchResult sr : refexes)
+			catch (Exception e)
 			{
-				RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
-				Optional<? extends RefexDynamicVersionBI<?>> rv = rc.getVersion(vc);
-				if (rv.isPresent())
-				{
-					result.add(new Association(rv.get()));
-				}
+				throw new RuntimeException(e);
 			}
-		}
-		return result;
-	}
-
-	public static List<Association> getAssociationsOfType(ConceptChronicleBI concept, ViewCoordinate vc) throws NumberFormatException, IOException, ParseException, ContradictionException
-	{
-		ArrayList<Association> result = new ArrayList<>();
-
-		//TODO validate the concept is annotated for association?
-
-		LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-		if (indexer == null)
-		{
-			throw new RuntimeException("Required index is not available");
-		}
-		List<SearchResult> refexes = indexer.queryAssemblageUsage(concept.getNid(), Integer.MAX_VALUE, null);
-		for (SearchResult sr : refexes)
-		{
-			RefexDynamicChronicleBI<?> rc = (RefexDynamicChronicleBI<?>) ExtendedAppContext.getDataStore().getComponent(sr.getNid());
-			Optional<? extends RefexDynamicVersionBI<?>> rv = rc.getVersion(vc);
-			if (rv.isPresent())
-			{
-				result.add(new Association(rv.get()));
-			}
-		}
-
-		return result;
-	}
-
-	public static List<ConceptChronicleBI> getAssociationTypes() throws NumberFormatException, ValidationException, IOException, ParseException
-	{
-		ArrayList<ConceptChronicleBI> result = new ArrayList<>();
-
-		LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-		if (indexer == null)
-		{
-			throw new RuntimeException("Required index is not available");
-		}
-		List<SearchResult> refexes = indexer.queryAssemblageUsage(ISAAC.ASSOCIATION_SEMEME.getNid(), Integer.MAX_VALUE, null);
-		for (SearchResult sr : refexes)
-		{
-			result.add(ExtendedAppContext.getDataStore().getConceptForNid(sr.getNid()));
 		}
 		return result;
 	}
 
 	/**
-	 * @param assemblageNid
-	 * @throws ContradictionException 
-	 * @throws IOException 
+	 * 
+	 * @param associationTypeConceptNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 * @return
 	 */
-	public static int findTargetColumnIndex(int assemblageNid) throws IOException, ContradictionException
+	public static List<AssociationInstance> getAssociationsOfType(int associationTypeConceptNid, StampCoordinate stamp)
 	{
-		RefexDynamicUsageDescription rdud = RefexDynamicUsageDescription.read(assemblageNid);
+		ArrayList<AssociationInstance> results = new ArrayList<>();
+		Get.sememeService().getSememesFromAssemblage(associationTypeConceptNid)
+			.forEach(associationC -> 
+				{
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)associationC).getLatestVersion(DynamicSememe.class, 
+							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
+					if (latest.isPresent())
+					{
+						results.add(AssociationInstance.read(latest.get().value()));
+					}
+					
+				});
+		return results;
+	}
 
-		for (RefexDynamicColumnInfo rdci : rdud.getColumnInfo())
+	/**
+	 * Get a list of all of the concepts that identify a type of association - returning their concept sequence identifier.
+	 * @return
+	 */
+	public static List<Integer> getAssociationConceptSequences()
+	{
+		ArrayList<Integer> result = new ArrayList<>();
+
+		DynamicSememeIndexer indexer = LookupService.getService(DynamicSememeIndexer.class);
+		if (indexer == null)
 		{
-			if (rdci.getColumnDescriptionConcept().equals(ISAAC.REFEX_COLUMN_TARGET_COMPONENT.getPrimodialUuid()))
+			throw new RuntimeException("Required index is not available");
+		}
+		Get.sememeService().getSememesFromAssemblage(IsaacMetadataConstants.DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).forEach(associationC ->
+		{
+			result.add(Get.identifierService().getConceptSequence(associationC.getReferencedComponentNid()));
+		});
+		return result;
+	}
+
+	/**
+	 * @param assemblageNidOrSequence
+	 */
+	protected static int findTargetColumnIndex(int assemblageNidOrSequence)
+	{
+		DynamicSememeUsageDescription rdud = DynamicSememeUsageDescription.read(assemblageNidOrSequence);
+
+		for (DynamicSememeColumnInfo rdci : rdud.getColumnInfo())
+		{
+			if (rdci.getColumnDescriptionConcept().equals(IsaacMetadataConstants.DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getUUID()))
 			{
 				return rdci.getColumnOrder();
 			}
 		}
 		return Integer.MIN_VALUE;
 	}
+	
+	
 }

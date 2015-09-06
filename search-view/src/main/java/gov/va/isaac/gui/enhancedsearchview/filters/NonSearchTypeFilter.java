@@ -32,6 +32,7 @@ import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.nid.NativeIdSetBI;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,9 +60,9 @@ public abstract class NonSearchTypeFilter<T extends NonSearchTypeFilter<T>> impl
 			//in the DB to see if it extends from ISAAC_ROOT?  The only thing that would do is exclude orphans... which, certainly doesn't seem 
 			//to be the intent... On top of that... it doesn't even start with the startList... rather starting with the entire DB.
 			//This needs to be completely thrown out / rewritten from scratch.
-			NativeIdSetBI allConcepts = ExtendedAppContext.getDataStore().getAllConceptNids();
+			NativeIdSetBI allConcepts = Ts.get().getAllConceptNids();
 			NoSearchTermConcurrentSearcher searcher = new NoSearchTermConcurrentSearcher(allConcepts, IsaacMetadataAuxiliaryBinding.ISAAC_ROOT.getNid());
-			ExtendedAppContext.getDataStore().iterateConceptDataInParallel(searcher);
+			Ts.get().iterateConceptDataInParallel(searcher);
 
 			if (!startList.isEmpty()) {
 				for (Integer examCon : startList) {

@@ -5,21 +5,17 @@ package gov.va.isaac.util;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
-import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.config.users.InvalidUserException;
-import gov.vha.isaac.cradle.sememe.SememeProvider;
+import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
@@ -29,12 +25,11 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
-import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
-import gov.vha.isaac.ochre.util.UuidFactory;
-
+import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,8 +40,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
 import org.apache.commons.lang3.StringUtils;
+import org.ihtsdo.otf.query.lucene.indexers.SememeIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,91 +54,87 @@ public final class OchreUtility {
 
 	private OchreUtility() {}
 
-	
-	@SuppressWarnings("unchecked")
-	public static List<? extends SememeChronology<? extends DescriptionSememe<?>>> getConceptDescriptionList(ConceptChronology<?> cc) {
-		@SuppressWarnings("rawtypes")
-		List<? extends SememeChronology<? extends DescriptionSememe>> rawList = cc.getConceptDescriptionList();
-		
-		return (List<? extends SememeChronology<? extends DescriptionSememe<?>>>)rawList;
-	}
 
-    @SuppressWarnings("unchecked")
-	public static Optional<LatestVersion<? extends ConceptVersion<?>>> getLatestConceptVersion(ConceptChronology<? extends ConceptVersion<?>> cc, StampCoordinate<? extends StampCoordinate<?>> sc) {
-		@SuppressWarnings("rawtypes")
-		ConceptChronology raw = (ConceptChronology)cc;
-    	
-    	return raw.getLatestVersion(ConceptVersion.class, sc);
-    }
-    
+	/**
+	 * Simple utility method to get the latest version of a concept without having to do the class conversion stuff
+	 * @param conceptChronology the chronlogy to get the concept version for
+	 * @param stampCoordinate - optional - if not provided, uses the current stamp coordinate from the user profile.
+	 */
 	@SuppressWarnings("unchecked")
-	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptor(SememeChronology<? extends RelationshipVersionAdaptor<?>> sc, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
+	public static Optional<LatestVersion<? extends ConceptVersion<?>>> getLatestConceptVersion(ConceptChronology<? extends ConceptVersion<?>> conceptChronology, 
+			StampCoordinate stampCoordinate) {
 		@SuppressWarnings("rawtypes")
-		SememeChronology rawSememChronology = (SememeChronology)sc;
+		ConceptChronology raw = (ConceptChronology)conceptChronology;
 		
-		return rawSememChronology.getLatestVersion(RelationshipVersionAdaptor.class, stampCoordinate);
+		return raw.getLatestVersion(ConceptVersion.class, 
+				(stampCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stampCoordinate));
 	}
 
 	/**
-	 * @param nid concept nid
-	 * @param stampCoordinate StampCoordinate for retrieving latest LogicGraphSememeImpl
-	 * @param premiseType PremiseTypes by which to filter. Passing null disables filtering by PremiseType (returns both STATED and INFERRED)
-	 * @return List of RelationshipVersionAdaptor
-	 * 
-	 * 
+	 * Simple utility method to return a relationship version adapater, handling the class conversion stuff
+	 * @param sememeChronology the relationship sememe chronology to lookup 
+	 * @param stampCoordinate - optional - if not provided, uses the current stamp coordinate from the user profile
+	 * @return
 	 */
-	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int nid, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
+	@SuppressWarnings("unchecked")
+	public static Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> getLatestRelationshipVersionAdaptor(
+			SememeChronology<? extends RelationshipVersionAdaptor<?>> sememeChronology, StampCoordinate stampCoordinate) {
+		@SuppressWarnings("rawtypes")
+		SememeChronology rawSememChronology = (SememeChronology)sememeChronology;
+		
+		return rawSememChronology.getLatestVersion(RelationshipVersionAdaptor.class, 
+				(stampCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stampCoordinate));
+	}
+
+	/**
+	 * @param id concept nid or sequence
+	 * @param stampCoordinate - optional - if not provided, taken from user preferences.  StampCoordinate for retrieving the LogicGraphSememeImpl
+	 * @param historical - if true, return all rels, if false, only return the latest
+	 * @param premiseType PremiseTypes by which to filter. Passing null disables filtering by PremiseType (returns both STATED and INFERRED)
+	 * @param relTypeSequence - optional - if provided - only rels that match the specified type sequence will be returned
+	 * @return List of RelationshipVersionAdaptor
+	 */
+	public static List<RelationshipVersionAdaptor<?>> getRelationshipListOriginatingFromConcept(int id, 
+			StampCoordinate stampCoordinate, boolean historical, PremiseType premiseType, Integer relTypeSequence) {
 		List<RelationshipVersionAdaptor<?>> allRelationships = new ArrayList<>();
-		
-		// Code for examining LogicGraphs only
-//		LogicGraphSememeImpl latestStatedGraph = null;
-//		LogicGraphSememeImpl latestInferredGraph = null;
-//
-//		if (premiseType == null || premiseType == PremiseType.STATED)
-//		{
-//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.statedDefinitionChronology(nid);
-//
-//			SememeChronology rawDefChronology = defChronologyOptional.get();
-//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-//			latestStatedGraph = latestGraphLatestVersionOptional.get().value();
-//		}	
-//		
-//		if (premiseType == null || premiseType == PremiseType.INFERRED)
-//		{
-//			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = Get.inferredDefinitionChronology(nid);
-//
-//			SememeChronology rawDefChronology = defChronologyOptional.get();
-//			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, stampCoordinate);
-//			latestInferredGraph = latestGraphLatestVersionOptional.get().value();
-//		}
-		
-		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(nid).getRelationshipListOriginatingFromConcept();
+	
+		List<? extends SememeChronology<? extends RelationshipVersionAdaptor<?>>> outgoingRelChronicles = Get.conceptService().getConcept(id)
+				.getRelationshipListOriginatingFromConcept();
 		for (SememeChronology<? extends RelationshipVersionAdaptor<?>> chronicle : outgoingRelChronicles)
 		{
 			if (historical) {
 				for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 				{
 					// Ensure that RelationshipVersionAdaptor corresponds to latest LogicGraph
-					if (premiseType == null || premiseType == rv.getPremiseType()) {
+					if ((premiseType == null || premiseType == rv.getPremiseType())
+							&& (relTypeSequence == null || relTypeSequence == rv.getTypeSequence())) {
 						allRelationships.add(rv);
-						LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(nid) + ", stampCoord, (PremiseType)" + (premiseType != null ? premiseType.name() : null) + ") adding " + OchreUtility.toString(rv));
+						LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(id) + ", stampCoord, (PremiseType)" 
+						+ (premiseType != null ? premiseType.name() : null) + ", relTypeSequence=" + relTypeSequence + ") adding " + rv);
 					}
 				}
 			} else {
-				Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> latest = getLatestRelationshipVersionAdaptor(chronicle, stampCoordinate);
+				Optional<LatestVersion<? extends RelationshipVersionAdaptor<?>>> latest = getLatestRelationshipVersionAdaptor(chronicle, 
+						(stampCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stampCoordinate));
 				if (latest.isPresent() && latest.get().value() != null
 						&& (premiseType == null || premiseType == latest.get().value().getPremiseType())
 						&& (relTypeSequence == null || relTypeSequence == latest.get().value().getTypeSequence())) {
 					allRelationships.add(latest.get().value());
+					LOG.debug("getLatestRelationshipListOriginatingFromConcept(" + Get.conceptDescriptionText(id) + ", stampCoord, (PremiseType)" 
+					+ (premiseType != null ? premiseType.name() : null) + ", relTypeSequence=" + relTypeSequence + ") adding " + latest.get().value());
 				}
 			}
 		}
 		return allRelationships;
 	}
 	
+	/**
+	 * Utility method to find all concepts present and active as a member of the PATHS_ASSEMBLAGE
+	 * @return The path concepts
+	 */
 	public static Set<ConceptVersion<?>> getPathConcepts() {
-		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService().getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getConceptSequence());
-		//LOG.debug("Loaded {} sememes from assemblage {}", sememes.count(), Get.conceptDescriptionText(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getNid()));
+		Stream<SememeChronology<? extends SememeVersion<?>>> sememes = Get.sememeService()
+				.getSememesFromAssemblage(IsaacMetadataAuxiliaryBinding.PATHS_ASSEMBLAGE.getConceptSequence());
 
 		final Set<ConceptVersion<?>> pathConcepts = new HashSet<>();
 		Consumer<? super SememeChronology<? extends SememeVersion<?>>> action = new Consumer<SememeChronology<? extends SememeVersion<?>>>() {
@@ -167,261 +158,85 @@ public final class OchreUtility {
 			
 		return Collections.unmodifiableSet(pathConcepts);
 	}
-
-	public static ConceptSnapshotService conceptSnapshotService(TaxonomyCoordinate<?> vc) {
-		return conceptSnapshotService(vc.getStampCoordinate(), vc.getLanguageCoordinate());
-	}
-	public static ConceptSnapshotService conceptSnapshotService(StampCoordinate<? extends StampCoordinate<?>> stampCoordinate, LanguageCoordinate languageCoordinate) {
-		return LookupService.getService(ConceptService.class).getSnapshot(stampCoordinate, languageCoordinate);
-	}
-
-	@Deprecated
-	public static String conceptDescriptionText(int conceptId, TaxonomyCoordinate<?> vc) {
-		return conceptDescriptionText(conceptId, conceptSnapshotService(vc));
-	}
-	public static String conceptDescriptionText(int conceptId, ConceptSnapshotService snapshot) {
-		Optional<LatestVersion<DescriptionSememe<?>>> descriptionOptional = snapshot.getDescriptionOptional(conceptId);
-		if (descriptionOptional.isPresent()) {
-			return descriptionOptional.get().value().getText();
-		}
-
-		return null;
-	}
-	public static String conceptDescriptionText(int conceptId) {
-		return Get.conceptDescriptionText(conceptId);
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the user preferences.  
+	 * Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with nulls. 
+	 * @param conceptUUID - identifier for a concept
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID) {
+		return getDescription(conceptUUID, null, null);
 	}
 
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, TaxonomyCoordinate<?> vc) {
-		return getDescriptionOptional(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
-	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
-		try {
-			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-			if (userProfile == null)
-			{
-				LOG.warn("User profile not available yet during call to getDescription() - configuring automation mode!");
-				try
-				{
-					LookupService.getService(UserProfileManager.class).configureAutomationMode(null);
-					userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				}
-				catch (InvalidUserException e)
-				{
-					throw new RuntimeException("Problem configuring automation mode!");
-				}
-			}
-
-			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
-			if (userProfile.getDisplayFSN()) {
-				optional = OchreUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptChronology.getNid());
-			} else {
-				optional = OchreUtility.conceptSnapshotService(stampCoordinate, languageCoordinate).getPreferredDescription(conceptChronology.getNid());
-			}
-
-			return optional;
-		} catch (RuntimeException e) {
-			LOG.error("Failed determining correct description type. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-			
-			throw e;
-		}
-	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(int conceptId) {
-		return getDescriptionOptional(Get.conceptSnapshot().getConceptSnapshot(conceptId).getChronology());
-	}
-	public static Optional<LatestVersion<DescriptionSememe<?>>> getDescriptionOptional(ConceptChronology<?> conceptChronology) {
-		try {
-			UserProfile userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-			if (userProfile == null)
-			{
-				LOG.warn("User profile not available yet during call to getDescription() - configuring automation mode!");
-				try
-				{
-					LookupService.getService(UserProfileManager.class).configureAutomationMode(null);
-					userProfile = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-				}
-				catch (InvalidUserException e)
-				{
-					throw new RuntimeException("Problem configuring automation mode!");
-				}
-			}
-
-			Optional<LatestVersion<DescriptionSememe<?>>> optional = null;
-			if (userProfile.getDisplayFSN()) {
-				optional = Get.conceptSnapshot().getFullySpecifiedDescription(conceptChronology.getNid());
-			} else {
-				optional = Get.conceptSnapshot().getPreferredDescription(conceptChronology.getNid());
-			}
-
-			return optional;
-		} catch (RuntimeException e) {
-			LOG.error("Failed determining correct description type. Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-			
-			throw e;
-		}
-	}
-
-	public static String getDescription(UUID conceptUuid, TaxonomyCoordinate<?> vc) {
-		return getDescription(conceptSnapshotService(vc).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), vc);
-	}
-	public static String getDescription(ConceptChronology<?> conceptChronology, TaxonomyCoordinate<?> vc) {
-		return getDescription(conceptChronology, vc.getLanguageCoordinate(), vc.getStampCoordinate());
-	}
-	public static String getDescription(UUID conceptUuid, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
-		return getDescription(conceptSnapshotService(stampCoordinate, languageCoordinate).getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUuid)).getChronology(), languageCoordinate, stampCoordinate);
-	}
-	public static String getDescription(ConceptChronology<?> conceptChronology, LanguageCoordinate languageCoordinate, StampCoordinate<? extends StampCoordinate<?>> stampCoordinate) {
-		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology, languageCoordinate, stampCoordinate);
-
-		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
-			return optional.get().value().getText();
-		} else {
-			String desc = conceptDescriptionText(conceptChronology.getNid(), conceptSnapshotService(stampCoordinate, languageCoordinate));
-			if (desc != null) {
-				return desc;
-			}
-			
-			desc = conceptDescriptionText(conceptChronology.getNid());
-			if (desc != null) {
-				return desc;
-			}
-
-			LOG.warn("Trying OTFUtility.getDescription({})", conceptChronology.getNid());
-			desc = OTFUtility.getDescription(conceptChronology.getNid());
-			if (desc != null) {
-				return desc;
-			}
-
-			return null;
-		}
-	}
-	public static String getDescription(int conceptId) {
-		return getDescription(Get.conceptService().getConcept(conceptId));
-	}
-	public static String getDescription(ConceptChronology<?> conceptChronology) {
-		Optional<LatestVersion<DescriptionSememe<?>>> optional = getDescriptionOptional(conceptChronology);
-
-		if (optional.isPresent() && optional.get().value() != null && optional.get().value().getText() != null) {
-			return optional.get().value().getText();
-		} else {
-			String desc = conceptDescriptionText(conceptChronology.getNid());
-			if (desc != null) {
-				return desc;
-			}
-
-			desc = OTFUtility.getDescription(conceptChronology.getNid());
-			if (desc != null) {
-				return desc;
-			}
-			LOG.warn("In OCHREUtility.getDescription() OTFUtility.getDescription({}) returned {}", conceptChronology.getNid(), desc);
-
-			return null;
-		}
-	}
-	public static String getDescription(UUID uuid) {
-		return getDescription(Get.conceptService().getConcept(uuid));
+	/**
+	 * Utility method to get the best text value description for a concept, according to the user preferences.  
+	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)}. 
+	 * @param conceptId - either a sequence or a nid
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId) {
+		return getDescription(conceptId, null, null);
 	}
 	
-	public static Set<Integer> getChildrenAsConceptSequences(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree) {
-		Set<Integer> sequenceSet = new HashSet<>();
-		
-		for (int childSeq : taxonomyTree.getChildrenSequences(AppContext.getService(IdentifierService.class).getConceptSequence(parent.getNid()))) {
-			sequenceSet.add(childSeq);
-		}
-		
-		return sequenceSet;
-	}
-	public static Set<Integer> getChildrenAsConceptNids(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree) {
-		Set<Integer> nidSet = new HashSet<>();
-		
-		for (int childSeq : taxonomyTree.getChildrenSequences(AppContext.getService(IdentifierService.class).getConceptSequence(parent.getNid()))) {
-			Integer nid = AppContext.getService(IdentifierService.class).getConceptNid(childSeq);
-			if (nid != null) {
-				nidSet.add(nid);
-			}
-		}
-		
-		return nidSet;
-	}
-	
-	public static Set<ConceptSnapshot> getChildrenAsConceptSnapshots(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, StampCoordinate<? extends StampCoordinate<?>> sc, LanguageCoordinate lc) {
-		Set<ConceptSnapshot> conceptVersions = new HashSet<>();
-	
-		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
-			conceptVersions.add(conceptSnapshotService(sc, lc).getConceptSnapshot(nid));
-		}
-		
-		return conceptVersions;
-	}
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, StampCoordinate<? extends StampCoordinate<?>> sc, LanguageCoordinate lc) {
-		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
-	
-		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
-			conceptVersions.add(conceptSnapshotService(sc, lc).getConceptSnapshot(nid).getChronology());
-		}
-		
-		return conceptVersions;
-	}
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getChildrenAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> parent, Tree taxonomyTree, TaxonomyCoordinate<?> vc) {
-		Set<ConceptChronology<? extends ConceptVersion<?>>> conceptVersions = new HashSet<>();
-		
-		for (Integer nid : getChildrenAsConceptNids(parent, taxonomyTree)) {
-			conceptVersions.add(Get.conceptService().getConcept(nid));
-		}
-		
-		return conceptVersions;
-	}
-	
-	public static Set<Integer> getParentsAsConceptNids(ConceptChronology<? extends ConceptVersion<?>> child, Tree taxonomyTree) {
-		//LOG.debug("Getting parents of concept {}...", Get.conceptDescriptionText(child.getNid()));
-		int[] parentSequences = taxonomyTree.getParentSequences(child.getConceptSequence());
-		
-		Set<Integer> parentNids = new HashSet<>();
-		
-		for (int parentSequence : parentSequences) {
-			int parentNid = Get.identifierService().getConceptNid(parentSequence);
-			parentNids.add(parentNid);
-		}
-		
-		return parentNids;
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptUUID - identifier for a concept
+	 * @param tc - optional - if not provided, defaults to user preferences values
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
 
-	public static Set<ConceptChronology<? extends ConceptVersion<?>>> getParentsAsConceptChronologies(ConceptChronology<? extends ConceptVersion<?>> child, Tree taxonomyTree) {
-		Set<ConceptChronology<? extends ConceptVersion<?>>> parentConcepts = new HashSet<>();
-		for (int nid : taxonomyTree.getParentSequences(child.getConceptSequence())) {
-			parentConcepts.add(Get.conceptService().getConcept(nid));
-		}
-		
-		return parentConcepts;
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param tc - optional - if not provided, defaults to user preferences values
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
 	}
-
-	public static Optional<Long> getSctId(int componentNid)
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param languageCoordinate - optional - if not provided, defaults to user preferences values
+	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
 	{
-		try
-		{
-			Optional<LatestVersion<StringSememeImpl>> sememe = AppContext.getService(SememeProvider.class)
-					.getSnapshot(StringSememeImpl.class, StampCoordinates.getDevelopmentLatest())
-					.getLatestSememeVersionsForComponentFromAssemblage(componentNid, OTFUtility.getSnomedAssemblageNid()).findFirst();
-			if (sememe.isPresent())
-			{
-				String temp = sememe.get().value().getString();
-				try
-				{
-					return Optional.of(Long.parseLong(temp));
-				}
-				catch (NumberFormatException e)
-				{
-					OTFUtility.LOG.error("The found string '" + temp + "' isn't parseable as a long - as an SCTID should be - in nid " + componentNid);
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			OTFUtility.LOG.warn("Unexpected error trying to find SCTID for nid " + componentNid, e);
-		}
-		return Optional.empty();
+		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), stampCoordinate, languageCoordinate);
 	}
-	
-	
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param languageCoordinate - optional - if not provided, defaults to user preferences values
+	 * @param stampCoordinate - optional - if not provided, defaults to user preference values
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
+	{
+		Optional<LatestVersion<DescriptionSememe<?>>> desc = Get.conceptService()
+			.getSnapshot(stampCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stampCoordinate,
+						languageCoordinate == null ? ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get() : languageCoordinate)
+					.getDescriptionOptional(conceptId);
+		
+		return desc.isPresent() ? Optional.of(desc.get().value().getText()) : Optional.empty();
+	}
+
 	/**
 	 * Get isA children of a concept.
 	 * @param conceptSequence The concept to look at
@@ -449,7 +264,8 @@ public final class OchreUtility {
 		AtomicInteger count = new AtomicInteger();
 		//TODO should be getTaxonomyChildSequences(conceptSequence); but that is broken
 		//TODO take in a taxonomy coord, if we leave it like this - Keith convo on slack on 7/31
-		ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(conceptSequence, AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get());
+		ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(conceptSequence, 
+				ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
 
 		children.stream().forEach((conSequence) ->
 		{
@@ -473,14 +289,6 @@ public final class OchreUtility {
 		return results;
 	}
 	
-	/**
-	 * @param conceptNidOrSequence
-	 * @return the ConceptChronology, or an optional that indicates empty, if the id was invalid
-	 */
-	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConceptChronology(int conceptNidOrSequence)
-	{
-		return Get.conceptService().getOptionalConcept(conceptNidOrSequence);
-	}
 	
 	/**
 	 * @param conceptNidOrSequence
@@ -489,15 +297,24 @@ public final class OchreUtility {
 	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
 	 *   have a version available on the specified stampCoord
 	 */
-	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence, StampCoordinate<? extends StampCoordinate<?>> stampCoord, LanguageCoordinate langCoord)
+	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence, 
+			StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
-		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = getConceptChronology(conceptNidOrSequence);
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = Get.conceptService().getOptionalConcept(conceptNidOrSequence);
 		if (c.isPresent())
 		{
-			if (c.get().isLatestVersionActive(AppContext.getService(UserProfileBindings.class).getStampCoordinate().get()))
+			try
 			{
-				return Optional.of(Get.conceptService().getSnapshot(AppContext.getService(UserProfileBindings.class).getStampCoordinate().get(),
-						AppContext.getService(UserProfileBindings.class).getLanguageCoordinate().get()).getConceptSnapshot(c.get().getConceptSequence()));
+				return Optional.of(Get.conceptService().getSnapshot(
+						stampCoord == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stampCoord,
+						langCoord == null ? AppContext.getService(UserProfileBindings.class).getLanguageCoordinate().get() : langCoord)
+							.getConceptSnapshot(c.get().getConceptSequence()));
+			}
+			catch (Exception e)
+			{
+				//TODO conceptSnapshot APIs are currently broken, provide no means of detecting if a concept doesn't exist on a given coordinate
+				//See slack convo https://informatics-arch.slack.com/archives/dev-isaac/p1440568057000512
+				return Optional.empty();
 			}
 		}
 		return Optional.empty();
@@ -510,18 +327,18 @@ public final class OchreUtility {
 	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
 	 *   have a version available on the specified stampCoord
 	 */
-	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate<? extends StampCoordinate<?>> stampCoord, LanguageCoordinate langCoord)
+	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
 		return getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID), stampCoord, langCoord);
 	}
 	
 	/**
-	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link #getConceptVersion(int)}
+	 * If the passed in value is a {@link UUID}, calls {@link ConceptService#getOptionalConcept(int)} after converting the UUID to nid.
+	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link ConceptService#getOptionalConcept(int)}
 	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
-	 * a SCTID and converts that to UUID and then calls {@link #getConceptVersion(UUID)}.  Note that is is possible for some 
-	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - then a 
-	 * runtime exception is thrown.
+	 * a SCTID and attempts to look up the SCTID in the lucene index.  Note that is is possible for some 
+	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - it will be 
+	 * treated as an SCTID.
 	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
 	 */
 	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConceptForUnknownIdentifier(String identifier)
@@ -548,22 +365,21 @@ public final class OchreUtility {
 		
 		if (SctId.isValidSctId(localIdentifier))
 		{
-			//Note that some sequence IDs may still look like valid SCTIDs... which would mis-match... 
-			UUID alternateUUID = UuidFactory.getUuidFromAlternateId(IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getPrimodialUuid(), localIdentifier);
-			LOG.debug("WB DB String Lookup as SCTID converted to UUID {}", alternateUUID);
-			Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> cv = Get.conceptService().getOptionalConcept(alternateUUID);
-			if (cv.isPresent())
+			
+			SememeIndexer si = LookupService.get().getService(SememeIndexer.class);
+			if (si != null)
 			{
-				//sanity check:
-				if (Utility.isInt(localIdentifier))
+				//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+				List<SearchResult> result = si.query(localIdentifier + " ", true, 
+						IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence(), 5, Long.MIN_VALUE);
+				if (result.size() > 0)
 				{
-					int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
-					if (nidFromSequence != 0)
-					{
-						throw new RuntimeException("Cannot distinguish " + localIdentifier + ".  Appears to be valid as a SCTID and a sequence identifier.");
-					}
+					return Get.conceptService().getOptionalConcept(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 				}
-				return cv;
+			}
+			else
+			{
+				LOG.warn("Sememe Index not available - can't lookup SCTID");
 			}
 		}
 		else if (Utility.isInt(localIdentifier))
@@ -584,16 +400,17 @@ public final class OchreUtility {
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate<? extends StampCoordinate<?>> stamp)
+	public static Optional<String> getFSNForConceptNid(int nid, StampCoordinate stamp)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
-				stamp == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stamp); 
+				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
 		
 		Stream<LatestVersion<DescriptionSememe>> descriptions = ss.getLatestDescriptionVersionsForComponent(nid);
 		Optional<LatestVersion<DescriptionSememe>> desc = descriptions.filter((LatestVersion<DescriptionSememe> d) -> 
 		{
 			if (d.value().getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())
 			{
+				//shouldn't need to check for preferred, I don't believe you can have multiple FSN's.
 				return true;
 			}
 			return false;
@@ -608,22 +425,30 @@ public final class OchreUtility {
 	
 	/**
 	 * @param nid concept nid (must be a nid)
-	 * @param stamp - optional
+	 * @param stamp - optional - defaults to user prefs if not provided
+	 * @param language - optional - defaults to the user prefs if not provided.
+	 * If provided, it should be a child of {@link IsaacMetadataAuxiliaryBinding#LANGUAGE}
 	 * @return the text of the description, if found
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate<? extends StampCoordinate<?>> stamp)
+	public static Optional<String> getPreferredTermForConceptNid(int nid, StampCoordinate stamp, ConceptProxy language)
 	{
 		SememeSnapshotService<DescriptionSememe> ss = Get.sememeService().getSnapshot(DescriptionSememe.class, 
-				stamp == null ? AppContext.getService(UserProfileBindings.class).getStampCoordinate().get() : stamp); 
+				stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp); 
+		
+		int langMatch = language == null ? ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get().getLanguageConceptSequence() 
+				: language.getConceptSequence();
 		
 		Stream<LatestVersion<DescriptionSememe>> descriptions = ss.getLatestDescriptionVersionsForComponent(nid);
 		Optional<LatestVersion<DescriptionSememe>> desc = descriptions.filter((LatestVersion<DescriptionSememe> d) -> 
 		{
-			if (d.value().getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()) 
+			if (d.value().getDescriptionTypeConceptSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()
+					&& d.value().getLanguageConceptSequence() == langMatch)
 			{
-				//TODO this isn't finished - need to also read the preferred / acceptable nested sememe, and include that in the filter logic.
-				return true;
+				if (Frills.isDescriptionPreferred(d.value().getNid(), stamp == null ? ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get() : stamp))
+				{
+					return true;
+				}
 			}
 			return false;
 		}).findFirst();
@@ -636,12 +461,8 @@ public final class OchreUtility {
 	}
 	
 	/**
-	 * If the passed in value is a {@link UUID}, calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a long, treats it as an SCTID and converts that to UUID and 
-	 * then calls {@link #getConceptVersion(UUID)}
-	 * Next, if no hit, if the passed in value is parseable as a int, calls {@link #getConceptVersion(int)}
+	 * Calls {@link #getConceptForUnknownIdentifier(String)} in a background thread.  returns immediately. 
 	 * 
-	 * All done in a background thread, method returns immediately
 	 * 
 	 * @param identifier - what to search for
 	 * @param callback - who to inform when lookup completes
@@ -653,7 +474,7 @@ public final class OchreUtility {
 			final String identifier,
 			final ConceptLookupCallback callback,
 			final Integer callId,
-			final StampCoordinate<? extends StampCoordinate<?>> stampCoord,
+			final StampCoordinate stampCoord,
 			final LanguageCoordinate langCoord)
 	{
 		LOG.debug("Threaded Lookup: '{}'", identifier);
@@ -693,7 +514,7 @@ public final class OchreUtility {
 			final int nid,
 			final ConceptLookupCallback callback,
 			final Integer callId,
-			final StampCoordinate<? extends StampCoordinate<?>> stampCoord,
+			final StampCoordinate stampCoord,
 			final LanguageCoordinate langCoord)
 	{
 		LOG.debug("Threaded Lookup: '{}'", nid);
@@ -710,23 +531,28 @@ public final class OchreUtility {
 		Utility.execute(r);
 	}
 	
-	public static String toString(Object obj) {
-		try {
-			if (obj == null) {
-				return null;
-			} else if (obj instanceof RelationshipVersionAdaptor) {
-				RelationshipVersionAdaptor<?> rva = (RelationshipVersionAdaptor<?>) obj;
-				String orig = Get.conceptDescriptionText(rva.getOriginSequence());
-				String dest = Get.conceptDescriptionText(rva.getDestinationSequence());
-				String type = Get.conceptDescriptionText(rva.getTypeSequence());
-				String stamp = Get.conceptDescriptionText(rva.getStampSequence());
-				return "RelationshipVersionAdaptor: origin=" + orig + " (seq=" + rva.getOriginSequence() + "), dest=" + dest + " (seq=" + rva.getDestinationSequence() + "), type=" + type + " (seq=" + rva.getTypeSequence() + "), premise=" + rva.getPremiseType().name() + ", group=" + rva.getGroup() + " stamp=" + stamp;
-			} else {
-				return obj.toString();
+	/**
+	 * Return a sorted list of SimpleDisplayConcept objects that represent all dynamic sememe assemblages in the system (active or inactive)
+	 */
+	public static List<SimpleDisplayConcept> getAllDynamicSememeAssemblageConcepts()
+	{
+		List<SimpleDisplayConcept> allDynamicSememeDefConcepts = new ArrayList<>();
+
+		Get.sememeService().getSememesFromAssemblage(IsaacMetadataConstants.DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence()).forEach(sememeC ->
+		{
+			//This will be a nid of a description - need to get the referenced component of that description
+			int annotatedDescriptionNid = sememeC.getReferencedComponentNid();
+			try
+			{
+				allDynamicSememeDefConcepts.add(new SimpleDisplayConcept(Get.sememeService().getSememe(annotatedDescriptionNid).getReferencedComponentNid()));
 			}
-		} catch (Exception e) {
-			LOG.error("Caught " + e.getClass().getName() + " " + e.getLocalizedMessage(), e);
-			return null;
-		}
+			catch (Exception e)
+			{
+				LOG.error("Unexpeted error looking up dynamic sememes! with " + sememeC.toUserString(), e);
+			}
+		});
+
+		Collections.sort(allDynamicSememeDefConcepts);
+		return allDynamicSememeDefConcepts;
 	}
 }

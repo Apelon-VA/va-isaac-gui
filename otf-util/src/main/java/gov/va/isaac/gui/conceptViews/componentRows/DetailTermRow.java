@@ -2,7 +2,7 @@ package gov.va.isaac.gui.conceptViews.componentRows;
 
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.util.OTFUtility;
-import java.io.IOException;
+import gov.va.isaac.util.OchreUtility;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
@@ -13,7 +13,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
 import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.metadata.ComponentType;
 import org.slf4j.Logger;
@@ -36,7 +35,7 @@ public class DetailTermRow extends TermRow {
 		if (isPrefTerm) {
 			descTypeLabel = labelHelper.createLabel(desc, prefTermTypeStr, ComponentType.DESCRIPTION, prefTermTypeNid);
 		} else {
-			descTypeLabel = labelHelper.createLabel(desc, OTFUtility.getConPrefTerm(desc.getTypeNid()), ComponentType.DESCRIPTION, desc.getTypeNid());
+			descTypeLabel = labelHelper.createLabel(desc, OchreUtility.getDescription(desc.getTypeNid()), ComponentType.DESCRIPTION, desc.getTypeNid());
 		}
 		
 		Label descCaseLabel = labelHelper.createLabel(desc, getBooleanValue(desc.isInitialCaseSignificant()), ComponentType.DESCRIPTION, 0);
@@ -62,15 +61,16 @@ public class DetailTermRow extends TermRow {
 				if (!descLabel.getText().equals(origVersion.getText())) {
 					descLabel.setUnderline(true);
 				}
-				try {
-					if (OTFUtility.getConceptVersion(desc.getConceptNid()).getPreferredDescription().getNid() != desc.getNid()) {
-				if (!descTypeLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getTypeNid()))) {
-					descTypeLabel.setUnderline(true);
-						}
-					}
-				} catch (IOException | ContradictionException e) {
-					LOGGER.error("Failed testing Preferred Term Labels", e);
-				}
+//Dan commented out because he doesn't understand what is being done...
+//				try {
+//					if (OTFUtility.getConceptVersion(desc.getConceptNid()).getPreferredDescription().getNid() != desc.getNid()) {
+//				if (!descTypeLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getTypeNid()))) {
+//					descTypeLabel.setUnderline(true);
+//						}
+//					}
+//				} catch (IOException | ContradictionException e) {
+//					LOGGER.error("Failed testing Preferred Term Labels", e);
+//				}
 	
 				if (!descCaseLabel.getText().equals(getBooleanValue(origVersion.isInitialCaseSignificant()))) {
 					descCaseLabel.setUnderline(true);

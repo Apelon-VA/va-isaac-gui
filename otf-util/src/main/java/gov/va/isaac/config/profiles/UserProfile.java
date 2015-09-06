@@ -23,37 +23,30 @@ import gov.va.isaac.config.generated.RoleOption;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.util.PasswordHasher;
-
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-
+import gov.va.isaac.util.json.InterfaceAdapter;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.model.coordinate.LanguageCoordinateImpl;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.apache.commons.lang3.StringUtils;
+import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * {@link UserProfile}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 public class UserProfile
 {
 	private static Logger logger = LoggerFactory.getLogger(UserProfile.class);
@@ -62,76 +55,56 @@ public class UserProfile
 	private transient char[] clearTextPassword;
 	
 	//What we actually perform login comparisons against - what is stored in the user prefs file.
-	@XmlElement 
+
 	private String hashedPassword;
 
-	@XmlElement 
 	private String userLogonName;
 	
-	@XmlElement
 	private UUID conceptUUID;
 
-	@XmlElement 
 	private StatedInferredOptions statedInferredPolicy = UserProfileDefaults.getDefaultStatedInferredPolicy();
 	
-	@XmlElement 
-	private boolean displayFSN = UserProfileDefaults.getDefaultDisplayFSN();
-	
-	@XmlElement 
 	private RelationshipDirection displayRelDirection = UserProfileDefaults.getDefaultDisplayRelDirection();
 	
-	@XmlElement 
 	private String workflowUsername = null;
 	
 	//This field will be encrypted using the clearTextPassword
-	@XmlElement 
 	private String workflowPasswordEncrypted = null;
 	
-	@XmlElement 
 	private String syncUsername = null;
 	
 	//This field will be encrypted using the clearTextPassword
-	@XmlElement 
 	private String syncPasswordEncrypted = null;
 	
-	@XmlElement
 	private boolean launchWorkflowForEachCommit = UserProfileDefaults.getDefaultLaunchWorkflowForEachCommit();
 	
-	@XmlElement
 	private boolean runDroolsBeforeEachCommit = UserProfileDefaults.getDefaultRunDroolsBeforeEachCommit();
 	
-	@XmlElement 
 	private String workflowServerDeploymentId = null;
 
-	@XmlElement 
 	private UUID viewCoordinatePath = null;
 	
-	@XmlElement
 	private Long viewCoordinateTime = null;
 	
-	@XmlElement 
 	private UUID editCoordinatePath = null;
+	
+	private UUID editCoordinateModule = null;
 
-	@XmlElement 
 	private UUID workflowPromotionPath = null;
+
+	private String workflowServerUrl = null;
+
+	private String changeSetUrl = null;
+
+	private String releaseVersion = null;
+
+	private String extensionNamespace = null;
+
+	private Status[] viewCoordinateStatuses = null;
+
+	private UUID[] viewCoordinateModules = null;
 	
-	@XmlElement
-	public String workflowServerUrl = null;
-
-	@XmlElement
-	public String changeSetUrl = null;
-	
-	@XmlElement
-	public String releaseVersion = null;
-
-	@XmlElement
-	public String extensionNamespace = null;
-
-	@XmlElement
-	public Status[] viewCoordinateStatuses = null;
-
-	@XmlElement
-	public UUID[] viewCoordinateModules = null;
+	private LanguageCoordinate languageCoordinate = null;
 	
 	/*
 	 *  *** Update clone() method when adding parameters
@@ -145,7 +118,9 @@ public class UserProfile
 		clone.clearTextPassword = this.clearTextPassword;
 		clone.hashedPassword = this.hashedPassword;
 		clone.statedInferredPolicy = this.statedInferredPolicy;
-		clone.displayFSN = this.displayFSN;
+		clone.languageCoordinate = (this.languageCoordinate == null ? null : 
+			new LanguageCoordinateImpl(this.languageCoordinate.getLanguageConceptSequence(), this.languageCoordinate.getDialectAssemblagePreferenceList(),
+					this.languageCoordinate.getDescriptionTypePreferenceList()));
 		clone.displayRelDirection = this.displayRelDirection;
 		clone.syncPasswordEncrypted = this.syncPasswordEncrypted;
 		clone.syncUsername = this.syncUsername;
@@ -158,6 +133,7 @@ public class UserProfile
 		clone.viewCoordinatePath = this.viewCoordinatePath;
 		clone.viewCoordinateTime = this.viewCoordinateTime;
 		clone.editCoordinatePath = this.editCoordinatePath;
+		clone.editCoordinateModule = this.editCoordinateModule;
 		clone.workflowPromotionPath = this.workflowPromotionPath;
 		clone.workflowServerUrl = this.workflowServerUrl;
 		clone.changeSetUrl = this.changeSetUrl;
@@ -283,14 +259,18 @@ public class UserProfile
 		this.statedInferredPolicy = statedInferredPolicy;
 	}
 	
-	public void setDisplayFSN(boolean displayFSN)
+	public void setLanguageCoordinate(LanguageCoordinate languageCoordinate)
 	{
-		this.displayFSN = displayFSN;
+		this.languageCoordinate = languageCoordinate;
 	}
 	
-	public boolean getDisplayFSN()
+	public LanguageCoordinate getLanguageCoordinate()
 	{
-		return displayFSN;
+		if (languageCoordinate == null)
+		{
+			languageCoordinate = UserProfileDefaults.getDefaultLanguageCoordinate();
+		}
+		return languageCoordinate;
 	}
 	
 	public void setDisplayRelDirection(RelationshipDirection displayRelationshipDirection)
@@ -514,6 +494,25 @@ public class UserProfile
 	{
 		this.editCoordinatePath = editCoordinatePath;
 	}
+	
+	/**
+	 * @return editCoordinatePath
+	 */
+	public UUID getEditCoordinateModule()
+	{
+		if (editCoordinateModule == null)
+		{
+			return UserProfileDefaults.getDefaultEditCoordinateModule();
+		}
+		return editCoordinateModule;
+	}
+	/**
+	 * @param editCoordinatePath
+	 */
+	public void setEditCoordinateModule(UUID editCoordinateModule)
+	{
+		this.editCoordinateModule = editCoordinateModule;
+	}
 
 	/**
 	 * @return workflowPromotionPath
@@ -726,13 +725,11 @@ public class UserProfile
 	{
 		try
 		{
-			JAXBContext jaxbContext = JAXBContext.newInstance(UserProfile.class);
-			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-
-			// output pretty printed
-			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
-			jaxbMarshaller.marshal(this, fileToWrite);
+			Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting()
+					.registerTypeAdapter(LanguageCoordinate.class, new InterfaceAdapter<LanguageCoordinate>()).create();
+			FileWriter fw = new FileWriter(fileToWrite);
+			gson.toJson(this, fw);
+			fw.close();
 		}
 		catch (Exception e)
 		{
@@ -744,10 +741,13 @@ public class UserProfile
 	{
 		try
 		{
-			JAXBContext jaxbContext = JAXBContext.newInstance(UserProfile.class);
-
-			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			return (UserProfile) jaxbUnmarshaller.unmarshal(path);
+			//Register type adapters for classes we serialize that are interfaces...
+			Gson gson = new GsonBuilder().registerTypeAdapter(LanguageCoordinate.class, new InterfaceAdapter<LanguageCoordinate>()).create();
+			FileReader fr = new FileReader(path);
+			UserProfile up = gson.fromJson(fr, UserProfile.class);
+			fr.close();
+			
+			return up;
 		}
 		catch (Exception e)
 		{
@@ -755,5 +755,4 @@ public class UserProfile
 			throw new IOException("Problem reading user profile", e);
 		}
 	}
-
 }

@@ -18,26 +18,36 @@
  */
 package gov.va.isaac.gui.refexViews.refexCreation.wizardPages;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.SimpleDisplayConceptComparator;
-import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
-import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
-import gov.va.isaac.gui.refexViews.util.RefexDataTypeFXNodeBuilder;
-import gov.va.isaac.gui.refexViews.util.RefexDataTypeNodeDetails;
-import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeFXNodeBuilder;
-import gov.va.isaac.gui.refexViews.util.RefexValidatorTypeNodeDetails;
-import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableListWrapper;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.gui.SimpleDisplayConceptComparator;
+import gov.va.isaac.gui.refexViews.refexCreation.PanelControllersI;
+import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
+import gov.va.isaac.gui.refexViews.util.SememeGUIDataTypeFXNodeBuilder;
+import gov.va.isaac.gui.refexViews.util.SememeGUIDataTypeNodeDetails;
+import gov.va.isaac.gui.refexViews.util.SememeGUIValidatorTypeFXNodeBuilder;
+import gov.va.isaac.gui.refexViews.util.SememeGUIValidatorTypeNodeDetails;
+import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataBI;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.model.constants.IsaacMetadataConstants;
 import javafx.application.Platform;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -60,14 +70,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.metadata.binding.RefexDynamic;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicDataType;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicValidatorType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * 
@@ -82,7 +84,7 @@ public class ColumnController implements PanelControllersI {
 	@FXML private Button cancelButton;
 	@FXML private Button startOverButton;
 	@FXML private HBox defaultValueHolder;
-	@FXML private ChoiceBox<RefexDynamicDataType> typeOption;
+	@FXML private ChoiceBox<DynamicSememeDataType> typeOption;
 	@FXML private Button backButton;
 	@FXML private BorderPane columnDefinitionPane;
 	@FXML private Label columnTitle;
@@ -91,10 +93,10 @@ public class ColumnController implements PanelControllersI {
 	@FXML private Button newColNameButton;
 	@FXML private CheckBox isMandatory;
 	@FXML private GridPane gridPane;
-	@FXML private ChoiceBox<RefexDynamicValidatorType> validatorType;
+	@FXML private ChoiceBox<DynamicSememeValidatorType> validatorType;
 	@FXML private HBox validatorDataHolder;
 	
-	private RefexValidatorTypeNodeDetails validatorTypeNode = new RefexValidatorTypeNodeDetails();
+	private SememeGUIValidatorTypeNodeDetails validatorTypeNode = new SememeGUIValidatorTypeNodeDetails();
 
 	private ScreensController processController_;
 	private Region sceneParent_;
@@ -104,12 +106,12 @@ public class ColumnController implements PanelControllersI {
 	private UpdateableBooleanBinding allValid_;
 	private StringBinding typeValueInvalidReason_;
 	private SimpleStringProperty defaultValueInvalidReason_ = new SimpleStringProperty("");
-	private RefexDataTypeNodeDetails currentDefaultNodeDetails_;
+	private SememeGUIDataTypeNodeDetails currentDefaultNodeDetails_;
 
 	private ObservableList<SimpleDisplayConcept> columnNameChoices = new ObservableListWrapper<>(new ArrayList<SimpleDisplayConcept>());
 	private Function<ConceptSnapshot, String> colNameReader_ = (conceptVersion) -> 
 	{
-		RefexDynamicColumnInfo rdc = new RefexDynamicColumnInfo();
+		DynamicSememeColumnInfo rdc = new DynamicSememeColumnInfo();
 		rdc.setColumnDescriptionConcept(conceptVersion.getPrimordialUuid());
 		return rdc.getColumnName();
 	};
@@ -147,7 +149,7 @@ public class ColumnController implements PanelControllersI {
 			@Override
 			protected String computeValue()
 			{
-				if (typeOption.getValue() == RefexDynamicDataType.UNKNOWN)
+				if (typeOption.getValue() == DynamicSememeDataType.UNKNOWN)
 				{
 					return "You must select the attribute type";
 				}
@@ -249,7 +251,7 @@ public class ColumnController implements PanelControllersI {
 			@Override
 			public void changed(ObservableValue<? extends ConceptSnapshot> observable, ConceptSnapshot oldValue, ConceptSnapshot newValue)
 			{
-				RefexDynamicColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
+				DynamicSememeColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
 				if (newValue != null)
 				{
 					rdci.setColumnDescriptionConcept(newValue.getPrimordialUuid());
@@ -264,13 +266,13 @@ public class ColumnController implements PanelControllersI {
 		});
 		
 
-		typeOption.setConverter(new StringConverter<RefexDynamicDataType>()
+		typeOption.setConverter(new StringConverter<DynamicSememeDataType>()
 		{
 			
 			@Override
-			public String toString(RefexDynamicDataType object)
+			public String toString(DynamicSememeDataType object)
 			{
-				if (object == RefexDynamicDataType.UNKNOWN)
+				if (object == DynamicSememeDataType.UNKNOWN)
 				{
 					return "- Make Selection - ";
 				}
@@ -281,17 +283,17 @@ public class ColumnController implements PanelControllersI {
 			}
 			
 			@Override
-			public RefexDynamicDataType fromString(String string)
+			public DynamicSememeDataType fromString(String string)
 			{
 				throw new RuntimeException("unecessary");
 			}
 		});
 		
 		
-		typeOption.valueProperty().addListener(new ChangeListener<RefexDynamicDataType>()
+		typeOption.valueProperty().addListener(new ChangeListener<DynamicSememeDataType>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends RefexDynamicDataType> observable, RefexDynamicDataType oldValue, RefexDynamicDataType newValue)
+			public void changed(ObservableValue<? extends DynamicSememeDataType> observable, DynamicSememeDataType oldValue, DynamicSememeDataType newValue)
 			{
 				defaultValueHolder.getChildren().clear();
 				if (currentDefaultNodeDetails_ != null)
@@ -302,26 +304,26 @@ public class ColumnController implements PanelControllersI {
 					}
 				}
 				currentDefaultNodeDetails_ = null;
-				if (newValue == RefexDynamicDataType.POLYMORPHIC)
+				if (newValue == DynamicSememeDataType.POLYMORPHIC)
 				{
 					Label l = new Label("No defaults allowed for polymorphic data");
 					l.setAlignment(Pos.CENTER_LEFT);
 					l.setMinHeight(25.0);
 					defaultValueHolder.getChildren().add(l);
 				
-					validatorType.getSelectionModel().select(RefexDynamicValidatorType.UNKNOWN);
+					validatorType.getSelectionModel().select(DynamicSememeValidatorType.UNKNOWN);
 					validatorType.setDisable(true);
 				}
-				else if (newValue == RefexDynamicDataType.UNKNOWN)
+				else if (newValue == DynamicSememeDataType.UNKNOWN)
 				{
-					validatorType.getSelectionModel().select(RefexDynamicValidatorType.UNKNOWN);
+					validatorType.getSelectionModel().select(DynamicSememeValidatorType.UNKNOWN);
 					validatorType.setDisable(true);
 				}
 				else
 				{
-					if (newValue == RefexDynamicDataType.BOOLEAN || newValue == RefexDynamicDataType.BYTEARRAY)
+					if (newValue == DynamicSememeDataType.BOOLEAN || newValue == DynamicSememeDataType.BYTEARRAY)
 					{
-						validatorType.getSelectionModel().select(RefexDynamicValidatorType.UNKNOWN);
+						validatorType.getSelectionModel().select(DynamicSememeValidatorType.UNKNOWN);
 						validatorType.setDisable(true);
 					}
 					else
@@ -330,7 +332,7 @@ public class ColumnController implements PanelControllersI {
 						updateValidationValues(newValue);
 					}
 					
-					currentDefaultNodeDetails_ = RefexDataTypeFXNodeBuilder.buildNodeForType(newValue, null, 
+					currentDefaultNodeDetails_ = SememeGUIDataTypeFXNodeBuilder.buildNodeForType(newValue, null, 
 							processController_.getWizardData().getColumnInfo().get(columnNumber_).getDefaultColumnValue(), null, null, null, allValid_,
 							validatorType.valueProperty(), validatorTypeNode.getValidatorDataProperty());
 					defaultValueHolder.getChildren().add(currentDefaultNodeDetails_.getNodeForDisplay());
@@ -340,17 +342,17 @@ public class ColumnController implements PanelControllersI {
 		});
 		
 		validatorType.setDisable(true);
-		validatorType.setConverter(new StringConverter<RefexDynamicValidatorType>()
+		validatorType.setConverter(new StringConverter<DynamicSememeValidatorType>()
 		{
 			
 			@Override
-			public String toString(RefexDynamicValidatorType object)
+			public String toString(DynamicSememeValidatorType object)
 			{
-				if (object == RefexDynamicValidatorType.UNKNOWN)
+				if (object == DynamicSememeValidatorType.UNKNOWN)
 				{
 					return "No Validator";
 				}
-				if (object == RefexDynamicValidatorType.EXTERNAL)
+				if (object == DynamicSememeValidatorType.EXTERNAL)
 				{
 					return "Drools";
 				}
@@ -361,7 +363,7 @@ public class ColumnController implements PanelControllersI {
 			}
 			
 			@Override
-			public RefexDynamicValidatorType fromString(String string)
+			public DynamicSememeValidatorType fromString(String string)
 			{
 				throw new RuntimeException("unecessary");
 			}
@@ -376,15 +378,16 @@ public class ColumnController implements PanelControllersI {
 				allValid_.removeBinding(binding);
 			}
 			
-			if (validatorType.getValue() !=  RefexDynamicValidatorType.UNKNOWN)
+			if (validatorType.getValue() !=  DynamicSememeValidatorType.UNKNOWN)
 			{
-				if (processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidator() != validatorType.getValue())
+				if (processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidator() == null ||
+						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidator()[0] != validatorType.getValue())
 				{
 					//If the validator type has changed, clear the stored value.
 					processController_.getWizardData().getColumnInfo().get(columnNumber_).setValidatorData(null);
 				}
-				validatorTypeNode.update(RefexValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
-						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidatorData(),
+				validatorTypeNode.update(SememeGUIValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
+						processController_.getWizardData().getColumnInfo().get(columnNumber_).getValidatorData()[0],
 						typeOption.valueProperty(), allValid_));
 				validatorDataHolder.getChildren().add(validatorTypeNode.getNodeForDisplay());
 				HBox.setHgrow(validatorTypeNode.getNodeForDisplay(), Priority.ALWAYS);
@@ -402,34 +405,34 @@ public class ColumnController implements PanelControllersI {
 	}
 	
 	
-	private void updateValidationValues(RefexDynamicDataType dType) 
+	private void updateValidationValues(DynamicSememeDataType dType) 
 	{
-		for (RefexDynamicValidatorType type : RefexDynamicValidatorType.values()) 
+		for (DynamicSememeValidatorType type : DynamicSememeValidatorType.values()) 
 		{
 			// TODO (artf231424) replace RegExp for UUID with Type3/5 validators that are hardwired to validate via RegExp
-			if (type.validatorSupportsType(dType) && (!((dType == RefexDynamicDataType.UUID || dType == RefexDynamicDataType.NID) && type == RefexDynamicValidatorType.REGEXP)))
+			if (type.validatorSupportsType(dType) && (!((dType == DynamicSememeDataType.UUID || dType == DynamicSememeDataType.NID) && type == DynamicSememeValidatorType.REGEXP)))
 			{
 				if (!validatorType.getItems().contains(type))
 				{
 					validatorType.getItems().add(type);
 				}
 			}
-			else if (type != RefexDynamicValidatorType.UNKNOWN)  //always keep UNKNOWN
+			else if (type != DynamicSememeValidatorType.UNKNOWN)  //always keep UNKNOWN
 			{
 				validatorType.getItems().remove(type);
 			}
 		}
-		validatorType.getSelectionModel().select(RefexDynamicValidatorType.UNKNOWN);
+		validatorType.getSelectionModel().select(DynamicSememeValidatorType.UNKNOWN);
 	}
 
 	private void initializeTypeConcepts() {
-		for (RefexDynamicDataType type : RefexDynamicDataType.values()) {
+		for (DynamicSememeDataType type : DynamicSememeDataType.values()) {
 			typeOption.getItems().add(type);
 		}
-		typeOption.getSelectionModel().select(RefexDynamicDataType.UNKNOWN);
+		typeOption.getSelectionModel().select(DynamicSememeDataType.UNKNOWN);
 		
-		validatorType.getItems().add(RefexDynamicValidatorType.UNKNOWN);
-		validatorType.getSelectionModel().select(RefexDynamicValidatorType.UNKNOWN);
+		validatorType.getItems().add(DynamicSememeValidatorType.UNKNOWN);
+		validatorType.getSelectionModel().select(DynamicSememeValidatorType.UNKNOWN);
 	}
 
 	private void createNewColumnConcept() {
@@ -437,7 +440,7 @@ public class ColumnController implements PanelControllersI {
 			NewColumnDialog dialog = new NewColumnDialog(processController_.getScene().getWindow());
 			dialog.showAndWait();
 
-			ConceptChronicleBI newCon = dialog.getNewColumnConcept();
+			ConceptChronology<? extends ConceptVersion<?>> newCon = dialog.getNewColumnConcept();
 			
 			if (newCon != null) {
 				
@@ -453,7 +456,7 @@ public class ColumnController implements PanelControllersI {
 
 	private void initializeColumnConcepts() {
 		try {
-			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(RefexDynamic.DYNAMIC_SEMEME_COLUMNS.getConceptSequence(), false, false);
+			Set<Integer> colCons = OchreUtility.getAllChildrenOfConcept(IsaacMetadataConstants.DYNAMIC_SEMEME_COLUMNS.getSequence(), false, false);
 
 			for (Integer col : colCons) {
 				columnNameChoices.add(new SimpleDisplayConcept(col, colNameReader_));
@@ -466,7 +469,7 @@ public class ColumnController implements PanelControllersI {
 
 	private void updatePreviousContent() {
 		
-		RefexDynamicColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
+		DynamicSememeColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
 		
 		//TODO (artf231425) this is currently triggering an infinite loop in Dans ConceptNode code... Dan needs to finish debugging this... 
 		//The Platform.runLater should _NOT_ be necessary, but it seems to prevent the infinite loop for now.
@@ -484,12 +487,12 @@ public class ColumnController implements PanelControllersI {
 		}
 		else
 		{
-			typeOption.getSelectionModel().select(RefexDynamicDataType.UNKNOWN);
+			typeOption.getSelectionModel().select(DynamicSememeDataType.UNKNOWN);
 		}
 		defaultValueHolder.getChildren().clear();
-		if (typeOption.getSelectionModel().getSelectedItem() != RefexDynamicDataType.UNKNOWN)
+		if (typeOption.getSelectionModel().getSelectedItem() != DynamicSememeDataType.UNKNOWN)
 		{
-			if (typeOption.getSelectionModel().getSelectedItem() == RefexDynamicDataType.POLYMORPHIC)
+			if (typeOption.getSelectionModel().getSelectedItem() == DynamicSememeDataType.POLYMORPHIC)
 			{
 				Label l = new Label("No defaults allowed for polymorphic data");
 				l.setAlignment(Pos.CENTER_LEFT);
@@ -498,26 +501,27 @@ public class ColumnController implements PanelControllersI {
 			}
 			else 
 			{
-				currentDefaultNodeDetails_ = RefexDataTypeFXNodeBuilder.buildNodeForType(typeOption.getSelectionModel().getSelectedItem(), null, rdci.getDefaultColumnValue(), 
+				currentDefaultNodeDetails_ = SememeGUIDataTypeFXNodeBuilder.buildNodeForType(typeOption.getSelectionModel().getSelectedItem(), null, rdci.getDefaultColumnValue(), 
 					null, null, null, allValid_, validatorType.valueProperty(), validatorTypeNode.getValidatorDataProperty());
 				defaultValueHolder.getChildren().add(currentDefaultNodeDetails_.getNodeForDisplay());
 				HBox.setHgrow(currentDefaultNodeDetails_.getNodeForDisplay(), Priority.ALWAYS);
 			}
 		}
 		isMandatory.setSelected(rdci.isColumnRequired());
-		if (rdci.getValidator() != null)
+		if (rdci.getValidator() != null && rdci.getValidator().length > 0)
 		{
-			validatorType.getSelectionModel().select(rdci.getValidator());
+			//TODO change the GUI to support multiple validators
+			validatorType.getSelectionModel().select(rdci.getValidator()[0]);
 		}
 		else
 		{
-			validatorType.getSelectionModel().select(RefexDynamicValidatorType.UNKNOWN);
+			validatorType.getSelectionModel().select(DynamicSememeValidatorType.UNKNOWN);
 		}
 		validatorDataHolder.getChildren().clear();
-		if (validatorType.getSelectionModel().getSelectedItem() != RefexDynamicValidatorType.UNKNOWN)
+		if (validatorType.getSelectionModel().getSelectedItem() != DynamicSememeValidatorType.UNKNOWN)
 		{
-			validatorTypeNode.update(RefexValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
-					rdci.getValidatorData(), 
+			validatorTypeNode.update(SememeGUIValidatorTypeFXNodeBuilder.buildNodeForType(validatorType.getSelectionModel().getSelectedItem(), 
+					rdci.getValidatorData()[0], 
 					typeOption.valueProperty(), allValid_));
 			validatorDataHolder.getChildren().add(validatorTypeNode.getNodeForDisplay());
 			HBox.setHgrow(validatorTypeNode.getNodeForDisplay(), Priority.ALWAYS);
@@ -525,24 +529,25 @@ public class ColumnController implements PanelControllersI {
 	}
 
 	public void storeValues() throws PropertyVetoException {
-		RefexDynamicColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
+		DynamicSememeColumnInfo rdci = processController_.getWizardData().getColumnInfo().get(columnNumber_);
 		
 		rdci.setColumnDescriptionConcept(columnNameSelection_.isValid().get() ? columnNameSelection_.getConcept().getPrimordialUuid() : null);
 		rdci.setColumnDataType(typeOption.getSelectionModel().getSelectedItem());
 		rdci.setColumnDefaultData(null);//make sure it doesn't read this when parsing below
 		if (currentDefaultNodeDetails_ != null)
 		{
-			rdci.setColumnDefaultData(RefexDataTypeFXNodeBuilder.getDataForType(currentDefaultNodeDetails_.getDataField(), rdci));
+			rdci.setColumnDefaultData(SememeGUIDataTypeFXNodeBuilder.getDataForType(currentDefaultNodeDetails_.getDataField(), rdci));
 		}
 		rdci.setColumnRequired(isMandatory.isSelected());
-		rdci.setValidatorType((validatorType.getValue() == RefexDynamicValidatorType.UNKNOWN ? null : validatorType.getSelectionModel().getSelectedItem()));
+		rdci.setValidatorType((validatorType.getValue() == DynamicSememeValidatorType.UNKNOWN ? null : new DynamicSememeValidatorType[] 
+				{validatorType.getSelectionModel().getSelectedItem()}));
 		if (rdci.getValidator() == null)
 		{
 			rdci.setValidatorData(null);
 		}
 		else
 		{
-			rdci.setValidatorData(validatorTypeNode.getValidatorDataProperty().get());
+			rdci.setValidatorData(new DynamicSememeDataBI[] {validatorTypeNode.getValidatorDataProperty().get()});
 		}
 	}
 

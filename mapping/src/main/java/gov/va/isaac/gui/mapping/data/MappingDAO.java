@@ -20,25 +20,17 @@ package gov.va.isaac.gui.mapping.data;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.util.OTFUtility;
-import java.io.IOException;
-import java.util.List;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import java.util.Optional;
 import java.util.UUID;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.ihtsdo.otf.query.lucene.LuceneDynamicRefexIndexer;
-import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.RefexDynamicCAB;
-import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicVersionBI;
-import gov.vha.isaac.ochre.api.index.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,37 +43,36 @@ public abstract class MappingDAO
 {
 	protected static final Logger LOG = LoggerFactory.getLogger(MappingDAO.class);
 	
-	protected static RefexDynamicVersionBI<?> readCurrentRefex(UUID refexUUID) throws IOException, ContradictionException
+	protected static DynamicSememe<?> readCurrentRefex(UUID refexUUID) throws RuntimeException
 	{
-		return (RefexDynamicVersionBI<?>) ExtendedAppContext.getDataStore().getComponentVersion(OTFUtility.getViewCoordinateAllowInactive(), refexUUID).get();
+		SememeChronology<? extends SememeVersion<?>> sc = Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(refexUUID));
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)sc).getLatestVersion(DynamicSememe.class, 
+				ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE));
+		
+		return latest.get().value();
 	}
 	
-	protected static void setConceptStatus(UUID conceptUUID, Status status) throws IOException
+	protected static void setConceptStatus(UUID conceptUUID, State state) throws RuntimeException
 	{
 		try
 		{
-			ConceptVersionBI concept = ExtendedAppContext.getDataStore().getConceptVersion(OTFUtility.getViewCoordinateAllowInactive(), conceptUUID);
-			ConceptAttributeVersionBI<?> conAttrib = concept.getConceptAttributes().getVersion(OTFUtility.getViewCoordinateAllowInactive()).get();
-			if (conAttrib.getStatus() == status)
+			ConceptSnapshotService css = Get.conceptService().getSnapshot(
+					ExtendedAppContext.getUserProfileBindings().getStampCoordinate().get().makeAnalog(State.ACTIVE, State.INACTIVE), 
+					ExtendedAppContext.getUserProfileBindings().getLanguageCoordinate().get());
+			
+			ConceptSnapshot cs = css.getConceptSnapshot(Get.identifierService().getConceptSequenceForUuids(conceptUUID));
+			
+			if (cs.getState() == state)
 			{
 				LOG.warn("Tried set the status to the value it already has.  Doing nothing");
 			}
 			else
 			{
-				
-				ConceptAttributeAB conceptAttribCab = conAttrib.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-				conceptAttribCab.setStatus(status);
-				OTFUtility.getBuilder().construct(conceptAttribCab);
-
-				AppContext.getRuntimeGlobals().disableAllCommitListeners();
-				ExtendedAppContext.getDataStore().addUncommitted(concept);
-				ExtendedAppContext.getDataStore().commit(/* concept */);
+				cs.getChronology().createMutableVersion(state, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				Get.commitService().addUncommitted(cs.getChronology());
+				Get.commitService().commit("Changing map concept state");
 			}
-		}
-		catch (InvalidCAB | ContradictionException e)
-		{
-			LOG.error("Unexpected!", e);
-			throw new IOException("Internal error");
 		}
 		finally
 		{
@@ -89,49 +80,23 @@ public abstract class MappingDAO
 		}
 	}
 	
-	protected static void setRefexStatus(UUID refexUUID, Status status) throws IOException
+	protected static void setSememeStatus(UUID refexUUID, State state) throws RuntimeException
 	{
-		try
+		DynamicSememe<?> ds = readCurrentRefex(refexUUID);
+		
+		if (ds.getState() == state)
 		{
-			RefexDynamicVersionBI<?> rdv = readCurrentRefex(refexUUID);
-			if (rdv.getStatus() == status)
-			{
-				LOG.warn("Tried set the status to the value it already has.  Doing nothing");
-			}
-			else
-			{
-				RefexDynamicCAB mappingCab = rdv.makeBlueprint(OTFUtility.getViewCoordinateAllowInactive(), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
-				mappingCab.setStatus(status);
-				RefexDynamicChronicleBI<?> rdc = OTFUtility.getBuilder().construct(mappingCab);
-
-				ConceptChronicleBI cc = ExtendedAppContext.getDataStore().getConcept(rdc.getEnclosingConceptNid());
-				ExtendedAppContext.getDataStore().addUncommitted(cc);
-				ExtendedAppContext.getDataStore().commit(/* cc */);
-			}
+			LOG.warn("Tried set the status to the value it already has.  Doing nothing");
 		}
-		catch (InvalidCAB | ContradictionException e)
+		else
 		{
-			LOG.error("Unexpected!", e);
-			throw new IOException("Internal error");
-		}
-	}
-	
-	protected static List<SearchResult> search(UUID assemblageUUID) throws IOException
-	{
-		try
-		{
-			LuceneDynamicRefexIndexer indexer = AppContext.getService(LuceneDynamicRefexIndexer.class);
-			if (indexer == null)
-			{
-				LOG.error("Required index on dynamic refexes is missing!");
-				throw new IOException("Required index is not available");
-			}
-			return indexer.queryAssemblageUsage(ExtendedAppContext.getDataStore().getNidForUuids(assemblageUUID), Integer.MAX_VALUE, Long.MAX_VALUE);
-		}
-		catch (NumberFormatException | ParseException e)
-		{
-			LOG.error("Unexpected", e);
-			throw new IOException("Unexpected error searching for refexes");
+			@SuppressWarnings("unchecked")
+			MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)ds.getChronology()).createMutableVersion(MutableDynamicSememe.class, state,
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			mds.setData(ds.getData());
+			
+			Get.commitService().addUncommitted(ds.getChronology());
+			Get.commitService().commit("Changing sememe state");
 		}
 	}
 }

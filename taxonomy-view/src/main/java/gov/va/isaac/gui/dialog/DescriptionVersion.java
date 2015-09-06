@@ -18,14 +18,13 @@
  */
 package gov.va.isaac.gui.dialog;
 
-import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-
 import java.util.AbstractMap;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.ToIntFunction;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,22 +60,10 @@ public class DescriptionVersion
 		return dv_;
 	}
 	
-//	public boolean hasDynamicRefex()
-//	{
-//		try
-//		{
-//			Collection<? extends RefexDynamicChronicleBI<?>> foo = dv_.getRefexDynamicAnnotations();
-//			if (foo != null && foo.size() > 0)
-//			{
-//				return true;
-//			}
-//		}
-//		catch (IOException e)
-//		{
-//			LOG.error("Unexpeted", e);
-//		}
-//		return false;
-//	}
+	public boolean hasNestedSememe()
+	{
+		return !dv_.getChronology().getSememeList().isEmpty();
+	}
 	
 	/**
 	 * Returns the string for display, and the tooltip, if applicable.  Either / or may be null.
@@ -131,7 +118,7 @@ public class DescriptionVersion
 				{
 					// TODO implement handling of LANGUAGE column
 					//Not bothering with historical here - doesn't really fit the display paradigm.
-					text = OchreUtility.conceptDescriptionText(dv_.getLanguageConceptSequence());
+					text = Get.conceptDescriptionText(dv_.getLanguageConceptSequence());
 //					for (RefexChronicleBI<?> rc :  dv_.getAnnotationsActive(OTFUtility.getViewCoordinate()))
 //					{
 //						for (RefexVersionBI<?> rv : rc.getVersions())
@@ -227,7 +214,7 @@ public class DescriptionVersion
 	{
 		try
 		{
-			return OchreUtility.conceptDescriptionText(nidFetcher.applyAsInt(dv_));
+			return Get.conceptDescriptionText(nidFetcher.applyAsInt(dv_));
 		}
 		catch (Exception e)
 		{

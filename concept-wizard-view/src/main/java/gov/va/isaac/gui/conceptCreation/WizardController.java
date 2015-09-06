@@ -21,6 +21,7 @@ package gov.va.isaac.gui.conceptCreation;
 import gov.va.isaac.gui.conceptCreation.wizardPages.TermRow;
 import gov.va.isaac.gui.conceptCreation.wizardPages.RelRow;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import java.io.IOException;
 import java.util.List;
@@ -123,11 +124,11 @@ public class WizardController {
 	}
 
 	public String getRelType(int i) {
-		return OTFUtility.getConPrefTerm(rels.get(i).getRelationshipNid());
+		return OchreUtility.getDescription(rels.get(i).getRelationshipNid(), null).get();
 	}
 	
 	public String getTarget(int i) {
-		return OTFUtility.getConPrefTerm(rels.get(i).getTargetNid());
+		return OchreUtility.getDescription(rels.get(i).getTargetNid(), null).get();
 	}
 	
 	//TODO make sure PT and FSN are case insensitive

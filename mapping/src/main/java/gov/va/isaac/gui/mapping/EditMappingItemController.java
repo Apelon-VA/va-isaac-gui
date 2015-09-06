@@ -1,16 +1,18 @@
 package gov.va.isaac.gui.mapping;
 
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.mapping.data.MappingItem;
 import gov.va.isaac.gui.mapping.data.MappingItemDAO;
 import gov.va.isaac.gui.mapping.data.MappingUtils;
 import gov.va.isaac.util.Utility;
-import java.net.URL;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import gov.vha.isaac.ochre.api.Get;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -25,8 +27,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EditMappingItemController {
 
@@ -100,7 +100,7 @@ public class EditMappingItemController {
 			boolean saved = false;
 			try	{
 				UUID statusUUID = (statusCombo.getSelectionModel().getSelectedItem().getNid() == Integer.MIN_VALUE ? null : 
-					ExtendedAppContext.getDataStore().getUuidPrimordialForNid(statusCombo.getSelectionModel().getSelectedItem().getNid()));
+					Get.identifierService().getUuidPrimordialForNid(statusCombo.getSelectionModel().getSelectedItem().getNid()).get());
 					
 				mappingItem_.setEditorStatusConcept(statusUUID);
 				MappingItemDAO.updateMappingItem(mappingItem_);

@@ -20,14 +20,12 @@ package gov.va.isaac.gui.refsetview;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.util.OTFUtility;
-
+import gov.va.isaac.util.OchreUtility;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
-
 import javafx.beans.property.SimpleStringProperty;
-
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.ihtsdo.otf.tcc.api.refex.RefexType;
@@ -35,7 +33,6 @@ import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.type_nid.RefexNidVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.type_nid_string.RefexNidStringVersionBI;
 import org.ihtsdo.otf.tcc.api.refex.type_string.RefexStringVersionBI;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +80,7 @@ public class RefsetInstanceAccessor {
 					try
 					{
 						if (previousMember == null || previousMember.getAuthorNid() != member.getAuthorNid()) {
-							this.author = OTFUtility.getDescription(AppContext.getService(TerminologyStoreDI.class).getConcept(member.getAuthorNid()).getPrimordialUuid());
+							this.author = OchreUtility.getDescription(member.getAuthorNid()).get();
 						} else {
 							this.author = "";
 						}
@@ -96,7 +93,7 @@ public class RefsetInstanceAccessor {
 					try
 					{
 						if (previousMember == null || previousMember.getModuleNid() != member.getModuleNid()) {
-							this.module = OTFUtility.getDescription(AppContext.getService(TerminologyStoreDI.class).getConcept(member.getModuleNid()).getPrimordialUuid());
+							this.module = OchreUtility.getDescription(member.getModuleNid()).get();
 						} else {
 							this.module = "";
 						}
@@ -109,7 +106,7 @@ public class RefsetInstanceAccessor {
 					try
 					{
 						if (previousMember == null || previousMember.getPathNid() != member.getPathNid()) {
-							this.path = OTFUtility.getDescription(AppContext.getService(TerminologyStoreDI.class).getConcept(member.getPathNid()).getPrimordialUuid());
+							this.path = OchreUtility.getDescription(member.getPathNid()).get();
 						} else {
 							this.path = "";
 						}

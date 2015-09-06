@@ -21,22 +21,22 @@ package gov.va.isaac.gui.refexViews.refexEdit;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
-import org.ihtsdo.otf.tcc.api.refexDynamic.data.RefexDynamicColumnInfo;
 
 /**
  * {@link AttachedDataCellFactory}
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class AttachedDataCellFactory implements Callback <TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI>, TreeTableCell<RefexDynamicGUI,RefexDynamicGUI>>
+public class AttachedDataCellFactory implements Callback <TreeTableColumn<SememeGUI, SememeGUI>, TreeTableCell<SememeGUI,SememeGUI>>
 {
-	private Hashtable<UUID, List<RefexDynamicColumnInfo>> colInfo_;
+	private Hashtable<UUID, List<DynamicSememeColumnInfo>> colInfo_;
 	private int listPosition_;
 	
-	public AttachedDataCellFactory(Hashtable<UUID, List<RefexDynamicColumnInfo>> colInfo, int listPosition)
+	public AttachedDataCellFactory(Hashtable<UUID, List<DynamicSememeColumnInfo>> colInfo, int listPosition)
 	{
 		colInfo_ = colInfo;
 		listPosition_ = listPosition;
@@ -46,7 +46,7 @@ public class AttachedDataCellFactory implements Callback <TreeTableColumn<RefexD
 	 * @see javafx.util.Callback#call(java.lang.Object)
 	 */
 	@Override
-	public TreeTableCell<RefexDynamicGUI, RefexDynamicGUI> call(TreeTableColumn<RefexDynamicGUI, RefexDynamicGUI> param)
+	public TreeTableCell<SememeGUI, SememeGUI> call(TreeTableColumn<SememeGUI, SememeGUI> param)
 	{
 		return new AttachedDataCell(colInfo_, listPosition_);
 	}

@@ -2,6 +2,7 @@ package gov.va.isaac.gui.conceptViews.componentRows;
 
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
 import java.util.Collection;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -34,19 +35,19 @@ public class HistoricalRelRow extends RelRow {
 			Rectangle rec = createAnnotRectangle(rv);
 			Label relLabel;
 			if (isDetailed) {
-				relLabel = labelHelper.createLabel(rv, OTFUtility.getConPrefTerm(rv.getConceptNid()), ComponentType.RELATIONSHIP, rv.getConceptNid());
+				relLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getConceptNid()), ComponentType.RELATIONSHIP, rv.getConceptNid());
 			} else {
-				relLabel = labelHelper.createLabel(rv, OTFUtility.getConPrefTerm(rv.getDestinationNid()), ComponentType.RELATIONSHIP, rv.getDestinationNid());
+				relLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getDestinationNid()), ComponentType.RELATIONSHIP, rv.getDestinationNid());
 			}
-			Label relTypeLabel = labelHelper.createLabel(rv, OTFUtility.getConPrefTerm(rv.getTypeNid()), ComponentType.RELATIONSHIP, rv.getTypeNid());
+			Label relTypeLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getTypeNid()), ComponentType.RELATIONSHIP, rv.getTypeNid());
 			Label relGroupLabel = labelHelper.createLabel(rv, String.valueOf(rv.getGroup()), ComponentType.RELATIONSHIP, 0);
-			Label relCharLabel = labelHelper.createLabel(rv, OTFUtility.getConPrefTerm(rv.getCharacteristicNid()), ComponentType.RELATIONSHIP, rv.getCharacteristicNid());
-			Label relRefLabel = labelHelper.createLabel(rv, OTFUtility.getConPrefTerm(rv.getRefinabilityNid()), ComponentType.RELATIONSHIP, rv.getRefinabilityNid());
+			Label relCharLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getCharacteristicNid()), ComponentType.RELATIONSHIP, rv.getCharacteristicNid());
+			Label relRefLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getRefinabilityNid()), ComponentType.RELATIONSHIP, rv.getRefinabilityNid());
 			
 			Label relStatusLabel = labelHelper.createLabel(rv, OTFUtility.getStatusString(rv), ComponentType.RELATIONSHIP, 0);
 			Label relTimeLabel = labelHelper.createLabel(rv, OTFUtility.getTimeString(rv), ComponentType.RELATIONSHIP, rv.getTypeNid());
-			Label relAuthorLabel = labelHelper.createLabel(rv, OTFUtility.getAuthorString(rv), ComponentType.RELATIONSHIP, 0);
-			Label relPathLabel = labelHelper.createLabel(rv, OTFUtility.getPathString(rv), ComponentType.RELATIONSHIP, 0);
+			Label relAuthorLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getAuthorNid()), ComponentType.RELATIONSHIP, 0);
+			Label relPathLabel = labelHelper.createLabel(rv, OchreUtility.getDescription(rv.getPathNid()), ComponentType.RELATIONSHIP, 0);
 
 			if (rel.isUncommitted()) {
 				if (rel.getVersions().size() == 1) {
@@ -68,19 +69,19 @@ public class HistoricalRelRow extends RelRow {
 					ComponentChronicleBI<?> chronicle = rel.getChronicle();
 					RelationshipVersionBI<?> origVersion = (RelationshipVersionBI<?>) OTFUtility.getLastCommittedVersion(chronicle);
 	
-					if (!relLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getDestinationNid()))) {
+					if (!relLabel.getText().equals(OchreUtility.getDescription(origVersion.getDestinationNid()))) {
 						relLabel.setUnderline(true);
 					}
 					
-					if (!relTypeLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getTypeNid()))) {
+					if (!relTypeLabel.getText().equals(OchreUtility.getDescription(origVersion.getTypeNid()))) {
 						relTypeLabel.setUnderline(true);
 					}
 		
-					if (!relCharLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getCharacteristicNid()))) {
+					if (!relCharLabel.getText().equals(OchreUtility.getDescription(origVersion.getCharacteristicNid()))) {
 						relCharLabel.setUnderline(true);
 					}
 					
-					if (!relRefLabel.getText().equals(OTFUtility.getConPrefTerm(origVersion.getRefinabilityNid()))) {
+					if (!relRefLabel.getText().equals(OchreUtility.getDescription(origVersion.getRefinabilityNid()))) {
 						relRefLabel.setUnderline(true);
 					}
 					

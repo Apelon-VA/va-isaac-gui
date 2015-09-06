@@ -18,15 +18,14 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
-import gov.va.isaac.gui.util.Images;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import com.sun.javafx.collections.ObservableListWrapper;
+import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
+import gov.va.isaac.gui.util.Images;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -40,8 +39,6 @@ import javafx.scene.control.TreeTableColumn;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
-import com.sun.javafx.collections.ObservableListWrapper;
-
 /**
  * HeaderNode
  * 
@@ -51,7 +48,7 @@ import com.sun.javafx.collections.ObservableListWrapper;
  */
 public class HeaderNode<T> {
 	public static interface DataProvider<T> {
-		public T getData(RefexDynamicGUI source);
+		public T getData(SememeGUI source);
 	}
 	public static class Filter<T> {
 		private final Set<T> allPotentialFilterValues = new HashSet<>();
@@ -67,7 +64,7 @@ public class HeaderNode<T> {
 			this.dataProvider = dataProvider;
 		}
 		
-		public boolean accept(RefexDynamicGUI data) {
+		public boolean accept(SememeGUI data) {
 			if (filterValues.size() > 0) {
 				return filterValues.contains(dataProvider.getData(data));
 			} else {
@@ -94,7 +91,7 @@ public class HeaderNode<T> {
 		}
 	}
 	
-	private final TreeTableColumn<RefexDynamicGUI, ?> column;
+	private final TreeTableColumn<SememeGUI, ?> column;
 	private final Scene scene;
 	private final DataProvider<T> dataProvider;
 	private final Button filterConfigurationButton = new Button();
@@ -109,7 +106,7 @@ public class HeaderNode<T> {
 	
 	public HeaderNode(
 			ObservableMap<ColumnId, Filter<?>> filterCache,
-			TreeTableColumn<RefexDynamicGUI, ?> col,
+			TreeTableColumn<SememeGUI, ?> col,
 			ColumnId columnId,
 			Scene scene,
 			DataProvider<T> dataProvider) {
@@ -158,7 +155,7 @@ public class HeaderNode<T> {
 		}
 	}
 
-	private static <T> Set<T> getUniqueDisplayObjects(TreeItem<RefexDynamicGUI> item, DataProvider<T> dataProvider) {
+	private static <T> Set<T> getUniqueDisplayObjects(TreeItem<SememeGUI> item, DataProvider<T> dataProvider) {
 		Set<T> stringSet = new HashSet<>();
 		
 		if (item == null) {
@@ -169,7 +166,7 @@ public class HeaderNode<T> {
 			stringSet.add(dataProvider.getData(item.getValue()));
 		}
 		
-		for (TreeItem<RefexDynamicGUI> childItem : item.getChildren()) {
+		for (TreeItem<SememeGUI> childItem : item.getChildren()) {
 			stringSet.addAll(getUniqueDisplayObjects(childItem, dataProvider));
 		}
 		
@@ -192,7 +189,7 @@ public class HeaderNode<T> {
 		
 		Collections.sort(testList);
 		
-		RefexContentFilterPrompt prompt = new RefexContentFilterPrompt(text, testList, filter.getFilterValues());
+		SememeContentFilterPrompt prompt = new SememeContentFilterPrompt(text, testList, filter.getFilterValues());
 		prompt.showUserPrompt((Stage)scene.getWindow(), "Select Filters");
 
 		if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
@@ -203,7 +200,7 @@ public class HeaderNode<T> {
 	}
 
 	public Button getButton() { return filterConfigurationButton; }
-	public TreeTableColumn<RefexDynamicGUI, ?> getColumn() { return column; }
+	public TreeTableColumn<SememeGUI, ?> getColumn() { return column; }
 	public ObservableList<Object> getUserFilters() { return filter.getFilterValues(); }
 
 	public Node getNode() { return filterConfigurationButton; }

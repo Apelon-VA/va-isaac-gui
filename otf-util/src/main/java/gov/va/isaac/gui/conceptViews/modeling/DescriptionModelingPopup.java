@@ -41,6 +41,7 @@ import org.ihtsdo.otf.tcc.api.description.DescriptionVersionBI;
 import org.ihtsdo.otf.tcc.api.lang.LanguageCode;
 import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
 import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -309,13 +310,13 @@ public class DescriptionModelingPopup extends ModelingPopup
 				OTFUtility.createNewDescription((desc != null) ? desc.getConceptNid() : conceptNid, type, LanguageCode.getLangCode(langCode), term, isInitCap);
 			} else {
 				if (desc.isUncommitted()) {
-					ExtendedAppContext.getDataStore().forget(desc);
+					Ts.get().forget(desc);
 				}
 				DescriptionCAB dcab = new DescriptionCAB((desc != null) ? desc.getConceptNid() : conceptNid, type, LanguageCode.getLangCode(langCode), 
 						term, isInitCap, Optional.of(desc), Optional.of(OTFUtility.getViewCoordinate()), IdDirective.PRESERVE, RefexDirective.EXCLUDE);
 	
 				DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
-				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(dcbi.getConceptNid()));
+				Ts.get().addUncommitted(Ts.get().getConceptForNid(dcbi.getConceptNid()));
 			}
 		}
 		catch (Exception e)

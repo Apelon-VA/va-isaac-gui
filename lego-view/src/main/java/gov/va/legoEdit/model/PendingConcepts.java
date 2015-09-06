@@ -18,10 +18,11 @@
  */
 package gov.va.legoEdit.model;
 
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.legoEdit.model.schemaModel.Concept;
 import gov.va.legoEdit.storage.wb.LegoWBUtility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,10 +32,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,11 +114,11 @@ public class PendingConcepts implements Observable
 			return false;
 		}
 
-		if (null != OTFUtility.lookupIdentifier(potentialPendingConcept.getSctid().toString()))
+		if (OchreUtility.getConceptForUnknownIdentifier(potentialPendingConcept.getSctid().toString()).isPresent())
 		{
 			return false;
 		}
-		if (potentialPendingConcept.getUuid() != null && null != OTFUtility.lookupIdentifier(potentialPendingConcept.getUuid().toString()))
+		if (potentialPendingConcept.getUuid() != null && OchreUtility.getConceptForUnknownIdentifier(potentialPendingConcept.getUuid().toString()).isPresent())
 		{
 			return false;
 		}
@@ -141,7 +142,8 @@ public class PendingConcepts implements Observable
 			if (parent != null)
 			{
 				//allow ref to pending, but not self....
-				Concept parentConcept =  LegoWBUtility.convertConcept(OTFUtility.lookupIdentifier(parent + ""));
+				Concept parentConcept =  LegoWBUtility.convertConcept(OchreUtility.getConceptSnapshot(
+						OchreUtility.getConceptForUnknownIdentifier(parent + "").get().getNid(), null, null).get());
 				if (parentConcept != null && parentConcept.getSctid().longValue() != id)
 				{
 					parentConcepts.put(id, parentConcept);
@@ -356,15 +358,16 @@ public class PendingConcepts implements Observable
 							{
 								long parentSCTID = Long.parseLong(parts[2]);
 								//Use this lookup, since it doesn't loop back to pending.
-								ConceptVersionBI wbParentConcept =  OTFUtility.lookupIdentifier(parentSCTID + "");
-								if (wbParentConcept == null)
+								Optional<ConceptSnapshot> wbParentConcept = OchreUtility.getConceptSnapshot(
+										OchreUtility.getConceptForUnknownIdentifier(parentSCTID + "").get().getNid(), null, null);
+								if (!wbParentConcept.isPresent())
 								{
 									//See if it is a different pending concept (must be higher in the file, for this to work)
 									parent = pendingConcepts.get(UUID.nameUUIDFromBytes((parentSCTID + "").getBytes()).toString());
 								}
-								else if (wbParentConcept != null)
+								else if (wbParentConcept.isPresent())
 								{
-									parent = LegoWBUtility.convertConcept(wbParentConcept);
+									parent = LegoWBUtility.convertConcept(wbParentConcept.get());
 								}
 								if (parent == null)
 								{

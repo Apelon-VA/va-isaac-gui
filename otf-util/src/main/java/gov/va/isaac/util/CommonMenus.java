@@ -18,6 +18,15 @@
  */
 package gov.va.isaac.util;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
@@ -26,6 +35,7 @@ import gov.va.isaac.interfaces.gui.views.DockedViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ContentRequestHandlerI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
@@ -38,15 +48,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.BooleanSupplier;
-
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -58,11 +60,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-
-import org.ihtsdo.otf.tcc.api.chronicle.ComponentChronicleBI;
-import org.ihtsdo.otf.tcc.api.refexDynamic.RefexDynamicChronicleBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CommonMenus}
@@ -81,12 +78,13 @@ public class CommonMenus
 	public static enum CommonMenuItem {
 		// These text values must be distinct
 		// including across non-CommonMenu items that may exist on any passed ContextMenu
-		CONCEPT_VIEW("Model Concept", Images.CONCEPT_VIEW),
-		CONCEPT_VIEW_LEGACY("View Concept", Images.CONCEPT_VIEW),
+		CONCEPT_DIAGRAM_VIEW("Concept Diagraming View", Images.CONCEPT_VIEW),
+		CONCEPT_VIEW_LEGACY("Concept Table View", Images.CONCEPT_VIEW),
 		TAXONOMY_VIEW("Find in Taxonomy", Images.ROOT),
 		WORKFLOW_TASK_DETAILS_VIEW("Workflow Task Details", Images.INBOX),
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
 		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
+		LOGIC_GRAPH_VIEW("Logic Graph View", Images.ROOT),
 		
 		SEND_TO("Send To"),
 			LIST_VIEW("List View", Images.LIST_VIEW),
@@ -123,7 +121,7 @@ public class CommonMenus
 	
 	// Initialize service call cache
 	static {
-		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW, PopupConceptViewI.class, SharedServiceNames.MODERN_STYLE);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_DIAGRAM_VIEW, PopupConceptViewI.class, SharedServiceNames.DIAGRAM_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.CONCEPT_VIEW_LEGACY, PopupConceptViewI.class, SharedServiceNames.LEGACY_STYLE);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.TAXONOMY_VIEW, TaxonomyViewI.class, SharedServiceNames.DOCKED);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW, WorkflowTaskDetailsViewI.class);
@@ -132,6 +130,7 @@ public class CommonMenus
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LIST_VIEW, ListBatchViewI.class, SharedServiceNames.DOCKED);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, WorkflowInitiationViewI.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.RELEASE_WORKFLOW_TASK, ComponentWorkflowServiceI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LOGIC_GRAPH_VIEW, LogicalExpressionTreeGraphPopupViewI.class);
 	}
 
 	public static class ObjectContainer {
@@ -435,34 +434,36 @@ public class CommonMenus
 		}
 		final CommonMenusNIdProvider commonMenusNIdProvider = tmpCommonMenusNIdProvider;
 		
-		// Menu item to show concept details.
+		// Menu item to show concept details in table
 		try {
-			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_VIEW)) {
-				MenuItem enhancedConceptViewMenuItem = createNewMenuItem(
-						CommonMenuItem.CONCEPT_VIEW,
-						builder, 
+			if (CommonMenusServices.hasService(CommonMenuItem.CONCEPT_DIAGRAM_VIEW)) {
+				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
+						CommonMenuItem.CONCEPT_DIAGRAM_VIEW,
+						builder,
 						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
 						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
-						() -> { // onHandlable
-							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW.getText() + "\" menu item to display concept with id \"" 
+						() -> {
+							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_DIAGRAM_VIEW.getText() + "\" menu item to display concept with id \"" 
 									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
 
-							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getService(CommonMenuItem.CONCEPT_VIEW);
+							PopupConceptViewI cv = (PopupConceptViewI)CommonMenusServices.getService(CommonMenuItem.CONCEPT_DIAGRAM_VIEW);
 							cv.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+
 							cv.showView(null);
 						},
-						() -> { // onNotHandlable
+						() -> {
 							AppContext.getCommonDialogs().showInformationDialog("Invalid Concept", "Can't display an invalid concept");
-						});
-				if (enhancedConceptViewMenuItem != null)
+						}
+						);
+				if (legacyConceptViewMenuItem != null)
 				{
-					menuItems.add(enhancedConceptViewMenuItem);
+					menuItems.add(legacyConceptViewMenuItem);
 				}
 			} else {
-				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_VIEW) returned false");
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.CONCEPT_TABLE_VIEW) returned false");
 			}
 		} catch (Exception e) {
-			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.CONCEPT_TABLE_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
 		// Menu item to show concept details. (legacy)
@@ -607,6 +608,40 @@ public class CommonMenus
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOINC_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
+		// Menu item to open a Logic Graph View content request
+		try {
+			if (CommonMenusServices.hasService(CommonMenuItem.LOGIC_GRAPH_VIEW)) {
+				MenuItem logicGraphViewMenuItem = createNewMenuItem(
+						CommonMenuItem.LOGIC_GRAPH_VIEW,
+						builder,
+						() -> {
+							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+						}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						// onHandlable
+						() -> {
+							LogicalExpressionTreeGraphPopupViewI handler = (LogicalExpressionTreeGraphPopupViewI)CommonMenusServices.getService(CommonMenuItem.LOGIC_GRAPH_VIEW);
+							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { 
+							int nid = commonMenusNIdProvider.getNIds().iterator().next();
+							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
+				if (logicGraphViewMenuItem != null)
+				{
+					menuItems.add(logicGraphViewMenuItem);
+				}
+			} else {
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOGIC_GRAPH_VIEW) returned false");
+			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOGIC_GRAPH_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+		}
+
+
+		
+		
 		try {
 			if (CommonMenusServices.hasService(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
 				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
@@ -873,7 +908,7 @@ public class CommonMenus
 				{
 					ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
 					if (conceptSnapshot != null) {
-						Optional<Long> conceptSct = OchreUtility.getSctId(conceptSnapshot.getNid());
+						Optional<Long> conceptSct = Frills.getSctId(conceptSnapshot.getNid(), null);
 						if(conceptSct.isPresent()) {
 							sctIds.add(conceptSct.get());
 						}
@@ -972,7 +1007,7 @@ public class CommonMenus
 			case STRING:
 				break;
 			case DYNAMIC:
-				break;
+				return Get.identifierService().getConceptNid(sememeC.getAssemblageSequence());
 			case DESCRIPTION:
 				break;
 			case RELATIONSHIP_ADAPTOR:
@@ -982,14 +1017,6 @@ public class CommonMenus
 			}
 			
 			return sememeC.getNid();
-		case REFEX:
-			LOG.debug("NID {} passed is for REFEX {}", nid, Get.conceptDescriptionText(nid));
-
-			break;
-		case OTHER:
-			LOG.debug("NID {} passed is for OTHER {}", nid, Get.conceptDescriptionText(nid));
-
-			break;
 		case UNKNOWN_NID:
 			LOG.debug("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
 
@@ -998,30 +1025,7 @@ public class CommonMenus
 				throw new RuntimeException("Unsupported ObjectChronologyType " + nidType.name());
 		}
 		
-		LOG.debug("Using OTF API to get parent concept nid for component {} (nid={})", Get.conceptDescriptionText(nid), nid);
-		ComponentChronicleBI<?> cc = OTFUtility.getComponentChronicle(nid);
-		if (cc != null) {
-			if (cc instanceof RefexDynamicChronicleBI) {
-				RefexDynamicChronicleBI<?> refexChron = (RefexDynamicChronicleBI<?>)cc;
-				
-				try {
-					if (OTFUtility.getConceptVersion(refexChron.getAssemblageNid()).isAnnotationStyleRefex()) {
-						return refexChron.getAssemblageNid();
-					} else {
-						return refexChron.getReferencedComponentNid();
-					}
-				} catch (IOException e) {
-					LOG.error("Unexpected - couldn't get RefexDynamicChronicleBI information for nid{}", nid);
-					return nid;
-				}
-			} else 	{
-				return cc.getEnclosingConceptNid();
-			}
-		}
-		else
-		{
-			LOG.error("Unexpected - couldn't find component for nid {}", nid);
-			return nid;
-		}
+		LOG.error("Unexpected - couldn't find component for nid {}", nid);
+		return nid;
 	}
 }

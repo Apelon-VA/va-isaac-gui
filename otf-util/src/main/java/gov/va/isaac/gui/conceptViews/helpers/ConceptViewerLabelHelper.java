@@ -18,44 +18,9 @@
  */
 package gov.va.isaac.gui.conceptViews.helpers;
 
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.gui.conceptViews.enhanced.EnhancedConceptView;
-import gov.va.isaac.gui.conceptViews.enhanced.PreferredAcceptabilityPrompt;
-import gov.va.isaac.gui.conceptViews.enhanced.RetireConceptPrompt;
-import gov.va.isaac.gui.conceptViews.modeling.ConceptModelingPopup;
-import gov.va.isaac.gui.conceptViews.modeling.DescriptionModelingPopup;
-import gov.va.isaac.gui.conceptViews.modeling.ModelingPopup;
-import gov.va.isaac.gui.conceptViews.modeling.RelationshipModelingPopup;
-import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
-import gov.va.isaac.gui.util.CustomClipboard;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.api.LookupService;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextArea;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptAttributeAB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
@@ -78,8 +43,43 @@ import org.ihtsdo.otf.tcc.api.relationship.RelationshipChronicleBI;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.ihtsdo.otf.tcc.api.relationship.RelationshipVersionBI;
 import org.ihtsdo.otf.tcc.api.spec.ValidationException;
+import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.conceptViews.enhanced.EnhancedConceptView;
+import gov.va.isaac.gui.conceptViews.enhanced.PreferredAcceptabilityPrompt;
+import gov.va.isaac.gui.conceptViews.enhanced.RetireConceptPrompt;
+import gov.va.isaac.gui.conceptViews.modeling.ConceptModelingPopup;
+import gov.va.isaac.gui.conceptViews.modeling.DescriptionModelingPopup;
+import gov.va.isaac.gui.conceptViews.modeling.ModelingPopup;
+import gov.va.isaac.gui.conceptViews.modeling.RelationshipModelingPopup;
+import gov.va.isaac.gui.dialog.UserPrompt.UserPromptResponse;
+import gov.va.isaac.gui.util.CustomClipboard;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
+import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import gov.vha.isaac.ochre.api.LookupService;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
 /**
 *
@@ -100,6 +100,10 @@ public class ConceptViewerLabelHelper {
 
 	public ConceptViewerLabelHelper(PopupConceptViewI conceptView) {
 		this.conceptView = conceptView;
+	}
+	
+	public Label createLabel(ComponentVersionBI comp, Optional<String> txt, ComponentType type, int refConNid) {
+		return createLabel(comp, txt.isPresent() ? txt.get() : "-ERROR-", type, refConNid);
 	}
 
 	// Create Labels
@@ -372,7 +376,7 @@ public class ConceptViewerLabelHelper {
 						} else {
 							RetireConceptPrompt prompt = new RetireConceptPrompt();
 							
-							prompt.showUserPrompt((Stage)pane.getScene().getWindow(), "Retire Concept: " + OTFUtility.getConPrefTerm(comp.getNid()));
+							prompt.showUserPrompt((Stage)pane.getScene().getWindow(), "Retire Concept: " + OchreUtility.getDescription(comp.getNid()).get());
 							
 							if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
 								// Retire Stated Parent Rels
@@ -393,17 +397,17 @@ public class ConceptViewerLabelHelper {
 								
 								ConceptAttributeChronicleBI cabi = OTFUtility.getBuilder().constructIfNotCurrent(cab);
 								
-								ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(cabi.getAssociatedConceptNid()));
+								Ts.get().addUncommitted(Ts.get().getConceptForNid(cabi.getAssociatedConceptNid()));
 								
 								// Commit
-								ExtendedAppContext.getDataStore().commit(/* con */);
+								Ts.get().commit(/* con */);
 							}
 						}
 					} else if (type == ComponentType.DESCRIPTION) {
 						DescriptionVersionBI<?> desc = (DescriptionVersionBI<?>)comp;
 
 						if (desc.isUncommitted()) {
-							ExtendedAppContext.getDataStore().forget(desc);
+							Ts.get().forget(desc);
 						}
 
 						DescriptionCAB dcab = desc.makeBlueprint(OTFUtility.getViewCoordinate(),  IdDirective.PRESERVE, RefexDirective.EXCLUDE);
@@ -411,13 +415,13 @@ public class ConceptViewerLabelHelper {
 						
 						DescriptionChronicleBI dcbi = OTFUtility.getBuilder().constructIfNotCurrent(dcab);
 						
-						ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(dcbi.getConceptNid()));
+						Ts.get().addUncommitted(Ts.get().getConceptForNid(dcbi.getConceptNid()));
 	
 					} else if (type == ComponentType.RELATIONSHIP) {
 						RelationshipVersionBI<?> rel = (RelationshipVersionBI<?>)comp;
 
 						if (rel.isUncommitted()) {
-							ExtendedAppContext.getDataStore().forget(rel);
+							Ts.get().forget(rel);
 						}
 
 						retireRelationship(rel);
@@ -438,7 +442,7 @@ public class ConceptViewerLabelHelper {
 				
 				RelationshipChronicleBI rcbi = OTFUtility.getBuilder().constructIfNotCurrent(rcab);
 				
-				ExtendedAppContext.getDataStore().addUncommitted(ExtendedAppContext.getDataStore().getConceptForNid(rcbi.getAssociatedConceptNid()));
+				Ts.get().addUncommitted(Ts.get().getConceptForNid(rcbi.getAssociatedConceptNid()));
 			}
 		});
 
@@ -454,11 +458,11 @@ public class ConceptViewerLabelHelper {
 			{
 				try {
 					if (type == ComponentType.CONCEPT) {
-						ExtendedAppContext.getDataStore().forget((ConceptAttributeVersionBI<?>)comp);
+						Ts.get().forget((ConceptAttributeVersionBI<?>)comp);
 					} else if (type == ComponentType.DESCRIPTION) {
-						ExtendedAppContext.getDataStore().forget((DescriptionVersionBI<?>)comp);
+						Ts.get().forget((DescriptionVersionBI<?>)comp);
 					} else if (type == ComponentType.RELATIONSHIP) {
-						ExtendedAppContext.getDataStore().forget((RelationshipVersionBI<?>)comp);
+						Ts.get().forget((RelationshipVersionBI<?>)comp);
 					}
 					conceptView.setConcept(comp.getAssociatedConceptNid());
 				} catch (Exception e) {

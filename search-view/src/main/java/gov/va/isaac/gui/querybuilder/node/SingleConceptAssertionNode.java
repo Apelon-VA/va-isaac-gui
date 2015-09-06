@@ -25,6 +25,8 @@
 package gov.va.isaac.gui.querybuilder.node;
 
 import gov.va.isaac.util.OTFUtility;
+import gov.va.isaac.util.OchreUtility;
+import java.util.Optional;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
@@ -84,12 +86,12 @@ public abstract class SingleConceptAssertionNode extends AssertionNode {
 
 	@Override
 	public String getDescription() {
-		String conceptDescription = null;
+		Optional<String> conceptDescription = null;
 		if (getNid() != null && getNid() != 0) {
-			conceptDescription = OTFUtility.getDescriptionIfConceptExists(getNid());
+			conceptDescription = OchreUtility.getDescription(getNid());
 		}
-		if (conceptDescription != null) {
-			return (invertProperty.get() ? "NOT " : "") + getNodeTypeName() + " " + conceptDescription;
+		if (conceptDescription.isPresent()) {
+			return (invertProperty.get() ? "NOT " : "") + getNodeTypeName() + " " + conceptDescription.get();
 		} else {
 			return (invertProperty.get() ? "NOT " : "") + getNodeTypeName();
 		}

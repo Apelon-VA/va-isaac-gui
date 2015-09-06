@@ -1,15 +1,10 @@
 package gov.va.isaac.gui.conceptViews.helpers;
 
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import org.ihtsdo.otf.tcc.api.chronicle.ComponentVersionBI;
 import org.ihtsdo.otf.tcc.api.conattr.ConceptAttributeVersionBI;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
@@ -17,6 +12,9 @@ import org.ihtsdo.otf.tcc.api.metadata.binding.SnomedMetadataRf2;
 import org.ihtsdo.otf.tcc.api.refex.RefexVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 
 public class ConceptViewerHelper {
 	private static Integer snomedAssemblageNid;
@@ -36,7 +34,7 @@ public class ConceptViewerHelper {
 	}
 	
 	public static Optional<Long> getSctId(int componentNid)  {
-		return OchreUtility.getSctId(componentNid);
+		return Frills.getSctId(componentNid, null);
 	}
 
 	public static String getPrimDef(ConceptAttributeVersionBI<?> attr) {
