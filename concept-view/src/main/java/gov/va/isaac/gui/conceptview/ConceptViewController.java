@@ -122,7 +122,7 @@ public class ConceptViewController {
 	@FXML private Button commitButton;
 
 	private ObjectProperty<ConceptSnapshot> conceptProperty = new SimpleObjectProperty<ConceptSnapshot>();
-	private UpdateableBooleanBinding updateableBooleanBinding;
+	private UpdateableBooleanBinding refreshBinding;
 	
 	@FXML
 	void initialize() {
@@ -184,7 +184,7 @@ public class ConceptViewController {
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
 		// This binding refreshes whenever its bindings change
-		updateableBooleanBinding = new UpdateableBooleanBinding() {
+		refreshBinding = new UpdateableBooleanBinding() {
 			private volatile boolean enabled = false;
             {
                 setComputeOnInvalidate(true);
@@ -192,6 +192,7 @@ public class ConceptViewController {
                 		conceptProperty,
                 		activeOnlyToggle.selectedProperty(),
                 		stampToggle.selectedProperty());
+                		//modulesComboBox.getSelectionModel().selectedItemProperty());
                 enabled = true;
             }
 
@@ -396,7 +397,7 @@ public class ConceptViewController {
 			}
 		});
 		loadConceptCodeFromConcept(conceptProperty.get());
-	}
+	} 
 	private void loadConceptCodeFromConcept(ConceptSnapshot concept) {
 		conceptCodeLabel.setText(null);
 		if (concept != null) {
@@ -615,8 +616,6 @@ public class ConceptViewController {
 
 	private void setupDescriptionTable() 
 	{
-		//descriptionTableView.setTableMenuButtonVisible(true);
-
 		setDescriptionTableFactories(descriptionTableView.getColumns());
 
 		descriptionTypeTableColumn.setComparator(ConceptDescription.valueComparator);
