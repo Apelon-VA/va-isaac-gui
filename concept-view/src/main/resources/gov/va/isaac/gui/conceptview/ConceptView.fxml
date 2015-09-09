@@ -69,7 +69,8 @@
                   </FlowPane>
                   <ComboBox fx:id="statusComboBox" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2" />
                   <VBox fx:id="uuidsVBox" alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                  <VBox fx:id="modulesVBox" alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label fx:id="conceptLabel" text="Drop concept here" GridPane.columnIndex="1" />
+                  <ComboBox fx:id="modulesComboBox" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" />
                </children>
             </GridPane>
          </children>
@@ -81,7 +82,7 @@
          <children>
             <VBox layoutX="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <children>
-                  <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="ALWAYS" layoutX="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="370.0" prefViewportWidth="980.0" vbarPolicy="ALWAYS" VBox.vgrow="ALWAYS">
+                  <ScrollPane fitToHeight="true" fitToWidth="true" layoutX="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="370.0" prefViewportWidth="980.0" VBox.vgrow="ALWAYS">
                      <content>
                         <TableView fx:id="descriptionTableView" layoutY="57.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
                           <columns>

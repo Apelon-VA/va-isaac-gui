@@ -59,8 +59,8 @@ public abstract class StampedItem
 	{
 		_stampedVersion = stampedVersion;
 
-		stateSSP.set(isActive()? "Active" : "Inactive");
-		timeSSP.set(new SimpleDateFormat("MM/dd/yy HH:mm").format(getCreationDate()));
+		stateSSP.set(Get.commitService().isUncommitted(stampedVersion.getStampSequence()) ? "U" : isActive() ? "A" : "I");
+		timeSSP.set(new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(getCreationDate()));
 		
 		Utility.execute(() ->
 		{
