@@ -2,7 +2,7 @@ package gov.va.isaac.gui.conceptview;
 
 public enum ConceptViewColumnType {
 	STATE_CONDENSED("Status Condensed"),
-	VALUE("Description Value"),
+	TERM("Description Term"),
 	TYPE("Description Type"),
 	LANGUAGE("Language - Dialect"),
 	ACCEPTABILITY("Acceptability"),

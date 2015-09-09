@@ -278,7 +278,7 @@ public class ConceptViewController {
 		significanceTableColumn.setUserData(ConceptViewColumnType.SIGNIFICANCE);
 		dialectTableColumn.setUserData(ConceptViewColumnType.LANGUAGE);
 		statusTableColumn.setUserData(ConceptViewColumnType.STAMP_STATE);
-		descriptionValueTableColumn.setUserData(ConceptViewColumnType.VALUE);
+		descriptionValueTableColumn.setUserData(ConceptViewColumnType.TERM);
 		
 		descriptionTableSTAMPColumn.setUserData(ConceptViewColumnType.STAMP_HEADING);
 		moduleTableColumn.setUserData(ConceptViewColumnType.STAMP_MODULE);
@@ -761,7 +761,7 @@ public class ConceptViewController {
 		if (!cell.isEmpty() && conceptDescription != null) {
 			ContextMenu cm = new ContextMenu();
 			cell.setContextMenu(cm);
-			SimpleStringProperty property = null;
+			StringProperty textProperty = null;
 			int conceptSequence = 0;
 			ConceptViewColumnType columnType = (ConceptViewColumnType) cell.getTableColumn().getUserData();
 
@@ -780,60 +780,59 @@ public class ConceptViewController {
 				cell.setGraphic(sp);
 				break;
 				
-			case VALUE:
-				property = conceptDescription.getValueProperty(); 
-				conceptSequence = conceptDescription.getSequence();
+			case TERM:
+				textProperty = conceptDescription.getValueProperty();
 				break;
 				
 			case TYPE:
-				property = conceptDescription.getTypeProperty();
+				textProperty = conceptDescription.getTypeProperty();
 				conceptSequence = conceptDescription.getTypeSequence();
 				break;
 				
 			case LANGUAGE:
-				property = conceptDescription.getLanguageProperty();
+				textProperty = conceptDescription.getLanguageProperty();
 				conceptSequence = conceptDescription.getLanguageSequence();
 				break;
 				
 			case ACCEPTABILITY:
-				property = conceptDescription.getAcceptabilityProperty();
+				textProperty = conceptDescription.getAcceptabilityProperty();
 				//conceptSequence = conceptDescription.getAcceptabilitySequence();
 				break;
 			case SIGNIFICANCE:
-				property = conceptDescription.getSignificanceProperty();
+				textProperty = conceptDescription.getSignificanceProperty();
 				conceptSequence = conceptDescription.getSignificanceSequence();
 				break;
 				
 			case STAMP_STATE:
-				property = conceptDescription.getStateProperty();
+				textProperty = conceptDescription.getStateProperty();
 				break;
 			case STAMP_TIME:
-				property = conceptDescription.getTimeProperty();
+				textProperty = conceptDescription.getTimeProperty();
 				break;
 			case STAMP_AUTHOR:
-				property = conceptDescription.getAuthorProperty();
+				textProperty = conceptDescription.getAuthorProperty();
 				conceptSequence = conceptDescription.getAuthorSequence();
 				break;
 			case STAMP_MODULE:
-				property = conceptDescription.getModuleProperty();
+				textProperty = conceptDescription.getModuleProperty();
 				conceptSequence = conceptDescription.getModuleSequence();
 				break;
 			case STAMP_PATH:
-				property = conceptDescription.getPathProperty();
+				textProperty = conceptDescription.getPathProperty();
 				conceptSequence = conceptDescription.getPathSequence();
 				break;
 			default:
 				// Nothing
 			}
 			
-			if (property != null) {
+			if (textProperty != null) {
 				Text text = new Text();
-				text.textProperty().bind(property);
+				text.textProperty().bind(textProperty);
 				text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
 				cell.setGraphic(text);
 				
 				Tooltip tooltip = new Tooltip();
-				tooltip.textProperty().bind(property);
+				tooltip.textProperty().bind(textProperty);
 				cell.setTooltip(tooltip);
 	
 				MenuItem mi = new MenuItem("Copy Value");
