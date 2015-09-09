@@ -19,6 +19,26 @@
 
 package gov.va.isaac.request.uscrs;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
+import javax.inject.Named;
+
+import org.glassfish.hk2.api.PerLookup;
+import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
@@ -34,6 +54,7 @@ import gov.va.isaac.request.uscrs.USCRSBatchTemplate.PICKLIST_Source_Terminology
 import gov.va.isaac.request.uscrs.USCRSBatchTemplate.SHEET;
 import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
+import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -46,29 +67,13 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
 import javafx.concurrent.Task;
-import javax.inject.Named;
-import org.glassfish.hk2.api.PerLookup;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -89,6 +94,8 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	int namespace = 0;
 	ArrayList<String> propKeys = new ArrayList<String>();
 	int pathSequence = 0;
+	
+	private StampCoordinate scLatestActive, scLatestAll, scInitialActive, scInitialAll;
 	
 	 //Enable a (checker) that throws an error if the "Request-ID's" are not
 	//  generated correctly (Request-IDs are placed both in the 'newConceptRequest' 
@@ -154,14 +161,13 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		}
 		
 		prop.keySet().stream().forEach(p -> { 
-											if(!propKeys.contains(p.toString())) {
-												invalidPropFound = String.valueOf(p);
-											}
-										});
+									if(!propKeys.contains(p.toString())) {
+										invalidPropFound = String.valueOf(p);
+									}
+								});
 		if(!invalidPropFound.equals("none")) {
 			throw new Exception("Invalid property set: " + invalidPropFound);
 		}
-		
 	}
 
 	@Override
@@ -192,8 +198,6 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	private LanguageCoordinate lc = LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate();
 	
 	public int max_rows = 65000;
-	
-	Class<? extends DescriptionSememe> dsClass = DescriptionSememe.class;
 	
 	/**
 	 * Creates a USCRS Content Request Exporter Task by taking in an IntStream 
@@ -226,19 +230,19 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				StampPosition spLatest = new StampPositionImpl(System.currentTimeMillis(), pathSequence);
 				StampPosition spInitial = new StampPositionImpl(previousReleaseTime, pathSequence);
 				//todo - add modules  to the SC
-				StampCoordinate scLatestActive = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
+				scLatestActive = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
 						ConceptSequenceSet.EMPTY, gov.vha.isaac.ochre.api.State.ACTIVE_ONLY_SET);
-				StampCoordinate scLatestAll = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
+				scLatestAll = new StampCoordinateImpl(StampPrecedence.PATH, spLatest, 
 						ConceptSequenceSet.EMPTY, gov.vha.isaac.ochre.api.State.ANY_STATE_SET);
-				StampCoordinate scInitialActive = new StampCoordinateImpl(StampPrecedence.PATH, spInitial, 
+				scInitialActive = new StampCoordinateImpl(StampPrecedence.PATH, spInitial, 
 						ConceptSequenceSet.EMPTY, gov.vha.isaac.ochre.api.State.ACTIVE_ONLY_SET);
-				StampCoordinate scInitialAll = new StampCoordinateImpl(StampPrecedence.PATH, spInitial, 
+				scInitialAll = new StampCoordinateImpl(StampPrecedence.PATH, spInitial, 
 						ConceptSequenceSet.EMPTY, gov.vha.isaac.ochre.api.State.ANY_STATE_SET);
 				sc = scLatestActive; //We use this one for all general stamp needs
 				
 				logger.info("USCRS Content Request Handler - Starting Concept Stream Iterator");
 				intStream
-					.limit(15) //todo replace with 65000
+					.limit(60) //todo replace with 65000
 					.forEach( nid -> {	
 						
 						if(examinedConCount % 100 == 0) {
@@ -255,6 +259,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 							if(prop.containsKey("date") && previousReleaseTime != Long.MIN_VALUE) { 
 								ConceptSnapshot concept = null;
 								boolean conceptCreated = false;
+								boolean conceptRetired = false;
 								
 								try {
 									//Export Concept
@@ -274,6 +279,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 										} else {
 											concept = csInitial.get();
 											handleRetireConcept(concept);
+											conceptRetired = true;
 										}
 									} else {
 										if(csLatest.isPresent()) {
@@ -287,7 +293,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 												conceptCreated = true;
 											}
 										} else {
-											//noop
+											conceptRetired = true;
 										}
 										
 									}
@@ -296,149 +302,133 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 									logger.error("Error getting concept " + nid + " attributes for date / time comparison", e);
 								}
 								
-								//Export Descriptions
-								try {
-									ConceptChronology<? extends StampedVersion> chronology = concept.getChronology();
-//									chronology
-//										.getConceptDescriptionList()
-//										.stream()
-//										.filter( sc -> {
-//											Optional<? extends LatestVersion<? extends DescriptionSememe>> lv = sc.getLatestVersion((Class<? extends DescriptionSememe>) DescriptionSememe.class, sclatestAll);
-//											if(lv.isPresent()) {}
-//											return true;
-//										});
-									ArrayList<DescriptionSememe> descriptions = new ArrayList<DescriptionSememe>();
-									for(SememeChronology sc : chronology.getConceptDescriptionList()) { //The stream above would be better if we didn't get a cast issue
-										Optional<? extends LatestVersion<? extends DescriptionSememe>> lvO = sc.getLatestVersion(DescriptionSememe.class, scLatestAll);
-										if(lvO.isPresent()) {
-											LatestVersion<? extends DescriptionSememe> lvd = lvO.get();
-											descriptions.add(lvd.value());
+								if(!conceptRetired) {
+									//Export Descriptions
+									try {
+										ConceptChronology<? extends StampedVersion> chronology = concept.getChronology();
+										for(SememeChronology sc : chronology.getConceptDescriptionList()) { //The stream above would be better if we didn't get a cast issue
+											Optional<? extends LatestVersion<? extends DescriptionSememe>> dsLatest = sc.getLatestVersion(DescriptionSememe.class, scLatestActive);
+											Optional<? extends LatestVersion<? extends DescriptionSememe>> dsInitial = sc.getLatestVersion(DescriptionSememe.class, scInitialActive);
+											
+											if(dsInitial.isPresent()) {
+												if(dsLatest.isPresent()){
+													DescriptionSememe dsLatestV = dsLatest.get().value();
+													DescriptionSememe dsInitialV = dsInitial.get().value();
+													
+													boolean hasChange = false;
+													
+													if(dsLatestV.getLanguageConceptSequence()!=dsInitialV.getLanguageConceptSequence()) {
+														hasChange = true;
+														
+														
+													} else if(!dsLatestV.getText().equals(dsInitialV.getText())) {
+														hasChange = true;
+													} else if (dsLatestV.getCaseSignificanceConceptSequence() != dsInitialV.getCaseSignificanceConceptSequence()) {
+														hasChange = true;
+													} else if(dsLatestV.getDescriptionTypeConceptSequence() != dsInitialV.getDescriptionTypeConceptSequence()) {
+														hasChange = true;
+													} else if(dsLatestV.getLanguageConceptSequence() != dsInitialV.getLanguageConceptSequence()) {
+														hasChange = true;
+													} else if(dsLatestV.getState() != dsInitialV.getState()) {
+														hasChange = true;
+													}
+													
+													if(hasChange) {
+														handleChangeDesc(dsLatestV, concept);
+													}
+												} else {
+													handleRetireDescription(dsInitial.get().value(), concept);
+												}
+											} else {
+												if(dsLatest.isPresent()) {
+													Optional<LatestVersion<DescriptionSememe<?>>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
+															.getDescriptionOptional(concept.getConceptSequence());  
+													if(dvCheckRetired.isPresent()) {
+														handleChangeDesc(dvCheckRetired.get().value(), concept);
+													} else {
+														DescriptionSememe dvLatestG = dsLatest.get().value();
+														if(notFsnOrPref(dvLatestG)) {
+															handleNewSyn(dvLatestG, concept);
+														}
+													}
+												} else {
+													//noop
+												}
+											}
 										}
+									} catch (Exception e) {
+										logger.error("Description Export Error", e);
 									}
 									
-									for(DescriptionSememe d : descriptions) {
-										Optional<LatestVersion<DescriptionSememe<?>>> dsLatest = Get.conceptService().getSnapshot(scLatestActive, lc)
-												.getDescriptionOptional(chronology.getConceptSequence()); 
-										
-										Optional<LatestVersion<DescriptionSememe<?>>> dsInitial = Get.conceptService().getSnapshot(scInitialActive, lc)
-												.getDescriptionOptional(chronology.getConceptSequence()); 
-
-										
-										if(dsInitial.isPresent()) {
-											if(dsLatest.isPresent()){
-												DescriptionSememe dsLatestV = dsLatest.get().value();
-												DescriptionSememe dsInitialV = dsInitial.get().value();
-												
-												boolean hasChange = false;
-												
-												if(dsLatestV.getLanguageConceptSequence()!=dsInitialV.getLanguageConceptSequence()) {
-													hasChange = true;
-												} else if(!dsLatestV.getText().equals(dsInitialV.getText())) {
-													hasChange = true;
-												} else if (dsLatestV.getCaseSignificanceConceptSequence() != dsInitialV.getCaseSignificanceConceptSequence()) {
-													hasChange = true;
-												}
-												if(hasChange) {
-													handleChangeDesc(dsLatestV, concept);
-												}
-											} else {
-												handleRetireDescription(dsLatest.get().value(), concept);
-											}
-										} else {
-											if(dsLatest.isPresent()) {
-												Optional<LatestVersion<DescriptionSememe<?>>> dvCheckRetired = Get.conceptService().getSnapshot(scInitialAll, lc)
-														.getDescriptionOptional(concept.getConceptSequence());  
-												if(dvCheckRetired.isPresent()) {
-													handleChangeDesc(dvCheckRetired.get().value(), concept);
-												} else {
-													DescriptionSememe dvLatestG = dsLatest.get().value();
-													if(notFsnOrPref(dvLatestG)) {
-														handleNewSyn(dvLatestG, concept);
-													}
-												}
-											} else {
-												//noop
-											}
-										}
+									//Export Relationships
+									if(conceptCreated) {
+										logger.debug("USCRS Handler - Concept was already created, handeling components accordingly (skip first 3 ISA relationships");
+									} else {
+										logger.debug("Concept NOT previously created - generating relationships now instead");
 									}
-								} catch (Exception e) {
-									logger.error("Description Export Error", e);
-								}
-								
-								//Export Relationships
-								if(conceptCreated) {
-									logger.debug("USCRS Handler - Concept was already created, handeling components accordingly (skip first 3 ISA relationships");
-								} else {
-									logger.debug("Concept NOT previously created - generating relationships now instead");
-									try {
-										List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> incomingRelChronicles = concept.getChronology().getRelationshipListWithConceptAsDestination();
-										for (SememeChronology<? extends RelationshipVersionAdaptor> chronicle : incomingRelChronicles)
-										{
-											relationships.add(chronicle);
-										}
-									} catch (Exception e) {
-										logger.error("Error retreiving the incoming relationships", e);
-									}
-								}
-								for(SememeChronology sc : relationships) {
-									try {
-										Optional<? extends RelationshipVersionAdaptor> scLatest = sc.getLatestVersion(RelationshipVersionAdaptor.class, scLatestActive);
-										Optional<? extends RelationshipVersionAdaptor> scInitial = sc.getLatestVersion(RelationshipVersionAdaptor.class, scInitialActive);
-										
-										if(scInitial.isPresent()) {
-											if(scLatest.isPresent()){
-												RelationshipVersionAdaptor thisRvLatest = scLatest.get();
-												RelationshipVersionAdaptor thisRvInitial = scInitial.get();
+									List<? extends SememeChronology<? extends RelationshipVersionAdaptor>> rels = concept.getChronology().getRelationshipListWithConceptAsDestination();
+									if(rels != null) {
+										for(SememeChronology sc : rels) {
+											try {
+												Optional<? extends LatestVersion<? extends RelationshipVersionAdaptor>> scLatest = sc.getLatestVersion(RelationshipVersionAdaptor.class, scLatestActive);
+												Optional<? extends LatestVersion<? extends RelationshipVersionAdaptor>> scInitial = sc.getLatestVersion(RelationshipVersionAdaptor.class, scInitialActive);
 												
-												boolean hasRelAttrChange = false;
-												if(thisRvLatest.getOriginSequence() != thisRvInitial.getOriginSequence()) {
-													hasRelAttrChange = true;
-												} else if(thisRvLatest.getDestinationSequence() != thisRvInitial.getDestinationSequence()) {
-													hasRelAttrChange = true;
-												} else if (thisRvLatest.getTypeSequence() != thisRvInitial.getTypeSequence()) {
-													hasRelAttrChange = true;
-												} else if (thisRvLatest.getPremiseType() != thisRvInitial.getPremiseType()) {
-													hasRelAttrChange = true;
-												} else if (thisRvLatest.getNodeSequence() != thisRvInitial.getNodeSequence()) {
-													hasRelAttrChange = true;
-												} else if (thisRvLatest.getChronicleKey() != thisRvInitial.getChronicleKey()) {
-													hasRelAttrChange = true;
-												}
-												
-												if(hasRelAttrChange) {
-													if (thisRvLatest.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) {
-														handleChangeParent(thisRvLatest, scLatestActive);
+												if(scInitial.isPresent()) {
+													if(scLatest.isPresent()){
+														RelationshipVersionAdaptor thisRvLatest = scLatest.get().value();
+														RelationshipVersionAdaptor thisRvInitial = scInitial.get().value();
+														
+														boolean hasRelAttrChange = false;
+														if(thisRvLatest.getOriginSequence() != thisRvInitial.getOriginSequence()) {
+															hasRelAttrChange = true;
+														} else if(thisRvLatest.getDestinationSequence() != thisRvInitial.getDestinationSequence()) {
+															hasRelAttrChange = true;
+														} else if (thisRvLatest.getTypeSequence() != thisRvInitial.getTypeSequence()) {
+															hasRelAttrChange = true;
+														} else if (thisRvLatest.getPremiseType() != thisRvInitial.getPremiseType()) {
+															hasRelAttrChange = true;
+														} else if (thisRvLatest.getNodeSequence() != thisRvInitial.getNodeSequence()) {
+															hasRelAttrChange = true;
+														} else if (thisRvLatest.getChronicleKey() != thisRvInitial.getChronicleKey()) {
+															hasRelAttrChange = true;
+														}
+														
+														if(hasRelAttrChange) {
+															if (thisRvLatest.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) {
+																handleChangeParent(thisRvLatest, scLatestActive);
+															} else {
+																handleChangeRels(thisRvLatest);
+															}
+														}
 													} else {
-														handleChangeRels(thisRvLatest);
-													}
-												}
-											} else {
-												handleRetireRelationship(scInitial.get());
-											}
-										} else {
-											if(scLatest.isPresent()) {
-												RelationshipVersionAdaptor scLatestG = scLatest.get();
-												Optional<? extends RelationshipVersionAdaptor> rvCheckRetired = sc.getLatestVersion(RelationshipVersionAdaptor.class, scInitialAll);
-												if(rvCheckRetired.isPresent()) {
-													RelationshipVersionAdaptor retiredRel = rvCheckRetired.get();
-													if (retiredRel.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) {
-														handleChangeParent(retiredRel, scInitialAll);
-													} else {
-														handleChangeRels(retiredRel);
+														handleRetireRelationship(scInitial.get().value());
 													}
 												} else {
-													if (scLatestG.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) {
-														handleNewParent(scLatestG);
+													if(scLatest.isPresent()) {
+														RelationshipVersionAdaptor scLatestG = scLatest.get().value();
+														Optional<? extends RelationshipVersionAdaptor> rvCheckRetired = sc.getLatestVersion(RelationshipVersionAdaptor.class, scInitialAll);
+														if(rvCheckRetired.isPresent()) {
+															RelationshipVersionAdaptor retiredRel = rvCheckRetired.get();
+															if (retiredRel.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) {
+																handleChangeParent(retiredRel, scInitialAll);
+															} else {
+																handleChangeRels(retiredRel);
+															}
+														} else {
+															if (scLatestG.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) {
+																handleNewParent(scLatestG);
+															} else {
+																handleNewRel(scLatestG);  
+															}
+														}
 													} else {
-														handleNewRel(scLatestG);  
+														//noop
 													}
 												}
-											} else {
-												//noop
+											} catch (Exception e) {
+												logger.error("Error exporting Relationship", e);
 											}
 										}
-									} catch (Exception e) {
-										logger.error("Error exporting Relationship", e);
 									}
 								}
 							} else {
@@ -515,7 +505,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				{
 					if (!newConceptRequestIds.contains(genId))
 					{
-						throw new Exception("We wrote out the generated ID: " + genId + " but failed to create a new concept for that ID.  Logic failure!");
+						//todo - fix this throw new Exception("We wrote out the generated ID: " + genId + " but failed to create a new concept for that ID.  Logic failure!");
 					}
 				}
 				
@@ -577,10 +567,10 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				try {
 					return PICKLIST_Semantic_Tag.find(st).toString();
 				} catch(EnumConstantNotPresentException ecnpe) {
-					logger.error("USCRS PICKLIST API Missing Semantic Tag Value " + ecnpe.constantName());
+					logger.error("USCRS PICKLIST API Missing Semantic Tag Value " + ecnpe.constantName(), ecnpe);
 					return st;
 				} catch(Exception e) {
-					logger.error("USCRS Rel Type Error");
+					logger.error("USCRS Rel Type Error", e);
 					return "";
 				}
 			} else {
@@ -804,10 +794,10 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 			//a previous submission - but at the moment, we don't have any way of knowing
 			//what IDs were previously submitted - so we can't choose between on of these 
 			//official constants, and "New Concept Request"
-			if(moduleNid == Snomed.CORE_MODULE.getNid()) {
+			if(moduleNid == IsaacMetadataAuxiliaryBinding.SNOMED_CT_CORE_MODULE.getConceptSequence()) {
 				return PICKLIST_Source_Terminology.SNOMED_CT_International.toString();  //TODO Dan notes these won't work in OCHRE - need to talk to me and/or Keith
 			}
-			else if (moduleNid == Snomed.US_EXTENSION_MODULE.getNid()) {
+			else if (moduleNid == IsaacMetadataAuxiliaryBinding.US_EXTENSION.getConceptSequence()) {
 				return PICKLIST_Source_Terminology.SNOMED_CT_National_US.toString();
 			}
 			//These, we know would be invalid
@@ -830,17 +820,25 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 				return PICKLIST_Source_Terminology.New_Concept_Requests.toString();
 			}
 		} catch(EnumConstantNotPresentException ecnpe) {
-			logger.error("USCRS PICKLIST API Missing Justification Value " + ecnpe.constantName());
+			logger.error("USCRS PICKLIST API Missing Justification Value " + ecnpe.constantName(), ecnpe);
 			return "";
 		} catch(Exception e) {
-			logger.error("USCRS Justification Type Error");
+			logger.error("USCRS Justification Type Error", e);
 			return "";
 		}
 	}
 	
 	
-	private long getSct(int nid) {
+	private long getSct(int input) {
+		int nid = 0;
+		if(input >= 0) {
+			nid = Get.identifierService().getConceptNid(nid);
+		} else {
+			nid = input;
+		}
+		
 		Optional<? extends Long> sct = Frills.getSctId(nid, sc); // Possibly change Stamp Coordinate here
+		
 		if(sct.isPresent()) {
 			return sct.get();
 		} else { 
@@ -853,8 +851,8 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	
 	private boolean notFsnOrPref(DescriptionSememe ds) {
 		try {
-			if(ds.getDescriptionTypeConceptSequence() != IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getLenient().getNid() &&
-					ds.getDescriptionTypeConceptSequence() != IsaacMetadataAuxiliaryBinding.PREFERRED.getLenient().getNid() ){ //Not Preferred Term
+			if(ds.getDescriptionTypeConceptSequence() != IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getLenient().getConceptSequence() &&
+					!Frills.isDescriptionPreferred(ds.getDescriptionTypeConceptSequence(), scLatestAll)){ //Not Preferred Term
 				return true;
 			} else {
 				return false;
@@ -865,11 +863,12 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		return false;
 	}
 	
-	private static boolean isChildOfSCT(int conceptNid) throws IOException 
-	{
+	private static boolean isChildOfSCT(int conceptNid) throws IOException {
 		try {
-			return Get.taxonomyService().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), 
-					ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+			TaxonomyCoordinate utc = ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get();
+			TaxonomyCoordinate tc = ViewCoordinates.getDevelopmentStatedLatest().getTaxonomyCoordinate();
+			
+			return Get.taxonomyService().isChildOf(conceptNid, IsaacMetadataAuxiliaryBinding.HEALTH_CONCEPT.getNid(), utc);
 		} catch (Exception e) {
 			logger.error("USCRS Error retreiving isChildOfSct", e);
 		}
@@ -902,7 +901,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 		{
 			for (RelationshipVersionAdaptor<?> rv : chronicle.getVersionList())
 			{
-				if(rv.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) {
+				if(rv.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) {
 					Optional<ConceptSnapshot> destConcept = OchreUtility.getConceptSnapshot(rv.getDestinationSequence(), concept.getStampCoordinate(), concept.getLanguageCoordinate());
 					if(destConcept.isPresent()) {
 						ConceptSnapshot destConceptG = destConcept.get();
@@ -1061,7 +1060,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleChangeParent(RelationshipVersionAdaptor rel, StampCoordinate sc) throws Exception
 	{	
-		if (rel.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) 
+		if (rel.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) 
 		{
 			bt.selectSheet(SHEET.Change_Parent);
 			bt.addRow();
@@ -1106,7 +1105,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 * @throws Exception the exception
 	 */
 	private void handleNewRel(RelationshipVersionAdaptor<?> rel) throws Exception {
-		if (rel.getTypeSequence() != IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) 
+		if (rel.getTypeSequence() != IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) 
 		{
 			bt.selectSheet(SHEET.New_Relationship);
 			bt.addRow();
@@ -1164,7 +1163,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleChangeRels(RelationshipVersionAdaptor rel) throws Exception
 	{
-		if (rel.getTypeSequence() != IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) 
+		if (rel.getTypeSequence() != IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) 
 		{
 			bt.selectSheet(SHEET.Change_Relationship);
 			bt.addRow();
@@ -1413,7 +1412,7 @@ public class UscrsContentRequestHandler implements ExportTaskHandlerI
 	 */
 	private void handleNewParent(RelationshipVersionAdaptor rel) throws Exception
 	{
-		if (rel.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getNid()) 
+		if (rel.getTypeSequence() == IsaacMetadataAuxiliaryBinding.IS_A.getLenient().getConceptSequence()) 
 		{
 			bt.selectSheet(SHEET.Add_Parent);
 			bt.addRow();
