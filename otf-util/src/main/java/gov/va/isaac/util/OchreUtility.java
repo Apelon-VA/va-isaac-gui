@@ -61,7 +61,7 @@ public final class OchreUtility {
 	 * @return the semantic tag
 	 * @throws Exception
 	 */
-	private String getSemanticTag(String input) throws Exception {
+	public static String getSemanticTag(String input) throws Exception {
 		if (input.indexOf('(') != -1) {
 			String st = input.substring(input.lastIndexOf('(') + 1, input.lastIndexOf(')'));
 			return st;
