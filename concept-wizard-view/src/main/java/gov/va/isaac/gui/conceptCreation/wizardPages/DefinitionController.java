@@ -22,8 +22,10 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -236,6 +238,9 @@ public class DefinitionController implements PanelControllers {
 		for (Node parentNode : parentVBox.getChildren()) {
 			ConceptNode parent = nodeToConMap.get(parentNode);
 			parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
+			
+			parents.add(); //Concept Version
+			
 		}
 		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents,
 												isPrimitive.isSelected()); 
