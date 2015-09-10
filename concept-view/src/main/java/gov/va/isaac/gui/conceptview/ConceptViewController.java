@@ -15,16 +15,23 @@ import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
@@ -124,6 +131,15 @@ public class ConceptViewController {
 	private ObjectProperty<ConceptSnapshot> conceptProperty = new SimpleObjectProperty<ConceptSnapshot>();
 	private UpdateableBooleanBinding refreshBinding;
 	
+	private ObjectProperty<ChronologyChangeListener> conceptChronologyChangeListenerProperty = new SimpleObjectProperty<ChronologyChangeListener>();
+	private ObjectProperty<ConceptChronology<? extends StampedVersion>> conceptChronologyProperty = new SimpleObjectProperty<ConceptChronology<? extends StampedVersion>>();
+	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
+
+	// TODO should modules be displayed and selectable that are off path of panel coordinates?
+	private ObjectProperty<StampCoordinate> panelStampCoordinate = new SimpleObjectProperty<>(StampCoordinates.getDevelopmentLatest());
+	private ObjectProperty<LanguageCoordinate> panelLanguageCoordinate = new SimpleObjectProperty<>(LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+
+	
 	@FXML
 	void initialize() {
 		assert detailPane 					!= null : "fx:id=\"detailPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -181,6 +197,8 @@ public class ConceptViewController {
 		setupCommitButton();
 		setupConceptLabel();
 		
+		setupConceptChronologyChangeListener();
+		
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
 		// This binding refreshes whenever its bindings change
@@ -191,7 +209,10 @@ public class ConceptViewController {
                 addBinding(
                 		conceptProperty,
                 		activeOnlyToggle.selectedProperty(),
-                		stampToggle.selectedProperty());
+                		stampToggle.selectedProperty(),
+                		conceptChronologyProperty,
+                		conceptCommitRecordProperty
+                		);
                 		//modulesComboBox.getSelectionModel().selectedItemProperty());
                 enabled = true;
             }
@@ -257,7 +278,7 @@ public class ConceptViewController {
 		significanceTableColumn.setUserData(ConceptViewColumnType.SIGNIFICANCE);
 		dialectTableColumn.setUserData(ConceptViewColumnType.LANGUAGE);
 		statusTableColumn.setUserData(ConceptViewColumnType.STAMP_STATE);
-		descriptionValueTableColumn.setUserData(ConceptViewColumnType.VALUE);
+		descriptionValueTableColumn.setUserData(ConceptViewColumnType.TERM);
 		
 		descriptionTableSTAMPColumn.setUserData(ConceptViewColumnType.STAMP_HEADING);
 		moduleTableColumn.setUserData(ConceptViewColumnType.STAMP_MODULE);
@@ -270,15 +291,25 @@ public class ConceptViewController {
 		return (conceptProperty.get() != null) ? conceptProperty.get() : null;
 	}
 	public void setConcept(int conceptId) {
+		setConcept(conceptId, panelStampCoordinate.get(), panelLanguageCoordinate.get());
+	}
+	public void setConcept(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Task<ConceptSnapshot> task = new Task<ConceptSnapshot>() {
 			@Override
 			protected ConceptSnapshot call() throws Exception {
-				return Get.conceptSnapshot().getConceptSnapshot(conceptId);
+				return OchreUtility.getConceptSnapshot(conceptId, stampCoordinate != null ? stampCoordinate : panelStampCoordinate.get(), languageCoordinate != null ? languageCoordinate : panelLanguageCoordinate.get()).get();
 			}
 
 			@Override
 			protected void succeeded() {
 				Platform.runLater(() -> conceptProperty.set(getValue()));
+			}
+
+			@Override
+			protected void failed() {
+				String title = "Failed retrieving ConceptSnapshot";
+				LOG.error(title, getException());
+				AppContext.getCommonDialogs().showErrorDialog(title, "There was an unexpected error retrieving ConceptSnapshot (nid=" + conceptId + ")", getException().toString());
 			}
 		};
 		
@@ -300,6 +331,61 @@ public class ConceptViewController {
 		refreshConceptDescriptions(concept);
 	}
 
+	void viewDiscarded() {
+		removeConceptChronologyChangeListener();
+	}
+	
+	private void setupConceptChronologyChangeListener() {
+		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends ConceptSnapshot> observable,
+					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				removeConceptChronologyChangeListener();
+				
+				addConceptChronologyChangeListener(newValue);
+			}
+		});
+	}
+	private void removeConceptChronologyChangeListener() {
+		if (conceptChronologyChangeListenerProperty.get() != null) {
+			Get.commitService().removeChangeListener(conceptChronologyChangeListenerProperty.get());
+		}
+		conceptChronologyProperty.set(null);
+		conceptCommitRecordProperty.set(null);
+	}
+	private void addConceptChronologyChangeListener(ConceptSnapshot newValue) {
+		if (newValue != null) {
+			final UUID listenerUuid = UUID.randomUUID();
+			ChronologyChangeListener listener = new ChronologyChangeListener() {
+				@Override
+				public UUID getListenerUuid() {
+					return listenerUuid;
+				}
+
+				@Override
+				public void handleChange(ConceptChronology<? extends StampedVersion> cc) {
+					LOG.debug("Handling chronology change for concept \"{}\" (nid={}, uuid={}) by resetting conceptChronologyProperty", Get.conceptDescriptionText(cc.getNid()), cc.getNid(), cc.getPrimordialUuid());
+					conceptChronologyProperty.set(cc);
+				}
+
+				@Override
+				public void handleChange(SememeChronology<? extends SememeVersion<?>> sc) {
+					// TODO Auto-generated method stub
+				}
+
+				@Override
+				public void handleCommit(CommitRecord commitRecord) {
+					LOG.debug("Handling CommitRecord for concept \"{}\" (nid={}, uuid={}) by resetting conceptCommitRecordProperty: CommitRecord: {}", Get.conceptDescriptionText(newValue.getNid()), newValue.getNid(), newValue.getPrimordialUuid(), commitRecord);
+					conceptCommitRecordProperty.set(commitRecord);
+				}
+			};
+
+			conceptChronologyChangeListenerProperty.set(listener);
+			Get.commitService().addChangeListener(listener);
+		}
+	}
+	
 	private void setupConceptLabel() {
 		conceptLabel.setPadding(new Insets(10,0,10,10));
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
@@ -367,7 +453,7 @@ public class ConceptViewController {
 							Platform.runLater(() -> conceptProperty.set(null));
 							return null;
 						} else {
-							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, StampCoordinates.getDevelopmentLatest(), Get.configurationService().getDefaultLanguageCoordinate());
+							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelStampCoordinate.get(), Get.configurationService().getDefaultLanguageCoordinate());
 							
 							Platform.runLater(() -> conceptProperty.set(cs.get()));
 							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
@@ -404,7 +490,7 @@ public class ConceptViewController {
 			Task<Optional<Long>> task = new Task<Optional<Long>>() {
 				@Override
 				protected Optional<Long> call() throws Exception {
-					return Frills.getSctId(concept.getChronology().getNid(), StampCoordinates.getDevelopmentLatest());
+					return Frills.getSctId(concept.getChronology().getNid(), concept.getStampCoordinate());
 				}
 
 				@Override
@@ -515,15 +601,6 @@ public class ConceptViewController {
 			statusComboBox.buttonCellProperty().set(null);
 		}
 	}
-
-	// TODO replace with not-yet-existing call to API to return list of latest version per each module
-	private Collection<Integer> tempGetModulesUntilGetLatestPerModuleAvailable(ConceptSnapshot concept) {
-		List<Integer> modules = new ArrayList<>();
-		
-		modules.add(concept.getModuleSequence());
-		
-		return modules;
-	}
 	
 	private void setupModulesComboBox() {
 		modulesComboBox.setCellFactory((param) -> {
@@ -601,17 +678,32 @@ public class ConceptViewController {
 		
 		loadModulesComboBoxFromConcept(conceptProperty.get());
 	}
+	private final ChangeListener<Integer> modulesComboBoxSelectedItemChangeListener = new ChangeListener<Integer>() {
+		@Override
+		public void changed(ObservableValue<? extends Integer> observable, Integer oldValue, Integer newValue) {
+			LOG.debug("modulesComboBoxSelectedItemChangeListener: selected item changed from {} to {}", oldValue, newValue);
+			// Always use latest stamp coordinate with module specified
+			if (oldValue != newValue) {
+				StampCoordinate stampCoordinate = Frills.makeStampCoordinateAnalogVaryingByModulesOnly(StampCoordinates.getDevelopmentLatest(), newValue);
+				setConcept(conceptProperty.get().getChronology().getConceptSequence(), stampCoordinate, panelLanguageCoordinate.get());
+			}
+		}
+	};
 	// In read-only view, set contents/choices of moduleComboBox
 	// to module of loaded concepts only
 	private void loadModulesComboBoxFromConcept(ConceptSnapshot concept) {
+		// Must remove listener or will infinitely loop
+		modulesComboBox.getSelectionModel().selectedItemProperty().removeListener(modulesComboBoxSelectedItemChangeListener);
 		modulesComboBox.getItems().clear();
 		if (concept != null) {
-			
-			modulesComboBox.getItems().addAll(tempGetModulesUntilGetLatestPerModuleAvailable(concept));
-			modulesComboBox.getSelectionModel().clearAndSelect(0);
+			modulesComboBox.getItems().addAll(Frills.getAllModuleSequences(concept.getChronology()));
+			modulesComboBox.getSelectionModel().clearSelection();
+			// NOTE: Must use Integer.valueOf() otherwise argument interpreted as index instead of sequence
+			modulesComboBox.getSelectionModel().select(Integer.valueOf(concept.getModuleSequence()));
 		} else {
 			modulesComboBox.buttonCellProperty().set(null);
 		}
+		modulesComboBox.getSelectionModel().selectedItemProperty().addListener(modulesComboBoxSelectedItemChangeListener);
 	}
 
 	private void setupDescriptionTable() 
@@ -669,7 +761,7 @@ public class ConceptViewController {
 		if (!cell.isEmpty() && conceptDescription != null) {
 			ContextMenu cm = new ContextMenu();
 			cell.setContextMenu(cm);
-			SimpleStringProperty property = null;
+			StringProperty textProperty = null;
 			int conceptSequence = 0;
 			ConceptViewColumnType columnType = (ConceptViewColumnType) cell.getTableColumn().getUserData();
 
@@ -688,60 +780,59 @@ public class ConceptViewController {
 				cell.setGraphic(sp);
 				break;
 				
-			case VALUE:
-				property = conceptDescription.getValueProperty(); 
-				conceptSequence = conceptDescription.getSequence();
+			case TERM:
+				textProperty = conceptDescription.getValueProperty();
 				break;
 				
 			case TYPE:
-				property = conceptDescription.getTypeProperty();
+				textProperty = conceptDescription.getTypeProperty();
 				conceptSequence = conceptDescription.getTypeSequence();
 				break;
 				
 			case LANGUAGE:
-				property = conceptDescription.getLanguageProperty();
+				textProperty = conceptDescription.getLanguageProperty();
 				conceptSequence = conceptDescription.getLanguageSequence();
 				break;
 				
 			case ACCEPTABILITY:
-				property = conceptDescription.getAcceptabilityProperty();
+				textProperty = conceptDescription.getAcceptabilityProperty();
 				//conceptSequence = conceptDescription.getAcceptabilitySequence();
 				break;
 			case SIGNIFICANCE:
-				property = conceptDescription.getSignificanceProperty();
+				textProperty = conceptDescription.getSignificanceProperty();
 				conceptSequence = conceptDescription.getSignificanceSequence();
 				break;
 				
 			case STAMP_STATE:
-				property = conceptDescription.getStateProperty();
+				textProperty = conceptDescription.getStateProperty();
 				break;
 			case STAMP_TIME:
-				property = conceptDescription.getTimeProperty();
+				textProperty = conceptDescription.getTimeProperty();
 				break;
 			case STAMP_AUTHOR:
-				property = conceptDescription.getAuthorProperty();
+				textProperty = conceptDescription.getAuthorProperty();
 				conceptSequence = conceptDescription.getAuthorSequence();
 				break;
 			case STAMP_MODULE:
-				property = conceptDescription.getModuleProperty();
+				textProperty = conceptDescription.getModuleProperty();
 				conceptSequence = conceptDescription.getModuleSequence();
 				break;
 			case STAMP_PATH:
-				property = conceptDescription.getPathProperty();
+				textProperty = conceptDescription.getPathProperty();
 				conceptSequence = conceptDescription.getPathSequence();
 				break;
 			default:
 				// Nothing
 			}
 			
-			if (property != null) {
+			if (textProperty != null) {
 				Text text = new Text();
-				text.textProperty().bind(property);
+				text.textProperty().bind(textProperty);
 				text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
 				cell.setGraphic(text);
 				
 				Tooltip tooltip = new Tooltip();
-				tooltip.textProperty().bind(property);
+				tooltip.textProperty().bind(textProperty);
 				cell.setTooltip(tooltip);
 	
 				MenuItem mi = new MenuItem("Copy Value");

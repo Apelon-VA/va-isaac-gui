@@ -69,7 +69,7 @@ public class ConceptView implements EmbeddableViewI, PopupConceptViewI  {
 	}
 	@Override
 	public void viewDiscarded() {
-		// TODO need to stop any background operations, dispose of any javaFX hooks that might cause leaks
+		controller.viewDiscarded();
 	}
 	@Override
 	public UUID getConceptUuid()
