@@ -29,9 +29,6 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
-import org.ihtsdo.otf.query.lucene.LuceneIndexer;
-import org.ihtsdo.otf.tcc.api.store.TerminologyStoreDI;
-import org.ihtsdo.otf.tcc.lookup.Hk2Looker;
 
 /**
  * RefsetPanelRunner
@@ -49,7 +46,7 @@ public class NewConceptCreationWizardRunner extends Application
 		primaryStage.setTitle("New Concept Panel");
 
 		ConceptCreationWizard refsetPanel = AppContext.getService(ConceptCreationWizard.class);
-//		refsetPanel.setRefsetAndComponent(gov.va.isaac.models.cem.importer.CEMMetadataBinding.CEM_DATA_REFSET.getUuids()[0], diastolicBP);
+		//refsetPanel.setRefsetAndComponent(gov.va.isaac.models.cem.importer.CEMMetadataBinding.CEM_DATA_REFSET.getUuids()[0], diastolicBP);
 
 		primaryStage.setScene(new Scene(new Label("hello world"), 200, 100));
 		primaryStage.show();

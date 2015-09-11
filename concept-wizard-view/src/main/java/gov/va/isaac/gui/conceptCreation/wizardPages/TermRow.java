@@ -20,6 +20,8 @@ package gov.va.isaac.gui.conceptCreation.wizardPages;
 
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.ConceptProxy;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -146,21 +148,21 @@ public class TermRow
 		return type.getValue();
 	}
 	
-	public int getTypeNid()
+	public ConceptProxy getType() //TODO -
 	{
 		try
 		{
 			if ("Synonym".equals(type.getSelectionModel().getSelectedItem()))
 			{
-				return SnomedMetadataRf2.SYNONYM_RF2.getNid();
+				return IsaacMetadataAuxiliaryBinding.SYNONYM;
 			}
 			else if ("Definition".equals(type.getSelectionModel().getSelectedItem()))
 			{
-				return Snomed.DEFINITION_DESCRIPTION_TYPE.getNid();
+				return IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE;
 			}
 			else
 			{
-				return -1;
+				throw new Exception("Incorrect Description Type");
 			}
 		}
 		catch (Exception e)

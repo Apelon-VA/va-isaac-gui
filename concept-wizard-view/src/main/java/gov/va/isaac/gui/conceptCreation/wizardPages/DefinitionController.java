@@ -18,13 +18,23 @@
  */
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -233,13 +243,12 @@ public class DefinitionController implements PanelControllers {
 
 	@Override
 	public void processValues() {
-		List<ConceptVersionBI> parents = new ArrayList<>();
+		List<Integer> parents = new ArrayList<>();
 		
 		for (Node parentNode : parentVBox.getChildren()) {
 			ConceptNode parent = nodeToConMap.get(parentNode);
-//			parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
-//			
-//			parents.add(); //Concept Version
+			//parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
+			parents.add(parent.getConcept().getConceptSequence());
 			
 		}
 		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents,

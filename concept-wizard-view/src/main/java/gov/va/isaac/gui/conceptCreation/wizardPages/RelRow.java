@@ -18,10 +18,13 @@
  */
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
+import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
+
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.va.isaac.util.OTFUtility;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
@@ -32,8 +35,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 
 /**
  * {@link RelRow}
@@ -64,7 +65,7 @@ public class RelRow
 	public RelRow()
 	{
 		ObservableList<SimpleDisplayConcept> dropDownOptions = FXCollections.observableArrayList();
-		dropDownOptions.add(new SimpleDisplayConcept(OTFUtility.getConceptVersion(Snomed.IS_A.getUuids()[0])));
+		dropDownOptions.add(new SimpleDisplayConcept(OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid())));
 		relationship = new ConceptNode(null, true, dropDownOptions, null);
 		target = new ConceptNode(null, true);
 		
