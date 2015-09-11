@@ -55,6 +55,20 @@ public final class OchreUtility {
 
 	private OchreUtility() {}
 
+	/**
+	 * Takes a string and returns the Semantic Tag (the string in parentheses)
+	 * @param The string that contains a semantic tag in parentheses
+	 * @return the semantic tag
+	 * @throws Exception
+	 */
+	public static String getSemanticTag(String input) throws Exception {
+		if (input.indexOf('(') != -1) {
+			String st = input.substring(input.lastIndexOf('(') + 1, input.lastIndexOf(')'));
+			return st;
+		} else {
+			return "";
+		}
+	}
 
 	/**
 	 * Simple utility method to get the latest version of a concept without having to do the class conversion stuff
