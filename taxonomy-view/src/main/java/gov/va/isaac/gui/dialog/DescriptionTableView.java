@@ -201,31 +201,8 @@ public class DescriptionTableView implements EmbeddableViewI
 											{
 												SememeView drv = AppContext.getService(SememeView.class);
 												drv.setComponent(ref.getDescriptionVersion().getNid(), null, null, null, true);
-												
-												BorderPane bp = new BorderPane();
-												
-												Label title = new Label("Sememes attached to Description ");
-												title.setMaxWidth(Double.MAX_VALUE);
-												title.setAlignment(Pos.CENTER);
-												title.setPadding(new Insets(10));
-												title.getStyleClass().add("boldLabel");
-												title.getStyleClass().add("headerBackground");
-												
-												bp.setTop(title);
-												bp.setCenter(drv.getView());
-												
-												
-												PopOver po = new PopOver();
-												po.setContentNode(bp);
-												po.setAutoHide(true);
-												po.detachedTitleProperty().set("Sememes attached to Description");
-												po.detachedProperty().addListener((change) ->
-												{
-													po.setAutoHide(false);
-												});
-												
-												Point2D point = b.localToScreen(b.getWidth(), -32);
-												po.show(b.getScene().getWindow(), point.getX(), point.getY());
+							
+												DetachablePopOverHelper.showDetachachablePopOver(b, DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv.getView()));
 											});
 											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
 										}
