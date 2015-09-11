@@ -333,12 +333,7 @@ public class ConceptViewController {
 	}
 	
 	private void refresh() {
-		ConceptChronology<? extends StampedVersion> concept = null;
-		if (conceptProperty.get() != null) {
-			concept = conceptProperty.get().getChronology();
-		}
-
-		refreshConceptDescriptions(concept);
+		refreshConceptDescriptions();
 	}
 
 	void viewDiscarded() {
@@ -924,13 +919,17 @@ public class ConceptViewController {
 		StackPane.setAlignment(node, Pos.TOP_LEFT);
 	}
 
-	private void refreshConceptDescriptions(ConceptChronology<? extends StampedVersion> concept)
+	private void refreshConceptDescriptions()
 	{
 		descriptionTableView.getItems().clear();
 		descriptionTableView.getSelectionModel().clearSelection();
 		
-		if (concept != null) {
-			ObservableList<ConceptDescription> descriptionList = ConceptDescription.makeDescriptionList(concept.getConceptDescriptionList(), activeOnlyToggle.selectedProperty().get());
+		if (conceptProperty.get() != null) {
+			ObservableList<ConceptDescription> descriptionList =
+					ConceptDescription.makeDescriptionList(
+							conceptProperty.get().getChronology().getConceptDescriptionList(),
+							conceptProperty.get().getStampCoordinate(),
+							activeOnlyToggle.selectedProperty().get());
 			descriptionTableView.setItems(descriptionList);
 		}
 		descriptionTypeTableColumn.setSortType(SortType.ASCENDING);

@@ -6,6 +6,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 
 import java.util.Comparator;
 import java.util.List;
@@ -47,13 +48,16 @@ public class ConceptDescription extends StampedItem {
 		return description;
 	}
 
-	public static ObservableList<ConceptDescription> makeDescriptionList(List<? extends SememeChronology<? extends DescriptionSememe<?>>> sememeChronologyList, boolean activeOnly)
+	public static ObservableList<ConceptDescription> makeDescriptionList(
+			List<? extends SememeChronology<? extends DescriptionSememe<?>>> sememeChronologyList,
+			StampCoordinate stampCoordinate,
+			boolean activeOnly)
 	{
 		ObservableList<ConceptDescription> descriptionList = FXCollections.observableArrayList();
 		
 		for (SememeChronology<? extends DescriptionSememe<?>> sememeChronology : sememeChronologyList)
 		{
-			if (activeOnly && ! sememeChronology.isLatestVersionActive(Get.configurationService().getDefaultStampCoordinate())) {
+			if (activeOnly && ! sememeChronology.isLatestVersionActive(stampCoordinate)) {
 				// Ignore inactive descriptions when activeOnly true
 				continue;
 			} else {
