@@ -67,6 +67,21 @@ public class AcceptabilitiesHelper {
 			}
 		}
 	};
+	static int getAcceptabilitySortValue(DescriptionSememe<?> description) {
+		int rval = 100;
+		Map<Integer, Integer> dialectSequenceToAcceptabilityNidMap = Frills.getAcceptabilities(description.getNid(), StampCoordinates.getDevelopmentLatest());
+		for (Map.Entry<Integer, Integer> entry : dialectSequenceToAcceptabilityNidMap.entrySet()) {
+			if (entry.getKey() != null && entry.getValue() != null) {
+				if (entry.getValue() == IsaacMetadataAuxiliaryBinding.PREFERRED.getNid()) {
+					rval = 0;
+					break;
+				} else if (entry.getValue() == IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getNid()) {
+					rval = 1;
+				}
+			}
+		}
+		return rval;
+	}
 	static String getAcceptabilities(DescriptionSememe<?> description, Function<Integer, String> passedDialectSequenceRenderer, Function<Integer, String> passedAcceptabilityRenderer) {
 		final Function<Integer, String> acceptabilityRenderer = passedAcceptabilityRenderer != null ? passedAcceptabilityRenderer : DEFAULT_ACCEPTABILITY_NID_RENDERER;
 		final Function<Integer, String> dialectSequenceRenderer = passedDialectSequenceRenderer != null ? passedDialectSequenceRenderer : DEFAULT_DIALECT_SEQUENCE_RENDERER;

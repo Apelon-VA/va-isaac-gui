@@ -59,9 +59,11 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
@@ -241,13 +243,21 @@ public class ConceptViewController {
 	}
 	
 	void setColumnWidths() {
-//		descriptionTypeTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.15));
-//		descriptionValueTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.25));
-//		dialectTableColumn.prefWidthProperty().bind(			descriptionTableView.widthProperty().multiply(0.15));
-//		acceptabilityTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.10));
-//		significanceTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.15));
-//		statusTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.07));
-//		moduleTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.13));
+		/*
+		descriptionTypeTableColumn.setPrefWidth(	descriptionTableView.getWidth() * 0.15);
+		acceptabilityTableColumn.setPrefWidth(		descriptionTableView.getWidth() * 0.15);
+		descriptionValueTableColumn.setPrefWidth(	descriptionTableView.getWidth() * 0.30);
+		dialectTableColumn.setPrefWidth(			descriptionTableView.getWidth() * 0.15);
+		significanceTableColumn.setPrefWidth(		descriptionTableView.getWidth() * 0.15);
+		statusTableColumn.setPrefWidth(				descriptionTableView.getWidth() * 0.09);
+		*/
+		// TODO This bind is not exactly what we want.  DT
+		descriptionTypeTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.15));
+		acceptabilityTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.15));
+		descriptionValueTableColumn.prefWidthProperty().bind(	descriptionTableView.widthProperty().multiply(0.30));
+		dialectTableColumn.prefWidthProperty().bind(			descriptionTableView.widthProperty().multiply(0.15));
+		significanceTableColumn.prefWidthProperty().bind(		descriptionTableView.widthProperty().multiply(0.15));
+		statusTableColumn.prefWidthProperty().bind(				descriptionTableView.widthProperty().multiply(0.09));
 	}
 	
 	private void setupColumnTypes() {
@@ -619,13 +629,15 @@ public class ConceptViewController {
 
 		setDescriptionTableFactories(descriptionTableView.getColumns());
 
-		descriptionTypeTableColumn.setComparator(ConceptDescription.valueComparator);
-		acceptabilityTableColumn.setComparator(ConceptDescription.valueComparator);
-		significanceTableColumn.setComparator(ConceptDescription.valueComparator);
-		dialectTableColumn.setComparator(ConceptDescription.valueComparator);
+		descriptionTypeTableColumn.setComparator(ConceptDescription.typeComparator);
+		acceptabilityTableColumn.setComparator(ConceptDescription.acceptabilityComparator);
+		significanceTableColumn.setComparator(ConceptDescription.significanceComparator);
+		dialectTableColumn.setComparator(ConceptDescription.languageComparator);
 		statusTableColumn.setComparator(StampedItem.statusComparator);
 		descriptionValueTableColumn.setComparator(ConceptDescription.valueComparator);
 		moduleTableColumn.setComparator(StampedItem.moduleComparator);
+		
+		descriptionTableView.getSortOrder().clear();
 	}
 	
 	private void setDescriptionTableFactories(ObservableList<TableColumn<ConceptDescription,?>> tableColumns)
@@ -736,9 +748,10 @@ public class ConceptViewController {
 			}
 			
 			if (property != null) {
+				// TODO Make text overrun work on text property
 				Text text = new Text();
 				text.textProperty().bind(property);
-				text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
+				//text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
 				cell.setGraphic(text);
 				
 				Tooltip tooltip = new Tooltip();
@@ -754,6 +767,24 @@ public class ConceptViewController {
 				});
 				mi.setGraphic(Images.COPY.createImageView());
 				cm.getItems().add(mi);
+
+				MenuItem miWrap = new MenuItem("Wrap Text");
+				miWrap.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						Text text = (Text)cell.getGraphic();
+						if (text.wrappingWidthProperty().isBound()) {
+							miWrap.setText("Wrap Text");
+							text.wrappingWidthProperty().unbind();
+							text.setWrappingWidth(0.0);
+							
+						} else {
+							miWrap.setText("Truncate Text");
+							text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
+						}
+					}
+				});
+				cm.getItems().add(miWrap);
 			}
 			if (conceptSequence != 0) {
 				final int sequence = conceptSequence;
@@ -765,7 +796,7 @@ public class ConceptViewController {
 				});
 			}
 		} else {
-			cell.setText(null);
+			//cell.setText(null);
 			cell.setGraphic(null);
 			cell.setTooltip(null);
 		}
@@ -812,5 +843,13 @@ public class ConceptViewController {
 			ObservableList<ConceptDescription> descriptionList = ConceptDescription.makeDescriptionList(concept.getConceptDescriptionList(), activeOnlyToggle.selectedProperty().get());
 			descriptionTableView.setItems(descriptionList);
 		}
+		descriptionTypeTableColumn.setSortType(SortType.ASCENDING);
+		acceptabilityTableColumn.setSortType(SortType.ASCENDING);
+		descriptionValueTableColumn.setSortType(SortType.ASCENDING);
+		descriptionTableView.getSortOrder().clear();
+		descriptionTableView.getSortOrder().addAll(descriptionTypeTableColumn,
+				   acceptabilityTableColumn,
+				   descriptionValueTableColumn);
+
 	}
 }

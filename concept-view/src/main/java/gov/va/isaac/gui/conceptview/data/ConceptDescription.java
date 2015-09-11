@@ -1,21 +1,15 @@
 package gov.va.isaac.gui.conceptview.data;
 
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.impl.lang.LanguageCode;
-import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Function;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -35,7 +29,10 @@ public class ConceptDescription extends StampedItem {
 	private final SimpleStringProperty languageSSP 		= new SimpleStringProperty("-");
 	private final SimpleStringProperty acceptabilitySSP = new SimpleStringProperty("-");
 	private final SimpleStringProperty significanceSSP 	= new SimpleStringProperty("-");
-
+	
+	private int _acceptabilitySortValue = Integer.MAX_VALUE;
+	private int _typeSortValue = Integer.MAX_VALUE;
+	
 	@SuppressWarnings("rawtypes")
 	public static DescriptionSememe extractDescription(SememeChronology<? extends DescriptionSememe> sememeChronology) {
 		DescriptionSememe description = null;
@@ -82,6 +79,12 @@ public class ConceptDescription extends StampedItem {
 		_description = description;
 		if (description != null) 
 		{
+			_acceptabilitySortValue = AcceptabilitiesHelper.getAcceptabilitySortValue(_description);
+			_typeSortValue = (getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())			? 0 :
+							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()) 						? 1 :
+							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence()) 	? 2 :
+							 Integer.MAX_VALUE;
+
 			readStampDetails(description);
 
 			Utility.execute(() ->
@@ -91,7 +94,7 @@ public class ConceptDescription extends StampedItem {
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
 				String acceptabilityName = AcceptabilitiesHelper.getFormattedAcceptabilities(_description);
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
-				
+
 				final String finalValueName = valueName;
 				Platform.runLater(() -> {
 					typeSSP.set(typeName);
@@ -122,11 +125,13 @@ public class ConceptDescription extends StampedItem {
 	public String getAcceptability()	{ return acceptabilitySSP.get(); }
 	public String getSignificance()		{ return significanceSSP.get(); }
 	
+	public int getAcceptabilitySortValue()	{ return _acceptabilitySortValue; }
+	public int getTypeSortValue() 			{ return _typeSortValue; }
 	
 	public static final Comparator<ConceptDescription> typeComparator = new Comparator<ConceptDescription>() {
 		@Override
 		public int compare(ConceptDescription o1, ConceptDescription o2) {
-			return Utility.compareStringsIgnoreCase(o1.getType(), o2.getType());
+			return Integer.compare(o1.getTypeSortValue(), o2.getTypeSortValue());
 		}
 	};
 	
@@ -147,7 +152,7 @@ public class ConceptDescription extends StampedItem {
 	public static final Comparator<ConceptDescription> acceptabilityComparator = new Comparator<ConceptDescription>() {
 		@Override
 		public int compare(ConceptDescription o1, ConceptDescription o2) {
-			return Utility.compareStringsIgnoreCase(o1.getAcceptability(), o2.getAcceptability());
+			return Integer.compare(o1.getAcceptabilitySortValue(), o2.getAcceptabilitySortValue());
 		}
 	};
 	
