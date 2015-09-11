@@ -237,9 +237,9 @@ public class DefinitionController implements PanelControllers {
 		
 		for (Node parentNode : parentVBox.getChildren()) {
 			ConceptNode parent = nodeToConMap.get(parentNode);
-			parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
-			
-			parents.add(); //Concept Version
+//			parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
+//			
+//			parents.add(); //Concept Version
 			
 		}
 		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents,
