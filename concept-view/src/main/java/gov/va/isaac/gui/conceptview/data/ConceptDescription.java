@@ -35,10 +35,12 @@ public class ConceptDescription extends StampedItem {
 	private int _typeSortValue = Integer.MAX_VALUE;
 	
 	@SuppressWarnings("rawtypes")
-	public static DescriptionSememe extractDescription(SememeChronology<? extends DescriptionSememe> sememeChronology) {
+	public static DescriptionSememe extractDescription(
+			SememeChronology<? extends DescriptionSememe> sememeChronology,
+			StampCoordinate stampCoordinate) {
 		DescriptionSememe description = null;
 		SememeChronology sc = (SememeChronology) sememeChronology;
-		Optional optDS = sc.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
+		Optional optDS = sc.getLatestVersion(DescriptionSememe.class, stampCoordinate);
 		
 		if (optDS.isPresent()) {
 			LatestVersion<DescriptionSememe> lv = (LatestVersion) optDS.get();
@@ -61,7 +63,7 @@ public class ConceptDescription extends StampedItem {
 				// Ignore inactive descriptions when activeOnly true
 				continue;
 			} else {
-				DescriptionSememe<?> descSememe = extractDescription(sememeChronology);
+				DescriptionSememe<?> descSememe = extractDescription(sememeChronology, stampCoordinate);
 				if (descSememe != null) 
 				{
 					ConceptDescription description = new ConceptDescription(descSememe);
