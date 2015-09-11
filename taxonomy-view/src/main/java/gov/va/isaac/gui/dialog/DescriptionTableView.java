@@ -202,7 +202,7 @@ public class DescriptionTableView implements EmbeddableViewI
 												SememeView drv = AppContext.getService(SememeView.class);
 												drv.setComponent(ref.getDescriptionVersion().getNid(), null, null, null, true);
 							
-												DetachablePopOverHelper.showDetachachablePopOver(b, "Sememes attached to Description", drv.getView());
+												DetachablePopOverHelper.showDetachachablePopOver(b, DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv.getView()));
 											});
 											sizeAndPosition(b, sp, Pos.BOTTOM_RIGHT);
 										}
