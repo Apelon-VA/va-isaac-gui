@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.dialog;
 
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Pane;
@@ -56,6 +57,12 @@ public class InformationDialogController
 		{
 			messageHolder.getChildren().add(new Label(message));
 		}
+	}
+	public void setContent(Node node)
+	{
+		messageHolder.getChildren().clear();
+		
+		messageHolder.getChildren().add(node);
 	}
 
 	public void handleOk()

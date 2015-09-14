@@ -113,6 +113,8 @@ public class ConceptDescription extends StampedItem {
 		}
 	}
 	
+	public DescriptionSememe<?> getDescriptionSememe() { return _description; }
+	
 	public int getSequence()				{ return _description.getSememeSequence(); }
 	public int getTypeSequence()			{ return _description.getDescriptionTypeConceptSequence(); }
 	public int getLanguageSequence()		{ return _description.getLanguageConceptSequence(); }

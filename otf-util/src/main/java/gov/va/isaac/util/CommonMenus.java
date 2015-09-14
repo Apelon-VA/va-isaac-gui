@@ -25,9 +25,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
+
+import org.controlsfx.control.PopOver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
@@ -37,6 +41,7 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.ExportTaskViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowInitiationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetailsViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
@@ -85,6 +90,7 @@ public class CommonMenus
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
 		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
 		LOGIC_GRAPH_VIEW("Logic Graph View", Images.ROOT),
+		SEMEMES_VIEW("Attached Sememes View", Images.ATTACH),
 		
 		SEND_TO("Send To"),
 			LIST_VIEW("List View", Images.LIST_VIEW),
@@ -131,6 +137,7 @@ public class CommonMenus
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, WorkflowInitiationViewI.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.RELEASE_WORKFLOW_TASK, ComponentWorkflowServiceI.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LOGIC_GRAPH_VIEW, LogicalExpressionTreeGraphPopupViewI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.SEMEMES_VIEW, SememeViewI.class);
 	}
 
 	public static class ObjectContainer {
@@ -621,7 +628,7 @@ public class CommonMenus
 						// onHandlable
 						() -> {
 							LogicalExpressionTreeGraphPopupViewI handler = (LogicalExpressionTreeGraphPopupViewI)CommonMenusServices.getService(CommonMenuItem.LOGIC_GRAPH_VIEW);
-							handler.setConcept(commonMenusNIdProvider.getNIds().iterator().next());
+							handler.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
 							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
 						},
 						// onNotHandlable
@@ -639,9 +646,40 @@ public class CommonMenus
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOGIC_GRAPH_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
+		// Menu item to open a Sememe View content request
+		try {
+			if (CommonMenusServices.hasService(CommonMenuItem.SEMEMES_VIEW)) {
+				MenuItem sememesViewMenuItem = createNewMenuItem(
+						CommonMenuItem.SEMEMES_VIEW,
+						builder,
+						() -> {
+							return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null;
+						}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						// onHandlable
+						() -> {
+							SememeViewI drv1 = AppContext.getService(SememeViewI.class);
+							drv1.setComponent(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null, null, null, true);
+							
+							PopOver po1 = DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv1.getView());
+							po1.detach();
+							po1.show(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { 
+							int nid = commonMenusNIdProvider.getNIds().iterator().next();
+							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
+				if (sememesViewMenuItem != null)
+				{
+					menuItems.add(sememesViewMenuItem);
+				}
+			} else {
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.SEMEMES_VIEW) returned false");
+			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.SEMEMES_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+		}
 
-		
-		
 		try {
 			if (CommonMenusServices.hasService(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
 				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
@@ -1018,7 +1056,17 @@ public class CommonMenus
 			
 			return sememeC.getNid();
 		case UNKNOWN_NID:
-			LOG.debug("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
+			// Check if UNKOWN_NID is a sememe sequence
+			int sememeNid = Get.identifierService().getSememeNid(nid);
+			if (sememeNid < 0) {
+				return sememeNid;
+			}
+
+			try {
+				LOG.warn("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
+			} catch (Exception e) {
+				LOG.warn("Cannot handle NID {}", nid);
+			}
 
 			break;
 			default:
