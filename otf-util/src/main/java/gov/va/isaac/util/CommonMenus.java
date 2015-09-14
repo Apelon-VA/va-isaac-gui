@@ -659,7 +659,7 @@ public class CommonMenus
 						// onHandlable
 						() -> {
 							SememeViewI drv1 = AppContext.getService(SememeViewI.class);
-							drv1.setComponent(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null, null, null, true);
+							drv1.setComponent(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
 							
 							PopOver po1 = DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv1.getView());
 							po1.detach();
@@ -1047,7 +1047,7 @@ public class CommonMenus
 			case DYNAMIC:
 				return Get.identifierService().getConceptNid(sememeC.getAssemblageSequence());
 			case DESCRIPTION:
-				break;
+				return nid;
 			case RELATIONSHIP_ADAPTOR:
 				break;
 			default:
@@ -1057,23 +1057,19 @@ public class CommonMenus
 			return sememeC.getNid();
 		case UNKNOWN_NID:
 			// Check if UNKOWN_NID is a sememe sequence
-			int sememeNid = Get.identifierService().getSememeNid(nid);
-			if (sememeNid < 0) {
-				return sememeNid;
-			}
-
+//			int sememeNid = Get.identifierService().getSememeNid(nid);
+//			if (sememeNid < 0) {
+//				return sememeNid;
+//			}
 			try {
-				LOG.warn("NID {} passed is for UNKNOWN {}", nid, Get.conceptDescriptionText(nid));
+				LOG.debug("UNKNOWN_NID type NID {} passed is for {}", nid, Get.conceptDescriptionText(nid));
 			} catch (Exception e) {
-				LOG.warn("Cannot handle NID {}", nid);
+				LOG.debug("UNKNOWN_NID type NID {} passed", nid);
 			}
+			return nid;
 
-			break;
 			default:
 				throw new RuntimeException("Unsupported ObjectChronologyType " + nidType.name());
 		}
-		
-		LOG.error("Unexpected - couldn't find component for nid {}", nid);
-		return nid;
 	}
 }

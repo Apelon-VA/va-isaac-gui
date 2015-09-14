@@ -831,8 +831,9 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
-				//conceptSequence = conceptDescription.getDescriptionSememe().getNid();
-				conceptSequence = conceptDescription.getSequence();
+				conceptSequence = conceptDescription.getDescriptionSememe().getNid();
+				LOG.debug("TERM has DescriptionSememe nid {}", conceptSequence);
+				//conceptSequence = conceptDescription.getSequence();
 				break;
 				
 			case TYPE:
