@@ -93,12 +93,12 @@ public class ConceptViewController {
 	@FXML private ResourceBundle resources;
 	@FXML private URL location;
 	
-	@FXML private AnchorPane mainPane;
-	@FXML private AnchorPane descriptionsPane;
-	@FXML private AnchorPane detailPane;
-	@FXML private AnchorPane footerPane;
-	@FXML private GridPane	 headerGridPane;
-	@FXML private Pane		 relationshipsPane;
+	@FXML private AnchorPane	mainPane;
+	@FXML private AnchorPane	descriptionsPane;
+	@FXML private AnchorPane	detailPane;
+	@FXML private AnchorPane	footerPane;
+	@FXML private GridPane		headerGridPane;
+	@FXML private VBox			relationshipsVBox;
 	
 	@FXML private TableView<ConceptDescription> descriptionTableView;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionTypeTableColumn;
@@ -169,7 +169,7 @@ public class ConceptViewController {
 		assert mainPane 					!= null : "fx:id=\"mainPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionsPane 			!= null : "fx:id=\"descriptionsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert headerGridPane 				!= null : "fx:id=\"headerGridPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert relationshipsPane			!= null : "fx:id=\"relationshipsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsVBox			!= null : "fx:id=\"relationshipsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert conceptLabel 			!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -277,7 +277,7 @@ public class ConceptViewController {
 	private void setupRelationshipsView() {
 		// TODO Make this work
 		relationshipsView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
-		relationshipsPane.getChildren().add(relationshipsView.getView());
+		relationshipsVBox.getChildren().add(relationshipsView.getView());
 	}
 	
 	void setColumnWidths() {
@@ -1017,7 +1017,7 @@ public class ConceptViewController {
 	
 	private void refreshRelationships()
 	{
-		//relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
+		relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
 	}
 	
 	private void refreshLogicGraph() {

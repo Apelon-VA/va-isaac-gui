@@ -133,7 +133,11 @@
                               <Font size="14.0" />
                            </font>
                         </Label>
-                        <Pane fx:id="relationshipsPane" layoutX="36.0" layoutY="24.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="35.0" />
+                        <ScrollPane AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="35.0">
+                           <content>
+                              <VBox fx:id="relationshipsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="100.0" />
+                           </content>
+                        </ScrollPane>
                      </children></AnchorPane>
               </items>
             </SplitPane>
