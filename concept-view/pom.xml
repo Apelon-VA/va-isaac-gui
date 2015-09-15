@@ -28,6 +28,11 @@
 			<artifactId>app-interfaces</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>logic-view</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
 	</dependencies>
 
 </project>

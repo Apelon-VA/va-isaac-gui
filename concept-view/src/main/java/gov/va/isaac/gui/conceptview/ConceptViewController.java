@@ -1,7 +1,6 @@
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
@@ -9,6 +8,8 @@ import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
+import gov.va.isaac.logic.treeview.LogicalExpressionTreeGraphView;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
@@ -24,9 +25,7 @@ import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -35,17 +34,13 @@ import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import javafx.concurrent.Task;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -54,6 +49,7 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -66,7 +62,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -77,6 +72,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -97,15 +93,16 @@ public class ConceptViewController {
 	@FXML private AnchorPane descriptionsPane;
 	@FXML private AnchorPane detailPane;
 	@FXML private AnchorPane footerPane;
-	@FXML private GridPane headerGridPane;
+	@FXML private GridPane	 headerGridPane;
+	@FXML private Pane		 relationshipsPane;
 	
 	@FXML private TableView<ConceptDescription> descriptionTableView;
-	@FXML private TableColumn<ConceptDescription, ConceptDescription> descriptionTypeTableColumn;
-	@FXML private TableColumn<ConceptDescription, ConceptDescription> acceptabilityTableColumn;
-	@FXML private TableColumn<ConceptDescription, ConceptDescription> significanceTableColumn;
-	@FXML private TableColumn<ConceptDescription, ConceptDescription> dialectTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem> statusTableColumn;
-	@FXML private TableColumn<ConceptDescription, ConceptDescription> descriptionValueTableColumn;
+	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionTypeTableColumn;
+	@FXML private TableColumn<ConceptDescription, ConceptDescription>	acceptabilityTableColumn;
+	@FXML private TableColumn<ConceptDescription, ConceptDescription>	significanceTableColumn;
+	@FXML private TableColumn<ConceptDescription, ConceptDescription>	dialectTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem>			statusTableColumn;
+	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionValueTableColumn;
 	
     @FXML private TableColumn<ConceptDescription, ?> descriptionTableSTAMPColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem> moduleTableColumn;
@@ -141,6 +138,8 @@ public class ConceptViewController {
 	private ObjectProperty<StampCoordinate> panelStampCoordinate = new SimpleObjectProperty<>(StampCoordinates.getDevelopmentLatest());
 	private ObjectProperty<LanguageCoordinate> panelLanguageCoordinate = new SimpleObjectProperty<>(LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 
+	private LogicalExpressionTreeGraphView relationshipsView;
+	
 	
 	@FXML
 	void initialize() {
@@ -163,6 +162,7 @@ public class ConceptViewController {
 		assert mainPane 					!= null : "fx:id=\"mainPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionsPane 			!= null : "fx:id=\"descriptionsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert headerGridPane 				!= null : "fx:id=\"headerGridPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsPane			!= null : "fx:id=\"relationshipsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert conceptLabel 			!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -189,6 +189,7 @@ public class ConceptViewController {
 		setColumnWidths();
 		setupColumnTypes();
 		setupDescriptionTable();
+		setupRelationshipsView();
 		setupStatusComboBox();
 		setupModulesComboBox();
 		setupConceptCodeLabel();
@@ -264,6 +265,12 @@ public class ConceptViewController {
 		});
 	}
 	
+	private void setupRelationshipsView() {
+		// TODO Make this work
+		//relationshipsView = (LogicalExpressionTreeGraphView) AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
+		//relationshipsPane.getChildren().add(relationshipsView.getView());
+	}
+	
 	void setColumnWidths() {
 		/*
 		descriptionTypeTableColumn.setPrefWidth(	descriptionTableView.getWidth() * 0.15);
@@ -334,6 +341,7 @@ public class ConceptViewController {
 	
 	private void refresh() {
 		refreshConceptDescriptions();
+		refreshRelationships();
 	}
 
 	void viewDiscarded() {
@@ -723,7 +731,14 @@ public class ConceptViewController {
 		descriptionValueTableColumn.setComparator(ConceptDescription.valueComparator);
 		moduleTableColumn.setComparator(StampedItem.moduleComparator);
 		
+		descriptionTypeTableColumn.setSortType(SortType.ASCENDING);
+		acceptabilityTableColumn.setSortType(SortType.ASCENDING);
+		descriptionValueTableColumn.setSortType(SortType.ASCENDING);
 		descriptionTableView.getSortOrder().clear();
+		descriptionTableView.getSortOrder().addAll(descriptionTypeTableColumn,
+				   acceptabilityTableColumn,
+				   descriptionValueTableColumn);
+		
 	}
 	
 	private void setDescriptionTableFactories(ObservableList<TableColumn<ConceptDescription,?>> tableColumns)
@@ -921,6 +936,8 @@ public class ConceptViewController {
 
 	private void refreshConceptDescriptions()
 	{
+		TableColumn[] sortColumns = descriptionTableView.getSortOrder().toArray(new TableColumn[0]);
+		
 		descriptionTableView.getItems().clear();
 		descriptionTableView.getSelectionModel().clearSelection();
 		
@@ -932,13 +949,13 @@ public class ConceptViewController {
 							activeOnlyToggle.selectedProperty().get());
 			descriptionTableView.setItems(descriptionList);
 		}
-		descriptionTypeTableColumn.setSortType(SortType.ASCENDING);
-		acceptabilityTableColumn.setSortType(SortType.ASCENDING);
-		descriptionValueTableColumn.setSortType(SortType.ASCENDING);
 		descriptionTableView.getSortOrder().clear();
-		descriptionTableView.getSortOrder().addAll(descriptionTypeTableColumn,
-				   acceptabilityTableColumn,
-				   descriptionValueTableColumn);
-
+		descriptionTableView.getSortOrder().addAll(sortColumns);
 	}
+	
+	private void refreshRelationships()
+	{
+		relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
+	}
+	
 }
