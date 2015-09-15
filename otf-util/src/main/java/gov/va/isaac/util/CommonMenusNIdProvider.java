@@ -22,18 +22,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
-
-import javafx.collections.ObservableSet;
-
-import com.sun.javafx.collections.ObservableSetWrapper;
-
-import javafx.collections.ObservableList;
-
-import com.sun.javafx.collections.ObservableListWrapper;
 
 import javafx.beans.binding.IntegerExpression;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleSetProperty;
+
+import com.sun.javafx.collections.ObservableListWrapper;
+import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * {@link CommonMenusNIdProvider}
@@ -53,9 +51,9 @@ public abstract class CommonMenusNIdProvider
 	};
 	public static CommonMenusNIdProvider getEmptyCommonMenusNIdProvider() { return emptyCommonMenusNIdProvider; }
 
-	SimpleIntegerProperty nidCount = new SimpleIntegerProperty(0);
-	private final ObservableSet<Integer> observableNIdSet = new ObservableSetWrapper<>(new HashSet<>(getNIds()));
-	private final ObservableList<Integer> observableNIdList = new ObservableListWrapper<>(new ArrayList<>(getNIds()));
+	private final SimpleIntegerProperty nidCount = new SimpleIntegerProperty(0);
+	private final SetProperty<Integer> nIdSetProperty = new SimpleSetProperty<>(new ObservableSetWrapper<>(new HashSet<>(getNIds())));
+	private final ListProperty<Integer> nIdListProperty = new SimpleListProperty<>(new ObservableListWrapper<>(new ArrayList<>(getNIds())));
 
 	public abstract Collection<Integer> getNIds();
 
@@ -63,18 +61,14 @@ public abstract class CommonMenusNIdProvider
 	{
 		return nidCount;
 	}
-	public ObservableSet<Integer> getObservableNIdSet() { return observableNIdSet; }
-	public ObservableList<Integer> getObservableNIdList() { return observableNIdList; }
+	public SetProperty<Integer> nIdSetProperty() { return nIdSetProperty; }
+	public ListProperty<Integer> nIdListProperty() { return nIdListProperty; }
 
 	public void invalidateAll()
 	{
 		Collection<Integer> nids = getNIds();
 		nidCount.set(nids == null ? 0 : nids.size());
-		observableNIdSet.clear();
-		observableNIdList.clear();
-		if (nids != null) {
-			observableNIdSet.addAll(nids);
-			observableNIdList.addAll(nids);
-		}
+		nIdSetProperty.set(new ObservableSetWrapper<>(getNIds() != null ? new HashSet<>(getNIds()) : null));
+		nIdListProperty.set(new ObservableListWrapper<>(getNIds() != null ? new ArrayList<>(getNIds()) : null));
 	}
 }

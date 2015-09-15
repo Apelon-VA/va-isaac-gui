@@ -652,7 +652,7 @@ public class CommonMenus
 			if (CommonMenusServices.hasService(CommonMenuItem.SEMEMES_VIEW)) {
 				BooleanBinding bb = new BooleanBinding() {
 					{
-						bind(commonMenusNIdProvider.getObservableNIdSet());
+						bind(commonMenusNIdProvider.nIdSetProperty());
 					}
 					
 					@Override
