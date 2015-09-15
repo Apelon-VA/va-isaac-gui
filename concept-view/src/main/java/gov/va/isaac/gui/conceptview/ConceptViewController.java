@@ -33,6 +33,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
@@ -953,7 +954,14 @@ public class ConceptViewController {
 				}, new CommonMenusNIdProvider() {
 					@Override
 					public Collection<Integer> getNIds() {
-						return Arrays.asList(new Integer[] {Get.identifierService().getConceptNid(sequence)});
+						int conceptNid = Get.identifierService().getConceptNid(sequence);
+						try {
+							boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(conceptNid);
+							LOG.debug("Creating common menus for sequence={}, nid={}, desc={}, which {} a dynamic sememe", sequence, conceptNid, Get.conceptDescriptionText(conceptNid), isDynamicSememe ? "is" : "is not");
+						} catch (Exception e) {
+							//
+						}
+						return Arrays.asList(new Integer[] { conceptNid });
 					}
 				});
 			}
