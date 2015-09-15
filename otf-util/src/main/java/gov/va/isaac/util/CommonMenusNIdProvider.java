@@ -18,9 +18,19 @@
  */
 package gov.va.isaac.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
+
+import javafx.collections.ObservableSet;
+
+import com.sun.javafx.collections.ObservableSetWrapper;
+
+import javafx.collections.ObservableList;
+
+import com.sun.javafx.collections.ObservableListWrapper;
 
 import javafx.beans.binding.IntegerExpression;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -34,7 +44,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 public abstract class CommonMenusNIdProvider
 {
 	private static final CommonMenusNIdProvider emptyCommonMenusNIdProvider =  new CommonMenusNIdProvider() {
-		private final Collection<Integer> collection = Collections.unmodifiableCollection(new HashSet<>());
+		private final Collection<Integer> collection = Collections.unmodifiableSet(new HashSet<>());
 		
 		@Override
 		public Collection<Integer> getNIds() {
@@ -44,6 +54,8 @@ public abstract class CommonMenusNIdProvider
 	public static CommonMenusNIdProvider getEmptyCommonMenusNIdProvider() { return emptyCommonMenusNIdProvider; }
 
 	SimpleIntegerProperty nidCount = new SimpleIntegerProperty(0);
+	private final ObservableSet<Integer> observableNIdSet = new ObservableSetWrapper<>(new HashSet<>(getNIds()));
+	private final ObservableList<Integer> observableNIdList = new ObservableListWrapper<>(new ArrayList<>(getNIds()));
 
 	public abstract Collection<Integer> getNIds();
 
@@ -51,10 +63,18 @@ public abstract class CommonMenusNIdProvider
 	{
 		return nidCount;
 	}
+	public ObservableSet<Integer> getObservableNIdSet() { return observableNIdSet; }
+	public ObservableList<Integer> getObservableNIdList() { return observableNIdList; }
 
 	public void invalidateAll()
 	{
 		Collection<Integer> nids = getNIds();
 		nidCount.set(nids == null ? 0 : nids.size());
+		observableNIdSet.clear();
+		observableNIdList.clear();
+		if (nids != null) {
+			observableNIdSet.addAll(nids);
+			observableNIdList.addAll(nids);
+		}
 	}
 }

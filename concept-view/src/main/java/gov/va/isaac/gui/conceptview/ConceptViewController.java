@@ -526,7 +526,7 @@ public class ConceptViewController {
 				protected void succeeded() {
 					conceptCodeLabel.setText(getValue().isPresent() ? getValue().get().toString() : null);
 					conceptCodeLabel.setContextMenu(null);
-					if (conceptCodeLabel.getText() == null) {
+					if (conceptCodeLabel.getText() != null) {
 						conceptCodeLabel.setContextMenu(new ContextMenu());
 						CommonMenus.addCommonMenus(conceptCodeLabel.getContextMenu(),
 								new CommonMenusDataProvider() {
@@ -811,7 +811,6 @@ public class ConceptViewController {
 			cell.setContextMenu(cm);
 			StringProperty textProperty = null;
 			int conceptSequence = 0;
-			int nid = 0;
 			ConceptViewColumnType columnType = (ConceptViewColumnType) cell.getTableColumn().getUserData();
 
 			cell.setText(null);
@@ -831,9 +830,7 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
-				conceptSequence = conceptDescription.getDescriptionSememe().getNid();
-				LOG.debug("TERM has DescriptionSememe nid {}", conceptSequence);
-				//conceptSequence = conceptDescription.getSequence();
+				//conceptSequence = conceptDescription.getDescriptionSememe().getNid();
 				break;
 				
 			case TYPE:
@@ -929,7 +926,7 @@ public class ConceptViewController {
 				}, new CommonMenusNIdProvider() {
 					@Override
 					public Collection<Integer> getNIds() {
-						return Arrays.asList(new Integer[] {sequence});
+						return Arrays.asList(new Integer[] {Get.identifierService().getConceptNid(sequence)});
 					}
 				});
 			}

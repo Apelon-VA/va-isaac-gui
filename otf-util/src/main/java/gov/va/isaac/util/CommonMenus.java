@@ -53,6 +53,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
@@ -649,21 +650,43 @@ public class CommonMenus
 		// Menu item to open a Sememe View content request
 		try {
 			if (CommonMenusServices.hasService(CommonMenuItem.SEMEMES_VIEW)) {
+				BooleanBinding bb = new BooleanBinding() {
+					{
+						bind(commonMenusNIdProvider.getObservableNIdSet());
+					}
+					
+					@Override
+					protected boolean computeValue() {
+						// Opened up for debug purposes only
+						int numNids = commonMenusNIdProvider.getObservableNidCount().get();
+						boolean hasOne = numNids == 1;
+						if (hasOne) {
+							boolean notNull = commonMenusNIdProvider.getNIds().iterator().next() != null;
+							if (notNull) {
+								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
+								if (isDynamicSememe) {
+									return true;
+								}
+							}
+						}
+						//return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null && DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
+						return false;
+					}
+				};
 				MenuItem sememesViewMenuItem = createNewMenuItem(
 						CommonMenuItem.SEMEMES_VIEW,
 						builder,
-						() -> {
-							return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null;
-						}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						() -> { return bb.get(); }, // canHandle
+						bb,			 //make visible
 						// onHandlable
 						() -> {
-							SememeViewI drv1 = AppContext.getService(SememeViewI.class);
-							drv1.setComponent(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
-							
-							PopOver po1 = DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv1.getView());
-							po1.detach();
-							po1.show(AppContext.getMainApplicationWindow().getPrimaryStage());
+							SememeViewI drv = AppContext.getService(SememeViewI.class);
+							drv.setComponent(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
+
+							// TODO use DynamicReferencedItemsView
+							PopOver po = DetachablePopOverHelper.newDetachachablePopover("Attached Sememes", drv.getView());
+							po.detach();
+							po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
 						},
 						// onNotHandlable
 						() -> { 
