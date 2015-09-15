@@ -338,7 +338,7 @@ public class SememeView implements SememeViewI
 			t.getItems().add(editButton_);
 			
 			viewUsageButton_ = new Button(null, Images.SEARCH.createImageView());
-			viewUsageButton_.setTooltip(new Tooltip("The displayed concept also defines a sememe dynamic itself.  Click to see the usage of this sememe."));
+			viewUsageButton_.setTooltip(new Tooltip("The displayed concept also defines a dynamic sememe itself.  Click to see the usage of this sememe."));
 			viewUsageButton_.setOnAction((action) ->
 			{
 				try
