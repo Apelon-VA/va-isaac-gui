@@ -1,6 +1,7 @@
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
@@ -1011,7 +1012,7 @@ public class ConceptViewController {
 	
 	private void refreshRelationships()
 	{
-		relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
+		//relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
 	}
 	
 }
