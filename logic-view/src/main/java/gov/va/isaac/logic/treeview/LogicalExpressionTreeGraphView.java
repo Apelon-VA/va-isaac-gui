@@ -211,6 +211,14 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	protected void refresh()
 	{
+		if (conceptId == null) {
+			clear();
+			
+			return;
+		}
+
+		// ELSE
+		
 		if (noRefresh_.get() > 0)
 		{
 			logger_.info("Skip refresh of LogicalExpressionTreeGraphView due to wait count {}", noRefresh_.get());
@@ -246,6 +254,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 				noRefresh_.decrementAndGet();
 			}
 		};
+		
 		Utility.execute(task);
 	}
 	
@@ -271,9 +280,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	@Override
 	public void viewDiscarded() {
-		title.setText(null);
-		logicalExpressionTreeGraph.setRootNode(null);
-		textGraph.setText(null);
+		clear();
 
 		if (passedObservableTaxonomyCoordinate != null) {
 			unbindFromPassedObservableTaxonomyCoordinate();
@@ -292,6 +299,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	@Override
 	public void setConcept(UUID uuid) {
+		uuid.getClass(); // Throw NPE if null
 		Utility.execute(() -> setConcept(Get.identifierService().getConceptSequenceForUuids(uuid)));
 	}
 
@@ -341,12 +349,22 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	public void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,
 			UUID uuid) {
+		uuid.getClass(); // Throw NPE if null
 		Utility.execute(() -> setConcept(taxonomyCoordinate, Get.identifierService().getConceptSequenceForUuids(uuid)));
 	}
 
 	@Override
 	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
 			UUID uuid) {
+		uuid.getClass(); // Throw NPE if null
 		Utility.execute(() -> setConcept(taxonomyCoordinate, Get.identifierService().getConceptSequenceForUuids(uuid)));
+	}
+	
+	@Override
+	public void clear() {
+		logicalExpressionTreeGraph.setRootNode(null);
+		textGraph.setText(null);
+		title.setText(null);
+		conceptId = null;
 	}
 }

@@ -1,6 +1,7 @@
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
@@ -17,6 +18,7 @@ import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -30,6 +32,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
@@ -136,10 +139,13 @@ public class ConceptViewController {
 	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
 
 	// TODO should modules be displayed and selectable that are off path of panel coordinates?
-	private ReadOnlyObjectProperty<StampCoordinate> panelStampCoordinateProperty;
-	private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
+	//private ReadOnlyObjectProperty<StampCoordinate> panelStampCoordinateProperty;
+	//private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
+	
+	// All bindings and listeners for constituent coordinates should be on change of TaxonomyCoordinate
+	private ReadOnlyObjectProperty<TaxonomyCoordinate> panelTaxonomyCoordinate;
 
-	private LogicalExpressionTreeGraphView relationshipsView;
+	private LogicalExpressionTreeGraphEmbeddableViewI relationshipsView;
 	
 	
 	@FXML
@@ -214,8 +220,7 @@ public class ConceptViewController {
                 addBinding(
                 		conceptProperty,
                 		activeOnlyToggle.selectedProperty(),
-                		panelStampCoordinateProperty,
-                		panelLanguageCoordinateProperty,
+                		panelTaxonomyCoordinate,
                 		stampToggle.selectedProperty(),
                 		conceptChronologyProperty,
                 		conceptCommitRecordProperty
@@ -271,8 +276,8 @@ public class ConceptViewController {
 	
 	private void setupRelationshipsView() {
 		// TODO Make this work
-		//relationshipsView = (LogicalExpressionTreeGraphView) AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
-		//relationshipsPane.getChildren().add(relationshipsView.getView());
+		relationshipsView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
+		relationshipsPane.getChildren().add(relationshipsView.getView());
 	}
 	
 	void setColumnWidths() {
@@ -312,13 +317,13 @@ public class ConceptViewController {
 		return (conceptProperty.get() != null) ? conceptProperty.get() : null;
 	}
 	public void setConcept(int conceptId) {
-		setConcept(conceptId, panelStampCoordinateProperty.get(), panelLanguageCoordinateProperty.get());
+		setConcept(conceptId, panelTaxonomyCoordinate.get().getStampCoordinate(), panelTaxonomyCoordinate.get().getLanguageCoordinate());
 	}
 	public void setConcept(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Task<ConceptSnapshot> task = new Task<ConceptSnapshot>() {
 			@Override
 			protected ConceptSnapshot call() throws Exception {
-				return OchreUtility.getConceptSnapshot(conceptId, stampCoordinate != null ? stampCoordinate : panelStampCoordinateProperty.get(), languageCoordinate != null ? languageCoordinate : panelLanguageCoordinateProperty.get()).get();
+				return OchreUtility.getConceptSnapshot(conceptId, stampCoordinate != null ? stampCoordinate : panelTaxonomyCoordinate.get().getStampCoordinate(), languageCoordinate != null ? languageCoordinate : panelTaxonomyCoordinate.get().getLanguageCoordinate()).get();
 			}
 
 			@Override
@@ -354,8 +359,9 @@ public class ConceptViewController {
 	}
 
 	private void setupPreferences() {
-		panelStampCoordinateProperty = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
-		panelLanguageCoordinateProperty = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
+		//panelStampCoordinateProperty = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+		//panelLanguageCoordinateProperty = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
+		panelTaxonomyCoordinate = AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate();
 	}
 
 	private void setupConceptChronologyChangeListener() {
@@ -495,7 +501,7 @@ public class ConceptViewController {
 							Platform.runLater(() -> conceptProperty.set(null));
 							return null;
 						} else {
-							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelStampCoordinateProperty.get(), Get.configurationService().getDefaultLanguageCoordinate());
+							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelTaxonomyCoordinate.get().getStampCoordinate(), Get.configurationService().getDefaultLanguageCoordinate());
 							
 							Platform.runLater(() -> conceptProperty.set(cs.get()));
 							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
@@ -745,7 +751,7 @@ public class ConceptViewController {
 			// Always use latest stamp coordinate with module specified
 			if (oldValue != newValue) {
 				StampCoordinate stampCoordinate = Frills.makeStampCoordinateAnalogVaryingByModulesOnly(StampCoordinates.getDevelopmentLatest(), newValue);
-				setConcept(conceptProperty.get().getChronology().getConceptSequence(), stampCoordinate, panelLanguageCoordinateProperty.get());
+				setConcept(conceptProperty.get().getChronology().getConceptSequence(), stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
 			}
 		}
 	};
@@ -1001,7 +1007,7 @@ public class ConceptViewController {
 			ObservableList<ConceptDescription> descriptionList =
 					ConceptDescription.makeDescriptionList(
 							conceptProperty.get().getChronology().getConceptDescriptionList(),
-							panelStampCoordinateProperty.get(),
+							panelTaxonomyCoordinate.get().getStampCoordinate(),
 							activeOnlyToggle.selectedProperty().get());
 			descriptionTableView.setItems(descriptionList);
 		}
@@ -1014,4 +1020,11 @@ public class ConceptViewController {
 		relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
 	}
 	
+	private void refreshLogicGraph() {
+		if (conceptProperty.get() != null) {
+			relationshipsView.setConcept(panelTaxonomyCoordinate.get(), conceptProperty.get().getNid());
+		} else {
+			relationshipsView.clear();
+		}
+	}
 }

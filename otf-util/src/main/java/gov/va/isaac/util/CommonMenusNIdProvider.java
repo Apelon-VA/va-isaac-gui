@@ -52,8 +52,8 @@ public abstract class CommonMenusNIdProvider
 	public static CommonMenusNIdProvider getEmptyCommonMenusNIdProvider() { return emptyCommonMenusNIdProvider; }
 
 	private final SimpleIntegerProperty nidCount = new SimpleIntegerProperty(0);
-	private final SetProperty<Integer> nIdSetProperty = new SimpleSetProperty<>(new ObservableSetWrapper<>(new HashSet<>(getNIds())));
-	private final ListProperty<Integer> nIdListProperty = new SimpleListProperty<>(new ObservableListWrapper<>(new ArrayList<>(getNIds())));
+	private final SetProperty<Integer> nIdSetProperty = new SimpleSetProperty<>(new ObservableSetWrapper<>(getNIds() != null ? new HashSet<>(getNIds()) : new HashSet<>()));
+	private final ListProperty<Integer> nIdListProperty = new SimpleListProperty<>(new ObservableListWrapper<>(getNIds() != null ? new ArrayList<>(getNIds()) : new ArrayList<>()));
 
 	public abstract Collection<Integer> getNIds();
 

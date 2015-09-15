@@ -121,4 +121,9 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 			UUID conceptUuid) {
 		embeddableView.setConcept(taxonomyCoordinate, conceptUuid);
 	}
+	
+	@Override
+	public void clear() {
+		embeddableView.clear();
+	}
 }

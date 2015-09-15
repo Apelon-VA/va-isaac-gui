@@ -39,4 +39,9 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 
 	public abstract void setConcept(
 			ObservableTaxonomyCoordinate taxonomyCoordinate, UUID uuid);
+	
+	/**
+	 * Clear display and unset conceptId
+	 */
+	public void clear();
 }
