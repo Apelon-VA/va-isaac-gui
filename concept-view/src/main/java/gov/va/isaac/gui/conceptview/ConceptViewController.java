@@ -1017,7 +1017,7 @@ public class ConceptViewController {
 	
 	private void refreshRelationships()
 	{
-		relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
+		//relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
 	}
 	
 	private void refreshLogicGraph() {
