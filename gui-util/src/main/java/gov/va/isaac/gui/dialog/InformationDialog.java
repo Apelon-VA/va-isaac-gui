@@ -25,6 +25,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -71,5 +72,9 @@ public class InformationDialog extends Stage {
     public void setVariables(String title, String message) {
         this.setTitle(title);
         controller.setMessageText(message == null || message.length() == 0 ? title : message);
+    }
+    public void setVariables(String title, Node content) {
+        this.setTitle(title);
+        controller.setContent(content);
     }
 }

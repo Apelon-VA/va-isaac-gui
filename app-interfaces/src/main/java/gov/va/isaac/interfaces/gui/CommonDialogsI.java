@@ -20,6 +20,7 @@ package gov.va.isaac.interfaces.gui;
 
 import gov.va.isaac.interfaces.utility.DialogResponse;
 import java.util.UUID;
+import javafx.scene.Node;
 import javafx.stage.Window;
 import org.jvnet.hk2.annotations.Contract;
 
@@ -40,6 +41,15 @@ public interface CommonDialogsI
 	 * @param message
 	 */
 	public void showInformationDialog(String title, String message);
+	
+	/**
+	 * Present an information dialog to the user with custom content, above the application main window.
+	 * 
+	 * @param title
+	 * @param content
+	 */
+	public void showInformationDialog(String title, Node content);
+
 	
 	/**
 	 * Present an information dialog to the user, above the application main window.

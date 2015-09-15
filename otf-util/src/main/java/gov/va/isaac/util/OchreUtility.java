@@ -392,7 +392,7 @@ public final class OchreUtility {
 					int componentNid = Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid();
 					if (Get.identifierService().getChronologyTypeForNid(componentNid) == ObjectChronologyType.CONCEPT)
 					{
-						return Get.conceptService().getOptionalConcept();
+						return Get.conceptService().getOptionalConcept(componentNid);
 					}
 					else
 					{

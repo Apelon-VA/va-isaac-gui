@@ -27,6 +27,7 @@ import gov.va.isaac.interfaces.utility.DialogResponse;
 import java.io.IOException;
 import java.util.UUID;
 import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.stage.Window;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
@@ -88,6 +89,19 @@ public class CommonDialogs implements CommonDialogsI
 		informationDialog_.showAndWait();
 	}
 
+	/**
+	 * @see gov.va.isaac.interfaces.gui.CommonDialogsI#showInformationDialog(java.lang.String, javafx.scene.Node)
+	 */
+	@Override
+	public void showInformationDialog(String title, Node content)
+	{
+		// Make sure in application thread.
+		FxUtils.checkFxUserThread();
+		init();
+		informationDialog_.setVariables(title, content);
+		informationDialog_.showAndWait();
+	}
+	
 	/**
 	 * @see gov.va.isaac.interfaces.gui.CommonDialogsI#showErrorDialog(java.lang.String, java.lang.Throwable)
 	 */

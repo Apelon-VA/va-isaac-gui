@@ -16,7 +16,6 @@ import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
@@ -34,6 +33,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
@@ -43,6 +43,7 @@ import java.util.function.Function;
 
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -72,7 +73,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -135,8 +135,8 @@ public class ConceptViewController {
 	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
 
 	// TODO should modules be displayed and selectable that are off path of panel coordinates?
-	private ObjectProperty<StampCoordinate> panelStampCoordinate = new SimpleObjectProperty<>(StampCoordinates.getDevelopmentLatest());
-	private ObjectProperty<LanguageCoordinate> panelLanguageCoordinate = new SimpleObjectProperty<>(LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
+	private ReadOnlyObjectProperty<StampCoordinate> panelStampCoordinateProperty;
+	private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
 
 	private LogicalExpressionTreeGraphView relationshipsView;
 	
@@ -187,6 +187,7 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.EDIT.createImageView(), 		"Edit Description");
 
 		setColumnWidths();
+		setupPreferences();
 		setupColumnTypes();
 		setupDescriptionTable();
 		setupRelationshipsView();
@@ -212,6 +213,8 @@ public class ConceptViewController {
                 addBinding(
                 		conceptProperty,
                 		activeOnlyToggle.selectedProperty(),
+                		panelStampCoordinateProperty,
+                		panelLanguageCoordinateProperty,
                 		stampToggle.selectedProperty(),
                 		conceptChronologyProperty,
                 		conceptCommitRecordProperty
@@ -308,13 +311,13 @@ public class ConceptViewController {
 		return (conceptProperty.get() != null) ? conceptProperty.get() : null;
 	}
 	public void setConcept(int conceptId) {
-		setConcept(conceptId, panelStampCoordinate.get(), panelLanguageCoordinate.get());
+		setConcept(conceptId, panelStampCoordinateProperty.get(), panelLanguageCoordinateProperty.get());
 	}
 	public void setConcept(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Task<ConceptSnapshot> task = new Task<ConceptSnapshot>() {
 			@Override
 			protected ConceptSnapshot call() throws Exception {
-				return OchreUtility.getConceptSnapshot(conceptId, stampCoordinate != null ? stampCoordinate : panelStampCoordinate.get(), languageCoordinate != null ? languageCoordinate : panelLanguageCoordinate.get()).get();
+				return OchreUtility.getConceptSnapshot(conceptId, stampCoordinate != null ? stampCoordinate : panelStampCoordinateProperty.get(), languageCoordinate != null ? languageCoordinate : panelLanguageCoordinateProperty.get()).get();
 			}
 
 			@Override
@@ -345,9 +348,15 @@ public class ConceptViewController {
 	}
 
 	void viewDiscarded() {
+		refreshBinding.clearBindings();
 		removeConceptChronologyChangeListener();
 	}
-	
+
+	private void setupPreferences() {
+		panelStampCoordinateProperty = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
+		panelLanguageCoordinateProperty = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
+	}
+
 	private void setupConceptChronologyChangeListener() {
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
@@ -415,7 +424,26 @@ public class ConceptViewController {
 						}
 						@Override
 						public void succeeded() {
-							Platform.runLater(() -> conceptLabel.setText(getValue()));
+							Platform.runLater(() -> {
+								conceptLabel.setText(getValue());
+								conceptLabel.setContextMenu(null);
+								if (conceptLabel.getText() != null) {
+									conceptLabel.setContextMenu(new ContextMenu());
+									CommonMenus.addCommonMenus(conceptLabel.getContextMenu(),
+											new CommonMenusDataProvider() {
+										@Override
+										public String[] getStrings() {
+											return conceptProperty.get() == null ? new String[0] : new String[] { conceptLabel.getText() };
+										}
+									},
+									new CommonMenusNIdProvider() {
+										@Override
+										public Collection<Integer> getNIds() {
+											return conceptProperty.get() == null ? new ArrayList<Integer>() : Arrays.asList(new Integer[] { conceptProperty.get().getChronology().getNid() });
+										}
+									});
+								}
+							});
 						}
 						@Override
 						public void failed() {
@@ -466,7 +494,7 @@ public class ConceptViewController {
 							Platform.runLater(() -> conceptProperty.set(null));
 							return null;
 						} else {
-							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelStampCoordinate.get(), Get.configurationService().getDefaultLanguageCoordinate());
+							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelStampCoordinateProperty.get(), Get.configurationService().getDefaultLanguageCoordinate());
 							
 							Platform.runLater(() -> conceptProperty.set(cs.get()));
 							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
@@ -487,6 +515,7 @@ public class ConceptViewController {
 	}
 
 	private void setupConceptCodeLabel() {
+		
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
@@ -509,9 +538,26 @@ public class ConceptViewController {
 				@Override
 				protected void succeeded() {
 					conceptCodeLabel.setText(getValue().isPresent() ? getValue().get().toString() : null);
+					conceptCodeLabel.setContextMenu(null);
+					if (conceptCodeLabel.getText() != null) {
+						conceptCodeLabel.setContextMenu(new ContextMenu());
+						CommonMenus.addCommonMenus(conceptCodeLabel.getContextMenu(),
+								new CommonMenusDataProvider() {
+							@Override
+							public String[] getStrings() {
+								return (conceptCodeLabel.getText() == null  || conceptCodeLabel.getText().length() == 0) ? new String[0] : new String[] { conceptCodeLabel.getText() };
+							}
+						},
+						new CommonMenusNIdProvider() {
+							@Override
+							public Collection<Integer> getNIds() {
+								return conceptProperty.get() == null ? new ArrayList<Integer>() : Arrays.asList(new Integer[] { conceptProperty.get().getChronology().getNid() });
+							}
+						});
+					}
 				}
 			};
-			
+
 			Utility.execute(task);
 		}
 	}
@@ -698,7 +744,7 @@ public class ConceptViewController {
 			// Always use latest stamp coordinate with module specified
 			if (oldValue != newValue) {
 				StampCoordinate stampCoordinate = Frills.makeStampCoordinateAnalogVaryingByModulesOnly(StampCoordinates.getDevelopmentLatest(), newValue);
-				setConcept(conceptProperty.get().getChronology().getConceptSequence(), stampCoordinate, panelLanguageCoordinate.get());
+				setConcept(conceptProperty.get().getChronology().getConceptSequence(), stampCoordinate, panelLanguageCoordinateProperty.get());
 			}
 		}
 	};
@@ -804,6 +850,7 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
+				//conceptSequence = conceptDescription.getDescriptionSememe().getNid();
 				break;
 				
 			case TYPE:
@@ -886,12 +933,20 @@ public class ConceptViewController {
 				});
 				cm.getItems().add(miWrap);
 			}
+			
+			final String textValue = textProperty.get();
 			if (conceptSequence != 0) {
 				final int sequence = conceptSequence;
-				CommonMenus.addCommonMenus(cm, new CommonMenusNIdProvider() {
+				CommonMenus.addCommonMenus(cm,
+						new CommonMenusDataProvider() {
+					@Override
+					public String[] getStrings() {
+						return textValue == null ? new String[0] : new String[] { textValue };
+					}
+				}, new CommonMenusNIdProvider() {
 					@Override
 					public Collection<Integer> getNIds() {
-						return Arrays.asList(new Integer[] {sequence});
+						return Arrays.asList(new Integer[] {Get.identifierService().getConceptNid(sequence)});
 					}
 				});
 			}
@@ -945,7 +1000,7 @@ public class ConceptViewController {
 			ObservableList<ConceptDescription> descriptionList =
 					ConceptDescription.makeDescriptionList(
 							conceptProperty.get().getChronology().getConceptDescriptionList(),
-							conceptProperty.get().getStampCoordinate(),
+							panelStampCoordinateProperty.get(),
 							activeOnlyToggle.selectedProperty().get());
 			descriptionTableView.setItems(descriptionList);
 		}
