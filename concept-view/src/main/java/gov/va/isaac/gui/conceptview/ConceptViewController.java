@@ -33,6 +33,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.net.URL;
@@ -838,6 +839,7 @@ public class ConceptViewController {
 			cell.setContextMenu(cm);
 			StringProperty textProperty = null;
 			int conceptSequence = 0;
+			int conceptNid = 0;
 			ConceptViewColumnType columnType = (ConceptViewColumnType) cell.getTableColumn().getUserData();
 
 			cell.setText(null);
@@ -857,17 +859,20 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
-				//conceptSequence = conceptDescription.getDescriptionSememe().getNid();
+				//conceptSequence = conceptDescription.getSequence();
+				//conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 				
 			case TYPE:
 				textProperty = conceptDescription.getTypeProperty();
 				conceptSequence = conceptDescription.getTypeSequence();
+				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 				
 			case LANGUAGE:
 				textProperty = conceptDescription.getLanguageProperty();
 				conceptSequence = conceptDescription.getLanguageSequence();
+				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 				
 			case ACCEPTABILITY:
@@ -877,6 +882,7 @@ public class ConceptViewController {
 			case SIGNIFICANCE:
 				textProperty = conceptDescription.getSignificanceProperty();
 				conceptSequence = conceptDescription.getSignificanceSequence();
+				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 				
 			case STAMP_STATE:
@@ -888,14 +894,17 @@ public class ConceptViewController {
 			case STAMP_AUTHOR:
 				textProperty = conceptDescription.getAuthorProperty();
 				conceptSequence = conceptDescription.getAuthorSequence();
+				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 			case STAMP_MODULE:
 				textProperty = conceptDescription.getModuleProperty();
 				conceptSequence = conceptDescription.getModuleSequence();
+				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 			case STAMP_PATH:
 				textProperty = conceptDescription.getPathProperty();
 				conceptSequence = conceptDescription.getPathSequence();
+				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 			default:
 				// Nothing
@@ -942,8 +951,9 @@ public class ConceptViewController {
 			}
 			
 			final String textValue = textProperty.get();
-			if (conceptSequence != 0) {
-				final int sequence = conceptSequence;
+			if (conceptNid != 0) {
+				final int finalConceptNid = conceptNid;
+				final int finalConceptSequence = conceptSequence;
 				CommonMenus.addCommonMenus(cm,
 						new CommonMenusDataProvider() {
 					@Override
@@ -953,7 +963,13 @@ public class ConceptViewController {
 				}, new CommonMenusNIdProvider() {
 					@Override
 					public Collection<Integer> getNIds() {
-						return Arrays.asList(new Integer[] {Get.identifierService().getConceptNid(sequence)});
+						try {
+							boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(finalConceptNid);
+							LOG.debug("Creating common menus for sequence={}, nid={}, desc={}, which {} a dynamic sememe", finalConceptSequence, finalConceptNid, Get.conceptDescriptionText(finalConceptNid), isDynamicSememe ? "is" : "is not");
+						} catch (Exception e) {
+							//
+						}
+						return Arrays.asList(new Integer[] { finalConceptNid });
 					}
 				});
 			}
