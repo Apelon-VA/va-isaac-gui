@@ -7,6 +7,7 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.util.Comparator;
 import java.util.List;
@@ -33,6 +34,8 @@ public class ConceptDescription extends StampedItem {
 	
 	private int _acceptabilitySortValue = Integer.MAX_VALUE;
 	private int _typeSortValue = Integer.MAX_VALUE;
+	
+	private boolean _hasSememes = false;
 	
 	@SuppressWarnings("rawtypes")
 	public static DescriptionSememe extractDescription(
@@ -90,7 +93,7 @@ public class ConceptDescription extends StampedItem {
 							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()) 						? 1 :
 							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence()) 	? 2 :
 							 Integer.MAX_VALUE;
-
+			_hasSememes = Frills.hasNestedSememe(_description.getChronology());
 			readStampDetails(description);
 
 			Utility.execute(() ->
@@ -133,8 +136,10 @@ public class ConceptDescription extends StampedItem {
 	public String getAcceptability()	{ return acceptabilitySSP.get(); }
 	public String getSignificance()		{ return significanceSSP.get(); }
 	
+	public boolean hasSememes()				{ return _hasSememes; }
 	public int getAcceptabilitySortValue()	{ return _acceptabilitySortValue; }
 	public int getTypeSortValue() 			{ return _typeSortValue; }
+	public int getSememesSortValue() 		{ return (_hasSememes)? Integer.MIN_VALUE : Integer.MAX_VALUE; }
 	
 	public static final Comparator<ConceptDescription> typeComparator = new Comparator<ConceptDescription>() {
 		@Override
@@ -168,6 +173,12 @@ public class ConceptDescription extends StampedItem {
 		@Override
 		public int compare(ConceptDescription o1, ConceptDescription o2) {
 			return Utility.compareStringsIgnoreCase(o1.getSignificance(), o2.getSignificance());
+		}
+	};
+	public static final Comparator<ConceptDescription> sememesComparator = new Comparator<ConceptDescription>() {
+		@Override
+		public int compare(ConceptDescription o1, ConceptDescription o2) {
+			return Integer.compare(o1.getSememesSortValue(), o2.getSememesSortValue());
 		}
 	};
 }

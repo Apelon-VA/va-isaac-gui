@@ -779,7 +779,7 @@ public class ConceptViewController {
 		modulesComboBox.getSelectionModel().selectedItemProperty().addListener(modulesComboBoxSelectedItemChangeListener);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "restriction" })
 	private void setupDescriptionTable() 
 	{
 		setDescriptionTableFactories(descriptionTableView.getColumns());
@@ -791,6 +791,7 @@ public class ConceptViewController {
 		statusTableColumn.setComparator(StampedItem.statusComparator);
 		descriptionValueTableColumn.setComparator(ConceptDescription.valueComparator);
 		moduleTableColumn.setComparator(StampedItem.moduleComparator);
+		sememeTableColumn.setComparator(ConceptDescription.sememesComparator);
 		
 		descriptionTypeTableColumn.setSortType(SortType.ASCENDING);
 		acceptabilityTableColumn.setSortType(SortType.ASCENDING);
@@ -936,7 +937,8 @@ public class ConceptViewController {
 //						sizeAndPosition(Images.YELLOW_DOT.createImageView(), sp, Pos.TOP_RIGHT);
 //						tooltipText += " - Uncommitted";
 //					}
-					if (Frills.hasNestedSememe(conceptDescription.getDescriptionSememe().getChronology()))
+					//if (Frills.hasNestedSememe(conceptDescription.getDescriptionSememe().getChronology()))
+					if (conceptDescription.hasSememes())
 					{
 						//I can't seem to get just and image view to pick up mouse clicks
 						//but it works in a button... sigh.
