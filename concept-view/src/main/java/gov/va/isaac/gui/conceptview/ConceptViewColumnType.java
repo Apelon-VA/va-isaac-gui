@@ -7,6 +7,7 @@ public enum ConceptViewColumnType {
 	LANGUAGE("Language - Dialect"),
 	ACCEPTABILITY("Acceptability"),
 	SIGNIFICANCE("Case Significance"),
+	SEMEMES("Sememes"),
 	
 	STAMP_HEADING("STAMP"),
 	STAMP_STATE("Status"),
