@@ -4,13 +4,18 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
+import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
+import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
+import gov.va.isaac.util.CommonMenus.CommonMenuBuilder;
+import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
@@ -358,6 +363,7 @@ public class ConceptViewController {
 	
 	private void refresh() {
 		refreshConceptDescriptions();
+		//refreshRelationships();
 		refreshLogicGraph();
 	}
 
@@ -367,8 +373,6 @@ public class ConceptViewController {
 	}
 
 	private void setupPreferences() {
-		//panelStampCoordinateProperty = AppContext.getService(UserProfileBindings.class).getStampCoordinate();
-		//panelLanguageCoordinateProperty = AppContext.getService(UserProfileBindings.class).getLanguageCoordinate();
 		panelTaxonomyCoordinate = AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate();
 	}
 
@@ -444,7 +448,14 @@ public class ConceptViewController {
 								conceptLabel.setContextMenu(null);
 								if (conceptLabel.getText() != null) {
 									conceptLabel.setContextMenu(new ContextMenu());
+									CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
+									builder.setMenuItemsToExclude(
+											CommonMenuItem.LOGIC_GRAPH_VIEW,
+											CommonMenuItem.CONCEPT_DIAGRAM_VIEW,
+											CommonMenuItem.USCRS_REQUEST_VIEW,
+											CommonMenuItem.LOINC_REQUEST_VIEW);
 									CommonMenus.addCommonMenus(conceptLabel.getContextMenu(),
+											builder,
 											new CommonMenusDataProvider() {
 										@Override
 										public String[] getStrings() {
@@ -562,12 +573,6 @@ public class ConceptViewController {
 							public String[] getStrings() {
 								return (conceptCodeLabel.getText() == null  || conceptCodeLabel.getText().length() == 0) ? new String[0] : new String[] { conceptCodeLabel.getText() };
 							}
-						},
-						new CommonMenusNIdProvider() {
-							@Override
-							public Collection<Integer> getNIds() {
-								return conceptProperty.get() == null ? new ArrayList<Integer>() : Arrays.asList(new Integer[] { conceptProperty.get().getChronology().getNid() });
-							}
 						});
 					}
 				}
@@ -599,12 +604,6 @@ public class ConceptViewController {
 					@Override
 					public String[] getStrings() {
 						return new String[] {uuid.toString()};
-					}
-				},
-				new CommonMenusNIdProvider() {
-					@Override
-					public Collection<Integer> getNIds() {
-						return Arrays.asList(new Integer[] {concept.getChronology().getNid()});
 					}
 				});
 				uuidsVBox.getChildren().add(label);
@@ -865,6 +864,7 @@ public class ConceptViewController {
 
 			switch (columnType) {
 			case STATE_CONDENSED:
+			{
 				StackPane sp = new StackPane();
 				sp.setPrefSize(25, 25);
 				String tooltipText = conceptDescription.isActive()? "Active" : "Inactive";
@@ -873,6 +873,7 @@ public class ConceptViewController {
 				cell.setTooltip(new Tooltip(tooltipText));
 				cell.setGraphic(sp);
 				break;
+			}
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
@@ -902,8 +903,85 @@ public class ConceptViewController {
 				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
 			case SEMEMES:
-				// TODO populate sememes column
+			{
+				String tooltipText = "";
+				StackPane sp = new StackPane();
+				sp.setPrefSize(25, 25);
+
+				try
+				{
+//					if (conceptDescription.getDescriptionSememe().getState() == State.ACTIVE)
+//					{
+//						sizeAndPosition(Images.BLACK_DOT.createImageView(), sp, Pos.TOP_LEFT);
+//						tooltipText += "Active";
+//					}
+//					else
+//					{
+//						sizeAndPosition(Images.GREY_DOT.createImageView(), sp, Pos.TOP_LEFT);
+//						tooltipText += "Inactive";
+//					}
+					
+//					if (!conceptDescription.getDescriptionSememe().isCurrent())
+//					{
+//						sizeAndPosition(Images.HISTORICAL.createImageView(), sp, Pos.BOTTOM_LEFT);
+//						tooltipText += " and Historical";
+//					}
+//					else
+//					{
+//						tooltipText += " and Current";
+//					}
+					
+//					if (conceptDescription.getDescriptionSememe().getTime() == Long.MAX_VALUE)
+//					{
+//						sizeAndPosition(Images.YELLOW_DOT.createImageView(), sp, Pos.TOP_RIGHT);
+//						tooltipText += " - Uncommitted";
+//					}
+					if (Frills.hasNestedSememe(conceptDescription.getDescriptionSememe().getChronology()))
+					{
+						//I can't seem to get just and image view to pick up mouse clicks
+						//but it works in a button... sigh.
+						tooltipText = tooltipText.length() == 0 ? "has sememes" : "and has sememes";
+						
+						Button b = new Button();
+						b.setPadding(new Insets(0));
+						b.setPrefHeight(12.0);
+						b.setPrefWidth(12.0);
+						ImageView iv = Images.ATTACH.createImageView();
+						iv.setFitHeight(12.0);
+						iv.setFitWidth(12.0);
+						b.setGraphic(iv);
+						b.setOnAction((event) ->
+						{
+							SememeViewI drv = AppContext.getService(SememeViewI.class);
+							drv.setComponent(conceptDescription.getDescriptionSememe().getNid(), null, null, null, true);
+		
+							DetachablePopOverHelper.showDetachachablePopOver(b, DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv.getView()));
+						});
+						sizeAndPosition(b, sp, Pos.CENTER);
+					}
+				}
+				catch (Exception e)
+				{
+					LOG.error("Unexpected", e);
+				}
+				Node graphic = sp;
+				cell.setTooltip(new Tooltip(tooltipText));
+				cell.setGraphic(graphic);
+				
+				//TODO Only want to set the style once per row - note - this breaks if they turn off this row :(
+//				if (ref.isCurrent())
+//				{
+//					getTableRow().getStyleClass().removeAll("historical");
+//				}
+//				else
+//				{
+//					if (!getTableRow().getStyleClass().contains("historical"))
+//					{
+//						getTableRow().getStyleClass().add("historical");
+//					}
+//				}
 				break;
+			}
 			case STAMP_STATE:
 				textProperty = conceptDescription.getStateProperty();
 				break;
@@ -973,7 +1051,17 @@ public class ConceptViewController {
 			if (conceptNid != 0) {
 				final int finalConceptNid = conceptNid;
 				final int finalConceptSequence = conceptSequence;
+				CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
+				builder.setMenuItemsToExclude(
+						CommonMenuItem.COPY,
+						CommonMenuItem.COPY_CONTENT,
+						CommonMenuItem.COPY_NID,
+						CommonMenuItem.COPY_SCTID,
+						CommonMenuItem.COPY_UUID,
+						CommonMenuItem.LOINC_REQUEST_VIEW,
+						CommonMenuItem.USCRS_REQUEST_VIEW);
 				CommonMenus.addCommonMenus(cm,
+						builder,
 						new CommonMenusDataProvider() {
 					@Override
 					public String[] getStrings() {
