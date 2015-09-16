@@ -63,7 +63,7 @@
             <Insets bottom="10.0" />
          </padding>
       </AnchorPane>
-      <AnchorPane fx:id="descriptionsPane" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="70.0">
+      <AnchorPane fx:id="descriptionsPane" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="50.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="70.0">
          <children>
             <SplitPane dividerPositions="0.5265151515151515" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
               <items>
@@ -144,9 +144,9 @@
             </SplitPane>
          </children>
       </AnchorPane>
-      <AnchorPane fx:id="footerPane" prefHeight="100.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+      <AnchorPane fx:id="footerPane" prefHeight="50.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <children>
-            <FlowPane alignment="BOTTOM_RIGHT" columnHalignment="RIGHT" hgap="10.0" layoutX="702.0" layoutY="147.0" prefHeight="20.0" prefWidth="651.0" rowValignment="TOP" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0">
+            <FlowPane alignment="BOTTOM_RIGHT" columnHalignment="RIGHT" hgap="10.0" layoutX="702.0" layoutY="147.0" prefHeight="25.0" prefWidth="444.0" rowValignment="TOP" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0">
                <children>
                   <Button fx:id="cancelButton" mnemonicParsing="false" prefWidth="150.0" text="Cancel" />
                   <Button fx:id="commitButton" mnemonicParsing="false" prefWidth="150.0" text="Commit" />
@@ -154,6 +154,11 @@
                <opaqueInsets>
                   <Insets />
                </opaqueInsets>
+            </FlowPane>
+            <FlowPane layoutY="13.0" prefHeight="25.0" prefWidth="353.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0">
+               <children>
+                  <Button mnemonicParsing="false" prefWidth="150.0" text="Create New Concept" />
+               </children>
             </FlowPane>
          </children></AnchorPane>
    </children>
