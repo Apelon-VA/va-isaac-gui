@@ -78,6 +78,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -85,7 +86,12 @@ import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.javafx.tk.Toolkit;
+
 public class ConceptViewController {
+	
+	public static final double MIN_HEIGHT = 150;
+	public static final double MIN_WIDTH  = 150;
 	
 	private static final Logger LOG = LoggerFactory.getLogger(ConceptViewController.class);
 
@@ -796,6 +802,13 @@ public class ConceptViewController {
 				   descriptionValueTableColumn);
 		
 		sememeTableColumn.setVisible(false);
+		
+		// Hack to dynamically set column min widths
+		Font f = new Font("System Bold", 13.0);
+		for (TableColumn<ConceptDescription,?> column : descriptionTableView.getColumns()) {
+			column.setMinWidth(Toolkit.getToolkit().getFontLoader().computeStringWidth(column.getText(), f) + 30);
+		}
+		
 	}
 	
 	@SuppressWarnings("unchecked")

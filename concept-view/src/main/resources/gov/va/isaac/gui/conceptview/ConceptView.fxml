@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="mainPane" prefHeight="700.0" prefWidth="980.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.conceptview.ConceptViewController">
+<AnchorPane fx:id="mainPane" minHeight="150.0" minWidth="150.0" prefHeight="700.0" prefWidth="980.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.conceptview.ConceptViewController">
    <children>
       <AnchorPane fx:id="detailPane" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="70.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -75,7 +75,7 @@
                               <TableColumn fx:id="acceptabilityTableColumn" maxWidth="1.7976931348623157E308" minWidth="100.0" prefWidth="-1.0" text="Acceptability" />
                             <TableColumn fx:id="descriptionValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="-1.0" text="Term" />
                               <TableColumn fx:id="dialectTableColumn" maxWidth="1.7976931348623157E308" minWidth="75.0" prefWidth="-1.0" text="Language" />
-                              <TableColumn fx:id="significanceTableColumn" maxWidth="1.7976931348623157E308" minWidth="125.0" prefWidth="-1.0" text="Case Significance" />
+                              <TableColumn fx:id="significanceTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="-1.0" text="Case Significance" />
                               <TableColumn fx:id="statusTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="68.0" resizable="false" text="Status" />
                               <TableColumn fx:id="descriptionTableSTAMPColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="-1.0" resizable="false" sortable="false" text="STAMP Columns">
                                  <columns>
