@@ -10,7 +10,6 @@ import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
-import gov.va.isaac.logic.treeview.LogicalExpressionTreeGraphView;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusDataProvider;
 import gov.va.isaac.util.CommonMenusNIdProvider;
@@ -18,7 +17,6 @@ import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
-import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -67,6 +65,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -77,7 +76,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -108,6 +106,7 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	dialectTableColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem>			statusTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionValueTableColumn;
+	@FXML private TableColumn<ConceptDescription, ConceptDescription>	sememeTableColumn;
 	
     @FXML private TableColumn<ConceptDescription, ?> descriptionTableSTAMPColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem> moduleTableColumn;
@@ -160,8 +159,9 @@ public class ConceptViewController {
 		assert statusTableColumn 			!= null : "fx:id=\"statusTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionTableView 		!= null : "fx:id=\"descriptionTableView\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert descriptionValueTableColumn 	!= null : "fx:id=\"descriptionValueTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
-
-		assert descriptionTableSTAMPColumn 			!= null : "fx:id=\"descriptionTableSTAMPColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert sememeTableColumn			!= null : "fx:id=\"sememeTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		
+		assert descriptionTableSTAMPColumn 	!= null : "fx:id=\"descriptionTableSTAMPColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert moduleTableColumn 			!= null : "fx:id=\"moduleTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert timeTableColumn 				!= null : "fx:id=\"timeTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert authorTableColumn 			!= null : "fx:id=\"authorTableColumn\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -306,6 +306,7 @@ public class ConceptViewController {
 		dialectTableColumn.setUserData(ConceptViewColumnType.LANGUAGE);
 		statusTableColumn.setUserData(ConceptViewColumnType.STAMP_STATE);
 		descriptionValueTableColumn.setUserData(ConceptViewColumnType.TERM);
+		sememeTableColumn.setUserData(ConceptViewColumnType.SEMEMES);
 		
 		descriptionTableSTAMPColumn.setUserData(ConceptViewColumnType.STAMP_HEADING);
 		moduleTableColumn.setUserData(ConceptViewColumnType.STAMP_MODULE);
@@ -351,7 +352,7 @@ public class ConceptViewController {
 	
 	private void refresh() {
 		refreshConceptDescriptions();
-		refreshRelationships();
+		refreshLogicGraph();
 	}
 
 	void viewDiscarded() {
@@ -773,6 +774,7 @@ public class ConceptViewController {
 		modulesComboBox.getSelectionModel().selectedItemProperty().addListener(modulesComboBoxSelectedItemChangeListener);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void setupDescriptionTable() 
 	{
 		setDescriptionTableFactories(descriptionTableView.getColumns());
@@ -793,8 +795,10 @@ public class ConceptViewController {
 				   acceptabilityTableColumn,
 				   descriptionValueTableColumn);
 		
+		sememeTableColumn.setVisible(false);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void setDescriptionTableFactories(ObservableList<TableColumn<ConceptDescription,?>> tableColumns)
 	{
 		for (TableColumn<ConceptDescription, ?> tableColumn : tableColumns) {
@@ -884,7 +888,9 @@ public class ConceptViewController {
 				conceptSequence = conceptDescription.getSignificanceSequence();
 				conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 				break;
-				
+			case SEMEMES:
+				// TODO populate sememes column
+				break;
 			case STAMP_STATE:
 				textProperty = conceptDescription.getStateProperty();
 				break;
@@ -950,7 +956,7 @@ public class ConceptViewController {
 				cm.getItems().add(miWrap);
 			}
 			
-			final String textValue = textProperty.get();
+			final String textValue = (textProperty != null)? textProperty.get() : null;
 			if (conceptNid != 0) {
 				final int finalConceptNid = conceptNid;
 				final int finalConceptSequence = conceptSequence;
@@ -1012,12 +1018,14 @@ public class ConceptViewController {
 		StackPane.setAlignment(node, Pos.TOP_LEFT);
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void refreshConceptDescriptions()
 	{
 		TableColumn[] sortColumns = descriptionTableView.getSortOrder().toArray(new TableColumn[0]);
 		
 		descriptionTableView.getItems().clear();
 		descriptionTableView.getSelectionModel().clearSelection();
+		descriptionTableView.setPlaceholder(new ProgressIndicator());
 		
 		if (conceptProperty.get() != null) {
 			ObservableList<ConceptDescription> descriptionList =
@@ -1029,11 +1037,6 @@ public class ConceptViewController {
 		}
 		descriptionTableView.getSortOrder().clear();
 		descriptionTableView.getSortOrder().addAll(sortColumns);
-	}
-	
-	private void refreshRelationships()
-	{
-		relationshipsView.setConcept(conceptProperty.get().getConceptSequence());
 	}
 	
 	private void refreshLogicGraph() {

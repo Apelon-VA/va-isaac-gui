@@ -76,8 +76,8 @@
                             <TableColumn fx:id="descriptionValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="-1.0" text="Term" />
                               <TableColumn fx:id="dialectTableColumn" maxWidth="1.7976931348623157E308" minWidth="75.0" prefWidth="-1.0" text="Language" />
                               <TableColumn fx:id="significanceTableColumn" maxWidth="1.7976931348623157E308" minWidth="125.0" prefWidth="-1.0" text="Case Significance" />
-                              <TableColumn fx:id="statusTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="-1.0" resizable="false" text="Status" />
-                              <TableColumn fx:id="descriptionTableSTAMPColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="-1.0" resizable="false" text="STAMP Columns">
+                              <TableColumn fx:id="statusTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="68.0" resizable="false" text="Status" />
+                              <TableColumn fx:id="descriptionTableSTAMPColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="-1.0" resizable="false" sortable="false" text="STAMP Columns">
                                  <columns>
                                     <TableColumn fx:id="timeTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="-1.0" resizable="false" text="Time" />
                                     <TableColumn fx:id="moduleTableColumn" maxWidth="1.7976931348623157E308" minWidth="75.0" prefWidth="-1.0" text="Module" />
@@ -85,6 +85,7 @@
                                     <TableColumn fx:id="pathTableColumn" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="-1.0" resizable="false" text="Path" />
                                  </columns>
                               </TableColumn>
+                              <TableColumn fx:id="sememeTableColumn" minWidth="80.0" prefWidth="-1.0" text="Sememes" />
                           </columns>
                         </TableView>
                         <FlowPane alignment="BOTTOM_RIGHT" columnHalignment="RIGHT" layoutX="711.0" prefHeight="30.0" prefWidth="463.0" rowValignment="BOTTOM" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
