@@ -13,6 +13,7 @@ import javafx.scene.control.ContextMenu;
 import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.CommonMenus.CommonMenuBuilder;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -31,7 +32,12 @@ public class TreeNodeFxNodeUtils {
 		// Add a Menus item.
 
 		CommonMenuBuilderI builder = CommonMenus.getDefaultMenuBuilder();
-
+		builder.setMenuItemsToExclude(
+				CommonMenuItem.COPY_NID,
+				CommonMenuItem.COPY_SCTID,
+				CommonMenuItem.COPY_UUID,
+				CommonMenuItem.LOINC_REQUEST_VIEW,
+				CommonMenuItem.USCRS_REQUEST_VIEW);
 		CommonMenus.addCommonMenus(cm, builder, new CommonMenusNIdProvider()
 		{
 			@Override
