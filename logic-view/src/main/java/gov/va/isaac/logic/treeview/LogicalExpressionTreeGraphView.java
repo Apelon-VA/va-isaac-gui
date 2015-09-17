@@ -2,6 +2,7 @@ package gov.va.isaac.logic.treeview;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
+import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
@@ -174,6 +175,16 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			rootScrollPane.setContextMenu(new ContextMenu());
 
 			rootScrollPane.getContextMenu().getItems().add(rootPanePremiseTypeMenuItem);
+			
+			MenuItem mi = new MenuItem("Copy Text Graph");
+			mi.visibleProperty().bind(textGraph.textProperty().isNotNull());
+			mi.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent arg0) {
+					CustomClipboard.set(title.getText() + "\n" + textGraph.getText());
+				}
+			});
+			rootScrollPane.getContextMenu().getItems().add(mi);
 			
 			taxonomyCoordinate.get().premiseTypeProperty().addListener(new ChangeListener<PremiseType>() {
 				@Override
