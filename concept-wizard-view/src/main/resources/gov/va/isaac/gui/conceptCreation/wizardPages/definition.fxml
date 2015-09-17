@@ -34,31 +34,6 @@
 				<VBox fx:id="parentVBox" prefWidth="100.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" />
 				<VBox fx:id="addParentButtonVBox" alignment="CENTER" prefWidth="100.0" GridPane.columnIndex="3" GridPane.rowIndex="2" />
 				<VBox fx:id="removeParentButtonVBox" alignment="CENTER" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="2" />
-				<HBox GridPane.columnIndex="2" GridPane.rowIndex="3">
-					<children>
-						<RadioButton fx:id="isPrimitive" mnemonicParsing="false" selected="true" text="Primitive" GridPane.columnIndex="1"
-							GridPane.rowIndex="4">
-							<HBox.margin>
-								<Insets left="5.0" right="5.0" />
-							</HBox.margin>
-							<padding>
-								<Insets left="5.0" right="5.0" />
-							</padding>
-							<toggleGroup>
-								<ToggleGroup fx:id="conceptTypeGroup" />
-							</toggleGroup>
-						</RadioButton>
-						<RadioButton fx:id="isFullyDefined" mnemonicParsing="false" text="Fully Defined" toggleGroup="$conceptTypeGroup"
-							GridPane.rowIndex="4">
-							<HBox.margin>
-								<Insets left="5.0" right="5.0" />
-							</HBox.margin>
-							<padding>
-								<Insets left="5.0" right="5.0" />
-							</padding>
-						</RadioButton>
-					</children>
-				</HBox>
 			</children>
 		</GridPane>
 	</center>

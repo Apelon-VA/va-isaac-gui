@@ -239,8 +239,7 @@ public class DefinitionController implements PanelControllers {
 			parents.add(parent.getConcept().getConceptSequence());
 			
 		}
-		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents,
-												isPrimitive.isSelected()); 
+		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents); 
 	}
 
 	private void removeNewParentHandler(int idx) {

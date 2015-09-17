@@ -18,22 +18,18 @@
  */
 package gov.va.isaac.gui.conceptCreation;
 
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.AllRole;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.blueprint.RelationshipCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
@@ -41,20 +37,16 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.conceptCreation.wizardPages.RelRow;
 import gov.va.isaac.gui.conceptCreation.wizardPages.TermRow;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.OchreUtility;
-import gov.vha.isaac.metadata.coordinates.EditCoordinates;
 import gov.vha.isaac.metadata.coordinates.LogicCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilderService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -63,6 +55,8 @@ import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.logic.assertions.AllRole;
+import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
 import gov.vha.isaac.ochre.impl.lang.LanguageCode;
 import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
 
@@ -80,19 +74,13 @@ public class WizardController {
 	private String fsn;
 	private String prefTerm;
 	private List<Integer> parents;
-	private boolean isPrimitive;
 	private List<TermRow> syns;
 	private List<RelRow> rels;
 	
-	private UserProfile userProfile = AppContext.getService(UserProfileManager.class).getCurrentlyLoggedInUserProfile();
-    //TODO - is this correct
-    private EditCoordinate editCoordinate = new EditCoordinateImpl(getNid(userProfile.getConceptUUID()), getNid(userProfile.getEditCoordinateModule()), getNid(userProfile.getEditCoordinatePath()));
-
-	public void setConceptDefinitionVals(String fsn, String prefTerm, List<Integer> parents, boolean isPrimitive) {
+	public void setConceptDefinitionVals(String fsn, String prefTerm, List<Integer> parents) {
 		this.fsn = fsn;
 		this.prefTerm = prefTerm;
 		this.parents = parents;
-		this.isPrimitive = isPrimitive;
 	}
 
 	public void setConceptComponents(List<TermRow> syns, List<RelRow> rels) {
@@ -106,14 +94,6 @@ public class WizardController {
 
 	public String getConceptPT() {
 		return prefTerm;
-	}
-
-	public String getConceptPrimDef() {
-		if (isPrimitive) {
-			return "Primitive";
-		} else {
-			return "Fully Defined";
-		}
 	}
 
 	public List<Integer> getParents() {
@@ -163,9 +143,7 @@ public class WizardController {
 	// TODO make sure PT and FSN are case insensitive
 
 	public String getQualRole(int i) {
-		// TODO Why are we implementing a toString on Reltype? ROLE isn't even
-		// an option in the enum
-		if (RelationshipType.QUALIFIER == rels.get(i).getType()) {
+		if (IsaacMetadataAuxiliaryBinding.MAPPING_QUALIFIERS == rels.get(i).getType()) {
 			return "Qualifier";
 		} else {
 			return "Role";
@@ -180,61 +158,78 @@ public class WizardController {
 		return Get.identifierService().getNidForUuids(input);
 	}
 
-	public ConceptChronology createNewConcept()  throws IOException {
+	public ConceptChronology<?> createNewConcept()  throws IOException {
 		logger.info("Creating concept " + fsn + " " + prefTerm + " in DB");
-        AppContext.getRuntimeGlobals().disableAllCommitListeners();
-        try {
-        	
-            ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
-            DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class);
-            LogicalExpressionBuilderService expressionBuilderService = LookupService.getService(LogicalExpressionBuilderService.class);
-            
-            //ConceptBuilderService
-            conceptBuilderService.setDefaultLanguageForDescriptions(IsaacMetadataAuxiliaryBinding.ENGLISH);
-            conceptBuilderService.setDefaultDialectAssemblageForDescriptions(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-            conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
+		AppContext.getRuntimeGlobals().disableAllCommitListeners();
+		try {
+			
+			ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
+			DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class);
+			LogicalExpressionBuilderService expressionBuilderService = LookupService.getService(LogicalExpressionBuilderService.class);
+			
+			//ConceptBuilderService
+			conceptBuilderService.setDefaultLanguageForDescriptions(IsaacMetadataAuxiliaryBinding.ENGLISH);
+			conceptBuilderService.setDefaultDialectAssemblageForDescriptions(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
+			conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
 
-            //Parent
-            LogicalExpressionBuilder defBuilder = expressionBuilderService.getLogicalExpressionBuilder();
-            NecessarySet(And(ConceptAssertion(
-            		Get.conceptService().getConcept(parents.remove(0)), defBuilder))); //TODO - verify this. Possibly check if parent size > 0
-            LogicalExpression conceptDef = defBuilder.build();
-            
-            //ConceptBuilder
-            ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(this.fsn, OchreUtility.getSemanticTag(this.fsn), conceptDef);
-            
-            //Preferred Term
-            DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>> definitionBuilderPT 
-            		= descriptionBuilderService.getDescriptionBuilder(this.prefTerm, conBuilder, IsaacMetadataAuxiliaryBinding.PREFERRED, IsaacMetadataAuxiliaryBinding.ENGLISH);
-            definitionBuilderPT.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-            definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
-            // Get.commitService().addUncommitted(definitionBuilderPT); //TODO - commit
-            conBuilder.addDescription(definitionBuilderPT);
-            
-            //FSN
-			DescriptionBuilder definitionBuilderFSN = descriptionBuilderService.
-                    getDescriptionBuilder(this.fsn, conBuilder,
-                            IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME,
-                            IsaacMetadataAuxiliaryBinding.ENGLISH);
+			//Parents
+			LogicalExpressionBuilder relBuilder = expressionBuilderService.getLogicalExpressionBuilder();
+			for(int parent : parents) {
+				NecessarySet(And(ConceptAssertion(
+						Get.conceptService().getConcept(parent), relBuilder))); 
+			}
+			//Relationships
+			for (int i = 0; i < getRelationshipsCreated(); i++) {
+				//Not necessary set and concept assertion, instead use Role, look in LogicalExpressionBuilder
+				
+				ConceptAssertion ca = ConceptAssertion(Get.conceptService().getConcept(rels.get(i).getTargetNid()), relBuilder);
+				
+				relBuilder.allRole(IsaacMetadataAuxiliaryBinding.IS_A, ca); 
+			}
+			LogicalExpression parentsDef = relBuilder.build();
+			
+			//ConceptBuilder
+			ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(this.fsn, OchreUtility.getSemanticTag(this.fsn), parentsDef);
+			
+			//Descriptions
+			for (int i = 0; i < getSynonymsCreated(); i++) {
+				DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>> descBuilder = 
+						descriptionBuilderService.getDescriptionBuilder(syns.get(i).getTerm(), 
+																conBuilder, 
+																getType(i),
+																IsaacMetadataAuxiliaryBinding.ENGLISH);
+				descBuilder.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
+				Get.commitService().addUncommitted(descBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
+				conBuilder.addDescription(descBuilder);
+			}
+			
+			//Preferred Term
+			DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>> definitionBuilderPT 
+					= descriptionBuilderService.getDescriptionBuilder(this.prefTerm, conBuilder, IsaacMetadataAuxiliaryBinding.PREFERRED, IsaacMetadataAuxiliaryBinding.ENGLISH);
+			definitionBuilderPT.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
+			definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
+			Get.commitService().addUncommitted(definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
+			conBuilder.addDescription(definitionBuilderPT);
+			
+			//FSN
+			DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>>  definitionBuilderFSN = 
+					descriptionBuilderService.
+					getDescriptionBuilder(this.fsn, conBuilder,
+							IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME,
+							IsaacMetadataAuxiliaryBinding.ENGLISH);
 			definitionBuilderFSN.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
 			definitionBuilderFSN.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE); //TODO - build each descBuilder?
-			// Get.commitService().addUncommitted(definitionBuilderPT); //TODO - Add Uncommitted
-            conBuilder.addDescription(definitionBuilderFSN);
-            
-            for(int parent : parents) {
-            	//TODO - add each parent here 
-            }
-            
-            //TODO - generate UUID?
-    
-            ConceptChronology<?> chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
-            
-            return chronology;
-        }
-        finally {
-            AppContext.getRuntimeGlobals().enableAllCommitListeners(); //TODO - do we want this
-        }
-        //OLD CODE TODO check these are all satisfied
+			Get.commitService().addUncommitted(definitionBuilderFSN.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
+			conBuilder.addDescription(definitionBuilderFSN);
+			
+			ConceptChronology<?> chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
+			
+			return chronology;
+		}
+		finally {
+			AppContext.getRuntimeGlobals().enableAllCommitListeners(); //TODO - do we want this
+		}
+		//OLD CODE TODO check these are all satisfied
 //		String fsn = this.fsn;
 //		String prefTerm = this.prefTerm;
 //		logger.debug("Creating concept {}", fsn);
@@ -256,18 +251,8 @@ public class WizardController {
 
 	public void createNewDescription(int conceptSequence, int i) throws IOException {
 		
-		DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class); //TODO - twice?
 		
-		//
-		DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>> descBuilder = descriptionBuilderService.getDescriptionBuilder(syns.get(i).getTerm(), 
-														conceptSequence, 
-														getType(i),
-														IsaacMetadataAuxiliaryBinding.ENGLISH);
-		descBuilder.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-		Get.commitService().addUncommitted(descBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
-        //TODO - isCaseSig desc attribute goes where?
-        
-        //OLD CODE
+		//OLD CODE
 //		DescriptionCAB newDesc = new DescriptionCAB(con.getConceptNid(), getTypeNid(i), LanguageCode.EN_US,
 //				syns.get(i).getTerm(), syns.get(i).isInitialCaseSig(), IdDirective.GENERATE_HASH);
 //		OTFUtility.getBuilder().construct(newDesc);
@@ -275,17 +260,19 @@ public class WizardController {
 	}
 
 	public void createNewRelationship(int conceptSequence, int i) throws IOException {
-		RelationshipCAB newRel;
-		try {
-			newRel = new RelationshipCAB(conceptSequence, rels.get(i).getRelationshipNid(),
-					rels.get(i).getTargetNid(), rels.get(i).getGroup(), rels.get(i).getType(), IdDirective.GENERATE_HASH);
-		} catch (InvalidCAB e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ContradictionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
+		
+		//OLD CODE
+//		RelationshipCAB newRel;
+//		try {
+//			newRel = new RelationshipCAB(conceptSequence, rels.get(i).getRelationshipNid(),
+//					rels.get(i).getTargetNid(), rels.get(i).getGroup(), rels.get(i).getType(), IdDirective.GENERATE_HASH);
+//		} catch (InvalidCAB e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (ContradictionException e) {
+//			e.printStackTrace();
+//		}
 		//OTFUtility.getBuilder().construct(newRel);
 		// OTFUtility.addUncommitted(con);
 	}

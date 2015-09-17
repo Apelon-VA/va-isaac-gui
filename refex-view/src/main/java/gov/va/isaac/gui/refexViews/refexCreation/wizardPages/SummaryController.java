@@ -24,6 +24,7 @@ import gov.va.isaac.gui.refexViews.refexCreation.SememeGUIData;
 import gov.va.isaac.gui.refexViews.refexCreation.ScreensController;
 import gov.va.isaac.gui.refexViews.util.DynamicSememeDataColumnListCell;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUtility;
 import javafx.fxml.FXML;
@@ -49,6 +50,7 @@ public class SummaryController implements PanelControllersI {
 	@FXML private Label actualRefexDescription;
 	@FXML private Label actualParentConcept;
 	@FXML private Label actualComponentTypeRestriction;
+	@FXML private Label actualComponentTypeSubRestriction;
 	@FXML private BorderPane summaryPane;
 	@FXML private ListView<DynamicSememeColumnInfo> detailsListView;
 	@FXML private Button cancelButton;
@@ -63,6 +65,9 @@ public class SummaryController implements PanelControllersI {
 
 	@Override
 	public void initialize() {
+		assert actualComponentTypeRestriction != null : "fx:id=\"actualComponentTypeRestriction\" was not injected: check your FXML file 'summary.fxml'.";
+		assert actualComponentTypeSubRestriction != null : "fx:id=\"actualComponentTypeSubRestriction\" was not injected: check your FXML file 'summary.fxml'.";
+		
 		assert actualRefexDescription != null : "fx:id=\"actualRefexDescription\" was not injected: check your FXML file 'summary.fxml'.";
 		assert actualRefexName != null : "fx:id=\"actualRefexName\" was not injected: check your FXML file 'summary.fxml'.";
 		assert cancelButton != null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'summary.fxml'.";
@@ -110,7 +115,9 @@ public class SummaryController implements PanelControllersI {
 		actualRefexDescription.setText(refexData.getRefexDescription());
 		actualParentConcept.setText(refexData.getParentConcept().getConceptDescriptionText());
 		actualComponentTypeRestriction.setText(refexData.getComponentRestrictionType() == ObjectChronologyType.UNKNOWN_NID ? "No Restriction" 
-				: refexData.getComponentRestrictionType().toString());  //TODO handle sub-restriction type
+				: refexData.getComponentRestrictionType().toString()); 
+		actualComponentTypeSubRestriction.setText(refexData.getComponentSubRestrictionType() == SememeType.UNKNOWN ? "No Subtype Restriction" 
+				: refexData.getComponentSubRestrictionType().toString()); 
 		
 		detailsListView.getItems().clear();
 		detailsListView.getItems().addAll(refexData.getColumnInfo());
@@ -124,7 +131,7 @@ public class SummaryController implements PanelControllersI {
 					refexData.getRefexName(), refexData.getRefexDescription(), refexData.getColumnInfo().toArray(new DynamicSememeColumnInfo[0]), 
 					refexData.getParentConcept().getNid(), 
 					refexData.getComponentRestrictionType(), 
-					null);
+					refexData.getComponentSubRestrictionType());
 		} catch (RuntimeException e) {
 			logger.error("Unable to create and/or commit refset concept and metadata", e);
 			AppContext.getCommonDialogs().showErrorDialog("Error Creating Sememe", "Unexpected error creating the Sememe", e.getMessage(), summaryPane.getScene().getWindow());

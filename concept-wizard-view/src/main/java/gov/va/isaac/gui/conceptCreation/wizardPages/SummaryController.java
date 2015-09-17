@@ -123,7 +123,6 @@ public class SummaryController implements PanelControllers {
 	private void setupConcept() {
 		conceptFSN.setText(processController.getWizard().getConceptFSN());
 		conceptPT.setText(processController.getWizard().getConceptPT());
-		conceptPrimDef.setText(processController.getWizard().getConceptPrimDef());
 
 		addAllParents(processController.getWizard().getParents());
 	}
@@ -199,23 +198,15 @@ public class SummaryController implements PanelControllers {
 	@Override
 	public void processValues() {
 		try {
+			
 			ConceptChronology newChronology = processController.getWizard().createNewConcept();
 			
-			for (int i = 0; i < processController.getWizard().getSynonymsCreated(); i++) {
-					processController.getWizard().createNewDescription(newChronology.getConceptSequence(), i);
-			}
-
-			for (int i = 0; i < processController.getWizard().getRelationshipsCreated(); i++) {
-				processController.getWizard().createNewRelationship(newChronology.getConceptSequence(), i);
-			}
-			
-			//Try doing one commit at the end on the concept. This should work. If not then commit individually
 			Get.commitService().addUncommitted(newChronology);
-		    
-			Get.commitService().commit(newChronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), "WizardController adding concept: " + processController.getWizard().getConceptFSN());
+			Get.commitService().commit(
+					newChronology, 
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
+					"WizardController adding concept: " + "fsn");
 			
-			 //fix depracated
-            
 //			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
 			//boolean committed = 
 //			Ts.get().commit(/* newCon.getNid() */);

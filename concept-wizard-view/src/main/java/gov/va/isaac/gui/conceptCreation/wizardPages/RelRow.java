@@ -18,14 +18,13 @@
  */
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
-
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.ochre.api.ConceptProxy;
+import gov.vha.isaac.ochre.api.Get;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -65,7 +64,7 @@ public class RelRow
 	public RelRow()
 	{
 		ObservableList<SimpleDisplayConcept> dropDownOptions = FXCollections.observableArrayList();
-		dropDownOptions.add(new SimpleDisplayConcept(OTFUtility.getConceptVersion(IsaacMetadataAuxiliaryBinding.IS_A.getPrimodialUuid())));
+		dropDownOptions.add(new SimpleDisplayConcept(Get.conceptSnapshot().getConceptSnapshot(IsaacMetadataAuxiliaryBinding.IS_A.getNid())));
 		relationship = new ConceptNode(null, true, dropDownOptions, null);
 		target = new ConceptNode(null, true);
 		
@@ -173,15 +172,15 @@ public class RelRow
 		return typeNode;
 	}
 
-	public RelationshipType getType()
+	public ConceptProxy getType()
 	{
 		if ("Role".equalsIgnoreCase(type.getSelectionModel().getSelectedItem()))
 		{
-			return RelationshipType.STATED_ROLE;
+			return IsaacMetadataAuxiliaryBinding.STATED;
 		}
 		else
 		{
-			return RelationshipType.QUALIFIER;
+			return IsaacMetadataAuxiliaryBinding.MAPPING_QUALIFIERS;
 		}
 	}
 
