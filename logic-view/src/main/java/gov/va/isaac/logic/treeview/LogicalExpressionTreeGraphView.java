@@ -224,38 +224,47 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			logger_.info("Skip refresh of LogicalExpressionTreeGraphView due to wait count {}", noRefresh_.get());
 			return;
 		}
-		else
-		{
-			noRefresh_.getAndIncrement();
-		}
-
-		Task<LogicalExpression> task = new Task<LogicalExpression>() {
-			@Override
-			protected LogicalExpression call() throws Exception {
-				return loadData();
-			}
-			
-			@Override
-			public void succeeded() {
-				Platform.runLater(() -> displayData(getValue()));
-				noRefresh_.decrementAndGet();
-			}
-			@Override
-			public void failed() {
-				logger_.error("Unexpected error building the LogicalExpressionTreeGraphView display", getException());
-				//null check, as the error may happen before the scene is visible
-				Platform.runLater(() ->
-					AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the LogicalExpressionTreeGraphView display", getException().getMessage(), 
-						(rootScrollPane.getScene() == null ? null : rootScrollPane.getScene().getWindow())));
-				noRefresh_.decrementAndGet();
-			}
-			@Override
-			public void cancelled() {
-				noRefresh_.decrementAndGet();
-			}
-		};
 		
-		Utility.execute(task);
+		// ELSE
+		noRefresh_.getAndIncrement();
+		
+		// TODO get background processes working
+		displayData(loadData());
+		
+		noRefresh_.decrementAndGet();
+
+//		Task<LogicalExpression> task = new Task<LogicalExpression>() {
+//			@Override
+//			protected LogicalExpression call() throws Exception {
+//				return loadData();
+//			}
+//			
+//			@Override
+//			public void succeeded() {
+//				displayData(getValue());
+//				noRefresh_.decrementAndGet();
+//			}
+//			@Override
+//			public void failed() {
+//				logger_.error("Unexpected error building the LogicalExpressionTreeGraphView display", getException());
+//				//null check, as the error may happen before the scene is visible
+//				Platform.runLater(() ->
+//					AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the LogicalExpressionTreeGraphView display", getException().getMessage(), 
+//						(rootScrollPane.getScene() == null ? null : rootScrollPane.getScene().getWindow())));
+//				noRefresh_.decrementAndGet();
+//			}
+//			@Override
+//			public void cancelled() {
+//				logger_.warn("Unexpected cancellation building the LogicalExpressionTreeGraphView display");
+//				//null check, as may happen before the scene is visible
+//				Platform.runLater(() ->
+//					AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected cancellation building the LogicalExpressionTreeGraphView display", "Task cancelled", 
+//						(rootScrollPane.getScene() == null ? null : rootScrollPane.getScene().getWindow())));
+//				noRefresh_.decrementAndGet();
+//			}
+//		};
+//		
+//		Utility.execute(task);
 	}
 	
 	private LogicalExpression loadData() {
@@ -265,14 +274,15 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinate.get().getStampCoordinate());
 		LogicGraphSememeImpl latestGraph = latestGraphLatestVersionOptional.get().value();	
 		
-		LogicalExpressionOchreImpl lg = new LogicalExpressionOchreImpl(latestGraph.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(latestGraph.getReferencedComponentNid()));
+		LogicalExpressionOchreImpl le = new LogicalExpressionOchreImpl(latestGraph.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(latestGraph.getReferencedComponentNid()));
 
-		return lg;
+		return le;
 	}
 	
 	private void displayData(LogicalExpression le) {
 		title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " Logic Graph for Concept " + Get.conceptDescriptionText(conceptId));
 		
+		logicalExpressionTreeGraph.getChildren().clear();
 		logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
 		
 		textGraph.setText(le.toString());
@@ -290,6 +300,10 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	@Override
 	public void setConcept(int id) {
+		if (conceptId != null && conceptId != id) {
+			clear();
+		}
+
 		conceptId = id;
 		
 		init();
@@ -362,6 +376,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 	@Override
 	public void clear() {
+		logicalExpressionTreeGraph.getChildren().clear();
 		logicalExpressionTreeGraph.setRootNode(null);
 		textGraph.setText(null);
 		title.setText(null);

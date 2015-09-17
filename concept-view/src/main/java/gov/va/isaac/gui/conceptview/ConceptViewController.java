@@ -363,12 +363,12 @@ public class ConceptViewController {
 	
 	private void refresh() {
 		refreshConceptDescriptions();
-		//refreshRelationships();
 		refreshLogicGraph();
 	}
 
 	void viewDiscarded() {
 		refreshBinding.clearBindings();
+		relationshipsView.viewDiscarded();
 		removeConceptChronologyChangeListener();
 	}
 
