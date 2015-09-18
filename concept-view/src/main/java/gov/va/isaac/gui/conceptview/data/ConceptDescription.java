@@ -77,7 +77,20 @@ public class ConceptDescription extends StampedItem {
 		
 		return descriptionList;
 	}
-	
+	public static ObservableList<ConceptDescription> makeDescriptionVersionList(
+			SememeChronology<? extends DescriptionSememe<?>> sememeChronology)
+	{
+		ObservableList<ConceptDescription> descriptionVersionList = FXCollections.observableArrayList();
+		
+		for (DescriptionSememe<?> descriptionSememeVersion : sememeChronology.getVersionList())
+		{
+			ConceptDescription description = new ConceptDescription(descriptionSememeVersion);
+			descriptionVersionList.add(description);
+		}
+		
+		return descriptionVersionList;
+	}
+
 	public ConceptDescription(DescriptionSememe<?> description)  
 	{
 		readDescription(description);
