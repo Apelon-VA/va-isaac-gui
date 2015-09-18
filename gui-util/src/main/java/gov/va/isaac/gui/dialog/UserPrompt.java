@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.StageStyle;
 
 public abstract class UserPrompt {
@@ -38,7 +39,7 @@ public abstract class UserPrompt {
 	}
 	protected static class Prompt extends Stage {
 		
-		public Prompt( String title, Stage owner, Scene scene) {
+		public Prompt( String title, Window owner, Scene scene) {
 		    setTitle( title );
 		    initStyle( StageStyle.UTILITY );
 		    initModality( Modality.APPLICATION_MODAL );
@@ -57,7 +58,7 @@ public abstract class UserPrompt {
 	abstract protected Node createUserInterface();
 	abstract protected void displayInvalidMessage();
 	
-	public UserPromptResponse showUserPrompt(Stage owner, String title) {
+	public UserPromptResponse showUserPrompt(Window owner, String title) {
 		 	vb = new VBox(10);
 		    vb.setAlignment(Pos.CENTER);
 
