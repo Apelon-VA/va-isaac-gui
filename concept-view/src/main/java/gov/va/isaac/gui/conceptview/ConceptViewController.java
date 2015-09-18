@@ -1081,6 +1081,24 @@ public class ConceptViewController {
 					}
 				});
 				cm.getItems().add(miWrap);
+
+				MenuItem miIds = new MenuItem("Display IDs");
+				miIds.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						PopupHelper.showDescriptionIdList(conceptDescription, cell);
+					}
+				});
+				cm.getItems().add(miIds);
+
+				MenuItem miHistory = new MenuItem("Description History");
+				miHistory.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						PopupHelper.showDescriptionHistory(conceptDescription, cell);
+					}
+				});
+				cm.getItems().add(miHistory);
 			}
 			
 			final String textValue = (textProperty != null)? textProperty.get() : null;
