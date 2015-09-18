@@ -190,7 +190,7 @@ public class HeaderNode<T> {
 		Collections.sort(testList);
 		
 		SememeContentFilterPrompt prompt = new SememeContentFilterPrompt(text, testList, filter.getFilterValues());
-		prompt.showUserPrompt((Stage)scene.getWindow(), "Select Filters");
+		prompt.showUserPrompt(scene.getWindow(), "Select Filters");
 
 		if (prompt.getButtonSelected() == UserPromptResponse.APPROVE) {
 			filter.getFilterValues().setAll(prompt.getSelectedValues());
