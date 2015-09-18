@@ -98,6 +98,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	{
 		if (description != null) 
 		{
+			readStampDetails(description);
 			_acceptabilitySortValue = AcceptabilitiesHelper.getAcceptabilitySortValue(description);
 			_typeSortValue = (getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())			? 0 :
 							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()) 						? 1 :
