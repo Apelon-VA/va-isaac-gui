@@ -1,51 +1,110 @@
 package gov.va.isaac.gui.conceptview.popups;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.conceptview.ConceptViewColumnType;
+import gov.va.isaac.gui.conceptview.ConceptViewController;
+import gov.va.isaac.gui.conceptview.data.ConceptDescription;
+import gov.va.isaac.gui.conceptview.data.ConceptId;
 import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
+import gov.va.isaac.gui.util.CustomClipboard;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
+import gov.va.isaac.util.CommonMenuBuilderI;
+import gov.va.isaac.util.CommonMenus;
+import gov.va.isaac.util.CommonMenusDataProvider;
+import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.CommonMenus.CommonMenuBuilder;
+import gov.va.isaac.util.CommonMenus.CommonMenuItem;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.controlsfx.control.PopOver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import javafx.util.Callback;
 
 public class PopupList {
 
 	private String 						_title;
-	private PopupDataType[] 			_columnTypes;
-	private ObservableList<PopupData[]>	_data = FXCollections.observableArrayList();
+	private ConceptViewColumnType[] 	_columnTypes;
+	private ObservableList<PopupData>	_data = FXCollections.observableArrayList();
 	private Region						_popOverRegion;
-	private TableView<PopupData[]>		_tableView;
+	private TableView<PopupData>		_tableView;
 	
-	protected void setTitle(String title)					{ _title = title; }
-	protected void setHeaders(PopupDataType[] columnTypes)	{ _columnTypes = columnTypes; }
-	protected void addValues(PopupData[] values) 			{ _data.add(values); }
-	protected void setPopOverRegion(Region r)				{ _popOverRegion = r; }
+	public void setTitle(String title)			{ _title = title; }
+	public void setPopOverRegion(Region r)		{ _popOverRegion = r; }
+	
+	public void setColumnTypes(ConceptViewColumnType[] columnTypes)	{ 
+		_columnTypes = columnTypes; 
+	}
+
+	private static final Logger LOG = LoggerFactory.getLogger(PopupList.class);
+
+	public void addData(Object data) {
+		PopupData pd = new PopupData(data);
+		if (pd.isValid()) {
+			_data.add(pd);
+		}
+	}
 	
 	protected void showPopup() {
-		
-		_tableView = new TableView<PopupData[]>();
+		_tableView = new TableView<PopupData>();
 		_tableView.getColumns().clear();
 		for (int i = 0; i < _columnTypes.length; i++) {
-			PopupDataType columnType = _columnTypes[i];
-			TableColumn<PopupData[],String> column = new TableColumn<PopupData[],String>(columnType.toString());
+			ConceptViewColumnType columnType = _columnTypes[i];
+			TableColumn<PopupData,PopupData> column = new TableColumn<PopupData,PopupData>(columnType.toString());
+			column.setUserData(columnType);
 			_tableView.getColumns().add(column);
-			final int colNum = i;
-			column.setCellValueFactory(new Callback<CellDataFeatures<PopupData[], String>, ObservableValue<String>>() {
+			
+			column.setCellValueFactory(new Callback<CellDataFeatures<PopupData, PopupData>, ObservableValue<PopupData>>() {
 				@Override
-				public ObservableValue<String> call(CellDataFeatures<PopupData[], String> p) {
-					return new SimpleStringProperty((p.getValue()[colNum].getValue()));
+				public ObservableValue<PopupData> call(CellDataFeatures<PopupData, PopupData> p) {
+					return new SimpleObjectProperty<PopupData>(p.getValue());
 				}
+			});
+			
+			column.setCellFactory(new Callback<TableColumn<PopupData,PopupData>,TableCell<PopupData,PopupData>>() {
+
+				@Override
+				public TableCell<PopupData, PopupData> call(TableColumn<PopupData, PopupData> param) {
+					return new TableCell<PopupData, PopupData>() {
+						@Override
+						public void updateItem(final PopupData popupData, boolean empty) {
+							super.updateItem(popupData, empty);
+							updateCell(this, popupData);
+						}
+					};
+				}
+				
 			});
 		}
 		
@@ -60,4 +119,172 @@ public class PopupList {
 		}
 	}
 	
+	private void updateCell(TableCell<?, ?> cell, PopupData popupData) {
+		if (!cell.isEmpty() && popupData.isValid()) {
+			ContextMenu cm = new ContextMenu();
+			cell.setContextMenu(cm);
+			StringProperty textProperty = null;
+			int conceptSequence = 0;
+			int conceptNid = 0;
+			ConceptViewColumnType columnType = (ConceptViewColumnType) cell.getTableColumn().getUserData();
+
+			cell.setText(null);
+			cell.setGraphic(null);
+			cell.setTooltip(null);
+		
+			if (popupData.isConceptId()) {
+				ConceptId conceptId = popupData.getConceptId();
+				switch (columnType) {
+				case ID_TYPE:
+					textProperty = conceptId.getTypeProperty();
+					break;
+				case ID_VALUE:
+					textProperty = conceptId.getValueProperty();
+					break;
+				case TIMESTAMP:
+					textProperty = conceptId.getTimestampProperty();
+					break;
+				default:
+					break;
+				}
+				
+			} else if (popupData.isConceptDescription()) {
+				ConceptDescription conceptDescription = popupData.getConceptDescription();
+				switch (columnType) {
+				case TERM:
+					textProperty = conceptDescription.getValueProperty();
+					//conceptSequence = conceptDescription.getSequence();
+					//conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+					
+				case TYPE:
+					textProperty = conceptDescription.getTypeProperty();
+					conceptSequence = conceptDescription.getTypeSequence();
+					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+					
+				case LANGUAGE:
+					textProperty = conceptDescription.getLanguageProperty();
+					conceptSequence = conceptDescription.getLanguageSequence();
+					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+					
+				case ACCEPTABILITY:
+					textProperty = conceptDescription.getAcceptabilityProperty();
+					//conceptSequence = conceptDescription.getAcceptabilitySequence();
+					break;
+				case SIGNIFICANCE:
+					textProperty = conceptDescription.getSignificanceProperty();
+					conceptSequence = conceptDescription.getSignificanceSequence();
+					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+				case STAMP_STATE:
+					textProperty = conceptDescription.getStateProperty();
+					break;
+				case STAMP_TIME:
+					textProperty = conceptDescription.getTimeProperty();
+					break;
+				case STAMP_AUTHOR:
+					textProperty = conceptDescription.getAuthorProperty();
+					conceptSequence = conceptDescription.getAuthorSequence();
+					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+				case STAMP_MODULE:
+					textProperty = conceptDescription.getModuleProperty();
+					conceptSequence = conceptDescription.getModuleSequence();
+					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+				case STAMP_PATH:
+					textProperty = conceptDescription.getPathProperty();
+					conceptSequence = conceptDescription.getPathSequence();
+					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+					break;
+				default:
+					// Nothing
+				}
+				
+			}
+			
+			if (textProperty != null) {
+				// TODO Make text overrun work on text property
+				Text text = new Text();
+				text.textProperty().bind(textProperty);
+				//text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
+				cell.setGraphic(text);
+				
+				Tooltip tooltip = new Tooltip();
+				tooltip.textProperty().bind(textProperty);
+				cell.setTooltip(tooltip);
+	
+				MenuItem mi = new MenuItem("Copy Value");
+				mi.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						CustomClipboard.set(((Text)cell.getGraphic()).getText());
+					}
+				});
+				mi.setGraphic(Images.COPY.createImageView());
+				cm.getItems().add(mi);
+
+				MenuItem miWrap = new MenuItem("Wrap Text");
+				miWrap.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						Text text = (Text)cell.getGraphic();
+						if (text.wrappingWidthProperty().isBound()) {
+							miWrap.setText("Wrap Text");
+							text.wrappingWidthProperty().unbind();
+							text.setWrappingWidth(0.0);
+							
+						} else {
+							miWrap.setText("Truncate Text");
+							text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
+						}
+					}
+				});
+				cm.getItems().add(miWrap);
+			}
+			
+			final String textValue = (textProperty != null)? textProperty.get() : null;
+			if (conceptNid != 0) {
+				final int finalConceptNid = conceptNid;
+				final int finalConceptSequence = conceptSequence;
+				CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
+				builder.setMenuItemsToExclude(
+						CommonMenuItem.COPY,
+						CommonMenuItem.COPY_CONTENT,
+						CommonMenuItem.COPY_NID,
+						CommonMenuItem.COPY_SCTID,
+						CommonMenuItem.COPY_UUID,
+						CommonMenuItem.LOINC_REQUEST_VIEW,
+						CommonMenuItem.USCRS_REQUEST_VIEW);
+				CommonMenus.addCommonMenus(cm,
+						builder,
+						new CommonMenusDataProvider() {
+					@Override
+					public String[] getStrings() {
+						return textValue == null ? new String[0] : new String[] { textValue };
+					}
+				}, new CommonMenusNIdProvider() {
+					@Override
+					public Collection<Integer> getNIds() {
+						try {
+							boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(finalConceptNid);
+							LOG.debug("Creating common menus for sequence={}, nid={}, desc={}, which {} a dynamic sememe", finalConceptSequence, finalConceptNid, Get.conceptDescriptionText(finalConceptNid), isDynamicSememe ? "is" : "is not");
+						} catch (Exception e) {
+							//
+						}
+						return Arrays.asList(new Integer[] { finalConceptNid });
+					}
+				});
+			}
+			
+		} else {
+			//cell.setText(null);
+			cell.setGraphic(null);
+			cell.setTooltip(null);
+		}
+	}
+
 }
+
