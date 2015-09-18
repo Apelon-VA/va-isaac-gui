@@ -47,6 +47,7 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.WorkflowTaskDetails
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.taxonomyView.TaxonomyViewI;
 import gov.va.isaac.interfaces.workflow.ComponentWorkflowServiceI;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
@@ -661,12 +662,28 @@ public class CommonMenus
 						int numNids = commonMenusNIdProvider.getObservableNidCount().get();
 						boolean hasOne = numNids == 1;
 						if (hasOne) {
-							boolean notNull = commonMenusNIdProvider.getNIds().iterator().next() != null;
-							if (notNull) {
-								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
+							Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
+							if (nid != null) {
+								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
 								if (isDynamicSememe) {
 									return true;
 								}
+								
+								ObjectChronology<?> chronology = null;
+								switch (Get.identifierService().getChronologyTypeForNid(nid)) {
+								case CONCEPT:
+									chronology = Get.conceptService().getConcept(nid);
+									break;
+								case SEMEME:
+									chronology = Get.sememeService().getSememe(nid);
+									break;
+									
+								case UNKNOWN_NID:
+									default:
+										return false;
+								}
+								
+								return chronology != null && chronology.getSememeList().size() > 0;
 							}
 						}
 						//return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null && DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
