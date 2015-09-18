@@ -488,6 +488,16 @@ public class ConceptViewController {
 									});
 									conceptLabel.getContextMenu().getItems().add(mi);
 
+
+									MenuItem mi = new MenuItem("Copy Details");
+									mi.visibleProperty().bind(conceptProperty.isNotNull());
+									mi.setOnAction(new EventHandler<ActionEvent>() {
+										@Override
+										public void handle(ActionEvent arg0) {
+											CustomClipboard.set(conceptProperty.get().toUserString());
+										}
+									});
+									conceptLabel.getContextMenu().getItems().add(mi);
 								}
 							});
 						}
