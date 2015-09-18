@@ -124,15 +124,15 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	acceptabilityTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	significanceTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	dialectTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem>			statusTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>>			statusTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionValueTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	sememeTableColumn;
 	
     @FXML private TableColumn<ConceptDescription, ?> descriptionTableSTAMPColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem> moduleTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem> timeTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem> authorTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem> pathTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>> moduleTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>> timeTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>> authorTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>> pathTableColumn;
 
 	@FXML private Label conceptCodeLabel;
 	@FXML private Label conceptLabel;
@@ -989,7 +989,7 @@ public class ConceptViewController {
 						b.setOnAction((event) ->
 						{
 							SememeViewI drv = AppContext.getService(SememeViewI.class);
-							drv.setComponent(conceptDescription.getDescriptionSememe().getNid(), null, null, null, true);
+							drv.setComponent(conceptDescription.getStampedVersion().getNid(), null, null, null, true);
 		
 							DetachablePopOverHelper.showDetachachablePopOver(b, DetachablePopOverHelper.newDetachachablePopover("Sememes attached to Description", drv.getView()));
 						});

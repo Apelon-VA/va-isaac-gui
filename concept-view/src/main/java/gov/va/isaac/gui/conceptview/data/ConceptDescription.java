@@ -21,11 +21,9 @@ import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConceptDescription extends StampedItem {
+public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	private static final Logger LOG = LoggerFactory.getLogger(ConceptDescription.class);
 
-	private DescriptionSememe<?> _description;
-	
 	private final SimpleStringProperty typeSSP 			= new SimpleStringProperty("-");
 	private final SimpleStringProperty valueSSP 		= new SimpleStringProperty("-");
 	private final SimpleStringProperty languageSSP 		= new SimpleStringProperty("-");
@@ -98,23 +96,22 @@ public class ConceptDescription extends StampedItem {
 	
 	private void readDescription(DescriptionSememe<?> description) 
 	{
-		_description = description;
 		if (description != null) 
 		{
-			_acceptabilitySortValue = AcceptabilitiesHelper.getAcceptabilitySortValue(_description);
+			_acceptabilitySortValue = AcceptabilitiesHelper.getAcceptabilitySortValue(description);
 			_typeSortValue = (getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())			? 0 :
 							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()) 						? 1 :
 							 (getTypeSequence() == IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence()) 	? 2 :
 							 Integer.MAX_VALUE;
-			_hasSememes = Frills.hasNestedSememe(_description.getChronology());
+			_hasSememes = Frills.hasNestedSememe(description.getChronology());
 			readStampDetails(description);
 
 			Utility.execute(() ->
 			{
-				String typeName			= Get.conceptDescriptionText(_description.getDescriptionTypeConceptSequence());
-				String valueName		= _description.getText();
+				String typeName			= Get.conceptDescriptionText(description.getDescriptionTypeConceptSequence());
+				String valueName		= description.getText();
 				String languageName 	 = Get.conceptDescriptionText(getLanguageSequence());
-				String acceptabilityName = AcceptabilitiesHelper.getFormattedAcceptabilities(_description);
+				String acceptabilityName = AcceptabilitiesHelper.getFormattedAcceptabilities(description);
 				String significanceName	 = Get.conceptDescriptionText(getSignificanceSequence());
 
 				final String finalValueName = valueName;
@@ -129,13 +126,11 @@ public class ConceptDescription extends StampedItem {
 		}
 	}
 	
-	public DescriptionSememe<?> getDescriptionSememe() { return _description; }
-	
-	public int getSequence()				{ return _description.getSememeSequence(); }
-	public int getTypeSequence()			{ return _description.getDescriptionTypeConceptSequence(); }
-	public int getLanguageSequence()		{ return _description.getLanguageConceptSequence(); }
+	public int getSequence()				{ return getStampedVersion().getSememeSequence(); }
+	public int getTypeSequence()			{ return getStampedVersion().getDescriptionTypeConceptSequence(); }
+	public int getLanguageSequence()		{ return getStampedVersion().getLanguageConceptSequence(); }
 	public int getAcceptabilitySequence()	{ return 0; }
-	public int getSignificanceSequence()	{ return _description.getCaseSignificanceConceptSequence(); }
+	public int getSignificanceSequence()	{ return getStampedVersion().getCaseSignificanceConceptSequence(); }
 	
 	public SimpleStringProperty getTypeProperty()			{ return typeSSP; }
 	public SimpleStringProperty getValueProperty()			{ return valueSSP; }

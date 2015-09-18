@@ -40,9 +40,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public abstract class StampedItem
+public abstract class StampedItem<T extends StampedVersion>
 {
-	private StampedVersion _stampedVersion;
+	private T _stampedVersion;
 	
 	//private UUID authorUUID;
 	//private UUID moduleUUID;
@@ -54,8 +54,9 @@ public abstract class StampedItem
 	private final SimpleStringProperty stateSSP  = new SimpleStringProperty("-");
 	private final SimpleStringProperty timeSSP   = new SimpleStringProperty("-");
 	
+	public T getStampedVersion() { return _stampedVersion; }
 	
-	protected void readStampDetails(StampedVersion stampedVersion) 
+	protected void readStampDetails(T stampedVersion) 
 	{
 		_stampedVersion = stampedVersion;
 
@@ -101,38 +102,38 @@ public abstract class StampedItem
 	public int getModuleSequence() { return _stampedVersion.getModuleSequence(); }
 	public int getPathSequence()   { return _stampedVersion.getPathSequence(); }
 	
-	public static final Comparator<StampedItem> statusComparator = new Comparator<StampedItem>() {
+	public static final Comparator<StampedItem<?>> statusComparator = new Comparator<StampedItem<?>>() {
 		@Override
-		public int compare(StampedItem o1, StampedItem o2) {
+		public int compare(StampedItem<?> o1, StampedItem<?> o2) {
 			// o1 and o2 intentionally reversed in this call, to make Active come before Inactive
 			return Boolean.compare(o2.isActive(), o1.isActive());
 		}
 	};
 	
-	public static final Comparator<StampedItem> timeComparator = new Comparator<StampedItem>() {
+	public static final Comparator<StampedItem<?>> timeComparator = new Comparator<StampedItem<?>>() {
 		@Override
-		public int compare(StampedItem o1, StampedItem o2) {
+		public int compare(StampedItem<?> o1, StampedItem<?> o2) {
 			return Long.compare(o1.getCreationDate(), o2.getCreationDate());
 		}
 	};
 	
-	public static final Comparator<StampedItem> authorComparator = new Comparator<StampedItem>() {
+	public static final Comparator<StampedItem<?>> authorComparator = new Comparator<StampedItem<?>>() {
 		@Override
-		public int compare(StampedItem o1, StampedItem o2) {
+		public int compare(StampedItem<?> o1, StampedItem<?> o2) {
 			return Utility.compareStringsIgnoreCase(o1.getAuthorProperty().get(), o2.getAuthorProperty().get());
 		}
 	};
 	
-	public static final Comparator<StampedItem> moduleComparator = new Comparator<StampedItem>() {
+	public static final Comparator<StampedItem<?>> moduleComparator = new Comparator<StampedItem<?>>() {
 		@Override
-		public int compare(StampedItem o1, StampedItem o2) {
+		public int compare(StampedItem<?> o1, StampedItem<?> o2) {
 			return Utility.compareStringsIgnoreCase(o1.getModuleProperty().get(), o2.getModuleProperty().get());
 		}
 	};
 	
-	public static final Comparator<StampedItem> pathComparator = new Comparator<StampedItem>() {
+	public static final Comparator<StampedItem<?>> pathComparator = new Comparator<StampedItem<?>>() {
 		@Override
-		public int compare(StampedItem o1, StampedItem o2) {
+		public int compare(StampedItem<?> o1, StampedItem<?> o2) {
 			return Utility.compareStringsIgnoreCase(o1.getPathProperty().get(), o2.getPathProperty().get());
 		}
 	};
