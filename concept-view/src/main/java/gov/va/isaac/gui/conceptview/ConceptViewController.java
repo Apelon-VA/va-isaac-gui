@@ -4,6 +4,7 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
+import gov.va.isaac.gui.conceptview.popups.PopupHelper;
 import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
@@ -39,6 +40,8 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
+
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +50,8 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.function.Function;
+
+
 
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -88,8 +93,12 @@ import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
 
 import com.sun.javafx.tk.Toolkit;
 
@@ -468,6 +477,17 @@ public class ConceptViewController {
 											return conceptProperty.get() == null ? new ArrayList<Integer>() : Arrays.asList(new Integer[] { conceptProperty.get().getChronology().getNid() });
 										}
 									});
+									
+									// test display ids
+									MenuItem mi = new MenuItem("Display IDs");
+									mi.setOnAction(new EventHandler<ActionEvent>() {
+										@Override
+										public void handle(ActionEvent arg0) {
+											PopupHelper.showConceptIdList(conceptProperty.getValue(), conceptLabel);
+										}
+									});
+									conceptLabel.getContextMenu().getItems().add(mi);
+
 								}
 							});
 						}
@@ -905,6 +925,7 @@ public class ConceptViewController {
 				break;
 			case SEMEMES:
 			{
+				
 				String tooltipText = "";
 				StackPane sp = new StackPane();
 				sp.setPrefSize(25, 25);
