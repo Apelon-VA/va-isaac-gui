@@ -681,7 +681,7 @@ public class AddSememePopup extends Stage implements PopupViewI
 						}
 					}
 					
-					assemblageSequence = focusNid_;
+					assemblageSequence = Get.identifierService().getConceptSequence(focusNid_);
 				}
 				else
 				{
@@ -718,7 +718,10 @@ public class AddSememePopup extends Stage implements PopupViewI
 			}
 
 			Get.commitService().addUncommitted(sememe);
-			Get.commitService().commit("Editing / adding a sememe").get();
+			Get.commitService().commit(
+					sememe, 
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
+					"Sememe Created");
 			
 			
 			if (callingView_ != null)
