@@ -721,7 +721,7 @@ public class AddSememePopup extends Stage implements PopupViewI
 			Get.commitService().commit(
 					sememe, 
 					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
-					"Sememe Created");
+					"Sememe Created").get();
 			
 			
 			if (callingView_ != null)
