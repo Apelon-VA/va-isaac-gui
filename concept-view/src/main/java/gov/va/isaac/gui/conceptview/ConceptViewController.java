@@ -491,6 +491,17 @@ public class ConceptViewController {
 									}
 
 									{
+										MenuItem miHistory = new MenuItem("Concept History");
+										miHistory.setOnAction(new EventHandler<ActionEvent>() {
+											@Override
+											public void handle(ActionEvent arg0) {
+												//PopupHelper.showDescriptionHistory(conceptDescription, conceptLabel);
+											}
+										});
+										conceptLabel.getContextMenu().getItems().add(miHistory);
+									}
+									
+									{
 										MenuItem mi = new MenuItem("Copy Details");
 										mi.visibleProperty().bind(conceptProperty.isNotNull());
 										mi.setOnAction(new EventHandler<ActionEvent>() {
