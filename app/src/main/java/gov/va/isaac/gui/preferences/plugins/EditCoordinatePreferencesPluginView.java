@@ -30,6 +30,7 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.ValidBooleanBinding;
@@ -163,7 +164,7 @@ public class EditCoordinatePreferencesPluginView  implements PreferencesPluginVi
 	 */
 	@Override
 	public String getName() {
-		return "Edit Coordinate";
+		return SharedServiceNames.EDIT_COORDINATE_PREFERENCES_PLUGIN;
 	}
 
 	/* (non-Javadoc)

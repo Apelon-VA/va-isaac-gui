@@ -31,11 +31,16 @@ import gov.va.isaac.gui.preferences.plugins.AbstractPreferencesPluginView;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginLabelProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import javafx.scene.control.Control;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -95,7 +100,7 @@ public class SyncPreferencesPluginView extends AbstractPreferencesPluginView {
 	 * @param properties
 	 */
 	protected SyncPreferencesPluginView() {
-		super("Sync", createProperties());
+		super(SharedServiceNames.SYNC_PREFERENCES_PLUGIN, createProperties());
 	}
 	
 	/**

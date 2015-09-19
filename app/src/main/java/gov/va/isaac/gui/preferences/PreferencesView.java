@@ -84,7 +84,21 @@ public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithM
 		this.controller = loader.getController();
 		this.controller.setStage(this);
 	}
-	
+
+	/**
+	 * 
+	 * Allow specification by name of plugins to display before calling aboutToShow().
+	 * If no plugin names specified, then all available plugins will be displayed.
+	 * Throws RuntimeException if called after aboutToShow()
+	 * 
+	 * @param requiredPluginName a required plugin name
+	 * @param optionalPluginNames optional additional plugin names
+	 * 
+	 */
+	public void setRequestedPlugins(String requiredPluginName, String...optionalPluginNames) {
+		controller.setRequestedPlugins(requiredPluginName, optionalPluginNames);
+	}
+
 	/* (non-Javadoc)
 	 * @see gov.va.isaac.interfaces.gui.views.PopupViewI#showView(javafx.stage.Window)
 	 */

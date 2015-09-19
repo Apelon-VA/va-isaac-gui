@@ -37,4 +37,12 @@ public class SharedServiceNames
     public static final String LOINC = "LOINC";
     public static final String GIT = "GIT";
     public static final String SVN = "SVN";
+    
+    public static final String VIEW_COORDINATE_PREFERENCES_PLUGIN = "View Coordinate";
+    public static final String EDIT_COORDINATE_PREFERENCES_PLUGIN = "Edit Coordinate";
+    public static final String DROOLS_PREFERENCES_PLUGIN = "Drools";
+    public static final String EXPORT_PREFERENCES_PLUGIN = "Export";
+    public static final String DISPLAY_OPTIONS_PREFERENCES_PLUGIN = "Display Options";
+    public static final String SYNC_PREFERENCES_PLUGIN = "Sync";
+    public static final String WORKFLOW_PREFERENCES_PLUGIN = "Workflow";
 }
