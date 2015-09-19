@@ -92,7 +92,8 @@ public class CommonMenus
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
 		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
 		LOGIC_GRAPH_VIEW("Logic Graph View", Images.ROOT),
-		SEMEMES_VIEW("Attached Sememes View", Images.ATTACH),
+		COMPONENT_SEMEMES_VIEW("Component Sememe View", Images.ATTACH),
+		ASSEMBLAGE_SEMEMES_VIEW("Assemblage Sememe View", Images.SEARCH),
 		
 		SEND_TO("Send To"),
 			LIST_VIEW("List View", Images.LIST_VIEW),
@@ -139,7 +140,8 @@ public class CommonMenus
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW, WorkflowInitiationViewI.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.RELEASE_WORKFLOW_TASK, ComponentWorkflowServiceI.class);
 		CommonMenusServices.setServiceCallParameters(CommonMenuItem.LOGIC_GRAPH_VIEW, LogicalExpressionTreeGraphPopupViewI.class);
-		CommonMenusServices.setServiceCallParameters(CommonMenuItem.SEMEMES_VIEW, SememeViewI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.COMPONENT_SEMEMES_VIEW, SememeViewI.class);
+		CommonMenusServices.setServiceCallParameters(CommonMenuItem.ASSEMBLAGE_SEMEMES_VIEW, SememeViewI.class);
 	}
 
 	public static class ObjectContainer {
@@ -650,7 +652,7 @@ public class CommonMenus
 
 		// Menu item to open a Sememe View content request
 		try {
-			if (CommonMenusServices.hasService(CommonMenuItem.SEMEMES_VIEW)) {
+			if (CommonMenusServices.hasService(CommonMenuItem.COMPONENT_SEMEMES_VIEW)) {
 				BooleanBinding bb = new BooleanBinding() {
 					{
 						bind(commonMenusNIdProvider.getObservableNidCount());
@@ -664,10 +666,11 @@ public class CommonMenus
 						if (hasOne) {
 							Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
 							if (nid != null) {
-								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
-								if (isDynamicSememe) {
-									return true;
-								}
+								// setAssemblage()
+//								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
+//								if (isDynamicSememe) {
+//									return true;
+//								}
 								
 								ObjectChronology<?> chronology = null;
 								switch (Get.identifierService().getChronologyTypeForNid(nid)) {
@@ -691,7 +694,7 @@ public class CommonMenus
 					}
 				};
 				MenuItem sememesViewMenuItem = createNewMenuItem(
-						CommonMenuItem.SEMEMES_VIEW,
+						CommonMenuItem.COMPONENT_SEMEMES_VIEW,
 						builder,
 						() -> { return bb.get(); }, // canHandle
 						bb,			 //make visible
@@ -701,7 +704,7 @@ public class CommonMenus
 							drv.setComponent(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
 
 							// TODO use DynamicReferencedItemsView
-							PopOver po = DetachablePopOverHelper.newDetachachablePopover("Attached Sememes", drv.getView());
+							PopOver po = DetachablePopOverHelper.newDetachachablePopover("Attached Sememes for " + Get.conceptDescriptionText(commonMenusNIdProvider.getNIds().iterator().next()), drv.getView());
 							po.detach();
 							po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
 						},
@@ -720,6 +723,61 @@ public class CommonMenus
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.SEMEMES_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
+		// Menu item to open a Sememe View content request
+		try {
+			if (CommonMenusServices.hasService(CommonMenuItem.ASSEMBLAGE_SEMEMES_VIEW)) {
+				BooleanBinding bb = new BooleanBinding() {
+					{
+						bind(commonMenusNIdProvider.getObservableNidCount());
+					}
+					
+					@Override
+					protected boolean computeValue() {
+						// Opened up for debug purposes only
+						int numNids = commonMenusNIdProvider.getObservableNidCount().get();
+						boolean hasOne = numNids == 1;
+						if (hasOne) {
+							Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
+							if (nid != null) {
+								// setAssemblage()
+								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
+								if (isDynamicSememe) {
+									return true;
+								}
+							}
+						}
+						//return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null && DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
+						return false;
+					}
+				};
+				MenuItem sememesViewMenuItem = createNewMenuItem(
+						CommonMenuItem.ASSEMBLAGE_SEMEMES_VIEW,
+						builder,
+						() -> { return bb.get(); }, // canHandle
+						bb,			 //make visible
+						// onHandlable
+						() -> {
+							SememeViewI drv = AppContext.getService(SememeViewI.class);
+							drv.setAssemblage(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
+
+							PopOver po = DetachablePopOverHelper.newDetachachablePopover("Attached Sememes for " + Get.conceptDescriptionText(commonMenusNIdProvider.getNIds().iterator().next()), drv.getView());
+							po.detach();
+							po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
+						},
+						// onNotHandlable
+						() -> { 
+							int nid = commonMenusNIdProvider.getNIds().iterator().next();
+							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
+				if (sememesViewMenuItem != null)
+				{
+					menuItems.add(sememesViewMenuItem);
+				}
+			} else {
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.SEMEMES_VIEW) returned false");
+			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.SEMEMES_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+		}
 		try {
 			if (CommonMenusServices.hasService(CommonMenuItem.RELEASE_WORKFLOW_TASK)) {
 				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(

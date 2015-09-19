@@ -69,7 +69,13 @@ public class PopupList {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PopupList.class);
 
-	public void addData(Object data) {
+	public void addData(ConceptId data) {
+		PopupData pd = new PopupData(data);
+		if (pd.isValid()) {
+			_data.add(pd);
+		}
+	}
+	public void addData(ConceptDescription data) {
 		PopupData pd = new PopupData(data);
 		if (pd.isValid()) {
 			_data.add(pd);
@@ -93,7 +99,6 @@ public class PopupList {
 			});
 			
 			column.setCellFactory(new Callback<TableColumn<PopupData,PopupData>,TableCell<PopupData,PopupData>>() {
-
 				@Override
 				public TableCell<PopupData, PopupData> call(TableColumn<PopupData, PopupData> param) {
 					return new TableCell<PopupData, PopupData>() {
@@ -104,7 +109,6 @@ public class PopupList {
 						}
 					};
 				}
-				
 			});
 		}
 		

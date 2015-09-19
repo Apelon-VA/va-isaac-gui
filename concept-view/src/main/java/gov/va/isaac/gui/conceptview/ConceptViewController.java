@@ -1113,7 +1113,8 @@ public class ConceptViewController {
 						CommonMenuItem.COPY_SCTID,
 						CommonMenuItem.COPY_UUID,
 						CommonMenuItem.LOINC_REQUEST_VIEW,
-						CommonMenuItem.USCRS_REQUEST_VIEW);
+						CommonMenuItem.USCRS_REQUEST_VIEW,
+						CommonMenuItem.SEND_TO);
 				CommonMenus.addCommonMenus(cm,
 						builder,
 						new CommonMenusDataProvider() {

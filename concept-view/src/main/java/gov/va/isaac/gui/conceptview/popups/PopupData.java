@@ -4,17 +4,15 @@ import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
 
 public class PopupData {
-
 	private ConceptId 			_idData = null;
 	private ConceptDescription	_descData = null;
 	//private ConceptSnaphot		_conceptDate = null;
 	
-	public PopupData(Object data) {
-		if (data instanceof ConceptId) {
-			_idData = (ConceptId) data;
-		} else if (data instanceof ConceptDescription) {
-			_descData = (ConceptDescription) data;
-		}
+	public PopupData(ConceptId data) {
+		_idData = data;
+	}
+	public PopupData(ConceptDescription data) {
+		_descData = data;
 	}
 	
 	public boolean isValid() {

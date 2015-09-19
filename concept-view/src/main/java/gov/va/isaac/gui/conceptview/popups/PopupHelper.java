@@ -1,20 +1,20 @@
 package gov.va.isaac.gui.conceptview.popups;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import javafx.scene.layout.Region;
 import gov.va.isaac.gui.conceptview.ConceptViewColumnType;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
 import gov.va.isaac.gui.conceptview.data.ConceptIdType;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Optional;
+import java.util.UUID;
+
+import javafx.scene.layout.Region;
 
 public class PopupHelper {
 	
@@ -22,7 +22,7 @@ public class PopupHelper {
 	
 	public static void showConceptIdList(ConceptSnapshot concept, Region popOverRegion) {
 		PopupList popup = new PopupList();
-		popup.setTitle("Display IDs");
+		popup.setTitle("Display IDs for Concept " + Get.conceptDescriptionText(concept.getNid()));
 		popup.setColumnTypes(new ConceptViewColumnType[] { ConceptViewColumnType.ID_TYPE, ConceptViewColumnType.ID_VALUE, ConceptViewColumnType.TIMESTAMP });
 		popup.setPopOverRegion(popOverRegion);
 		
@@ -53,7 +53,7 @@ public class PopupHelper {
 
 	public static void showDescriptionIdList(ConceptDescription conceptDescription, Region popOverRegion) {
 		PopupList popup = new PopupList();
-		popup.setTitle("Display IDs");
+		popup.setTitle("Display IDs for Description " + conceptDescription.getType() + " " + conceptDescription.getValue());
 		popup.setColumnTypes(new ConceptViewColumnType[] { ConceptViewColumnType.ID_TYPE, ConceptViewColumnType.ID_VALUE, ConceptViewColumnType.TIMESTAMP });
 		popup.setPopOverRegion(popOverRegion);
 		
@@ -81,7 +81,7 @@ public class PopupHelper {
 	
 	public static void showDescriptionHistory(ConceptDescription conceptDescription, Region popOverRegion) {
 		PopupList popup = new PopupList();
-		popup.setTitle("Description History");
+		popup.setTitle("History of description " + conceptDescription.getType() + " \"" + conceptDescription.getValue() + "\"");
 		popup.setColumnTypes(new ConceptViewColumnType[] { 
 			ConceptViewColumnType.TYPE, 
 			ConceptViewColumnType.TERM,
@@ -95,10 +95,7 @@ public class PopupHelper {
 		});
 		popup.setPopOverRegion(popOverRegion);
 		
-		// TODO This displays a list of descriptions, but I have no idea if it's right.  Please review.  DT
-		List<?> descriptionHistory = conceptDescription.getDescriptionSememe().getChronology().getVersionList();
-		for (Object d : descriptionHistory) {
-			DescriptionSememe<?> desc = (DescriptionSememe<?>) d;
+		for (DescriptionSememe<?> desc : conceptDescription.getStampedVersion().getChronology().getVersionList()) {
 			ConceptDescription cd = new ConceptDescription(desc);
 			popup.addData(cd);
 		}
