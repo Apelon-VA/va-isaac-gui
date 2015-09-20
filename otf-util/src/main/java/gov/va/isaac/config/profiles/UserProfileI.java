@@ -19,10 +19,10 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.config.generated.RoleOption;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.util.Set;
 import java.util.UUID;
@@ -44,9 +44,9 @@ public interface UserProfileI
 	public void setPassword(String currentPassword, String newPassword) throws InvalidPasswordException;
 	public String getUserLogonName();
 
-	public StatedInferredOptions getStatedInferredPolicy();
+	public PremiseType getStatedInferredPolicy();
 
-	public void setStatedInferredPolicy(StatedInferredOptions statedInferredPolicy);
+	public void setStatedInferredPolicy(PremiseType statedInferredPolicy);
 	
 	public void setLanguageCoordinate(LanguageCoordinate languageCoordinate);
 	

@@ -19,7 +19,6 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.preferences.PreferencesPersistenceI;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
@@ -38,6 +37,7 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 
 import java.io.IOException;
@@ -156,7 +156,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	private ValidBooleanBinding allValid_ = null;
 
 	// ValidBooleanBinding allValid_ dependencies
-	private final ObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
+	private final ObjectProperty<PremiseType> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
 	private final SimpleSetProperty<State> currentStatusesProperty = new SimpleSetProperty<>(new ObservableSetWrapper<State>(new HashSet<State>()));
@@ -433,12 +433,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 	private void initializeStatedInferredToggleGroup() {
 		statedInferredToggleGroup = new ToggleGroup(); //Stated / Inferred
 
-		for (StatedInferredOptions option : StatedInferredOptions.values()) {
+		for (PremiseType option : PremiseType.values()) {
 			RadioButton optionButton = new RadioButton();
-			if (option == StatedInferredOptions.STATED) {
+			if (option == PremiseType.STATED) {
 				optionButton.setText("Stated");
 			}
-			else if (option == StatedInferredOptions.INFERRED) {
+			else if (option == PremiseType.INFERRED) {
 				optionButton.setText("Inferred");
 			}
 			else {
@@ -451,7 +451,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			statedInferredOptionButtons.add(optionButton);
 		}
 		statedInferredToggleGroup.selectedToggleProperty().addListener(
-				(observable, oldValue, newValue) -> runLaterIfNotFXApplicationThread(() -> currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData())));
+				(observable, oldValue, newValue) -> runLaterIfNotFXApplicationThread(() -> currentStatedInferredOptionProperty.set((PremiseType)newValue.getUserData())));
 	}
 
 	private void initializeValidBooleanBinding() {
@@ -709,7 +709,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	
 	private void loadStoredStatedInferredOption() {
 		// Reload storedStatedInferredOption
-		final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
+		final PremiseType storedStatedInferredOption = getStoredStatedInferredOption();
 		for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
 			if (toggle.getUserData() == storedStatedInferredOption) {
 				toggle.setSelected(true);
@@ -800,7 +800,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	}
 
-	protected StatedInferredOptions getStoredStatedInferredOption() {
+	protected PremiseType getStoredStatedInferredOption() {
 		return persistenceInterface.getStatedInferredOption();
 
 	}
@@ -824,7 +824,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return UserProfileDefaults.getDefaultViewCoordinateTime();
 	}
 
-	protected StatedInferredOptions getDefaultStatedInferredOption() {
+	protected PremiseType getDefaultStatedInferredOption() {
 		return UserProfileDefaults.getDefaultStatedInferredPolicy();
 	}
 	protected Set<State> getDefaultStatuses() {
@@ -838,7 +838,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return currentTimeProperty;
 	}
 
-	public ReadOnlyObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty() {
+	public ReadOnlyObjectProperty<PremiseType> currentStatedInferredOptionProperty() {
 		return currentStatedInferredOptionProperty;
 	}
 

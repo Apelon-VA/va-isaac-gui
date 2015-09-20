@@ -1,7 +1,7 @@
 package gov.va.isaac.util;
 
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -9,14 +9,14 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class ViewCoordinateComponents {
-	private final StatedInferredOptions relAssertionType;
+	private final PremiseType relAssertionType;
 	private final UUID path;
 	private final Set<State> statuses = new HashSet<>();
 	private final long time;
 	private final Set<UUID> modules = new HashSet<>();
 	
 	public ViewCoordinateComponents(
-			StatedInferredOptions relAssertionType,
+			PremiseType relAssertionType,
 			UUID path,
 			Set<State> statuses, 
 			long time, 
@@ -29,7 +29,7 @@ public final class ViewCoordinateComponents {
 		this.modules.addAll(modules);
 	}
 
-	public StatedInferredOptions getStatedInferredOption() {
+	public PremiseType getStatedInferredOption() {
 		return relAssertionType;
 	}
 

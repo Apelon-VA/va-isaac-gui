@@ -20,7 +20,6 @@ package gov.va.isaac.gui.dialog;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
@@ -44,10 +43,13 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+
 import java.util.Optional;
 import java.util.UUID;
+
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -74,6 +76,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -250,10 +253,10 @@ public class ConceptViewController {
 			Button taxonomyViewMode = new Button();
 			taxonomyViewMode.setPadding(new Insets(2.0));
 			ImageView taxonomyInferred = Images.TAXONOMY_INFERRED.createImageView();
-			taxonomyInferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(StatedInferredOptions.INFERRED));
+			taxonomyInferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(PremiseType.INFERRED));
 			Tooltip.install(taxonomyInferred, new Tooltip("Displaying the Inferred view- click to display the Inferred then Stated view"));
 			ImageView taxonomyStated = Images.TAXONOMY_STATED.createImageView();
-			taxonomyStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(StatedInferredOptions.STATED));
+			taxonomyStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(PremiseType.STATED));
 			Tooltip.install(taxonomyStated, new Tooltip("Displaying the Stated view- click to display the Inferred view"));
 			taxonomyViewMode.setGraphic(new StackPane(taxonomyInferred, taxonomyStated));
 			taxonomyViewMode.setOnAction(new EventHandler<ActionEvent>()
@@ -264,14 +267,14 @@ public class ConceptViewController {
 					try
 					{
 						UserProfile up = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
-						StatedInferredOptions sip = null;
-						if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == StatedInferredOptions.STATED)
+						PremiseType sip = null;
+						if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == PremiseType.STATED)
 						{
-							sip = StatedInferredOptions.INFERRED;
+							sip = PremiseType.INFERRED;
 						}
-						else if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == StatedInferredOptions.INFERRED)
+						else if (AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().get() == PremiseType.INFERRED)
 						{
-							sip = StatedInferredOptions.STATED;
+							sip = PremiseType.STATED;
 						}
 						else
 						{

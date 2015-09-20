@@ -1,9 +1,9 @@
 package gov.va.isaac.util;
 
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -49,7 +49,7 @@ public class ViewCoordinateFactory {
 	}
 	public static ViewCoordinate getViewCoordinate(
 			UUID path,
-			StatedInferredOptions statedInferredOption,
+			PremiseType statedInferredOption,
 			Set<State> statusesSet,
 			long time,
 			Set<UUID> modules) {
@@ -67,7 +67,7 @@ public class ViewCoordinateFactory {
 			relAssertionType = RelAssertionType.INFERRED;
 			break;
 		default:
-			throw new IllegalArgumentException("Unsupported " + StatedInferredOptions.class.getName() + " value " + statedInferredOption + ".  Expected one of " + StatedInferredOptions.STATED + " or " + StatedInferredOptions.INFERRED);
+			throw new IllegalArgumentException("Unsupported " + PremiseType.class.getName() + " value " + statedInferredOption + ".  Expected one of " + PremiseType.STATED + " or " + PremiseType.INFERRED);
 		}
 
 		try {

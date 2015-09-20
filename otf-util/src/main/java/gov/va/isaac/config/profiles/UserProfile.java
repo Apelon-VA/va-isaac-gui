@@ -20,13 +20,13 @@ package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.RoleOption;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.util.PasswordHasher;
 import gov.va.isaac.util.json.InterfaceAdapter;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.model.coordinate.LanguageCoordinateImpl;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.File;
 import java.io.FileReader;
@@ -65,7 +65,7 @@ public class UserProfile implements UserProfileI
 	
 	private UUID conceptUUID;
 
-	private StatedInferredOptions statedInferredPolicy = UserProfileDefaults.getDefaultStatedInferredPolicy();
+	private PremiseType statedInferredPolicy = UserProfileDefaults.getDefaultStatedInferredPolicy();
 	
 	private RelationshipDirection displayRelDirection = UserProfileDefaults.getDefaultDisplayRelDirection();
 	
@@ -256,13 +256,13 @@ public class UserProfile implements UserProfileI
 	}
 
 	@Override
-	public StatedInferredOptions getStatedInferredPolicy()
+	public PremiseType getStatedInferredPolicy()
 	{
 		return statedInferredPolicy;
 	}
 
 	@Override
-	public void setStatedInferredPolicy(StatedInferredOptions statedInferredPolicy)
+	public void setStatedInferredPolicy(PremiseType statedInferredPolicy)
 	{
 		this.statedInferredPolicy = statedInferredPolicy;
 	}

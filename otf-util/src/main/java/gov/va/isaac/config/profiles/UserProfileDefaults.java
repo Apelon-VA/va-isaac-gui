@@ -25,12 +25,12 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,8 +46,8 @@ import java.util.UUID;
 public final class UserProfileDefaults {
 	private UserProfileDefaults() {}
 	
-	public static StatedInferredOptions getDefaultStatedInferredPolicy() {
-		return StatedInferredOptions.STATED;
+	public static PremiseType getDefaultStatedInferredPolicy() {
+		return PremiseType.STATED;
 	}
 
 	public static boolean getDefaultDisplayFSN() { 

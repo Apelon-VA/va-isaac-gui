@@ -28,6 +28,8 @@ import gov.va.isaac.interfaces.utility.ServicesToPreloadI;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,10 +39,13 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
 import javax.inject.Singleton;
+
 import org.glassfish.hk2.api.Rank;
 import org.ihtsdo.otf.tcc.api.metadata.binding.TermAux;
 import org.jvnet.hk2.annotations.Service;
@@ -264,7 +269,16 @@ public class UserProfileManager implements ServicesToPreloadI
 			
 			if (defaults.getStatedInferredPolicy() != null)
 			{
-				up.setStatedInferredPolicy(defaults.getStatedInferredPolicy());
+				switch (defaults.getStatedInferredPolicy()) {
+				case STATED:
+					up.setStatedInferredPolicy(PremiseType.STATED);
+					break;
+				case INFERRED:
+					up.setStatedInferredPolicy(PremiseType.STATED);
+					break;
+					default:
+						throw new IllegalArgumentException("Unsupported " + PremiseType.class.getName() + " value " + defaults.getStatedInferredPolicy());
+				}
 			}
 			if (defaults.isDisplayFSN() != null)
 			{

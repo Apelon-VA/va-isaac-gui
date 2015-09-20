@@ -19,7 +19,6 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateComponents;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
@@ -27,6 +26,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
@@ -80,7 +80,7 @@ public class UserProfileBindings
 	private final ReadOnlyObjectWrapper<UUID> editCoordinateModule = new ReadOnlyObjectWrapper<>();
 
 	// View Coordinate Components
-	private final ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<PremiseType> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<Long> viewCoordinateTime = new ReadOnlyObjectWrapper<>();
 
@@ -153,7 +153,7 @@ public class UserProfileBindings
 	/**
 	 * @return the statedInferredPolicy
 	 */
-	public ReadOnlyObjectProperty<StatedInferredOptions> getStatedInferredPolicy()
+	public ReadOnlyObjectProperty<PremiseType> getStatedInferredPolicy()
 	{
 		return statedInferredPolicy.getReadOnlyProperty();
 	}

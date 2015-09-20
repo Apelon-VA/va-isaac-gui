@@ -2,19 +2,17 @@ package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.preferences.PreferencesPersistenceI;
-import gov.va.isaac.util.ViewCoordinateComponents;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +32,7 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 	}
 
 	@Override
-	public StatedInferredOptions getStatedInferredOption() {
+	public PremiseType getStatedInferredOption() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getStatedInferredPolicy();
 	}

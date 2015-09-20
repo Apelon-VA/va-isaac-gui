@@ -20,7 +20,6 @@ package gov.va.isaac.util;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
@@ -28,6 +27,7 @@ import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
 import java.text.Format;
@@ -121,7 +121,7 @@ public class OTFUtility {
 				}
 			}
 
-			StatedInferredOptions relAssertionType = userProfile.getStatedInferredPolicy();
+			PremiseType relAssertionType = userProfile.getStatedInferredPolicy();
 			UUID path = userProfile.getViewCoordinatePath();
 			Set<State> statuses = userProfile.getViewCoordinateStatuses();
 			long time = userProfile.getViewCoordinateTime();

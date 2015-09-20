@@ -1,7 +1,7 @@
 package gov.va.isaac.gui.preferences;
 
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
 import java.util.Set;
@@ -11,7 +11,7 @@ public interface PreferencesPersistenceI {
 
 	// ViewCoordinate
 	public UUID getPath();
-	public StatedInferredOptions getStatedInferredOption();
+	public PremiseType getStatedInferredOption();
 	public Long getTime();
 	public Set<State> getStatuses();
 	public Set<UUID> getModules();
