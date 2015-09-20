@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,8 @@ public class PreferencesViewController {
 	private IterableProvider<PreferencesPluginViewI> allPlugins_;
 	
 	private final List<PreferencesPluginViewI> requestedPlugins = new ArrayList<>();
-	private Set<String> requestedPluginNames = new HashSet<>();
+	private Set<String> requestedPluginNames = null;
+//	private final Map<String, Object> pluginToInterfaceMap = new HashMap<>();
 
 	private @FXML TabPane tabPane_;
 
@@ -132,6 +134,41 @@ public class PreferencesViewController {
 		}
 	}
 	
+//	public void setPluginPersistenceInterfaces(Map<String, Object> pluginToInterfaceMap) {
+//		if (allValid_ != null) {
+//			throw new RuntimeException("Cannot set or reset plugin-to-interface map after calling aboutToShow()");
+//		}
+//		this.pluginToInterfaceMap.clear();
+//		this.pluginToInterfaceMap.putAll(pluginToInterfaceMap);
+//	}
+	
+	public void loadPlugins() {
+		if (requestedPluginNames == null) {
+			requestedPluginNames = new HashSet<>();
+
+			for (PreferencesPluginViewI plugin : allPlugins_) {
+				if (requestedPluginNames.size() == 0 || requestedPluginNames.contains(plugin.getName())) {
+//					if (pluginToInterfaceMap.get(plugin.getName()) != null) {
+//						plugin.setPersistenceInterface(pluginToInterfaceMap.get(plugin.getName()));
+//					}
+					requestedPlugins.add(plugin);
+				}
+			}
+		}
+	}
+	
+	public PreferencesPluginViewI getPlugin(String name) {
+		loadPlugins();
+		
+		for (PreferencesPluginViewI plugin : requestedPlugins) {
+			if (plugin.getName().equals(name)) {
+				return plugin;
+			}
+		}
+
+		return null;
+	}
+
 	public void aboutToShow()
 	{
 		// Using allValid_ to prevent rerunning content of aboutToShow()
@@ -163,11 +200,8 @@ public class PreferencesViewController {
 					}
 				}
 			};
-			for (PreferencesPluginViewI plugin : allPlugins_) {
-				if (requestedPluginNames.size() == 0 || requestedPluginNames.contains(plugin.getName())) {
-					requestedPlugins.add(plugin);
-				}
-			}
+			loadPlugins();
+			
 			Collections.sort(requestedPlugins, comparator);
 			for (PreferencesPluginViewI plugin : requestedPlugins) {
 				logger.debug("Adding PreferencesPluginView tab \"{}\"", plugin.getName());

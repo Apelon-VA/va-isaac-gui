@@ -76,7 +76,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
-				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface());
+				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface(drlvc_));
 				slaveValidationFailureMessageProperty.bind(drlvc_.validationFailureMessageProperty());
 			}
 			catch (IOException e)

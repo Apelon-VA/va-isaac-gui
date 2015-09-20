@@ -84,4 +84,16 @@ public interface PreferencesPluginViewI {
 	 * will be sorted alphabetically by tab name (getName())
 	 */
 	int getTabOrder() ;
+	
+	/**
+	 * 
+	 * Set to a PersistenceInterfaceI instance to allow persistence (read and write)
+	 * to either global file or local data structures.  Must be Object for now
+	 * because of obsolete types used in UserProfile.
+	 * 
+	 * TODO change argument to PersistenceInterfaceI
+	 *  
+	 * @param persistenceInterface
+	 */
+	default void setPersistenceInterface(Object persistenceInterface) {}
 }

@@ -28,8 +28,12 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
+
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -47,6 +51,7 @@ import gov.va.isaac.interfaces.gui.ApplicationMenus;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 
 /**
  * PreferencesView
@@ -99,6 +104,14 @@ public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithM
 		controller.setRequestedPlugins(requiredPluginName, optionalPluginNames);
 	}
 
+	public void loadPlugins() {
+		controller.loadPlugins();
+	}
+	
+	public PreferencesPluginViewI getPlugin(String name) {
+		return controller.getPlugin(name);
+	}
+	
 	/* (non-Javadoc)
 	 * @see gov.va.isaac.interfaces.gui.views.PopupViewI#showView(javafx.stage.Window)
 	 */
