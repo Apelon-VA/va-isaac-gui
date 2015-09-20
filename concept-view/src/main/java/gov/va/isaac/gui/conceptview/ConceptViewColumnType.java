@@ -14,8 +14,12 @@ public enum ConceptViewColumnType {
 	STAMP_TIME("Time"),
 	STAMP_AUTHOR("Author",true),
 	STAMP_MODULE("Module",true),
-	STAMP_PATH("Path",true);
+	STAMP_PATH("Path",true),
 	
+	ID_TYPE		("Type", 		false),
+	ID_VALUE	("Value",		false),
+	TIMESTAMP	("Timestamp",	false);
+
 	private String niceName_;
 	private boolean isConcept_ = false;
 	

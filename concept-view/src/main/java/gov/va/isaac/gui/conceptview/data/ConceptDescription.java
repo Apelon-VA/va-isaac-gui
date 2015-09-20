@@ -126,7 +126,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 			});
 		}
 	}
-	
+
 	public int getSequence()				{ return getStampedVersion().getSememeSequence(); }
 	public int getTypeSequence()			{ return getStampedVersion().getDescriptionTypeConceptSequence(); }
 	public int getLanguageSequence()		{ return getStampedVersion().getLanguageConceptSequence(); }

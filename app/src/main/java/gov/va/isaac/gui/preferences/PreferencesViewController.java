@@ -29,13 +29,18 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.ValidBooleanBinding;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -50,7 +55,9 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TabPane.TabClosingPolicy;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+
 import javax.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.hk2.api.IterableProvider;
 import org.slf4j.Logger;
@@ -66,7 +73,11 @@ public class PreferencesViewController {
 	private Logger logger = LoggerFactory.getLogger(PreferencesViewController.class);
 
 	@Inject
-	private IterableProvider<PreferencesPluginViewI> plugins_;
+	private IterableProvider<PreferencesPluginViewI> allPlugins_;
+	
+	private final List<PreferencesPluginViewI> requestedPlugins = new ArrayList<>();
+	private Set<String> requestedPluginNames = null;
+//	private final Map<String, Object> pluginToInterfaceMap = new HashMap<>();
 
 	private @FXML TabPane tabPane_;
 
@@ -100,6 +111,64 @@ public class PreferencesViewController {
 		this.stage_ = stage;
 	}
 	
+	/**
+	 * 
+	 * Allow specification by name of plugins to display before calling aboutToShow().
+	 * If no plugin names specified, then all available plugins will be displayed.
+	 * Throws RuntimeException if called after aboutToShow()
+	 * 
+	 * @param requiredPluginName a required plugin name
+	 * @param optionalPluginNames optional additional plugin names
+	 * 
+	 */
+	public void setRequestedPlugins(String requiredPluginName, String...optionalPluginNames) {
+		if (allValid_ != null) {
+			throw new RuntimeException("Cannot set or reset requested plugins after calling aboutToShow()");
+		}
+		requestedPluginNames.clear();
+		requestedPluginNames.add(requiredPluginName);
+		if (optionalPluginNames != null) {
+			for (String name : optionalPluginNames) {
+				requestedPluginNames.add(name);
+			}
+		}
+	}
+	
+//	public void setPluginPersistenceInterfaces(Map<String, Object> pluginToInterfaceMap) {
+//		if (allValid_ != null) {
+//			throw new RuntimeException("Cannot set or reset plugin-to-interface map after calling aboutToShow()");
+//		}
+//		this.pluginToInterfaceMap.clear();
+//		this.pluginToInterfaceMap.putAll(pluginToInterfaceMap);
+//	}
+	
+	public void loadPlugins() {
+		if (requestedPluginNames == null) {
+			requestedPluginNames = new HashSet<>();
+
+			for (PreferencesPluginViewI plugin : allPlugins_) {
+				if (requestedPluginNames.size() == 0 || requestedPluginNames.contains(plugin.getName())) {
+//					if (pluginToInterfaceMap.get(plugin.getName()) != null) {
+//						plugin.setPersistenceInterface(pluginToInterfaceMap.get(plugin.getName()));
+//					}
+					requestedPlugins.add(plugin);
+				}
+			}
+		}
+	}
+	
+	public PreferencesPluginViewI getPlugin(String name) {
+		loadPlugins();
+		
+		for (PreferencesPluginViewI plugin : requestedPlugins) {
+			if (plugin.getName().equals(name)) {
+				return plugin;
+			}
+		}
+
+		return null;
+	}
+
 	public void aboutToShow()
 	{
 		// Using allValid_ to prevent rerunning content of aboutToShow()
@@ -121,7 +190,6 @@ public class PreferencesViewController {
 			// load fields before initializing allValid_
 			// in case plugin.validationFailureMessageProperty() initialized by getNode()
 			tabPane_.getTabs().clear();
-			List<PreferencesPluginViewI> sortableList = new ArrayList<>();
 			Comparator<PreferencesPluginViewI> comparator = new Comparator<PreferencesPluginViewI>() {
 				@Override
 				public int compare(PreferencesPluginViewI o1, PreferencesPluginViewI o2) {
@@ -132,11 +200,10 @@ public class PreferencesViewController {
 					}
 				}
 			};
-			for (PreferencesPluginViewI plugin : plugins_) {
-				sortableList.add(plugin);
-			}
-			Collections.sort(sortableList, comparator);
-			for (PreferencesPluginViewI plugin : sortableList) {
+			loadPlugins();
+			
+			Collections.sort(requestedPlugins, comparator);
+			for (PreferencesPluginViewI plugin : requestedPlugins) {
 				logger.debug("Adding PreferencesPluginView tab \"{}\"", plugin.getName());
 				Label tabLabel = new Label(plugin.getName());
 				
@@ -184,7 +251,7 @@ public class PreferencesViewController {
 			allValid_ = new ValidBooleanBinding() {
 				{
 					ArrayList<ReadOnlyStringProperty> pluginValidationFailureMessages = new ArrayList<>();
-					for (PreferencesPluginViewI plugin : plugins_) {
+					for (PreferencesPluginViewI plugin : allPlugins_) {
 						pluginValidationFailureMessages.add(plugin.validationFailureMessageProperty());
 					}
 					bind(pluginValidationFailureMessages.toArray(new ReadOnlyStringProperty[pluginValidationFailureMessages.size()]));
@@ -193,7 +260,7 @@ public class PreferencesViewController {
 
 				@Override
 				protected boolean computeValue() {
-					for (PreferencesPluginViewI plugin : plugins_) {
+					for (PreferencesPluginViewI plugin : allPlugins_) {
 						if (plugin.validationFailureMessageProperty().get() != null && plugin.validationFailureMessageProperty().get().length() > 0) {
 							this.setInvalidReason(plugin.validationFailureMessageProperty().get());
 
@@ -215,7 +282,7 @@ public class PreferencesViewController {
 		}
 		
 		// Reload persisted values every time view opened
-		for (PreferencesPluginViewI plugin : plugins_) {
+		for (PreferencesPluginViewI plugin : allPlugins_) {
 			plugin.getContent();
 		}
 	}
@@ -225,7 +292,7 @@ public class PreferencesViewController {
 		
 		final Map<PreferencesPluginViewI, Exception> caughtExceptions = Collections.synchronizedMap(new WeakHashMap<>());
 		
-		for (PreferencesPluginViewI plugin : plugins_) {		
+		for (PreferencesPluginViewI plugin : allPlugins_) {		
 			try {
 				plugin.save();
 			} catch (IOException e) {

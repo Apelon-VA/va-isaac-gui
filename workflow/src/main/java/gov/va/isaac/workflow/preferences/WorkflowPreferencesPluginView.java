@@ -28,6 +28,7 @@ import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginComboBox
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginLabelProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
@@ -201,7 +202,7 @@ public class WorkflowPreferencesPluginView extends AbstractPreferencesPluginView
 	 * @param properties
 	 */
 	protected WorkflowPreferencesPluginView() {
-		super("Workflow", createProperties());
+		super(SharedServiceNames.WORKFLOW_PREFERENCES_PLUGIN, createProperties());
 	}
 
 	/* (non-Javadoc)

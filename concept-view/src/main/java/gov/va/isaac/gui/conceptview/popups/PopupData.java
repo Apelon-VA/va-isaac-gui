@@ -1,16 +1,28 @@
 package gov.va.isaac.gui.conceptview.popups;
 
+import gov.va.isaac.gui.conceptview.data.ConceptDescription;
+import gov.va.isaac.gui.conceptview.data.ConceptId;
+
 public class PopupData {
-	private PopupColumnType	_type;
-	private String			_value;
+	private ConceptId 			_idData = null;
+	private ConceptDescription	_descData = null;
+	//private ConceptSnaphot		_conceptDate = null;
 	
-	public PopupColumnType	getType()	{ return _type; }
-	public String			getValue()	{ return _value; }
-	
-	public boolean			isType(PopupColumnType type) { return _type == type; }
-	
-	public PopupData(PopupColumnType columnType, String value) {
-		_type = columnType;
-		_value = value;
+	public PopupData(ConceptId data) {
+		_idData = data;
 	}
+	public PopupData(ConceptDescription data) {
+		_descData = data;
+	}
+	
+	public boolean isValid() {
+		return (isConceptId() || isConceptDescription());
+	}
+	
+	public boolean isConceptId() 			{ return _idData != null; }
+	public boolean isConceptDescription()	{ return _descData != null; }
+	
+	
+	public ConceptId 		  getConceptId() 			{ return _idData; }
+	public ConceptDescription getConceptDescription()	{ return _descData; }
 }

@@ -21,6 +21,7 @@ package gov.va.isaac.gui.preferences.plugins;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
+import gov.va.isaac.gui.preferences.PreferencesPersistenceI;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.util.OchreUtility;
 //import gov.va.isaac.util.OTFUtility;
@@ -107,16 +108,6 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 public class ViewCoordinatePreferencesPluginViewController {
 	private final static Logger log = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginViewController.class);
 
-	public static interface PersistenceInterface {
-		public UUID getPath();
-		public StatedInferredOptions getStatedInferredOption();
-		public Long getTime();
-		public Set<Status> getStatuses();
-		public Set<UUID> getModules();
-		
-		public void save(ViewCoordinateComponents components) throws IOException;
-	}
-
 	/**
 	 * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
 	 *
@@ -150,7 +141,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	private boolean contentLoaded = false;
 	
-	private PersistenceInterface persistenceInterface = null;
+	private PreferencesPersistenceI persistenceInterface = null;
 
 	final private TaxonomyCoordinate panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 	
@@ -232,7 +223,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		initializeValidBooleanBinding();
 	}
 
-	public void setPersistenceInterface(PersistenceInterface pi) {
+	public void setPersistenceInterface(PreferencesPersistenceI pi) {
 		persistenceInterface = pi;
 	}
 	
@@ -764,13 +755,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	public void save() throws IOException {
-		persistenceInterface.save(
-				new ViewCoordinateComponents(
-						currentStatedInferredOptionProperty.get(),
-						currentPathProperty.get(),
-						currentStatusesProperty.get(),
-						currentTimeProperty.get(),
-						selectedModules));
+		persistenceInterface.save();
 	}
 
 	public static Date getEndOfDay(Date date) {
@@ -864,6 +849,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return currentPathProperty;
 	}
 
+	public ObservableSet<UUID> getCurrentSelectedModules() {
+		return this.selectedModules;
+	}
+	
 	private class SelectableModule implements Comparable<SelectableModule> {
 		private final BooleanProperty selected = new SimpleBooleanProperty(false);
 		private final String description;

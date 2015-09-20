@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 
 import java.io.IOException;
@@ -75,7 +76,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
-				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface());
+				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface(drlvc_));
 				slaveValidationFailureMessageProperty.bind(drlvc_.validationFailureMessageProperty());
 			}
 			catch (IOException e)
@@ -94,7 +95,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	 */
 	@Override
 	public String getName() {
-		return "View Coordinate";
+		return SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN;
 	}
 
 	/* (non-Javadoc)

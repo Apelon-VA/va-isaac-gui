@@ -491,6 +491,17 @@ public class ConceptViewController {
 									}
 
 									{
+										MenuItem miHistory = new MenuItem("Concept History");
+										miHistory.setOnAction(new EventHandler<ActionEvent>() {
+											@Override
+											public void handle(ActionEvent arg0) {
+												//PopupHelper.showDescriptionHistory(conceptDescription, conceptLabel);
+											}
+										});
+										conceptLabel.getContextMenu().getItems().add(miHistory);
+									}
+									
+									{
 										MenuItem mi = new MenuItem("Copy Details");
 										mi.visibleProperty().bind(conceptProperty.isNotNull());
 										mi.setOnAction(new EventHandler<ActionEvent>() {
@@ -1081,6 +1092,24 @@ public class ConceptViewController {
 					}
 				});
 				cm.getItems().add(miWrap);
+
+				MenuItem miIds = new MenuItem("Display IDs");
+				miIds.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						PopupHelper.showDescriptionIdList(conceptDescription, cell);
+					}
+				});
+				cm.getItems().add(miIds);
+
+				MenuItem miHistory = new MenuItem("Description History");
+				miHistory.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						PopupHelper.showDescriptionHistory(conceptDescription, cell);
+					}
+				});
+				cm.getItems().add(miHistory);
 			}
 			
 			final String textValue = (textProperty != null)? textProperty.get() : null;
@@ -1095,7 +1124,8 @@ public class ConceptViewController {
 						CommonMenuItem.COPY_SCTID,
 						CommonMenuItem.COPY_UUID,
 						CommonMenuItem.LOINC_REQUEST_VIEW,
-						CommonMenuItem.USCRS_REQUEST_VIEW);
+						CommonMenuItem.USCRS_REQUEST_VIEW,
+						CommonMenuItem.SEND_TO);
 				CommonMenus.addCommonMenus(cm,
 						builder,
 						new CommonMenusDataProvider() {
