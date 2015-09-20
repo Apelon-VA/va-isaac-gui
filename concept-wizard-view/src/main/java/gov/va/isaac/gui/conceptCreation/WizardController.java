@@ -25,6 +25,10 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySe
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -143,11 +147,7 @@ public class WizardController {
 	// TODO make sure PT and FSN are case insensitive
 
 	public String getQualRole(int i) {
-		if (IsaacMetadataAuxiliaryBinding.MAPPING_QUALIFIERS == rels.get(i).getType()) {
-			return "Qualifier";
-		} else {
-			return "Role";
-		}
+		return rels.get(i).toString();
 	}
 
 	public String getGroup(int i) {
@@ -173,22 +173,14 @@ public class WizardController {
 			conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
 
 			//Parents
-			LogicalExpressionBuilder relBuilder = expressionBuilderService.getLogicalExpressionBuilder();
+			LogicalExpressionBuilder parentBuilder = expressionBuilderService.getLogicalExpressionBuilder();
+			LogicalExpression parentsDef = null;
 			for(int parent : parents) {
-				NecessarySet(And(ConceptAssertion(
-						Get.conceptService().getConcept(parent), relBuilder))); 
+				LogicalExpressionBuilder.NecessarySet(LogicalExpressionBuilder.And(LogicalExpressionBuilder.ConceptAssertion(
+						Get.conceptService().getConcept(parent), parentBuilder))); 
+				parentBuilder.build();
 			}
-			//Relationships
-			for (int i = 0; i < getRelationshipsCreated(); i++) {
-				//Not necessary set and concept assertion, instead use Role, look in LogicalExpressionBuilder
-				
-				ConceptAssertion ca = ConceptAssertion(Get.conceptService().getConcept(rels.get(i).getTargetNid()), relBuilder);
-				
-				relBuilder.allRole(IsaacMetadataAuxiliaryBinding.IS_A, ca); 
-			}
-			LogicalExpression parentsDef = relBuilder.build();
 			
-			//ConceptBuilder
 			ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(this.fsn, OchreUtility.getSemanticTag(this.fsn), parentsDef);
 			
 			//Descriptions
@@ -199,7 +191,7 @@ public class WizardController {
 																getType(i),
 																IsaacMetadataAuxiliaryBinding.ENGLISH);
 				descBuilder.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-				Get.commitService().addUncommitted(descBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
+				Get.commitService().addUncommitted(descBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE)); //TODO verify commit
 				conBuilder.addDescription(descBuilder);
 			}
 			
@@ -208,7 +200,7 @@ public class WizardController {
 					= descriptionBuilderService.getDescriptionBuilder(this.prefTerm, conBuilder, IsaacMetadataAuxiliaryBinding.PREFERRED, IsaacMetadataAuxiliaryBinding.ENGLISH);
 			definitionBuilderPT.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
 			definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
-			Get.commitService().addUncommitted(definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
+			Get.commitService().addUncommitted(definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE)); //TODO verify commit
 			conBuilder.addDescription(definitionBuilderPT);
 			
 			//FSN
@@ -219,8 +211,42 @@ public class WizardController {
 							IsaacMetadataAuxiliaryBinding.ENGLISH);
 			definitionBuilderFSN.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
 			definitionBuilderFSN.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE); //TODO - build each descBuilder?
-			Get.commitService().addUncommitted(definitionBuilderFSN.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE));
+			Get.commitService().addUncommitted(definitionBuilderFSN.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE)); //TODO verify commit
 			conBuilder.addDescription(definitionBuilderFSN);
+			
+			// Creat Hash Table of Group ID's grouping relationships with Group ID;'s
+			// IE: rels with group ID 1 all get into one group, group with rel group of 3 all go togethor
+			// All rels with same group identifier need to be AND'd togethor
+			// For loop walk through hash table and create rels that way
+			
+			HashSet<Integer> relGroups = new HashSet<Integer>();
+			HashMap<Integer, ArrayList<RelRow>> relMap = new HashMap<Integer, ArrayList<RelRow>>();
+			//LinkedHashSet<Integer, ArrayList<RelRow>> relMap = new LinkedHashSet<Integer, ArrayList<RelRow>>();
+			for (int i = 0; i < getRelationshipsCreated(); i++) {
+				RelRow thisRel = rels.get(i);
+				if(!relMap.containsKey(thisRel.getGroup())) {
+					ArrayList<RelRow> relRowList = new ArrayList<RelRow>();
+					relRowList.add(thisRel);
+					relMap.put(thisRel.getGroup(), relRowList);
+				} else {
+					ArrayList<RelRow> thisRelList = relMap.get(thisRel.getGroup());
+					if(!thisRelList.contains(thisRel)) {
+						thisRelList.add(thisRel);
+					}
+				}
+			}
+			
+			//Relationships
+			LogicalExpressionBuilder relBuilder;
+			for(int group: relGroups) {
+				relBuilder = expressionBuilderService.getLogicalExpressionBuilder();
+				for(RelRow rel : relMap.get(group)) {
+					LogicalExpressionBuilder.NecessarySet(LogicalExpressionBuilder.And(LogicalExpressionBuilder.ConceptAssertion(
+							Get.conceptService().getConcept(rel.getTargetNid()), relBuilder))); 
+						
+					conBuilder.addLogicalExpression(relBuilder.build());
+				}
+			}
 			
 			ConceptChronology<?> chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
 			

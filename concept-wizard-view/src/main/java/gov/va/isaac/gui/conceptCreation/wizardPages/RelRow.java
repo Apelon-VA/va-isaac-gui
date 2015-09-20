@@ -44,7 +44,7 @@ public class RelRow
 {
 	ConceptNode relationship;
 	ConceptNode target;
-	ChoiceBox<String> type;
+	ChoiceBox<RoleType> type;
 	Node typeNode;
 	TextField group;
 	Node groupNode;
@@ -69,14 +69,14 @@ public class RelRow
 		target = new ConceptNode(null, true);
 		
 		//TODO (artf231868) add validation icons / reasons
-		type = new ChoiceBox<String>(FXCollections.observableArrayList("Role", "Qualifier"));
-		type.valueProperty().addListener(new ChangeListener<String>()
+		type = new ChoiceBox<RoleType>(FXCollections.observableArrayList(RoleType.All_Role, RoleType.Some_Role));
+		type.valueProperty().addListener(new ChangeListener<RoleType>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			public void changed(ObservableValue<? extends RoleType> observable, RoleType oldValue, RoleType newValue)
 			{
 				
-				String type = newValue.trim();
+				String type = newValue.toString().trim();
 				
 				if (type.length() == 0)
 				{
@@ -172,15 +172,15 @@ public class RelRow
 		return typeNode;
 	}
 
-	public ConceptProxy getType()
+	public RoleType getType()
 	{
-		if ("Role".equalsIgnoreCase(type.getSelectionModel().getSelectedItem()))
+		if ("All Role".equalsIgnoreCase(type.getSelectionModel().getSelectedItem().toString()))
 		{
-			return IsaacMetadataAuxiliaryBinding.STATED;
+			return RoleType.All_Role;
 		}
 		else
 		{
-			return IsaacMetadataAuxiliaryBinding.MAPPING_QUALIFIERS;
+			return RoleType.Some_Role;
 		}
 	}
 
