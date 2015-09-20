@@ -1,12 +1,11 @@
 package gov.va.isaac.gui.preferences;
 
 import gov.va.isaac.config.generated.StatedInferredOptions;
+import gov.vha.isaac.ochre.api.State;
 
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
-
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 
 public interface PreferencesPersistenceI {
 
@@ -14,7 +13,7 @@ public interface PreferencesPersistenceI {
 	public UUID getPath();
 	public StatedInferredOptions getStatedInferredOption();
 	public Long getTime();
-	public Set<Status> getStatuses();
+	public Set<State> getStatuses();
 	public Set<UUID> getModules();
 	
 	public void save() throws IOException;

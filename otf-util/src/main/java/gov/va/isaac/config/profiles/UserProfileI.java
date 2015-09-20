@@ -18,29 +18,14 @@
  */
 package gov.va.isaac.config.profiles;
 
-import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.RoleOption;
 import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
-import gov.va.isaac.util.PasswordHasher;
-import gov.va.isaac.util.json.InterfaceAdapter;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
-import gov.vha.isaac.ochre.model.coordinate.LanguageCoordinateImpl;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+
 import java.util.Set;
 import java.util.UUID;
-import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * {@link UserProfileI}
@@ -202,25 +187,25 @@ public interface UserProfileI
 	/**
 	 * @return viewCoordinateStatuses unmodifiable set of viewCoordinateStatus
 	 * 
-	 * Always returns a unique unmodifiable set of 1 or more Status values.
+	 * Always returns a unique unmodifiable set of 1 or more State values.
 	 * Returns unmodifiable set of default status values if stored array is null or contains no non-null values
 	 */
-	public Set<Status> getViewCoordinateStatuses();
+	public Set<State> getViewCoordinateStatuses();
 
 	/**
 	 * @param viewCoordinateStatuses set of viewCoordinateStatus
 	 * 
-	 * Sets a unique set of non-null Status values.
+	 * Sets a unique set of non-null State values.
 	 * If passed set is null or contains no non-null values then empty array is used.
 	 */
-	public void setViewCoordinateStatuses(Set<Status> viewCoordinateStatusesSet);
+	public void setViewCoordinateStatuses(Set<State> viewCoordinateStatusesSet);
 	/**
 	 * @param viewCoordinateStatuses variable length parameter array of viewCoordinateStatus
 	 * 
-	 * Sets a unique set of non-null Status values.
+	 * Sets a unique set of non-null State values.
 	 * If passed parameter array is null or contains no non-null values then empty array is used.
 	 */
-	public void setViewCoordinateStatuses(Status...viewCoordinateStatusesSet);
+	public void setViewCoordinateStatuses(State...viewCoordinateStatusesSet);
 
 	/**
 	 * @return viewCoordinateModules unmodifiable set of viewCoordinateModules

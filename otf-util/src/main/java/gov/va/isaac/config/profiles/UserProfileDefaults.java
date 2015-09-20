@@ -29,12 +29,13 @@ import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 
 /**
  * UserProfileDefaults
@@ -106,9 +107,9 @@ public final class UserProfileDefaults {
 		return "";
 	}
 	
-	public static Set<Status> getDefaultViewCoordinateStatuses() {
-		Set<Status> statuses = new HashSet<>();
-		statuses.add(Status.ACTIVE);
+	public static Set<State> getDefaultViewCoordinateStatuses() {
+		Set<State> statuses = new HashSet<>();
+		statuses.add(State.ACTIVE);
 		return Collections.unmodifiableSet(statuses);
 	}
 	

@@ -8,6 +8,7 @@ import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.va.isaac.gui.preferences.PreferencesPersistenceI;
 import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.vha.isaac.ochre.api.State;
 
 import java.io.IOException;
 import java.util.Set;
@@ -45,7 +46,7 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 	}
 
 	@Override
-	public Set<Status> getStatuses() {
+	public Set<State> getStatuses() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getViewCoordinateStatuses();
 	}
@@ -85,8 +86,8 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 		loggedIn.setViewCoordinateStatuses(ctrl.currentStatusesProperty().get());
 
 		//Modules Property
-		LOG.debug("Setting stored VC modules to :" + ctrl.getCurrentSelectedModules());
-		loggedIn.setViewCoordinateModules(ctrl.getCurrentSelectedModules());
+		LOG.debug("Setting stored VC modules to :" + ctrl.currentSelectedModulesProperty());
+		loggedIn.setViewCoordinateModules(ctrl.currentSelectedModulesProperty());
 
 		try {
 			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);

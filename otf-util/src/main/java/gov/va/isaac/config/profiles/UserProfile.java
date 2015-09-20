@@ -24,8 +24,10 @@ import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.util.PasswordHasher;
 import gov.va.isaac.util.json.InterfaceAdapter;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.model.coordinate.LanguageCoordinateImpl;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -35,10 +37,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -100,7 +103,7 @@ public class UserProfile implements UserProfileI
 
 	private String extensionNamespace = null;
 
-	private Status[] viewCoordinateStatuses = null;
+	private State[] viewCoordinateStatuses = null;
 
 	private UUID[] viewCoordinateModules = null;
 	
@@ -655,16 +658,16 @@ public class UserProfile implements UserProfileI
 	/**
 	 * @return viewCoordinateStatuses unmodifiable set of viewCoordinateStatus
 	 * 
-	 * Always returns a unique unmodifiable set of 1 or more Status values.
+	 * Always returns a unique unmodifiable set of 1 or more State values.
 	 * Returns unmodifiable set of default status values if stored array is null or contains no non-null values
 	 */
 	@Override
-	public Set<Status> getViewCoordinateStatuses()
+	public Set<State> getViewCoordinateStatuses()
 	{
-		Set<Status> statuses = new HashSet<>();
+		Set<State> statuses = new HashSet<>();
 		if (viewCoordinateStatuses != null)
 		{
-			for (Status status : viewCoordinateStatuses) {
+			for (State status : viewCoordinateStatuses) {
 				if (status != null) {
 					statuses.add(status);
 				}
@@ -681,23 +684,23 @@ public class UserProfile implements UserProfileI
 	/**
 	 * @param viewCoordinateStatuses set of viewCoordinateStatus
 	 * 
-	 * Sets a unique set of non-null Status values.
+	 * Sets a unique set of non-null State values.
 	 * If passed set is null or contains no non-null values then empty array is used.
 	 */
 	@Override
-	public void setViewCoordinateStatuses(Set<Status> viewCoordinateStatusesSet) {
-		setViewCoordinateStatuses(viewCoordinateStatusesSet != null ? viewCoordinateStatusesSet.toArray(new Status[viewCoordinateStatusesSet.size()]) : new Status[0]);
+	public void setViewCoordinateStatuses(Set<State> viewCoordinateStatusesSet) {
+		setViewCoordinateStatuses(viewCoordinateStatusesSet != null ? viewCoordinateStatusesSet.toArray(new State[viewCoordinateStatusesSet.size()]) : new State[0]);
 	}
 	/**
 	 * @param viewCoordinateStatuses variable length parameter array of viewCoordinateStatus
 	 * 
-	 * Sets a unique set of non-null Status values.
+	 * Sets a unique set of non-null State values.
 	 * If passed parameter array is null or contains no non-null values then empty array is used.
 	 */
-	public void setViewCoordinateStatuses(Status...viewCoordinateStatusesSet) {
-		Set<Status> validPassedStatuses = new HashSet<>();
+	public void setViewCoordinateStatuses(State...viewCoordinateStatusesSet) {
+		Set<State> validPassedStatuses = new HashSet<>();
 		if (viewCoordinateStatusesSet != null) {
-			for (Status status : viewCoordinateStatusesSet) {
+			for (State status : viewCoordinateStatusesSet) {
 				if (status != null) {
 					validPassedStatuses.add(status);
 				}
@@ -705,9 +708,9 @@ public class UserProfile implements UserProfileI
 		}
 		
 		if (validPassedStatuses.size() > 0) {
-			viewCoordinateStatuses = validPassedStatuses.toArray(new Status[validPassedStatuses.size()]);
+			viewCoordinateStatuses = validPassedStatuses.toArray(new State[validPassedStatuses.size()]);
 		} else {
-			viewCoordinateStatuses = new Status[0];
+			viewCoordinateStatuses = new State[0];
 		}
 	}
 
