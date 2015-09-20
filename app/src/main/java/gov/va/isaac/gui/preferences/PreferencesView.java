@@ -24,15 +24,19 @@
  */
 package gov.va.isaac.gui.preferences;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.users.AddUserDialog;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.MenuItemI;
+import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
+import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import javax.inject.Singleton;
-
-import org.jvnet.hk2.annotations.Service;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -44,14 +48,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.users.AddUserDialog;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.interfaces.gui.ApplicationMenus;
-import gov.va.isaac.interfaces.gui.MenuItemI;
-import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
-import gov.va.isaac.interfaces.gui.views.PopupViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
+
+import org.jvnet.hk2.annotations.Service;
 
 /**
  * PreferencesView
@@ -60,7 +58,6 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginVi
  *
  */
 @Service
-@Singleton
 public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithMenusI {
 	private PreferencesViewController controller = null;
 	
@@ -103,7 +100,14 @@ public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithM
 	public void setRequestedPlugins(String requiredPluginName, String...optionalPluginNames) {
 		controller.setRequestedPlugins(requiredPluginName, optionalPluginNames);
 	}
-
+	
+	/**
+	 * Load instances of all available PreferencesPluginViewI classes,
+	 * unless requestedPluginNames is non-empty, in which case ignore non-specified PreferencesPluginViewI classes.
+	 * PreferencesPersistenceI may be reset in plugins after this call, but cannot be reset after aboutToShow()
+	 * 
+	 * loadPlugins() only performs load on first call, subsequently performing noop.
+	 */
 	public void loadPlugins() {
 		controller.loadPlugins();
 	}

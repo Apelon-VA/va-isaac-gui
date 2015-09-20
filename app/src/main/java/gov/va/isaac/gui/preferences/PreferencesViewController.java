@@ -77,7 +77,6 @@ public class PreferencesViewController {
 	
 	private final List<PreferencesPluginViewI> requestedPlugins = new ArrayList<>();
 	private Set<String> requestedPluginNames = null;
-//	private final Map<String, Object> pluginToInterfaceMap = new HashMap<>();
 
 	private @FXML TabPane tabPane_;
 
@@ -134,29 +133,25 @@ public class PreferencesViewController {
 		}
 	}
 	
-//	public void setPluginPersistenceInterfaces(Map<String, Object> pluginToInterfaceMap) {
-//		if (allValid_ != null) {
-//			throw new RuntimeException("Cannot set or reset plugin-to-interface map after calling aboutToShow()");
-//		}
-//		this.pluginToInterfaceMap.clear();
-//		this.pluginToInterfaceMap.putAll(pluginToInterfaceMap);
-//	}
-	
+	/**
+	 * Load instances of all available PreferencesPluginViewI classes,
+	 * unless requestedPluginNames is non-empty, in which case ignore non-specified PreferencesPluginViewI classes.
+	 * PreferencesPersistenceI may be reset in plugins after this call, but cannot be reset after aboutToShow().
+	 * 
+	 * loadPlugins() only performs load on first call, subsequently performing noop.
+	 */
 	public void loadPlugins() {
 		if (requestedPluginNames == null) {
 			requestedPluginNames = new HashSet<>();
 
 			for (PreferencesPluginViewI plugin : allPlugins_) {
 				if (requestedPluginNames.size() == 0 || requestedPluginNames.contains(plugin.getName())) {
-//					if (pluginToInterfaceMap.get(plugin.getName()) != null) {
-//						plugin.setPersistenceInterface(pluginToInterfaceMap.get(plugin.getName()));
-//					}
 					requestedPlugins.add(plugin);
 				}
 			}
 		}
 	}
-	
+
 	public PreferencesPluginViewI getPlugin(String name) {
 		loadPlugins();
 		

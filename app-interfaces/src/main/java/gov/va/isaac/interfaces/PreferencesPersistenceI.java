@@ -1,4 +1,4 @@
-package gov.va.isaac.gui.preferences;
+package gov.va.isaac.interfaces;
 
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;

@@ -19,11 +19,17 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
+import java.util.UUID;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -42,8 +48,7 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 @Service
-@Singleton
-public class ViewCoordinatePreferencesPluginView implements PreferencesPluginViewI
+public class ViewCoordinatePreferencesPluginView implements ViewCoordinatePreferencesPluginViewI
 {
 	ViewCoordinatePreferencesPluginViewController drlvc_;
 	
@@ -76,7 +81,10 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
-				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface(drlvc_));
+				// If PreferencesPersistenceI not set, then create and apply default
+				if (drlvc_.getPersistenceInterface() == null) {
+					drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface(this));
+				}
 				slaveValidationFailureMessageProperty.bind(drlvc_.validationFailureMessageProperty());
 			}
 			catch (IOException e)
@@ -129,5 +137,49 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	@Override
 	public int getTabOrder() {
 		return 10;
+	}
+
+	@Override
+	public void setPersistenceInterface(PreferencesPersistenceI persistenceInterface) {
+		drlvc_.setPersistenceInterface(persistenceInterface);
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentStatusesProperty()
+	 */
+	@Override
+	public ReadOnlySetProperty<State> currentStatusesProperty() {
+		return drlvc_.currentStatusesProperty();
+	}
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentTimeProperty()
+	 */
+	@Override
+	public ReadOnlyObjectProperty<Long> currentTimeProperty() {
+		return drlvc_.currentTimeProperty();
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentStatedInferredOptionProperty()
+	 */
+	@Override
+	public ReadOnlyObjectProperty<PremiseType> currentStatedInferredOptionProperty() {
+		return drlvc_.currentStatedInferredOptionProperty();
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentPathProperty()
+	 */
+	@Override
+	public ReadOnlyObjectProperty<UUID> currentPathProperty() {
+		return drlvc_.currentPathProperty();
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentSelectedModulesProperty()
+	 */
+	@Override
+	public ReadOnlySetProperty<UUID> currentSelectedModulesProperty() {
+		return drlvc_.currentSelectedModulesProperty();
 	}
 }

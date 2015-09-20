@@ -5,7 +5,7 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
-import gov.va.isaac.gui.preferences.PreferencesPersistenceI;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
@@ -19,10 +19,10 @@ import org.slf4j.LoggerFactory;
 public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements PreferencesPersistenceI {
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-	private final ViewCoordinatePreferencesPluginViewController ctrl;
+	private final ViewCoordinatePreferencesPluginViewI view;
 	
-	public ViewCoordinatePreferencesUserProfilePersistenceInterface(ViewCoordinatePreferencesPluginViewController ctrl) {
-		this.ctrl = ctrl;
+	public ViewCoordinatePreferencesUserProfilePersistenceInterface(ViewCoordinatePreferencesPluginViewI ctrl) {
+		this.view = ctrl;
 	}
 
 	@Override
@@ -60,32 +60,25 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 		LOG.debug("Saving ViewCoordinatePreferencesPluginView data");
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 
-//		currentStatedInferredOptionProperty.get(),
-//		currentPathProperty.get(),
-//		currentStatusesProperty.get(),
-//		currentTimeProperty.get(),
-//		selectedModules));
-		
-		
 		//Path Property
-		LOG.debug("Setting stored VC path (currently \"{}\") to {}", getPath(), ctrl.currentPathProperty().get()); 
-		loggedIn.setViewCoordinatePath(ctrl.currentPathProperty().get());
+		LOG.debug("Setting stored VC path (currently \"{}\") to {}", getPath(), view.currentPathProperty().get()); 
+		loggedIn.setViewCoordinatePath(view.currentPathProperty().get());
 
 		//Stated/Inferred Policy
-		LOG.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", getStatedInferredOption(), ctrl.currentStatedInferredOptionProperty().get()); 
-		loggedIn.setStatedInferredPolicy(ctrl.currentStatedInferredOptionProperty().get());
+		LOG.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", getStatedInferredOption(), view.currentStatedInferredOptionProperty().get()); 
+		loggedIn.setStatedInferredPolicy(view.currentStatedInferredOptionProperty().get());
 
 		//Time Property
-		LOG.debug("Setting stored VC time to :" + ctrl.currentTimeProperty().get());
-		loggedIn.setViewCoordinateTime(ctrl.currentTimeProperty().get());
+		LOG.debug("Setting stored VC time to :" + view.currentTimeProperty().get());
+		loggedIn.setViewCoordinateTime(view.currentTimeProperty().get());
 
 		//Statuses Property
-		LOG.debug("Setting stored VC statuses to :" + ctrl.currentStatusesProperty().get());
-		loggedIn.setViewCoordinateStatuses(ctrl.currentStatusesProperty().get());
+		LOG.debug("Setting stored VC statuses to :" + view.currentStatusesProperty().get());
+		loggedIn.setViewCoordinateStatuses(view.currentStatusesProperty().get());
 
 		//Modules Property
-		LOG.debug("Setting stored VC modules to :" + ctrl.currentSelectedModulesProperty());
-		loggedIn.setViewCoordinateModules(ctrl.currentSelectedModulesProperty());
+		LOG.debug("Setting stored VC modules to :" + view.currentSelectedModulesProperty().get());
+		loggedIn.setViewCoordinateModules(view.currentSelectedModulesProperty().get());
 
 		try {
 			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);

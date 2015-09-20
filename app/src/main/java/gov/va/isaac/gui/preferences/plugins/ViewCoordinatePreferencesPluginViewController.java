@@ -20,10 +20,9 @@ package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
-import gov.va.isaac.gui.preferences.PreferencesPersistenceI;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
 import gov.va.isaac.util.OchreUtility;
-//import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
 import gov.va.isaac.util.ViewCoordinateFactory;
@@ -220,8 +219,23 @@ public class ViewCoordinatePreferencesPluginViewController {
 		initializeValidBooleanBinding();
 	}
 
+	/**
+	 * 
+	 * Set persistent interface prior to any interaction with either UserProfile or local data structures.
+	 * Cannot be called after getContent(), as getContent() invokes PreferencesPersistenceI methods.
+	 * setPersistenceInterface() may be called any number of times before getContent() and should not have any side effects.
+	 * 
+	 * @param pi PreferencesPersistenceI for saving and load preferences from either UserProfile or local data structures
+	 * 
+	 */
 	public void setPersistenceInterface(PreferencesPersistenceI pi) {
+		if (contentLoaded) {
+			throw new RuntimeException("Cannot call setPersistenceInterface() after getContent()");
+		}
 		persistenceInterface = pi;
+	}
+	PreferencesPersistenceI getPersistenceInterface() {
+		return persistenceInterface;
 	}
 	
 	private void setCurrentTimePropertyFromDatePicker() {
@@ -695,8 +709,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 				removeProgressIndicator();
 				
 				Throwable ex = getException();
-				log.error("loadContent() caught " + ex.getClass().getName() + " " + ex.getLocalizedMessage(), ex);
-				AppContext.getCommonDialogs().showErrorDialog("Failed loading content. See logs.", ex);
+				log.error("getContent() caught " + ex.getClass().getName() + " " + ex.getLocalizedMessage(), ex);
+				AppContext.getCommonDialogs().showErrorDialog("Failed getting content. See logs.", ex);
 			}
 		};
 
