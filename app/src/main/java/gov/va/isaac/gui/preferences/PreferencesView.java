@@ -50,6 +50,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
+import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -59,6 +60,7 @@ import org.jvnet.hk2.annotations.Service;
  *
  */
 @Service
+@PerLookup
 public class PreferencesView extends Stage implements PreferencesViewI {
 	private PreferencesViewController controller = null;
 	
@@ -88,6 +90,11 @@ public class PreferencesView extends Stage implements PreferencesViewI {
 		this.controller.setStage(this);
 	}
 
+	@Override
+	public void setPanelTitle(String value) {
+		controller.setPanelTitle(value);
+	}
+	
 	/* (non-Javadoc)
 	 * @see gov.va.isaac.gui.preferences.PreferencesViewI#setRequestedPlugins(java.lang.String, java.lang.String)
 	 */

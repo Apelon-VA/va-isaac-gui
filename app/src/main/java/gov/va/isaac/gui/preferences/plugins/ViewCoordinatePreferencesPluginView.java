@@ -41,6 +41,7 @@ import javafx.scene.layout.Region;
 
 import javax.inject.Singleton;
 
+import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,12 +52,18 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 @Service
+@PerLookup
 public class ViewCoordinatePreferencesPluginView implements ViewCoordinatePreferencesPluginViewI
 {
-	ViewCoordinatePreferencesPluginViewController drlvc_;
-	private PreferencesPersistenceI persistenceInterfaceToSetInController;
-	
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
+	
+	ViewCoordinatePreferencesPluginViewController drlvc_;
+	
+	/**
+	 * persistenceInterfaceToSetInController is necessary to allow setPersistenceInterface
+	 * to be called before getContent()
+	 */
+	private PreferencesPersistenceI persistenceInterfaceToSetInController;
 	
 	/**
 	 * This slave property, bound to controller validationFailureMessageProperty only after controller construction,

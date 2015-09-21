@@ -106,11 +106,11 @@
                                  </FlowPane.margin>
                               </Button>
                               <ToggleButton fx:id="panelVsGlobalPreferencesToggleButton" layoutX="380.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="G" />
-                              <ToggleButton fx:id="panelPreferencesToggleButton" layoutX="411.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="P">
+                              <Button fx:id="panelPreferencesPopupButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="Button">
                                  <FlowPane.margin>
                                     <Insets right="5.0" />
                                  </FlowPane.margin>
-                              </ToggleButton>
+                              </Button>
                               <ToggleButton fx:id="stampToggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="S">
                                  <FlowPane.margin>
                                     <Insets right="5.0" />

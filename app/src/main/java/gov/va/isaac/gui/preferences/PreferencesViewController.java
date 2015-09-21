@@ -83,9 +83,13 @@ public class PreferencesViewController {
 	private @FXML Button okButton_;
 	private @FXML Button cancelButton_;
 	
+	private @FXML Label titleLabel_;
+	
 	private PreferencesView stage_;
 	
 	private ValidBooleanBinding allValid_ = null;
+	
+	private boolean aboutToShowCalled_ = false;
 	
 	public PreferencesViewController() {
 		AppContext.getServiceLocator().inject(this);
@@ -97,6 +101,7 @@ public class PreferencesViewController {
 		assert tabPane_ != null : "fx:id=\"tabPane\" was not injected: check your FXML file 'PreferencesView.fxml'.";
 		assert okButton_ != null : "fx:id=\"okButton\" was not injected: check your FXML file 'PreferencesView.fxml'.";
 		assert cancelButton_ != null : "fx:id=\"cancelButton_\" was not injected: check your FXML file 'PreferencesView.fxml'.";
+		assert titleLabel_ != null : "fx:id=\"titleLable_\" was not injected: check your FXML file 'PreferencesView.fxml'.";
 
 		tabPane_.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
 		tabPane_.setMaxWidth(Double.MAX_VALUE);
@@ -108,6 +113,10 @@ public class PreferencesViewController {
 
 	void setStage(PreferencesView stage) {
 		this.stage_ = stage;
+	}
+	
+	void setPanelTitle(String title) {
+		titleLabel_.setText(title);
 	}
 	
 	/**
@@ -167,7 +176,9 @@ public class PreferencesViewController {
 	public void aboutToShow()
 	{
 		// Using allValid_ to prevent rerunning content of aboutToShow()
-		if (allValid_ == null) {
+		if (! aboutToShowCalled_) {
+			aboutToShowCalled_ = true;
+			
 			// These listeners are for debug and testing only. They may be removed at any time.
 //			UserProfileBindings  userProfileBindings = AppContext.getService(UserProfileBindings.class);
 //			for (Property<?> property : userProfileBindings.getAll()) 

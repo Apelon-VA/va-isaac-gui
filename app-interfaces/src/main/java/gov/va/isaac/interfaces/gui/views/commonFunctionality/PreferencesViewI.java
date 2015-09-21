@@ -21,6 +21,13 @@ public interface PreferencesViewI extends PopupViewI, IsaacViewWithMenusI {
 	public void setTitle(String value);
 	
 	/**
+	 * Set/reset panel title
+	 * 
+	 * @param value String title
+	 */
+	public void setPanelTitle(String value);
+	
+	/**
 	 * 
 	 * Allow specification by name of plugins to display before calling aboutToShow().
 	 * If no plugin names specified, then all available plugins will be displayed.
