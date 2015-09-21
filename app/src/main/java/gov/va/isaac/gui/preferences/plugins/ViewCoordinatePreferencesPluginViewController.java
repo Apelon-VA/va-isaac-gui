@@ -726,7 +726,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		final PremiseType storedStatedInferredOption = getStoredStatedInferredOption();
 		for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
 			if (toggle.getUserData() == storedStatedInferredOption) {
-				toggle.setSelected(true);
+				Platform.runLater(() -> toggle.setSelected(true));
 			}
 		}
 	}

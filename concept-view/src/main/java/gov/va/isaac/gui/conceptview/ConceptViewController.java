@@ -205,7 +205,7 @@ public class ConceptViewController {
 	@FXML private Button minusDescriptionButton;
 	@FXML private Button plusDescriptionButton;
 	@FXML private Button duplicateDescriptionButton;
-	@FXML private ToggleButton panelPreferencesToggleButton;
+	@FXML private Button panelPreferencesPopupButton;
 	@FXML private ToggleButton panelVsGlobalPreferencesToggleButton;
 
 	
@@ -269,7 +269,7 @@ public class ConceptViewController {
 		assert plusDescriptionButton 		!= null : "fx:id=\"plusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert activeOnlyToggle 			!= null : "fx:id=\"activeOnlyToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert stampToggle 					!= null : "fx:id=\"stampToggleToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert panelPreferencesToggleButton 			!= null : "fx:id=\"panelPreferencesToggleButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert panelPreferencesPopupButton 			!= null : "fx:id=\"panelPreferencesPopupButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert panelVsGlobalPreferencesToggleButton 	!= null : "fx:id=\"panelVsGlobalPreferencesToggleButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert cancelButton 	!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -280,6 +280,8 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(plusDescriptionButton, 	Images.PLUS.createImageView(), 		"Create Description");
 		FxUtils.assignImageToButton(minusDescriptionButton, 	Images.MINUS.createImageView(), 	"Retire/Unretire Description");
 		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.EDIT.createImageView(), 		"Edit Description");
+		FxUtils.assignImageToButton(panelPreferencesPopupButton, 	Images.CONFIGURE.createImageView(), 		"Panel Preferences");
+		FxUtils.assignImageToButton(panelVsGlobalPreferencesToggleButton, 	Images.CONFIGURE.createImageView(), "Use Local Preferences");
 
 		setColumnWidths();
 		setupPreferences();
@@ -295,7 +297,7 @@ public class ConceptViewController {
 		setupCancelButton();
 		setupCommitButton();
 		setupConceptLabel();
-		setupPanelPreferencesToggleButton();
+		setupPanelPreferencesPopupButton();
 		setupPanelVsGlobalPreferencesToggleButton();
 		
 		setupConceptChronologyChangeListener();
@@ -370,6 +372,8 @@ public class ConceptViewController {
 	}
 
 	private void setupPanelVsGlobalPreferencesToggleButton() {
+		final Tooltip selectedTooltip = new Tooltip("Use local preferences only (on)");
+		final Tooltip unselectedTooltip = new Tooltip("Use local preferences only (off)");
 		panelVsGlobalPreferencesToggleButton.selectedProperty().addListener(new ChangeListener<Boolean>() {
 			@Override
 			public void changed(
@@ -377,10 +381,10 @@ public class ConceptViewController {
 					Boolean oldValue, Boolean newValue) {
 				if (newValue) {
 					panelTaxonomyCoordinate.unbind();
-					panelVsGlobalPreferencesToggleButton.setText("G");
+					panelVsGlobalPreferencesToggleButton.setTooltip(selectedTooltip);
 				} else {
 					panelTaxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
-					panelVsGlobalPreferencesToggleButton.setText("P");
+					panelVsGlobalPreferencesToggleButton.setTooltip(unselectedTooltip);
 				}
 			}
 		});
@@ -388,107 +392,103 @@ public class ConceptViewController {
 		panelVsGlobalPreferencesToggleButton.setSelected(false);
 	}
 
-	private void setupPanelPreferencesToggleButton() {
-		panelPreferencesToggleButton.setOnAction((event) -> {
-			if (panelPreferencesToggleButton.isSelected()) {
-				if (panelPreferencesView == null) {
-					panelPreferencesView = AppContext.getService(PreferencesViewI.class);
-					panelPreferencesView.setRequestedPlugins(SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN);
-					panelPreferencesView.loadPlugins();
-					final ViewCoordinatePreferencesPluginViewI vcPrefPluginView = (ViewCoordinatePreferencesPluginViewI)panelPreferencesView.getPlugin(SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN);
-					
-					PreferencesPersistenceI panelPersistenceInterface = new PreferencesPersistenceI() {
-						@Override
-						public UUID getPath() {
-							// TODO Auto-generated method stub
-							Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getStampPathSequence());
-							return opt.get();
-						}
+	private void setupPanelPreferencesPopupButton() {
+		panelPreferencesPopupButton.setOnAction((event) -> {
+			if (panelPreferencesView == null) {
+				panelPreferencesView = AppContext.getService(PreferencesViewI.class);
+				panelPreferencesView.setRequestedPlugins(SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN);
+				panelPreferencesView.loadPlugins();
+				final ViewCoordinatePreferencesPluginViewI vcPrefPluginView = (ViewCoordinatePreferencesPluginViewI)panelPreferencesView.getPlugin(SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN);
 
-						@Override
-						public PremiseType getStatedInferredOption() {
-							return panelTaxonomyCoordinate.get().getTaxonomyType();
-						}
+				PreferencesPersistenceI panelPersistenceInterface = new PreferencesPersistenceI() {
+					@Override
+					public UUID getPath() {
+						// TODO Auto-generated method stub
+						Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getStampPathSequence());
+						return opt.get();
+					}
 
-						@Override
-						public Long getTime() {
-							return panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getTime();
-						}
+					@Override
+					public PremiseType getStatedInferredOption() {
+						return panelTaxonomyCoordinate.get().getTaxonomyType();
+					}
 
-						@Override
-						public Set<State> getStatuses() {
-							return Collections.unmodifiableSet(panelTaxonomyCoordinate.get().getStampCoordinate().getAllowedStates());
-						}
+					@Override
+					public Long getTime() {
+						return panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getTime();
+					}
 
-						@Override
-						public Set<UUID> getModules() {
-							 ConceptSequenceSet seqences = panelTaxonomyCoordinate.get().getStampCoordinate().getModuleSequences();
-							 
-							 Set<UUID> moduleUuids = new HashSet<>();
-							 for (int sequence : seqences.asArray()) {
-								 Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(sequence);
-								 if (opt.isPresent()) {
-									 moduleUuids.add(opt.get());
-								 }
-							 }
-							 
-							 return Collections.unmodifiableSet(moduleUuids);
-						}
+					@Override
+					public Set<State> getStatuses() {
+						return Collections.unmodifiableSet(panelTaxonomyCoordinate.get().getStampCoordinate().getAllowedStates());
+					}
 
-						@Override
-						public void save() throws IOException {
+					@Override
+					public Set<UUID> getModules() {
+						ConceptSequenceSet seqences = panelTaxonomyCoordinate.get().getStampCoordinate().getModuleSequences();
 
-							StampPosition stampPosition = new StampPositionImpl(
-									vcPrefPluginView.getCurrentTime(),
-									Get.identifierService().getConceptSequenceForUuids(vcPrefPluginView.getCurrentPath()));
-
-							int[] moduleSequences = new int[vcPrefPluginView.getCurrentSelectedModules().size()];
-							int index = 0;
-							for (UUID moduleUuid : vcPrefPluginView.getCurrentSelectedModules()) {
-								if (moduleUuid != null) {
-									moduleSequences[index++] = Get.identifierService().getConceptSequenceForUuids(moduleUuid);
-								}
+						Set<UUID> moduleUuids = new HashSet<>();
+						for (int sequence : seqences.asArray()) {
+							Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(sequence);
+							if (opt.isPresent()) {
+								moduleUuids.add(opt.get());
 							}
-
-							EnumSet<State> allowedStates = EnumSet.allOf(State.class);
-							allowedStates.clear();
-							for (State status : vcPrefPluginView.getCurrentStatuses()) {
-								allowedStates.add(status);
-							}								
-							StampCoordinate	stampCoordinate =
-									new StampCoordinateImpl(
-											StampPrecedence.PATH,
-											stampPosition, 
-											ConceptSequenceSet.of(moduleSequences), allowedStates);
-
-							TaxonomyCoordinate newCoordinate = null;
-							switch (vcPrefPluginView.getCurrentStatedInferredOption()) {
-							case STATED:
-								newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
-								break;
-							case INFERRED:
-								newCoordinate = TaxonomyCoordinates.getInferredTaxonomyCoordinate(stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
-								break;
-							default:
-								throw new RuntimeException("Unsupported StatedInferredOptions value " + vcPrefPluginView.getCurrentStatedInferredOption() + ".  Expected STATED or INFERRED.");
-							}
-
-							panelTaxonomyCoordinate.set(newCoordinate);
 						}
-					};
-					
-					vcPrefPluginView.setPersistenceInterface(panelPersistenceInterface);
-				}
-				
-				panelVsGlobalPreferencesToggleButton.setSelected(true);
-				
-				panelPreferencesView.setTitle("ConceptView Panel Preferences");
-				panelPreferencesView.showView(mainPane.getScene().getWindow());
-			} else {
-				// ! panelPreferencesToggleButton.isSelected()
-				
-				// TODO close preference view when toggled off?
+
+						return Collections.unmodifiableSet(moduleUuids);
+					}
+
+					@Override
+					public void save() throws IOException {
+
+						StampPosition stampPosition = new StampPositionImpl(
+								vcPrefPluginView.getCurrentTime(),
+								Get.identifierService().getConceptSequenceForUuids(vcPrefPluginView.getCurrentPath()));
+
+						int[] moduleSequences = new int[vcPrefPluginView.getCurrentSelectedModules().size()];
+						int index = 0;
+						for (UUID moduleUuid : vcPrefPluginView.getCurrentSelectedModules()) {
+							if (moduleUuid != null) {
+								moduleSequences[index++] = Get.identifierService().getConceptSequenceForUuids(moduleUuid);
+							}
+						}
+
+						EnumSet<State> allowedStates = EnumSet.allOf(State.class);
+						allowedStates.clear();
+						for (State status : vcPrefPluginView.getCurrentStatuses()) {
+							allowedStates.add(status);
+						}								
+						StampCoordinate	stampCoordinate =
+								new StampCoordinateImpl(
+										StampPrecedence.PATH,
+										stampPosition, 
+										ConceptSequenceSet.of(moduleSequences), allowedStates);
+
+						TaxonomyCoordinate newCoordinate = null;
+						switch (vcPrefPluginView.getCurrentStatedInferredOption()) {
+						case STATED:
+							newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
+							break;
+						case INFERRED:
+							newCoordinate = TaxonomyCoordinates.getInferredTaxonomyCoordinate(stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
+							break;
+						default:
+							throw new RuntimeException("Unsupported StatedInferredOptions value " + vcPrefPluginView.getCurrentStatedInferredOption() + ".  Expected STATED or INFERRED.");
+						}
+
+						panelTaxonomyCoordinate.set(newCoordinate);
+					}
+				};
+
+				vcPrefPluginView.setPersistenceInterface(panelPersistenceInterface);
 			}
+
+			panelVsGlobalPreferencesToggleButton.setSelected(true);
+
+			String title = "ConceptView Panel Preferences";
+			panelPreferencesView.setTitle("View/Edit " + title);
+			panelPreferencesView.setPanelTitle(title);
+			panelPreferencesView.showView(mainPane.getScene().getWindow());
 		});
 	}
 
@@ -574,6 +574,7 @@ public class ConceptViewController {
 
 	void viewDiscarded() {
 		refreshBinding.clearBindings();
+		panelTaxonomyCoordinate.unbind();
 		relationshipsView.viewDiscarded();
 		removeConceptChronologyChangeListener();
 	}

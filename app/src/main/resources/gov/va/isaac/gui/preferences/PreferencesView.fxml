@@ -6,11 +6,9 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="500.0"
-	xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.preferences.PreferencesViewController">
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="500.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.preferences.PreferencesViewController">
 	<top>
-		<Label alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="40.0" styleClass="headerBackground" text="User Preferences"
-			BorderPane.alignment="CENTER">
+		<Label fx:id="titleLabel_" alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="40.0" styleClass="headerBackground" text="User Preferences" BorderPane.alignment="CENTER">
 			<font>
 				<Font name="System Bold" size="18.0" />
 			</font>
@@ -40,8 +38,7 @@
 	<center>
 		<ScrollPane fitToHeight="true" fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
 			<content>
-				<TabPane fx:id="tabPane_" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tabClosingPolicy="UNAVAILABLE"
-					BorderPane.alignment="CENTER" />
+				<TabPane fx:id="tabPane_" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER" />
 			</content>
 		</ScrollPane>
 	</center>
