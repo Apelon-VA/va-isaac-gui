@@ -84,6 +84,9 @@ public class PopupList {
 			ConceptViewColumnType columnType = _columnTypes[i];
 			TableColumn<PopupData,PopupData> column = new TableColumn<PopupData,PopupData>(columnType.toString());
 			column.setUserData(columnType);
+			column.setPrefWidth(TableView.USE_COMPUTED_SIZE);
+			column.setMinWidth(100);
+			
 			_tableView.getColumns().add(column);
 			
 			column.setCellValueFactory(new Callback<CellDataFeatures<PopupData, PopupData>, ObservableValue<PopupData>>() {
@@ -108,8 +111,10 @@ public class PopupList {
 		}
 		
 		_tableView.setItems(_data);
+		_tableView.setPrefWidth(TableView.USE_COMPUTED_SIZE);
 		
 		PopOver po = DetachablePopOverHelper.newDetachachablePopoverWithCloseButton(_title, _tableView);
+		po.setWidth(_tableView.getPrefWidth());
 		if (_popOverRegion == null) {
 			po.detach();
 			po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
