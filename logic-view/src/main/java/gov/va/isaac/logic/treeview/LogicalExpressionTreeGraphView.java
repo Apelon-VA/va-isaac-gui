@@ -240,7 +240,9 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		noRefresh_.getAndIncrement();
 		
 		// TODO get background processes working
-		displayData(loadData());
+		LogicalExpression le = loadData();
+		
+		displayData(le);
 		
 		noRefresh_.decrementAndGet();
 
@@ -280,9 +282,19 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 	private LogicalExpression loadData() {
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
+		if (! defChronologyOptional.isPresent()) {
+			AppContext.getCommonDialogs().showInformationDialog("Missing Definition Chronology", "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate");
 
+			return null;
+		}
 		SememeChronology rawDefChronology = defChronologyOptional.get();
+	
 		Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinate.get().getStampCoordinate());
+		if (! latestGraphLatestVersionOptional.isPresent()) {
+			AppContext.getCommonDialogs().showInformationDialog("Missing LogicGraph", "No relationship LogicGraph found for " + Get.conceptDescriptionText(conceptId) + " for specified TaxonomyCoordinate");
+
+			return null;
+		}
 		LogicGraphSememeImpl latestGraph = latestGraphLatestVersionOptional.get().value();	
 		
 		LogicalExpressionOchreImpl le = new LogicalExpressionOchreImpl(latestGraph.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(latestGraph.getReferencedComponentNid()));
@@ -291,12 +303,18 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	}
 	
 	private void displayData(LogicalExpression le) {
-		title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " Logic Graph for Concept " + Get.conceptDescriptionText(conceptId));
-		
 		logicalExpressionTreeGraph.getChildren().clear();
-		logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
-		
-		textGraph.setText(le.toString());
+
+		if (le != null) {
+			title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " Logic Graph for Concept " + Get.conceptDescriptionText(conceptId));
+
+			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
+
+			textGraph.setText(le.toString());
+		} else {
+			title.setText(null);
+			textGraph.setText(null);
+		}
 	}
 
 	@Override

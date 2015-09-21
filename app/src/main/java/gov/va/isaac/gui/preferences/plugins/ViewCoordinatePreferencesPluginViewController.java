@@ -549,9 +549,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 				if (selectedModules.size() > 0) {
 					// Remove this check when modules supported by ViewCoordinateFactory.get()
-					this.setInvalidReason("Selection of specific module(s) not currently supported.  Currently, only ALL is supported.");
-					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
-					return false;
+//					this.setInvalidReason("Selection of specific module(s) not currently supported.  Currently, only ALL is supported.");
+//					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
+//					return false;
 				} else if (allModulesMarker.selectedProperty().get()
 						&& selectedModules.size() > 0) {
 					this.setInvalidReason("ALL module cannot be selected while any (currently " + selectedModules.size() + ") specific module selected");
@@ -647,7 +647,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					// Reload storedModules
 					final Set<UUID> storedModuleUuids = getStoredModules();
 					if (storedModuleUuids.size() == 0) {
-						allModulesMarker.setSelected(true);
+						runLaterIfNotFXApplicationThread(() -> allModulesMarker.setSelected(true));
 					} else {
 						// Check to make sure that stored UUID refers to an existing, known module
 						for (UUID storedModuleUuid : storedModuleUuids) {

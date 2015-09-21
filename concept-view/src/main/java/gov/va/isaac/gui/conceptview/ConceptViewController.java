@@ -760,9 +760,25 @@ public class ConceptViewController {
 						} else {
 							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelTaxonomyCoordinate.get().getStampCoordinate(), Get.configurationService().getDefaultLanguageCoordinate());
 							
-							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							if (! cs.isPresent()) {
+								final int finalNid = nid;
+								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Missing ConceptSnapshot", "No ConceptSnapshot found for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
+
+								// Return existing concept label contents
+								return conceptLabel.getText();
+							}
+							
 							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
-							return desc.isPresent() ? desc.get().value().getText() : null;
+							if (! desc.isPresent()) {
+								final int finalNid = nid;
+								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Not using dropped concept", "Failed to load Fully Specified Name for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
+								
+								// Return existing concept label contents
+								return conceptLabel.getText();
+							}
+
+							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							return desc.get().value().getText();
 						}
 					}
 				});
