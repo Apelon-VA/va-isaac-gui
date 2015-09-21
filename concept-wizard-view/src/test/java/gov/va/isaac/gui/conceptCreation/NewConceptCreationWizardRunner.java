@@ -18,13 +18,11 @@
  */
 package gov.va.isaac.gui.conceptCreation;
 
+import java.io.File;
+
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
-import gov.va.isaac.gui.conceptCreation.ConceptCreationWizard;
 import gov.va.isaac.init.SystemInit;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;

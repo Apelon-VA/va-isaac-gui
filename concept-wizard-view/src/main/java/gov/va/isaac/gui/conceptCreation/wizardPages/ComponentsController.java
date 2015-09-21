@@ -21,7 +21,6 @@ package gov.va.isaac.gui.conceptCreation.wizardPages;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.va.isaac.util.OTFUtility;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
@@ -34,7 +33,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +71,6 @@ public class ComponentsController implements PanelControllers {
 	
 	private final Logger LOG = LoggerFactory.getLogger(ComponentsController.class);
 	
-	static ViewCoordinate vc = null;
 	ScreensController processController;
 
 	private ArrayList<RelRow> relationships = new ArrayList<>();
@@ -85,7 +82,7 @@ public class ComponentsController implements PanelControllers {
 	@Override
 	public void initialize() {
 		LOG.debug("Creating a ComponentsController");
-		vc = OTFUtility.getViewCoordinate();
+		//vc = OTFUtility.getViewCoordinate();
 			
 		// Buttons
 		cancelButton.setOnAction(new EventHandler<ActionEvent>() {

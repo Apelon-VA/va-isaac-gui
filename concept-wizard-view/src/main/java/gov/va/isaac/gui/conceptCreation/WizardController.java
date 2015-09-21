@@ -18,17 +18,10 @@
  */
 package gov.va.isaac.gui.conceptCreation;
 
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.AllRole;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,8 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.profiles.UserProfile;
-import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.conceptCreation.wizardPages.RelRow;
 import gov.va.isaac.gui.conceptCreation.wizardPages.TermRow;
 import gov.va.isaac.util.OchreUtility;
@@ -55,14 +46,10 @@ import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
-import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
-import gov.vha.isaac.ochre.api.logic.assertions.AllRole;
-import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
 import gov.vha.isaac.ochre.impl.lang.LanguageCode;
-import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
 
 /**
  * 
@@ -161,6 +148,7 @@ public class WizardController {
 	public ConceptChronology<?> createNewConcept()  throws IOException {
 		logger.info("Creating concept " + fsn + " " + prefTerm + " in DB");
 		AppContext.getRuntimeGlobals().disableAllCommitListeners();
+		ConceptChronology<?> chronology = null;
 		try {
 			
 			ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
@@ -248,13 +236,12 @@ public class WizardController {
 				}
 			}
 			
-			ConceptChronology<?> chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
-			
-			return chronology;
-		}
-		finally {
+			chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
+		} finally {
 			AppContext.getRuntimeGlobals().enableAllCommitListeners(); //TODO - do we want this
 		}
+		return chronology;
+		
 		//OLD CODE TODO check these are all satisfied
 //		String fsn = this.fsn;
 //		String prefTerm = this.prefTerm;
