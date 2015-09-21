@@ -1,11 +1,13 @@
 package gov.va.isaac.gui.conceptview.popups;
 
 import gov.va.isaac.gui.conceptview.ConceptViewColumnType;
+import gov.va.isaac.gui.conceptview.data.Concept;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
 import gov.va.isaac.gui.conceptview.data.ConceptIdType;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
@@ -104,6 +106,22 @@ public class PopupHelper {
 	}
 	
 	public static void showConceptHistory(ConceptSnapshot concept, Region popOverRegion) {
-		// TODO this.
+		PopupList popup = new PopupList();
+		popup.setTitle("Concept History");
+		popup.setColumnTypes(new ConceptViewColumnType[] { 
+			ConceptViewColumnType.STAMP_MODULE,
+			ConceptViewColumnType.STAMP_STATE,
+			ConceptViewColumnType.STAMP_TIME,
+			ConceptViewColumnType.STAMP_AUTHOR,
+			ConceptViewColumnType.STAMP_PATH
+		});
+		popup.setPopOverRegion(popOverRegion);
+		
+		for (ConceptVersion<?> cv : concept.getChronology().getVersionList()) {
+			Concept c = new Concept(cv);
+			popup.addData(c);
+		}
+		
+		popup.showPopup();
 	}
 }

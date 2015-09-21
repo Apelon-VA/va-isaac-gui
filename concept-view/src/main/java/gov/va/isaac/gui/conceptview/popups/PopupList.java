@@ -5,6 +5,7 @@ import gov.va.isaac.gui.conceptview.ConceptViewColumnType;
 import gov.va.isaac.gui.conceptview.ConceptViewController;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
+import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
@@ -69,13 +70,7 @@ public class PopupList {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PopupList.class);
 
-	public void addData(ConceptId data) {
-		PopupData pd = new PopupData(data);
-		if (pd.isValid()) {
-			_data.add(pd);
-		}
-	}
-	public void addData(ConceptDescription data) {
+	public void addData(Object data) {
 		PopupData pd = new PopupData(data);
 		if (pd.isValid()) {
 			_data.add(pd);
@@ -151,8 +146,9 @@ public class PopupList {
 				default:
 					break;
 				}
-				
-			} else if (popupData.isConceptDescription()) {
+			} 
+			
+			if (popupData.isConceptDescription()) {
 				ConceptDescription conceptDescription = popupData.getConceptDescription();
 				switch (columnType) {
 				case TERM:
@@ -182,25 +178,30 @@ public class PopupList {
 					conceptSequence = conceptDescription.getSignificanceSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
+				}
+			}
+			if (popupData.isStampedItem()) {
+				StampedItem<?> stampedItem = popupData.getStampedItem();
+				switch (columnType) {
 				case STAMP_STATE:
-					textProperty = conceptDescription.getStateProperty();
+					textProperty = stampedItem.getStateProperty();
 					break;
 				case STAMP_TIME:
-					textProperty = conceptDescription.getTimeProperty();
+					textProperty = stampedItem.getTimeProperty();
 					break;
 				case STAMP_AUTHOR:
-					textProperty = conceptDescription.getAuthorProperty();
-					conceptSequence = conceptDescription.getAuthorSequence();
+					textProperty = stampedItem.getAuthorProperty();
+					conceptSequence = stampedItem.getAuthorSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
 				case STAMP_MODULE:
-					textProperty = conceptDescription.getModuleProperty();
-					conceptSequence = conceptDescription.getModuleSequence();
+					textProperty = stampedItem.getModuleProperty();
+					conceptSequence = stampedItem.getModuleSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
 				case STAMP_PATH:
-					textProperty = conceptDescription.getPathProperty();
-					conceptSequence = conceptDescription.getPathSequence();
+					textProperty = stampedItem.getPathProperty();
+					conceptSequence = stampedItem.getPathSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
 				default:

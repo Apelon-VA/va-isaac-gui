@@ -689,7 +689,7 @@ public class ConceptViewController {
 										miHistory.setOnAction(new EventHandler<ActionEvent>() {
 											@Override
 											public void handle(ActionEvent arg0) {
-												//PopupHelper.showDescriptionHistory(conceptDescription, conceptLabel);
+												PopupHelper.showConceptHistory(conceptProperty.getValue(), conceptLabel);
 											}
 										});
 										conceptLabel.getContextMenu().getItems().add(miHistory);
