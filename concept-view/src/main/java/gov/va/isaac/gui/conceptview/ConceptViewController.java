@@ -11,8 +11,12 @@ import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ViewCoordinatePreferencesPluginViewI;
 import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuBuilder;
@@ -23,6 +27,7 @@ import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
+import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -35,21 +40,55 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 
 
+
+
+
+
+
+
+
+
+
+
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -95,8 +134,30 @@ import javafx.util.StringConverter;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -144,6 +205,9 @@ public class ConceptViewController {
 	@FXML private Button minusDescriptionButton;
 	@FXML private Button plusDescriptionButton;
 	@FXML private Button duplicateDescriptionButton;
+	@FXML private ToggleButton panelPreferencesToggleButton;
+	@FXML private ToggleButton panelVsGlobalPreferencesToggleButton;
+
 	
 	@FXML private ToggleButton activeOnlyToggle;
 	@FXML private ToggleButton stampToggle;
@@ -163,10 +227,11 @@ public class ConceptViewController {
 	//private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
 	
 	// All bindings and listeners for constituent coordinates should be on change of TaxonomyCoordinate
-	private ReadOnlyObjectProperty<TaxonomyCoordinate> panelTaxonomyCoordinate;
+	private ObjectProperty<TaxonomyCoordinate> panelTaxonomyCoordinate = new SimpleObjectProperty<TaxonomyCoordinate>();
 
 	private LogicalExpressionTreeGraphEmbeddableViewI relationshipsView;
 	
+	private PreferencesViewI panelPreferencesView = null;
 	
 	@FXML
 	void initialize() {
@@ -204,6 +269,8 @@ public class ConceptViewController {
 		assert plusDescriptionButton 		!= null : "fx:id=\"plusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert activeOnlyToggle 			!= null : "fx:id=\"activeOnlyToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert stampToggle 					!= null : "fx:id=\"stampToggleToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert panelPreferencesToggleButton 			!= null : "fx:id=\"panelPreferencesToggleButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert panelVsGlobalPreferencesToggleButton 	!= null : "fx:id=\"panelVsGlobalPreferencesToggleButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert cancelButton 	!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert commitButton 	!= null : "fx:id=\"commitButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -228,6 +295,8 @@ public class ConceptViewController {
 		setupCancelButton();
 		setupCommitButton();
 		setupConceptLabel();
+		setupPanelPreferencesToggleButton();
+		setupPanelVsGlobalPreferencesToggleButton();
 		
 		setupConceptChronologyChangeListener();
 		
@@ -294,7 +363,135 @@ public class ConceptViewController {
 			}
 		});
 	}
-	
+
+	private void setupPreferences() {
+		// Effectively clone the TaxonomyCoordinate from UserProfileBindings
+		panelTaxonomyCoordinate.set(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get().makeAnalog(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get().getTaxonomyType()));
+	}
+
+	private void setupPanelVsGlobalPreferencesToggleButton() {
+		panelVsGlobalPreferencesToggleButton.selectedProperty().addListener(new ChangeListener<Boolean>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends Boolean> observable,
+					Boolean oldValue, Boolean newValue) {
+				if (newValue) {
+					panelTaxonomyCoordinate.unbind();
+					panelVsGlobalPreferencesToggleButton.setText("G");
+				} else {
+					panelTaxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
+					panelVsGlobalPreferencesToggleButton.setText("P");
+				}
+			}
+		});
+		
+		panelVsGlobalPreferencesToggleButton.setSelected(false);
+	}
+
+	private void setupPanelPreferencesToggleButton() {
+		panelPreferencesToggleButton.setOnAction((event) -> {
+			if (panelPreferencesToggleButton.isSelected()) {
+				if (panelPreferencesView == null) {
+					panelPreferencesView = AppContext.getService(PreferencesViewI.class);
+					panelPreferencesView.setRequestedPlugins(SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN);
+					panelPreferencesView.loadPlugins();
+					final ViewCoordinatePreferencesPluginViewI vcPrefPluginView = (ViewCoordinatePreferencesPluginViewI)panelPreferencesView.getPlugin(SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN);
+					
+					PreferencesPersistenceI panelPersistenceInterface = new PreferencesPersistenceI() {
+						@Override
+						public UUID getPath() {
+							// TODO Auto-generated method stub
+							Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getStampPathSequence());
+							return opt.get();
+						}
+
+						@Override
+						public PremiseType getStatedInferredOption() {
+							return panelTaxonomyCoordinate.get().getTaxonomyType();
+						}
+
+						@Override
+						public Long getTime() {
+							return panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getTime();
+						}
+
+						@Override
+						public Set<State> getStatuses() {
+							return Collections.unmodifiableSet(panelTaxonomyCoordinate.get().getStampCoordinate().getAllowedStates());
+						}
+
+						@Override
+						public Set<UUID> getModules() {
+							 ConceptSequenceSet seqences = panelTaxonomyCoordinate.get().getStampCoordinate().getModuleSequences();
+							 
+							 Set<UUID> moduleUuids = new HashSet<>();
+							 for (int sequence : seqences.asArray()) {
+								 Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(sequence);
+								 if (opt.isPresent()) {
+									 moduleUuids.add(opt.get());
+								 }
+							 }
+							 
+							 return Collections.unmodifiableSet(moduleUuids);
+						}
+
+						@Override
+						public void save() throws IOException {
+
+							StampPosition stampPosition = new StampPositionImpl(
+									vcPrefPluginView.getCurrentTime(),
+									Get.identifierService().getConceptSequenceForUuids(vcPrefPluginView.getCurrentPath()));
+
+							int[] moduleSequences = new int[vcPrefPluginView.getCurrentSelectedModules().size()];
+							int index = 0;
+							for (UUID moduleUuid : vcPrefPluginView.getCurrentSelectedModules()) {
+								if (moduleUuid != null) {
+									moduleSequences[index++] = Get.identifierService().getConceptSequenceForUuids(moduleUuid);
+								}
+							}
+
+							EnumSet<State> allowedStates = EnumSet.allOf(State.class);
+							allowedStates.clear();
+							for (State status : vcPrefPluginView.getCurrentStatuses()) {
+								allowedStates.add(status);
+							}								
+							StampCoordinate	stampCoordinate =
+									new StampCoordinateImpl(
+											StampPrecedence.PATH,
+											stampPosition, 
+											ConceptSequenceSet.of(moduleSequences), allowedStates);
+
+							TaxonomyCoordinate newCoordinate = null;
+							switch (vcPrefPluginView.getCurrentStatedInferredOption()) {
+							case STATED:
+								newCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
+								break;
+							case INFERRED:
+								newCoordinate = TaxonomyCoordinates.getInferredTaxonomyCoordinate(stampCoordinate, panelTaxonomyCoordinate.get().getLanguageCoordinate());
+								break;
+							default:
+								throw new RuntimeException("Unsupported StatedInferredOptions value " + vcPrefPluginView.getCurrentStatedInferredOption() + ".  Expected STATED or INFERRED.");
+							}
+
+							panelTaxonomyCoordinate.set(newCoordinate);
+						}
+					};
+					
+					vcPrefPluginView.setPersistenceInterface(panelPersistenceInterface);
+				}
+				
+				panelVsGlobalPreferencesToggleButton.setSelected(true);
+				
+				panelPreferencesView.setTitle("ConceptView Panel Preferences");
+				panelPreferencesView.showView(mainPane.getScene().getWindow());
+			} else {
+				// ! panelPreferencesToggleButton.isSelected()
+				
+				// TODO close preference view when toggled off?
+			}
+		});
+	}
+
 	private void setupRelationshipsView() {
 		// TODO Make this work
 		relationshipsView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
@@ -379,10 +576,6 @@ public class ConceptViewController {
 		refreshBinding.clearBindings();
 		relationshipsView.viewDiscarded();
 		removeConceptChronologyChangeListener();
-	}
-
-	private void setupPreferences() {
-		panelTaxonomyCoordinate = AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate();
 	}
 
 	private void setupConceptChronologyChangeListener() {

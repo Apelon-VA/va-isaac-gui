@@ -75,8 +75,8 @@ public class PreferencesViewController {
 	@Inject
 	private IterableProvider<PreferencesPluginViewI> allPlugins_;
 	
-	private final List<PreferencesPluginViewI> requestedPlugins = new ArrayList<>();
-	private Set<String> requestedPluginNames = null;
+	private List<PreferencesPluginViewI> requestedPlugins = null;
+	private final Set<String> requestedPluginNames = new HashSet<>();
 
 	private @FXML TabPane tabPane_;
 
@@ -141,8 +141,8 @@ public class PreferencesViewController {
 	 * loadPlugins() only performs load on first call, subsequently performing noop.
 	 */
 	public void loadPlugins() {
-		if (requestedPluginNames == null) {
-			requestedPluginNames = new HashSet<>();
+		if (requestedPlugins == null) {
+			requestedPlugins = new ArrayList<>();
 
 			for (PreferencesPluginViewI plugin : allPlugins_) {
 				if (requestedPluginNames.size() == 0 || requestedPluginNames.contains(plugin.getName())) {
@@ -169,18 +169,18 @@ public class PreferencesViewController {
 		// Using allValid_ to prevent rerunning content of aboutToShow()
 		if (allValid_ == null) {
 			// These listeners are for debug and testing only. They may be removed at any time.
-			UserProfileBindings  userProfileBindings = AppContext.getService(UserProfileBindings.class);
-			for (Property<?> property : userProfileBindings.getAll()) 
-			{
-				property.addListener(new ChangeListener<Object>()
-				{
-					@Override
-					public void changed(ObservableValue<? extends Object> observable, Object oldValue, Object newValue)
-					{
-						logger.debug("{} property changed from {} to {}", property.getName(), oldValue, newValue);
-					}
-				});
-			}
+//			UserProfileBindings  userProfileBindings = AppContext.getService(UserProfileBindings.class);
+//			for (Property<?> property : userProfileBindings.getAll()) 
+//			{
+//				property.addListener(new ChangeListener<Object>()
+//				{
+//					@Override
+//					public void changed(ObservableValue<? extends Object> observable, Object oldValue, Object newValue)
+//					{
+//						logger.debug("{} property changed from {} to {}", property.getName(), oldValue, newValue);
+//					}
+//				});
+//			}
 
 			// load fields before initializing allValid_
 			// in case plugin.validationFailureMessageProperty() initialized by getNode()
@@ -246,7 +246,7 @@ public class PreferencesViewController {
 			allValid_ = new ValidBooleanBinding() {
 				{
 					ArrayList<ReadOnlyStringProperty> pluginValidationFailureMessages = new ArrayList<>();
-					for (PreferencesPluginViewI plugin : allPlugins_) {
+					for (PreferencesPluginViewI plugin : requestedPlugins) {
 						pluginValidationFailureMessages.add(plugin.validationFailureMessageProperty());
 					}
 					bind(pluginValidationFailureMessages.toArray(new ReadOnlyStringProperty[pluginValidationFailureMessages.size()]));
@@ -255,7 +255,7 @@ public class PreferencesViewController {
 
 				@Override
 				protected boolean computeValue() {
-					for (PreferencesPluginViewI plugin : allPlugins_) {
+					for (PreferencesPluginViewI plugin : requestedPlugins) {
 						if (plugin.validationFailureMessageProperty().get() != null && plugin.validationFailureMessageProperty().get().length() > 0) {
 							this.setInvalidReason(plugin.validationFailureMessageProperty().get());
 
@@ -277,7 +277,7 @@ public class PreferencesViewController {
 		}
 		
 		// Reload persisted values every time view opened
-		for (PreferencesPluginViewI plugin : allPlugins_) {
+		for (PreferencesPluginViewI plugin : requestedPlugins) {
 			plugin.getContent();
 		}
 	}
@@ -287,7 +287,7 @@ public class PreferencesViewController {
 		
 		final Map<PreferencesPluginViewI, Exception> caughtExceptions = Collections.synchronizedMap(new WeakHashMap<>());
 		
-		for (PreferencesPluginViewI plugin : allPlugins_) {		
+		for (PreferencesPluginViewI plugin : requestedPlugins) {		
 			try {
 				plugin.save();
 			} catch (IOException e) {
