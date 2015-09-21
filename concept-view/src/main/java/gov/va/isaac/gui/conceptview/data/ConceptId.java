@@ -20,6 +20,10 @@ public class ConceptId {
 	public String getValue()			{ return valueSSP.get(); }
 	public String getTimestamp()		{ return timestampSSP.get(); }
 	
+	public ConceptId(ConceptIdType type, String value) {
+		this(type, value, "");
+	}
+	
 	public ConceptId(ConceptIdType type, String value, String timestamp) {
 		_type = type;
 		typeSSP.set(_type.toString());

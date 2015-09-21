@@ -5,11 +5,15 @@ import gov.va.isaac.gui.conceptview.data.Concept;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
 import gov.va.isaac.gui.conceptview.data.ConceptIdType;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -25,28 +29,30 @@ public class PopupHelper {
 	public static void showConceptIdList(ConceptSnapshot concept, Region popOverRegion) {
 		PopupList popup = new PopupList();
 		popup.setTitle("Display IDs for Concept " + Get.conceptDescriptionText(concept.getNid()));
-		popup.setColumnTypes(new ConceptViewColumnType[] { ConceptViewColumnType.ID_TYPE, ConceptViewColumnType.ID_VALUE, ConceptViewColumnType.TIMESTAMP });
+		popup.setColumnTypes(new ConceptViewColumnType[] { 
+			ConceptViewColumnType.ID_TYPE, 
+			ConceptViewColumnType.ID_VALUE, 
+			ConceptViewColumnType.TIMESTAMP 
+		});
 		popup.setPopOverRegion(popOverRegion);
 		
-		Optional<Long> sctId = Frills.getSctId(concept.getNid(), concept.getStampCoordinate());
-		if (sctId.isPresent()) {
-			// TODO get timestamp?
-			ConceptId id = new ConceptId(ConceptIdType.SCT, sctId.get().toString(), "");
+		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, concept.getStampCoordinate());
+		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence()).findFirst();
+		if (sctSememe.isPresent()) {
+			ConceptId id = new ConceptId(ConceptIdType.SCT, sctSememe.get().value().getString(), TIMESTAMP_FORMAT.format(sctSememe.get().value().getTime()));
 			popup.addData(id);
 		}
 		
-		// TODO LOINC ID
+		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), IsaacMetadataAuxiliaryBinding.LOINC_NUM.getConceptSequence()).findFirst();
+		if (loincSememe.isPresent()) {
+			ConceptId id = new ConceptId(ConceptIdType.LOINC, loincSememe.get().value().getString(), TIMESTAMP_FORMAT.format(loincSememe.get().value().getTime()));
+			popup.addData(id);
+		}
 		
 		// TODO RxNorm ID
 		
 		for (UUID uuid : concept.getUuidList()) {
-			String ts = "";
-			try {
-				ts = TIMESTAMP_FORMAT.format(uuid.timestamp());
-			} catch (Exception e) {
-				// ignore
-			}
-			ConceptId id = new ConceptId(ConceptIdType.UUID, uuid.toString(), ts);
+			ConceptId id = new ConceptId(ConceptIdType.UUID, uuid.toString());
 			popup.addData(id);
 		}
 		
@@ -56,25 +62,34 @@ public class PopupHelper {
 	public static void showDescriptionIdList(ConceptDescription conceptDescription, Region popOverRegion) {
 		PopupList popup = new PopupList();
 		popup.setTitle("Display IDs for Description " + conceptDescription.getType() + " " + conceptDescription.getValue());
-		popup.setColumnTypes(new ConceptViewColumnType[] { ConceptViewColumnType.ID_TYPE, ConceptViewColumnType.ID_VALUE, ConceptViewColumnType.TIMESTAMP });
+		popup.setColumnTypes(new ConceptViewColumnType[] { 
+			ConceptViewColumnType.ID_TYPE, 
+			ConceptViewColumnType.ID_VALUE, 
+			ConceptViewColumnType.TIMESTAMP 
+		});
 		popup.setPopOverRegion(popOverRegion);
 		
-		// TODO get SCT ID. I don't know how to get the description's stamp coordinate
-		//Optional<Long> sctId = Frills.getSctId();
+		// TODO use default stamp coordinate?
+		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, Get.configurationService().getDefaultStampCoordinate());
+		int descNid = conceptDescription.getStampedVersion().getNid();
 		
-		// TODO LOINC ID
+		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(descNid, IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence()).findFirst();
+		if (sctSememe.isPresent()) {
+			ConceptId id = new ConceptId(ConceptIdType.SCT, sctSememe.get().value().getString(), TIMESTAMP_FORMAT.format(sctSememe.get().value().getTime()));
+			popup.addData(id);
+		}
+		
+		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(descNid, IsaacMetadataAuxiliaryBinding.LOINC_NUM.getConceptSequence()).findFirst();
+		if (loincSememe.isPresent()) {
+			ConceptId id = new ConceptId(ConceptIdType.LOINC, loincSememe.get().value().getString(), TIMESTAMP_FORMAT.format(loincSememe.get().value().getTime()));
+			popup.addData(id);
+		}
 		
 		// TODO RxNorm ID
 		
 		
 		for (UUID uuid : conceptDescription.getStampedVersion().getUuidList()) {
-			String ts = "";
-			try {
-				ts = TIMESTAMP_FORMAT.format(uuid.timestamp());
-			} catch (Exception e) {
-				// ignore
-			}
-			ConceptId id = new ConceptId(ConceptIdType.UUID, uuid.toString(), ts);
+			ConceptId id = new ConceptId(ConceptIdType.UUID, uuid.toString());
 			popup.addData(id);
 		}
 
@@ -124,4 +139,5 @@ public class PopupHelper {
 		
 		popup.showPopup();
 	}
+
 }
