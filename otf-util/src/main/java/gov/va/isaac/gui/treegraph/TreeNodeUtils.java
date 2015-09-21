@@ -28,6 +28,7 @@ public class TreeNodeUtils {
 		if (fontSize != null && fxNode instanceof Labeled) {
 			Labeled labeled = (Labeled)fxNode;
 			labeled.setFont(Font.font(fontSize));
+			labeled.setWrapText(true);
 		}
 	}
 }

@@ -1132,8 +1132,34 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
-				//conceptSequence = conceptDescription.getSequence();
-				//conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+//				conceptNid = conceptDescription.getStampedVersion().getNid();
+//				conceptSequence = Get.identifierService().getConceptSequenceForDescriptionNid(conceptNid);
+//				final int finalConceptNid = conceptDescription.getStampedVersion().getNid();
+//				final int finalConceptSequence = conceptSequence;
+//				CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
+//				builder.setMenuItemsToExclude(
+//						CommonMenuItem.COPY,
+//						CommonMenuItem.COPY_CONTENT,
+//						CommonMenuItem.COPY_NID,
+//						CommonMenuItem.COPY_SCTID,
+//						CommonMenuItem.COPY_UUID,
+//						CommonMenuItem.CONCEPT_VIEW_LEGACY,
+//						CommonMenuItem.LOINC_REQUEST_VIEW,
+//						CommonMenuItem.USCRS_REQUEST_VIEW,
+//						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
+//				CommonMenus.addCommonMenus(cm,
+//						builder,
+//						new CommonMenusDataProvider() {
+//					@Override
+//					public String[] getStrings() {
+//						return conceptDescription.getValueProperty().get() == null ? new String[0] : new String[] { conceptDescription.getValueProperty().get() };
+//					}
+//				}, new CommonMenusNIdProvider() {
+//					@Override
+//					public Collection<Integer> getNIds() {
+//						return Arrays.asList(new Integer[] { finalConceptNid });
+//					}
+//				});
 				break;
 				
 			case TYPE:
@@ -1333,9 +1359,11 @@ public class ConceptViewController {
 						CommonMenuItem.COPY_NID,
 						CommonMenuItem.COPY_SCTID,
 						CommonMenuItem.COPY_UUID,
+						CommonMenuItem.CONCEPT_VIEW_LEGACY,
 						CommonMenuItem.LOINC_REQUEST_VIEW,
 						CommonMenuItem.USCRS_REQUEST_VIEW,
-						CommonMenuItem.SEND_TO);
+						CommonMenuItem.SEND_TO,
+						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
 				CommonMenus.addCommonMenus(cm,
 						builder,
 						new CommonMenusDataProvider() {

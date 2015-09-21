@@ -57,6 +57,7 @@ public class TreeNodeFxNodeUtils {
 	}
 	public static String getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Optional<LatestVersion<DescriptionSememe<?>>> opt = Get.conceptService().getSnapshot(stampCoordinate, languageCoordinate).getDescriptionOptional(conceptId);
+		//Optional<LatestVersion<DescriptionSememe<?>>> opt = Get.conceptService().getSnapshot(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptId);
 
 		return opt.isPresent() ? opt.get().value().getText() : "No description found for concept (id=" + conceptId + ", uuid=" + Get.identifierService().getUuidPrimordialFromConceptSequence(conceptId) + ")";
 	}

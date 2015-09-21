@@ -2,6 +2,7 @@ package gov.va.isaac.logic.treeview;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
+import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.util.UpdateableBooleanBinding;
@@ -51,6 +52,7 @@ import javafx.scene.layout.VBox;
 
 import javax.inject.Named;
 
+import org.controlsfx.control.PopOver;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -169,22 +171,38 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 					150, 75, 12);
 			textGraph = new Label();
 			textGraph.setAlignment(Pos.CENTER);
-			
+			textGraph.setContextMenu(new ContextMenu());
+			{
+				MenuItem mi = new MenuItem("Copy Text Graph");
+				mi.visibleProperty().bind(textGraph.textProperty().isNotNull());
+				mi.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						CustomClipboard.set(title.getText() + "\n" + textGraph.getText());
+					}
+				});
+
+				textGraph.getContextMenu().getItems().add(mi);
+			}
+
 			rootScrollPane = new ScrollPane();
 			
 			rootScrollPane.setContextMenu(new ContextMenu());
 
 			rootScrollPane.getContextMenu().getItems().add(rootPanePremiseTypeMenuItem);
-			
-			MenuItem mi = new MenuItem("Copy Text Graph");
-			mi.visibleProperty().bind(textGraph.textProperty().isNotNull());
-			mi.setOnAction(new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(ActionEvent arg0) {
-					CustomClipboard.set(title.getText() + "\n" + textGraph.getText());
-				}
-			});
-			rootScrollPane.getContextMenu().getItems().add(mi);
+
+			{
+				MenuItem mi = new MenuItem("Display Text Graph");
+				mi.visibleProperty().bind(textGraph.textProperty().isNotNull());
+				mi.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						DetachablePopOverHelper.showDetachachablePopOver(title, DetachablePopOverHelper.newDetachachablePopoverWithCloseButton(title.getText(), textGraph));
+					}
+				});
+
+				rootScrollPane.getContextMenu().getItems().add(mi);
+			}
 			
 			taxonomyCoordinate.get().premiseTypeProperty().addListener(new ChangeListener<PremiseType>() {
 				@Override
@@ -203,7 +221,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			});
 			updateRootPanePremiseTypeMenuItem();
 			
-			vbox.getChildren().addAll(title, logicalExpressionTreeGraph, textGraph);
+			vbox.getChildren().addAll(title, logicalExpressionTreeGraph /*, textGraph */);
 
 			rootScrollPane.setContent(vbox);
 			
