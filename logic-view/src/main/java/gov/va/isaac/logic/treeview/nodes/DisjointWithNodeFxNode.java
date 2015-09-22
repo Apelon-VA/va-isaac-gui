@@ -8,6 +8,6 @@ import javafx.scene.control.Label;
 
 public class DisjointWithNodeFxNode extends Label {
 	public DisjointWithNodeFxNode(DisjointWithNode logicalNode) {
-		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
+		super("DISJOINT" /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
 	}
 }
