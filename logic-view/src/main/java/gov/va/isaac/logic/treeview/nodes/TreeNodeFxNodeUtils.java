@@ -37,7 +37,11 @@ public class TreeNodeFxNodeUtils {
 				CommonMenuItem.COPY_SCTID,
 				CommonMenuItem.COPY_UUID,
 				CommonMenuItem.LOINC_REQUEST_VIEW,
-				CommonMenuItem.USCRS_REQUEST_VIEW);
+				CommonMenuItem.USCRS_REQUEST_VIEW,
+                                CommonMenuItem.TAXONOMY_VIEW,
+                                CommonMenuItem.USCRS_REQUEST_VIEW,
+                                CommonMenuItem.SEND_TO,
+                                CommonMenuItem.LOGIC_GRAPH_VIEW);
 		CommonMenus.addCommonMenus(cm, builder, new CommonMenusNIdProvider()
 		{
 			@Override

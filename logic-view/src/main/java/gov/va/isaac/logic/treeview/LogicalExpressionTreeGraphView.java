@@ -324,7 +324,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		logicalExpressionTreeGraph.getChildren().clear();
 
 		if (le != null) {
-			title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " Logic Graph for Concept " + Get.conceptDescriptionText(conceptId));
+			title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
 
 			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
 

@@ -8,6 +8,6 @@ import javafx.scene.control.Label;
 
 public class SubstitutionNodeFloatFxNode extends Label {
 	public SubstitutionNodeFloatFxNode(SubstitutionNodeFloat logicalNode) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode));
+		super(LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode));
 	}
 }

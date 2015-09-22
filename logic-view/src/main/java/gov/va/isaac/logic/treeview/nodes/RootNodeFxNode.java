@@ -13,7 +13,7 @@ public class RootNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 	private final int conceptId;
 	
 	public RootNodeFxNode(LogicalExpression logicalExpression, RootNode logicalNode, Function<Integer, String> descriptionRenderer) {
-		super(logicalNode, logicalNode.getNodeSemantic().name() + /* "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + */ "\n" + descriptionRenderer.apply(logicalExpression.getConceptSequence()));
+		super(logicalNode, descriptionRenderer.apply(logicalExpression.getConceptSequence()));
 		this.conceptId = logicalExpression.getConceptSequence();
 	}
 
