@@ -1,5 +1,6 @@
 package gov.va.isaac.interfaces.gui.views.commonFunctionality;
 
+import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
 
@@ -13,10 +14,12 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 	public Integer getConceptId();
 	
 	/**
-	 * @return Short optional sememeSequence of version set by user
+	 * Return the cached LogicGraphSememe value.  Only valid after setConcept() called.
+	 * 
+	 * @return cached LogicGraphSememe
 	 */
-	public Short getSememeSequence();
-	
+	public LogicGraphSememe<?> getLogicGraphSememe();
+
 	/**
 	 * Tell this view to display the Logical Expression tree graph for a particular concept
 	 * Always displays latest LogicGraph sememe version.
@@ -32,9 +35,9 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 	 * @param conceptNid id of the concept to graph.
 	 * @param sememeSequence sememe sequence of the version of the sememe to graph.
 	 */
-	public abstract void setConcept(int conceptNid, short sememeSequence);
+	public abstract void setConcept(int conceptNid, int sememeSequence);
 
-	public void setConcept(UUID uuid, short sememeSequence);
+	public void setConcept(UUID uuid, int sememeSequence);
 	
 	public abstract void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,

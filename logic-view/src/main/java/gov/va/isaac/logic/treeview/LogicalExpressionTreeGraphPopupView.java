@@ -21,6 +21,7 @@ package gov.va.isaac.logic.treeview;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
+import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
 
@@ -128,17 +129,17 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 	}
 
 	@Override
-	public void setConcept(int conceptNid, short sememeSequence) {
+	public void setConcept(int conceptNid, int sememeSequence) {
 		embeddableView.setConcept(conceptNid, sememeSequence);
 	}
 
 	@Override
-	public void setConcept(UUID uuid, short sememeSequence) {
+	public void setConcept(UUID uuid, int sememeSequence) {
 		embeddableView.setConcept(uuid, sememeSequence);
 	}
 
 	@Override
-	public Short getSememeSequence() {
-		return embeddableView.getSememeSequence();
+	public LogicGraphSememe<?> getLogicGraphSememe() {
+		return embeddableView.getLogicGraphSememe();
 	}
 }

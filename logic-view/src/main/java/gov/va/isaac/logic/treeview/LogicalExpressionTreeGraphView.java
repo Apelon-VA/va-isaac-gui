@@ -11,6 +11,7 @@ import gov.vha.isaac.ochre.api.DataSource;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
@@ -23,6 +24,10 @@ import gov.vha.isaac.ochre.observable.model.coordinate.ObservableLogicCoordinate
 import gov.vha.isaac.ochre.observable.model.coordinate.ObservableStampCoordinateImpl;
 import gov.vha.isaac.ochre.observable.model.coordinate.ObservableTaxonomyCoordinateImpl;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,9 +66,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	private ScrollPane rootScrollPane;
 	private AtomicInteger noRefresh_ = new AtomicInteger(0);
 	
-	Integer conceptId = null;
+	private Integer conceptId = null;
 
-	Short logicGraphSememeSequence = null;
+	private Integer specifiedLogicGraphSememeSequence = null;
+	
+	private LogicGraphSememeImpl cachedLogicGraphSememe = null;
 	
 	private ObservableTaxonomyCoordinate passedObservableTaxonomyCoordinate = null;
 	
@@ -140,11 +147,6 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
     public Integer getConceptId() {
     	return conceptId;
     }
-
-	@Override
-	public Short getSememeSequence() {
-		return logicGraphSememeSequence;
-	}
 	
 	private LogicalExpressionTreeGraphView() {
 		//Created by HK2 - no op - delay till getView called
@@ -202,6 +204,24 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 				rootScrollPane.getContextMenu().getItems().add(mi);
 			}
 			
+			if (this.specifiedLogicGraphSememeSequence == null)
+			{
+				// Only offer to display history if not already displaying history
+				MenuItem mi = new MenuItem("Display History");
+				mi.visibleProperty().bind(textGraph.textProperty().isNotNull());
+				mi.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						VBox historicalLogicGraphViewNode = new VBox();
+						historicalLogicGraphViewNode.getChildren().addAll(getHistoricalViews());
+
+						DetachablePopOverHelper.showDetachachablePopOver(title, DetachablePopOverHelper.newDetachachablePopoverWithCloseButton(title.getText() + " History", historicalLogicGraphViewNode));
+					}
+				});
+
+				rootScrollPane.getContextMenu().getItems().add(mi);
+			}
+			
 			taxonomyCoordinate.get().premiseTypeProperty().addListener(new ChangeListener<PremiseType>() {
 				@Override
 				public void changed(
@@ -234,6 +254,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		}
 		
 		return rootScrollPane;
+	}
+
+	@Override
+	public LogicGraphSememe getLogicGraphSememe() {
+		return cachedLogicGraphSememe;
 	}
 
 	protected void refresh()
@@ -296,16 +321,15 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 //		Utility.execute(task);
 	}
 	
-	private LogicalExpression loadData() {
+	private LogicGraphSememeImpl loadLogicGraphSememe(Integer sememeSequence) {
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
 		if (! defChronologyOptional.isPresent()) {
 			AppContext.getCommonDialogs().showInformationDialog("Missing Definition Chronology", "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate");
 
 			return null;
 		}
-	
-		LogicGraphSememeImpl logicGraphSememeVersion = null;
-		if (logicGraphSememeSequence == null) {
+		
+		if (sememeSequence == null) {
 			SememeChronology rawDefChronology = defChronologyOptional.get();
 			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinate.get().getStampCoordinate());
 			if (! latestGraphLatestVersionOptional.isPresent()) {
@@ -313,33 +337,44 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 				return null;
 			} else {
-				logicGraphSememeVersion = (LogicGraphSememeImpl)latestGraphLatestVersionOptional.get().value();
+				return (LogicGraphSememeImpl)latestGraphLatestVersionOptional.get().value();
 			}
 		} else {
 			for (SememeVersion<?> version : defChronologyOptional.get().getVersionList()) {
-				if (version.getSememeSequence() == logicGraphSememeSequence) {
-					logicGraphSememeVersion = (LogicGraphSememeImpl)version;
-					break;
+				if (version.getSememeSequence() == sememeSequence) {
+					return (LogicGraphSememeImpl)version;
 				}
 			}
-			
-			if (logicGraphSememeVersion == null) {
-				AppContext.getCommonDialogs().showInformationDialog("Missing LogicGraph", "No relationship LogicGraph found for " + Get.conceptDescriptionText(conceptId) + " for specified logicGraph sememe sequence " + logicGraphSememeSequence);
 
-				return null;
-			}
+			AppContext.getCommonDialogs().showInformationDialog("Missing LogicGraph", "No relationship LogicGraph found for " + Get.conceptDescriptionText(conceptId) + " for specified logicGraph sememe sequence " + sememeSequence);
+
+			return null;
+		}
+	}
+	
+	private LogicalExpression loadData() {
+		cachedLogicGraphSememe = loadLogicGraphSememe(specifiedLogicGraphSememeSequence);
+	
+		if (cachedLogicGraphSememe == null) {
+			return null;
 		}
 		
-		LogicalExpressionOchreImpl le = new LogicalExpressionOchreImpl(logicGraphSememeVersion.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(logicGraphSememeVersion.getReferencedComponentNid()));
+		LogicalExpressionOchreImpl le = new LogicalExpressionOchreImpl(cachedLogicGraphSememe.getGraphData(), DataSource.INTERNAL, Get.identifierService().getConceptSequence(cachedLogicGraphSememe.getReferencedComponentNid()));
 
 		return le;
 	}
 	
+	private static final DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
+
 	private void displayData(LogicalExpression le) {
 		logicalExpressionTreeGraph.getChildren().clear();
 
 		if (le != null) {
-			title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
+			if (specifiedLogicGraphSememeSequence == null) { 
+				title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
+			} else {
+				title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + TIMESTAMP_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")");
+			}
 
 			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
 
@@ -361,24 +396,24 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	}
 
 	@Override
-	public void setConcept(int conceptNid, short sememeSequence) {
-		setConcept(conceptNid, sememeSequence);
+	public void setConcept(int conceptNid, int sememeSequence) {
+		setConcept(conceptNid, Integer.valueOf(sememeSequence));
 	}
 	@Override
-	public void setConcept(UUID uuid, short sememeSequence) {
+	public void setConcept(UUID uuid, int sememeSequence) {
 		uuid.getClass(); // Throw NPE if null
 		Utility.execute(() -> setConcept(Get.identifierService().getConceptSequenceForUuids(uuid), sememeSequence));
 	}
 	@Override
 	public void setConcept(int id) {
-		setConcept(id, (Short)null);
+		setConcept(id, (Integer)null);
 	}
-	private void setConcept(int id, Short sememeSquence) {
-		if (conceptId != null && conceptId != id) {
+	private void setConcept(int id, Integer sememeSquence) {
+		if ((conceptId != null && conceptId != id) || sememeSquence != specifiedLogicGraphSememeSequence) {
 			clear();
 		}
 
-		logicGraphSememeSequence = sememeSquence;
+		specifiedLogicGraphSememeSequence = sememeSquence;
 		conceptId = id;
 		
 		init();
@@ -451,11 +486,39 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 	@Override
 	public void clear() {
-		logicGraphSememeSequence = null;
-		logicalExpressionTreeGraph.getChildren().clear();
-		logicalExpressionTreeGraph.setRootNode(null);
-		textGraph.setText(null);
-		title.setText(null);
+		cachedLogicGraphSememe = null;
+		specifiedLogicGraphSememeSequence = null;
+		if (logicalExpressionTreeGraph != null) {
+			logicalExpressionTreeGraph.getChildren().clear();
+			logicalExpressionTreeGraph.setRootNode(null);
+		}
+		if (textGraph != null) {
+			textGraph.setText(null);
+		}
+		if (title != null) {
+			title.setText(null);
+		}
 		conceptId = null;
+	}
+	
+	public List<Region> getHistoricalViews() {
+		List<Region> historicalViews = new ArrayList<>();
+		
+		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
+		if (! defChronologyOptional.isPresent()) {
+			AppContext.getCommonDialogs().showInformationDialog("Missing Definition Chronology", "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate");
+
+			return null;
+		}
+
+		for (SememeVersion<?> version : defChronologyOptional.get().getVersionList()) {
+			LogicalExpressionTreeGraphEmbeddableViewI embeddableView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
+
+			embeddableView.setConcept(conceptId, version.getSememeSequence());
+			
+			historicalViews.add(embeddableView.getView());
+		}
+
+		return historicalViews;
 	}
 }
