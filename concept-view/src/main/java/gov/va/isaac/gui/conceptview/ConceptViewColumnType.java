@@ -9,28 +9,34 @@ public enum ConceptViewColumnType {
 	SIGNIFICANCE("Case Significance"),
 	SEMEMES("Sememes"),
 	
-	STAMP_HEADING("STAMP"),
-	STAMP_STATE("Status"),
-	STAMP_TIME("Time"),
-	STAMP_AUTHOR("Author",true),
-	STAMP_MODULE("Module",true),
-	STAMP_PATH("Path",true),
+	STAMP_HEADING	("STAMP"),
+	STAMP_STATE		("Status",	false,	75.0),
+	STAMP_TIME		("Time",	false,	125.0),
+	STAMP_AUTHOR	("Author",	true,	125.0),
+	STAMP_MODULE	("Module",	true,	125.0),
+	STAMP_PATH		("Path",	true,	125.0),
 	
-	ID_TYPE		("Type", 		false),
-	ID_VALUE	("Value",		false),
-	TIMESTAMP	("Timestamp",	false);
+	ID_TYPE		("Type", 		false, 75.0),
+	ID_VALUE	("Value",		false, 250.0),
+	TIMESTAMP	("Timestamp",	false, 125.0);
 
 	private String niceName_;
 	private boolean isConcept_ = false;
+	private double columnWidth_ = 0;
 	
 	private ConceptViewColumnType(String name) {
-		this(name, false);
+		this(name, false, 0);
 	}
 	
 	private ConceptViewColumnType(String name, boolean isConcept)
 	{
+		this(name, isConcept, 0);
+	}
+	
+	private ConceptViewColumnType(String name, boolean isConcept, double columnWidth) {
 		niceName_ = name;
 		isConcept_ = isConcept;
+		columnWidth_ = columnWidth;
 	}
 
 	@Override
@@ -43,4 +49,7 @@ public enum ConceptViewColumnType {
 		return isConcept_;
 	}
 
+	public double getColumnWidth() {
+		return columnWidth_;
+	}
 }

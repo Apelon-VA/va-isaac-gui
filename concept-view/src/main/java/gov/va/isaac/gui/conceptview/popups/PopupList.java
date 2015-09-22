@@ -28,6 +28,8 @@ import org.controlsfx.control.PopOver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.javafx.tk.Toolkit;
+
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -50,6 +52,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 
@@ -77,15 +80,23 @@ public class PopupList {
 		}
 	}
 	
+	@SuppressWarnings("restriction")
 	protected void showPopup() {
 		_tableView = new TableView<PopupData>();
 		_tableView.getColumns().clear();
+
+		// Hack to dynamically set column min widths
+		Font font = new Font("System Bold", 13.0);
+		
+		double tableWidth = 0;
 		for (int i = 0; i < _columnTypes.length; i++) {
 			ConceptViewColumnType columnType = _columnTypes[i];
 			TableColumn<PopupData,PopupData> column = new TableColumn<PopupData,PopupData>(columnType.toString());
 			column.setUserData(columnType);
 			column.setPrefWidth(TableView.USE_COMPUTED_SIZE);
-			column.setMinWidth(100);
+			Double columnWidth = Double.max(columnType.getColumnWidth(), Toolkit.getToolkit().getFontLoader().computeStringWidth(column.getText(), font) + 30);
+			column.setMinWidth(columnWidth);
+			tableWidth += columnWidth;
 			
 			_tableView.getColumns().add(column);
 			
@@ -111,10 +122,12 @@ public class PopupList {
 		}
 		
 		_tableView.setItems(_data);
-		_tableView.setPrefWidth(TableView.USE_COMPUTED_SIZE);
+		_tableView.setMinWidth(tableWidth);
 		
 		PopOver po = DetachablePopOverHelper.newDetachachablePopoverWithCloseButton(_title, _tableView);
-		po.setWidth(_tableView.getPrefWidth());
+		po.setMinWidth(tableWidth);
+		po.setMaxWidth(tableWidth);
+		
 		if (_popOverRegion == null) {
 			po.detach();
 			po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
