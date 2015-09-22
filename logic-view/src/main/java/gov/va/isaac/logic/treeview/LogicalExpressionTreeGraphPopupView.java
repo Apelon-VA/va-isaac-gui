@@ -19,20 +19,18 @@
 package gov.va.isaac.logic.treeview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
-
 import java.io.IOException;
 import java.util.UUID;
-
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -58,12 +56,13 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 		// created by HK2
 		stage = new Stage();
 		stage.initModality(Modality.NONE);
-		stage.initStyle(StageStyle.UTILITY);
+		stage.initStyle(StageStyle.DECORATED);
 		embeddableView = (LogicalExpressionTreeGraphView) AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
 		stage.setScene(new Scene(embeddableView.getView(), 800, 600));
 //		stage.getScene().getStylesheets().add(LogicalExpressionTreeGraphPopupView.class.getResource("/info-model-view-style.css").toString());
 //		stage.getScene().getStylesheets().add(LogicalExpressionTreeGraphPopupView.class.getResource("/isaac-shared-styles.css").toString());
 		stage.setTitle("Logical Expression Tree Graph Popup View");
+		stage.getIcons().add(Images.ROOT.getImage());
 	}
 
 	/**
