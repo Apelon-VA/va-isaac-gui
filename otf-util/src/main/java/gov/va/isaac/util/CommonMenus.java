@@ -371,7 +371,7 @@ public class CommonMenus
 	private static MenuItem createNewMenuItem(
 			CommonMenuItem itemType, 
 			CommonMenuBuilder builder, 
-			BooleanSupplier canHandle, 
+			BooleanExpression canHandle, 
 			BooleanExpression makeVisible,
 			Runnable onHandlable) {
 		return createNewMenuItem(itemType, builder, canHandle, makeVisible, onHandlable, null);
@@ -380,7 +380,7 @@ public class CommonMenus
 	private static MenuItem createNewMenuItem(
 			CommonMenuItem itemType, 
 			CommonMenuBuilder builder, 
-			BooleanSupplier canHandle, 
+			BooleanExpression canHandle, 
 			BooleanExpression makeVisible,
 			Runnable onHandlable,
 			Runnable onNotHandleable) {
@@ -395,7 +395,7 @@ public class CommonMenus
 			@Override
 			public void handle(ActionEvent event)
 			{
-				if (canHandle.getAsBoolean())
+				if (canHandle.get())
 				{
 					onHandlable.run();
 				} else {
@@ -408,14 +408,17 @@ public class CommonMenus
 			}
 		});
 		
-		menuItem.visibleProperty().bind(builder.getInvisibleWhenfalse() == null ? makeVisible : builder.getInvisibleWhenfalse().not().and(makeVisible));
+		BooleanExpression temp = (makeVisible == null ? canHandle : makeVisible);
+		
+		menuItem.visibleProperty().bind(builder.getInvisibleWhenfalse() == null ? temp : builder.getInvisibleWhenfalse().not().and(temp));
 		return menuItem;
 	}
 	
 	public static List<MenuItem> getCommonMenus(CommonMenuBuilderI passedBuilder, final CommonMenusDataProvider dataProvider, final CommonMenusNIdProvider commonMenusNIdProvider) {
 		return getCommonMenus(passedBuilder, dataProvider, commonMenusNIdProvider, (CommonMenusTaskIdProvider)null);
 	}
-	public static List<MenuItem> getCommonMenus(CommonMenuBuilderI passedBuilder, final CommonMenusDataProvider dataProvider, CommonMenusNIdProvider tmpCommonMenusNIdProvider, CommonMenusTaskIdProvider tmpTaskIdProvider)
+	public static List<MenuItem> getCommonMenus(CommonMenuBuilderI passedBuilder, final CommonMenusDataProvider dataProvider, 
+			CommonMenusNIdProvider tmpCommonMenusNIdProvider, CommonMenusTaskIdProvider tmpTaskIdProvider)
 	{
 		List<MenuItem> menuItems = new ArrayList<>();
 		
@@ -446,8 +449,8 @@ public class CommonMenus
 				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
 						CommonMenuItem.CONCEPT_DIAGRAM_VIEW,
 						builder,
-						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1), // canHandle
+						null,				//make visible
 						() -> {
 							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_DIAGRAM_VIEW.getText() + "\" menu item to display concept with id \"" 
 									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
@@ -478,8 +481,8 @@ public class CommonMenus
 				MenuItem legacyConceptViewMenuItem = createNewMenuItem(
 						CommonMenuItem.CONCEPT_VIEW_LEGACY,
 						builder,
-						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1), // canHandle
+						null,				//make visible
 						() -> {
 							LOG.debug("Using \"" + CommonMenuItem.CONCEPT_VIEW_LEGACY.getText() + "\" menu item to display concept with id \"" 
 									+ getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()) + "\"");
@@ -510,8 +513,8 @@ public class CommonMenus
 				MenuItem findInTaxonomyViewMenuItem = createNewMenuItem(
 						CommonMenuItem.TAXONOMY_VIEW,
 						builder,
-						() -> {return commonMenusNIdProvider.getObservableNidCount().get() == 1;}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),				//make visible
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1), // canHandle
+						null,				//make visible
 						// onHandlable
 						() -> { ((TaxonomyViewI)CommonMenusServices.getService(CommonMenuItem.TAXONOMY_VIEW)).locateConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()), null); },
 						// onNotHandlable
@@ -533,10 +536,8 @@ public class CommonMenus
 				MenuItem logicGraphViewMenuItem = createNewMenuItem(
 						CommonMenuItem.LOGIC_GRAPH_VIEW,
 						builder,
-						() -> {
-							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-						}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1), // canHandle
+						null,			 //make visible
 						// onHandlable
 						() -> {
 							LogicalExpressionTreeGraphPopupViewI handler = (LogicalExpressionTreeGraphPopupViewI)CommonMenusServices.getService(CommonMenuItem.LOGIC_GRAPH_VIEW);
@@ -564,10 +565,8 @@ public class CommonMenus
 				MenuItem openTaskViewMenuItem = createNewMenuItem(
 						CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW,
 						builder,
-						() -> {
-							return taskIdProvider.getObservableTaskIdCount().get() == 1;
-						}, // canHandle
-						taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
+						taskIdProvider.getObservableTaskIdCount().isEqualTo(1), // canHandle
+						null,				//make visible
 						// onHandlable
 						() -> {
 							WorkflowTaskDetailsViewI view = (WorkflowTaskDetailsViewI)CommonMenusServices.getService(CommonMenuItem.WORKFLOW_TASK_DETAILS_VIEW);
@@ -593,10 +592,8 @@ public class CommonMenus
 				MenuItem uscrsRequestViewMenuItem = createNewMenuItem(
 						CommonMenuItem.USCRS_REQUEST_VIEW,
 						builder,
-						() -> {
-							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-						}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1), // canHandle
+						null,			 //make visible
 						// onHandlable
 						() -> {
 							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getService(CommonMenuItem.USCRS_REQUEST_VIEW);
@@ -622,10 +619,8 @@ public class CommonMenus
 				MenuItem loincRequestViewMenuItem = createNewMenuItem(
 						CommonMenuItem.LOINC_REQUEST_VIEW,
 						builder,
-						() -> {
-							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-						}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1), // canHandle
+						null,			 //make visible
 						// onHandlable
 						() -> {
 							ContentRequestHandlerI handler = (ContentRequestHandlerI)CommonMenusServices.getService(CommonMenuItem.LOINC_REQUEST_VIEW);
@@ -684,8 +679,8 @@ public class CommonMenus
 				MenuItem sememesViewMenuItem = createNewMenuItem(
 						CommonMenuItem.COMPONENT_SEMEMES_VIEW,
 						builder,
-						() -> { return bb.get(); }, // canHandle
-						bb,			 //make visible
+						bb, // canHandle
+						null,			 //make visible
 						// onHandlable
 						() -> {
 							SememeViewI drv = AppContext.getService(SememeViewI.class);
@@ -740,8 +735,8 @@ public class CommonMenus
 				MenuItem sememesViewMenuItem = createNewMenuItem(
 						CommonMenuItem.ASSEMBLAGE_SEMEMES_VIEW,
 						builder,
-						() -> { return bb.get(); }, // canHandle
-						bb,			 //make visible
+						bb, // canHandle
+						null,			 //make visible
 						// onHandlable
 						() -> {
 							SememeViewI drv = AppContext.getService(SememeViewI.class);
@@ -767,10 +762,8 @@ public class CommonMenus
 				MenuItem newReleaseWorkflowTaskItem = createNewMenuItem(
 						CommonMenuItem.RELEASE_WORKFLOW_TASK,
 						builder,
-						() -> {
-							return taskIdProvider.getObservableTaskIdCount().get() == 1;
-						}, // canHandle
-						taskIdProvider.getObservableTaskIdCount().isEqualTo(1),				//make visible
+						taskIdProvider.getObservableTaskIdCount().isEqualTo(1), // canHandle
+						null,				//make visible
 						() -> { // onHandlable
 							try
 							{
@@ -899,8 +892,8 @@ public class CommonMenus
 				MenuItem listViewMenuItem = createNewMenuItem(
 						CommonMenuItem.LIST_VIEW,
 						builder,
-						() -> {return nids.getObservableNidCount().get() > 0;}, // canHandle
-						nids.getObservableNidCount().greaterThan(0),				//make visible
+						nids.getObservableNidCount().greaterThan(0), // canHandle
+						null,				//make visible
 						() -> { // onHandlable
 							ArrayList<Integer> nidList = new ArrayList<>();
 							for (int i : nids.getNIds())
@@ -937,10 +930,8 @@ public class CommonMenus
 				MenuItem newWorkflowInstanceInitializationItem = createNewMenuItem(
 						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW,
 						builder,
-						() -> {
-							return nids.getObservableNidCount().get() == 1;
-						}, // canHandle
-						nids.getObservableNidCount().isEqualTo(1),				//make visible
+						nids.getObservableNidCount().isEqualTo(1), // canHandle
+						null,				//make visible
 						() -> { // onHandlable
 							WorkflowInitiationViewI view = (WorkflowInitiationViewI)CommonMenusServices.getService(CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
 							if (view == null) {
@@ -979,8 +970,8 @@ public class CommonMenus
 		MenuItem copyTextItem = createNewMenuItem(
 				CommonMenuItem.COPY_TEXT,
 				builder,
-				() -> {	return dataProvider.getObservableStringCount().isEqualTo(1).get();},  // canHandle 
-				dataProvider.getObservableStringCount().isEqualTo(1),	//make visible  
+				dataProvider.getObservableStringCount().isEqualTo(1),  // canHandle 
+				null,	//make visible  
 				() -> { // onHandlable
 					LOG.debug("Using \"" + CommonMenuItem.COPY_TEXT.getText() + "\" menu item to copy text \"" + dataProvider.getStrings()[0] + "\"");
 					CustomClipboard.set(dataProvider.getStrings()[0]);
@@ -994,8 +985,8 @@ public class CommonMenus
 		MenuItem copyContentItem = createNewMenuItem(
 				CommonMenuItem.COPY_CONTENT,
 				builder,
-				() -> {return dataProvider.getObservableObjectCount().isEqualTo(1).get();},// canHandle
-				dataProvider.getObservableObjectCount().isEqualTo(1), 	//make visible  
+				dataProvider.getObservableObjectCount().isEqualTo(1),// canHandle
+				null, 	//make visible  
 				() -> { // onHandlable
 					LOG.debug("Using \"" + CommonMenuItem.COPY_CONTENT.getText() + "\" menu item to copy " + dataProvider.getObjectContainers()[0].getObject().getClass() + " object \"" + dataProvider.getObjectContainers()[0].getString() + "\"");
 					CustomClipboard.set(dataProvider.getObjectContainers()[0].getObject(), dataProvider.getObjectContainers()[0].getString());
@@ -1009,42 +1000,14 @@ public class CommonMenus
 		final boolean copyTextOrContentItemVisible = copyTextItem.isVisible() || copyContentItem.isVisible();
 		
 		// The following are ID-related and will be under a separator
-		//TODO these UUID and SCTID lists are evaled at build time, not display time - tis a tricky one - as - we want to do this in a background
-		//thread... we probably need to move this conversion into the dataProvider - and provide an observable over top of it... but the invalidate 
-		//would need to cause it to recompute in a background thread, rather than foreground, like the other validators currently do...
-		//Then, each of the following calls should be changed to pull data from the new observables, rather than this out-of-date cache / nid list
 		
-		ArrayList<UUID> uuids = new ArrayList<>();
-		ArrayList<Long> sctIds = new ArrayList<>();
-
-		for (Integer i : nids.getNIds()) {
-			ConceptChronology<?> ochreConceptChronology = Get.conceptService().getConcept(i);
-
-			//LOG.debug("Get.conceptService().getConcept({}) returned component {}", i, ochreConceptChronology.getPrimordialUuid());
-
-			if (ochreConceptChronology != null && ochreConceptChronology.getPrimordialUuid() != null) {
-				uuids.add(ochreConceptChronology.getPrimordialUuid());
-				if (Get.identifierService().getChronologyTypeForNid(i) == ObjectChronologyType.CONCEPT)
-				{
-					ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
-					if (conceptSnapshot != null) {
-						Optional<Long> conceptSct = Frills.getSctId(conceptSnapshot.getNid(), null);
-						if(conceptSct.isPresent()) {
-							sctIds.add(conceptSct.get());
-						}
-						
-					}
-				}
-			}
-		}
-
 		// Menu item to copy SCT ID
 		MenuItem copySctIdMenuItem = createNewMenuItem(
 				CommonMenuItem.COPY_SCTID,
 				builder,
-				() -> {return sctIds != null && sctIds.size() == 1 && sctIds.get(0) != null;}, // canHandle
-				nids.getObservableNidCount().isEqualTo(1),
-				() -> { CustomClipboard.set(sctIds.get(0).toString()); } // onHandlable
+				nids.getObservableSctIdString().length().greaterThan(0), // canHandle
+				null,
+				() -> { CustomClipboard.set(nids.getObservableSctIdString().get()); } // onHandlable
 				);
 		// Add menu separator IFF there were non-ID items AND this is the first ID item
 		
@@ -1060,9 +1023,9 @@ public class CommonMenus
 		MenuItem copyUuidMenuItem = createNewMenuItem(
 				CommonMenuItem.COPY_UUID,
 				builder,
-				() -> {return uuids != null && uuids.size() == 1 && uuids.get(0) != null;}, // canHandle
-				nids.getObservableNidCount().isEqualTo(1),
-				() -> { CustomClipboard.set(uuids.get(0).toString()); } // onHandlable
+				nids.getObservableUUIDString().length().greaterThan(0), // canHandle
+				null,
+				() -> { CustomClipboard.set(nids.getObservableUUIDString().get()); } // onHandlable
 				);
 		if (copyUuidMenuItem != null)
 		{
@@ -1077,8 +1040,8 @@ public class CommonMenus
 		MenuItem copyNidMenuItem = createNewMenuItem(
 				CommonMenuItem.COPY_NID,
 				builder,
-				() -> {return nids.getObservableNidCount().get() == 1;}, // canHandle
-				nids.getObservableNidCount().isEqualTo(1),				//make visible
+				nids.getObservableNidCount().isEqualTo(1), // canHandle
+				null,				//make visible
 				() -> { CustomClipboard.set(nids.getNIds().iterator().next(), new Integer(nids.getNIds().iterator().next()).toString()); } // onHandlable
 				);
 		if (copyNidMenuItem != null)
