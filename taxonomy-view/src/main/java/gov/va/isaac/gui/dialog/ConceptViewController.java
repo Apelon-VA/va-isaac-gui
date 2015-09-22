@@ -31,6 +31,7 @@ import gov.va.isaac.gui.treeview.SctTreeViewIsaacView;
 import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OchreUtility;
@@ -46,10 +47,8 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
-
 import java.util.Optional;
 import java.util.UUID;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -76,7 +75,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -423,7 +421,7 @@ public class ConceptViewController {
 					descriptionsTableHolder.getChildren().add(new Label("Unexpected error configuring relationships view"));
 				}
 
-				sememeView = LookupService.getNamedServiceIfPossible(SememeViewI.class, "DynamicRefexView");
+				sememeView = LookupService.getNamedServiceIfPossible(SememeViewI.class, SharedServiceNames.SEMEME_VIEW);
 				sememeView.setComponent(conceptSnapshot.getNid(), stampToggle.selectedProperty(), activeOnlyToggle.selectedProperty(), historyToggle.selectedProperty(), false);
 				sememeView.getView().setMinHeight(100.0);
 				VBox.setVgrow(sememeView.getView(), Priority.ALWAYS);

@@ -18,20 +18,7 @@
  */
 package gov.va.isaac.util;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.BooleanSupplier;
-
-import org.controlsfx.control.PopOver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
@@ -54,8 +41,14 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BooleanSupplier;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
@@ -67,6 +60,8 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link CommonMenus}
@@ -92,8 +87,8 @@ public class CommonMenus
 		USCRS_REQUEST_VIEW("USCRS Content Request", Images.CONTENT_REQUEST),
 		LOINC_REQUEST_VIEW("LOINC Content Request", Images.CONTENT_REQUEST),
 		LOGIC_GRAPH_VIEW("Logic Graph View", Images.ROOT),
-		COMPONENT_SEMEMES_VIEW("Component Sememe View", Images.ATTACH),
-		ASSEMBLAGE_SEMEMES_VIEW("Assemblage Sememe View", Images.SEARCH),
+		COMPONENT_SEMEMES_VIEW("View Attached Sememes", Images.ATTACH),
+		ASSEMBLAGE_SEMEMES_VIEW("View Usage as Assemblage", Images.SEARCH),
 		
 		SEND_TO("Send To"),
 			LIST_VIEW("List View", Images.LIST_VIEW),
@@ -531,6 +526,37 @@ public class CommonMenus
 		} catch (Exception e) {
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.TAXONOMY_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
+		
+		// Menu item to open a Logic Graph View content request
+		try {
+			if (CommonMenusServices.hasService(CommonMenuItem.LOGIC_GRAPH_VIEW)) {
+				MenuItem logicGraphViewMenuItem = createNewMenuItem(
+						CommonMenuItem.LOGIC_GRAPH_VIEW,
+						builder,
+						() -> {
+							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
+						}, // canHandle
+						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
+						// onHandlable
+						() -> {
+							LogicalExpressionTreeGraphPopupViewI handler = (LogicalExpressionTreeGraphPopupViewI)CommonMenusServices.getService(CommonMenuItem.LOGIC_GRAPH_VIEW);
+							handler.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
+							handler.showView(null);
+						},
+						// onNotHandlable
+						() -> { 
+							int nid = commonMenusNIdProvider.getNIds().iterator().next();
+							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
+				if (logicGraphViewMenuItem != null)
+				{
+					menuItems.add(logicGraphViewMenuItem);
+				}
+			} else {
+				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOGIC_GRAPH_VIEW) returned false");
+			}
+		} catch (Exception e) {
+			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOGIC_GRAPH_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
+		}
 
 		// Menu item to find concept in tree.
 		try {
@@ -619,37 +645,6 @@ public class CommonMenus
 			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOINC_REQUEST_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
 		}
 
-		// Menu item to open a Logic Graph View content request
-		try {
-			if (CommonMenusServices.hasService(CommonMenuItem.LOGIC_GRAPH_VIEW)) {
-				MenuItem logicGraphViewMenuItem = createNewMenuItem(
-						CommonMenuItem.LOGIC_GRAPH_VIEW,
-						builder,
-						() -> {
-							return commonMenusNIdProvider.getObservableNidCount().get() == 1;
-						}, // canHandle
-						commonMenusNIdProvider.getObservableNidCount().isEqualTo(1),			 //make visible
-						// onHandlable
-						() -> {
-							LogicalExpressionTreeGraphPopupViewI handler = (LogicalExpressionTreeGraphPopupViewI)CommonMenusServices.getService(CommonMenuItem.LOGIC_GRAPH_VIEW);
-							handler.setConcept(getComponentParentConceptNid(commonMenusNIdProvider.getNIds().iterator().next()));
-							handler.showView(AppContext.getMainApplicationWindow().getPrimaryStage());
-						},
-						// onNotHandlable
-						() -> { 
-							int nid = commonMenusNIdProvider.getNIds().iterator().next();
-							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
-				if (logicGraphViewMenuItem != null)
-				{
-					menuItems.add(logicGraphViewMenuItem);
-				}
-			} else {
-				LOG.trace("CommonMenusServices.isServiceAvailable(CommonMenuItem.LOGIC_GRAPH_VIEW) returned false");
-			}
-		} catch (Exception e) {
-			LOG.error("getCommonMenus() failed adding CommonMenuItem.LOGIC_GRAPH_VIEW.  Caught {} {}", e.getClass().getName(), e.getLocalizedMessage());
-		}
-
 		// Menu item to open a Sememe View content request
 		try {
 			if (CommonMenusServices.hasService(CommonMenuItem.COMPONENT_SEMEMES_VIEW)) {
@@ -666,12 +661,6 @@ public class CommonMenus
 						if (hasOne) {
 							Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
 							if (nid != null) {
-								// setAssemblage()
-//								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
-//								if (isDynamicSememe) {
-//									return true;
-//								}
-								
 								ObjectChronology<?> chronology = null;
 								switch (Get.identifierService().getChronologyTypeForNid(nid)) {
 								case CONCEPT:
@@ -689,7 +678,6 @@ public class CommonMenus
 								return chronology != null && chronology.getSememeList().size() > 0;
 							}
 						}
-						//return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null && DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
 						return false;
 					}
 				};
@@ -702,16 +690,12 @@ public class CommonMenus
 						() -> {
 							SememeViewI drv = AppContext.getService(SememeViewI.class);
 							drv.setComponent(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
-
-							// TODO use DynamicReferencedItemsView
-							PopOver po = DetachablePopOverHelper.newDetachachablePopover("Attached Sememes for " + Get.conceptDescriptionText(commonMenusNIdProvider.getNIds().iterator().next()), drv.getView());
-							po.detach();
-							po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
+							drv.showView(null);
 						},
 						// onNotHandlable
 						() -> { 
 							int nid = commonMenusNIdProvider.getNIds().iterator().next();
-							AppContext.getCommonDialogs().showInformationDialog("Invalid concept id " + nid, "Can't locate an invalid concept id " + nid);});
+							AppContext.getCommonDialogs().showInformationDialog("No Sememes on component " + nid, "No Sememes on component" + nid);});
 				if (sememesViewMenuItem != null)
 				{
 					menuItems.add(sememesViewMenuItem);
@@ -738,15 +722,18 @@ public class CommonMenus
 						boolean hasOne = numNids == 1;
 						if (hasOne) {
 							Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
-							if (nid != null) {
-								// setAssemblage()
-								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
-								if (isDynamicSememe) {
-									return true;
-								}
+							if (nid != null && Get.identifierService().getChronologyTypeForNid(nid) == ObjectChronologyType.CONCEPT) {
+								//TODO there is code to determine if something is a dynamic sememe, but nothing 
+								//to determine if something is a regular sememe.  Want to allow regular sememes too, 
+								//so disable check for now.  When the datamodel changes, we will check if the concept
+								//is allowed as a dynamic or static sememe assemblage.
+//								boolean isDynamicSememe = DynamicSememeUsageDescription.isDynamicSememe(nid);
+//								if (isDynamicSememe) {
+//									return true;
+//								}
+								return true;
 							}
 						}
-						//return commonMenusNIdProvider.getObservableNidCount().get() == 1 && commonMenusNIdProvider.getNIds().iterator().next() != null && DynamicSememeUsageDescription.isDynamicSememe(commonMenusNIdProvider.getNIds().iterator().next());
 						return false;
 					}
 				};
@@ -759,10 +746,7 @@ public class CommonMenus
 						() -> {
 							SememeViewI drv = AppContext.getService(SememeViewI.class);
 							drv.setAssemblage(commonMenusNIdProvider.getNIds().iterator().next(), null, null, null, true);
-
-							PopOver po = DetachablePopOverHelper.newDetachachablePopover("Attached Sememes for " + Get.conceptDescriptionText(commonMenusNIdProvider.getNIds().iterator().next()), drv.getView());
-							po.detach();
-							po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
+							drv.showView(null);
 						},
 						// onNotHandlable
 						() -> { 
