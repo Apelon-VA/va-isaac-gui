@@ -519,18 +519,10 @@ public class SearchViewController implements TaskCompleteCallback
 							}; 
 							CommonMenuBuilderI menuBuilder = CommonMenus.CommonMenuBuilder.newInstance();
 				
-                                                        menuBuilder.setMenuItemsToExclude(
-                                                                CommonMenus.CommonMenuItem.COPY,
-                                                                CommonMenus.CommonMenuItem.COPY_CONTENT,
-                                                                CommonMenus.CommonMenuItem.COPY_NID,
-                                                                CommonMenus.CommonMenuItem.COPY_SCTID,
-                                                                CommonMenus.CommonMenuItem.COPY_UUID,
-                                                                CommonMenus.CommonMenuItem.LOINC_REQUEST_VIEW,
-                                                                CommonMenus.CommonMenuItem.USCRS_REQUEST_VIEW,
-                                                                CommonMenus.CommonMenuItem.LOGIC_GRAPH_VIEW,
-                                                                CommonMenus.CommonMenuItem.COMPONENT_SEMEMES_VIEW,
-                                                                CommonMenus.CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
-                                                        
+							menuBuilder.setMenuItemsToExclude(
+									CommonMenus.CommonMenuItem.LOINC_REQUEST_VIEW, 
+									CommonMenus.CommonMenuItem.USCRS_REQUEST_VIEW,
+									CommonMenus.CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
 							CommonMenus.addCommonMenus(cm, menuBuilder, dp, nidProvider);
 
 							setContextMenu(cm);
