@@ -162,6 +162,7 @@ import org.slf4j.LoggerFactory;
 
 
 import com.sun.javafx.tk.Toolkit;
+import javafx.scene.control.SeparatorMenuItem;
 
 public class ConceptViewController {
 	
@@ -656,6 +657,8 @@ public class ConceptViewController {
 											CommonMenuItem.LOGIC_GRAPH_VIEW,
 											CommonMenuItem.CONCEPT_DIAGRAM_VIEW,
 											CommonMenuItem.USCRS_REQUEST_VIEW,
+											CommonMenuItem.COPY,
+											CommonMenuItem.USCRS_REQUEST_VIEW,
 											CommonMenuItem.LOINC_REQUEST_VIEW);
 									CommonMenus.addCommonMenus(conceptLabel.getContextMenu(),
 											builder,
@@ -922,8 +925,9 @@ public class ConceptViewController {
 	private void loadStatusComboBoxFromConcept(ConceptSnapshot concept) {
 		statusComboBox.getItems().clear();
 		if (concept != null) {
-			statusComboBox.getItems().add(concept.getState());
-			statusComboBox.getSelectionModel().clearAndSelect(0);
+			statusComboBox.getItems().add(State.ACTIVE);
+			statusComboBox.getItems().add(State.INACTIVE);
+			statusComboBox.getSelectionModel().select(concept.getState());
 		} else {
 			statusComboBox.buttonCellProperty().set(null);
 		}
@@ -1290,7 +1294,9 @@ public class ConceptViewController {
 				// Nothing
 			}
 			
-			if (textProperty != null) {
+
+                        
+                        if (textProperty != null) {
 				// TODO Make text overrun work on text property
 				Text text = new Text();
 				text.textProperty().bind(textProperty);
@@ -1300,8 +1306,67 @@ public class ConceptViewController {
 				Tooltip tooltip = new Tooltip();
 				tooltip.textProperty().bind(textProperty);
 				cell.setTooltip(tooltip);
+
+                                MenuItem miIds = new MenuItem("Display IDs");
+                                miIds.setOnAction(new EventHandler<ActionEvent>() {
+                                        @Override
+                                        public void handle(ActionEvent arg0) {
+                                                PopupHelper.showDescriptionIdList(conceptDescription, cell);
+                                        }
+                                });
+                                cm.getItems().add(miIds);
 	
-				MenuItem mi = new MenuItem("Copy Value");
+                                MenuItem miHistory = new MenuItem("Description History");
+                                miHistory.setOnAction(new EventHandler<ActionEvent>() {
+                                        @Override
+                                        public void handle(ActionEvent arg0) {
+                                                PopupHelper.showDescriptionHistory(conceptDescription, cell);
+                                        }
+                                });
+                                cm.getItems().add(miHistory);
+
+                                MenuItem miEdit = new MenuItem("Edit Description");
+                                miEdit.setOnAction(new EventHandler<ActionEvent>() {
+                                        @Override
+                                        public void handle(ActionEvent arg0) {
+                                            // TODO: Update and normalize with CommonMenus Edit
+                                        }
+                                });
+                                miEdit.setGraphic(Images.EDIT.createImageView());
+                                cm.getItems().add(miEdit);
+
+                                MenuItem miWrap = new MenuItem("Wrap Text");
+                                miWrap.setOnAction(new EventHandler<ActionEvent>() {
+                                        @Override
+                                        public void handle(ActionEvent arg0) {
+                                                Text text = (Text)cell.getGraphic();
+                                                if (text.wrappingWidthProperty().isBound()) {
+                                                        miWrap.setText("Wrap Text");
+                                                        text.wrappingWidthProperty().unbind();
+                                                        text.setWrappingWidth(0.0);
+
+                                                } else {
+                                                        miWrap.setText("Truncate Text");
+                                                        text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
+                                                }
+                                        }
+                                });
+                                cm.getItems().add(miWrap);
+
+
+                                MenuItem miDet = new MenuItem("Copy Description Details");
+                                miDet.setOnAction(new EventHandler<ActionEvent>() {
+                                        @Override
+                                        public void handle(ActionEvent arg0) {
+                                                CustomClipboard.set(conceptDescription.toString());
+                                        }
+                                });
+                                miDet.setGraphic(Images.COPY.createImageView());
+                                cm.getItems().add(miDet);
+
+//                                cm.getItems().add(new SeparatorMenuItem());
+
+                                MenuItem mi = new MenuItem("Copy Value");
 				mi.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent arg0) {
@@ -1311,47 +1376,14 @@ public class ConceptViewController {
 				mi.setGraphic(Images.COPY.createImageView());
 				cm.getItems().add(mi);
 
-				MenuItem miWrap = new MenuItem("Wrap Text");
-				miWrap.setOnAction(new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent arg0) {
-						Text text = (Text)cell.getGraphic();
-						if (text.wrappingWidthProperty().isBound()) {
-							miWrap.setText("Wrap Text");
-							text.wrappingWidthProperty().unbind();
-							text.setWrappingWidth(0.0);
-							
-						} else {
-							miWrap.setText("Truncate Text");
-							text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
-						}
-					}
-				});
-				cm.getItems().add(miWrap);
 
-				MenuItem miIds = new MenuItem("Display IDs");
-				miIds.setOnAction(new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent arg0) {
-						PopupHelper.showDescriptionIdList(conceptDescription, cell);
-					}
-				});
-				cm.getItems().add(miIds);
-
-				MenuItem miHistory = new MenuItem("Description History");
-				miHistory.setOnAction(new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent arg0) {
-						PopupHelper.showDescriptionHistory(conceptDescription, cell);
-					}
-				});
-				cm.getItems().add(miHistory);
 			}
-			
+                        
 			final String textValue = (textProperty != null)? textProperty.get() : null;
 			if (conceptNid != 0) {
 				final int finalConceptNid = conceptNid;
 				final int finalConceptSequence = conceptSequence;
+                                
 				CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
 				builder.setMenuItemsToExclude(
 						CommonMenuItem.COPY,
@@ -1362,9 +1394,12 @@ public class ConceptViewController {
 						CommonMenuItem.CONCEPT_VIEW_LEGACY,
 						CommonMenuItem.LOINC_REQUEST_VIEW,
 						CommonMenuItem.USCRS_REQUEST_VIEW,
-						CommonMenuItem.SEND_TO,
+						CommonMenuItem.TAXONOMY_VIEW,
+						CommonMenuItem.LOGIC_GRAPH_VIEW,
+						CommonMenuItem.COMPONENT_SEMEMES_VIEW,
 						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
-				CommonMenus.addCommonMenus(cm,
+				
+                                CommonMenus.addCommonMenus(cm,
 						builder,
 						new CommonMenusDataProvider() {
 					@Override
