@@ -39,14 +39,12 @@ import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.tree.Tree;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import java.util.concurrent.atomic.AtomicInteger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -70,7 +68,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
-
 import org.apache.mahout.math.Arrays;
 import org.reactfx.inhibeans.property.ReadOnlyObjectWrapper;
 import org.slf4j.Logger;
@@ -105,12 +102,10 @@ class SctTreeView {
     private SctTreeItem rootTreeItem;
     private TreeView<ConceptChronology<? extends ConceptVersion<?>>> treeView_;
     private SctTreeItemDisplayPolicies displayPolicies = defaultDisplayPolicies;
-    //private ConcurrentSkipListSet<Integer> multiParentConceptCache = new ConcurrentSkipListSet<Integer>();
-        
+
     private UpdateableBooleanBinding refreshRequiredListenerHack;
 
-
-    private volatile AtomicBoolean refreshInProgress_ = new AtomicBoolean(false);
+    private volatile AtomicInteger refreshInProgress_ = new AtomicInteger(0);
 
     private Optional<UUID> selectedItem_ = Optional.empty();
     private ArrayList<UUID> expandedUUIDs_ = new ArrayList<>();
@@ -121,16 +116,47 @@ class SctTreeView {
     private ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
         if (taxonomyCoordinate.get() == null) {
             taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
+            taxonomyCoordinate.addListener(change -> 
+            {
+                //This takes a while to execute.  Disable all refresh until this completes.
+                refreshInProgress_.incrementAndGet();
+                saveExpanded();
+                rootTreeItem.clearChildren();
+                rootTreeItem.childLoadStarts();
+                //at this point... for now, this is better than nothing, while waiting for the expensive task below to complete
+                Task<Tree> task = new Task<Tree>() {
+                    @Override
+                    protected Tree call() throws Exception {
+                        return Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get());
+                    }
+
+                    @Override
+                    protected void succeeded() {
+                        LOG.debug("Succeeded waiting for tree to refresh on taxonomy coord change");
+                        refreshInProgress_.decrementAndGet();
+                        try {
+                            taxonomyTree.set(this.get());
+                        }
+                        catch (Exception e) {
+                            LOG.error("Unexpected error doing taxonomy tree refresh", e);
+                        }
+                    }
+
+                    @Override
+                    protected void failed() {
+                        refreshInProgress_.decrementAndGet();
+                        LOG.error("Unexpected error doing taxonomy tree refresh", this.getException());
+                    }
+                };
+
+                Utility.execute(task);
+            });
         }
         return taxonomyCoordinate;
     }
     
     private ReadOnlyObjectWrapper<Tree> taxonomyTree = new ReadOnlyObjectWrapper<>();
     private ReadOnlyObjectProperty<Tree> getTaxonomyTree() {
-        taxonomyCoordinate.addListener(change -> 
-        {
-            taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
-        });
         if (taxonomyTree.get() == null) {
             taxonomyTree.set(Get.taxonomyService().getTaxonomyTree(taxonomyCoordinate.get()));
         }
@@ -267,17 +293,17 @@ class SctTreeView {
     }
 
     public void refresh() {
-        if (refreshInProgress_.get()) {
+        if (refreshInProgress_.get() > 0) {
             LOG.debug("Skipping refresh due to in-progress refresh");
             return;
         }
         synchronized (refreshInProgress_) {
             //Check again, because first check was before the sync block.
-            if (refreshInProgress_.get()) {
+            if (refreshInProgress_.get() > 0) {
                 LOG.debug("Skipping refresh due to in-progress refresh");
                 return;
             }
-            refreshInProgress_.set(true);
+            refreshInProgress_.incrementAndGet();
         }
 
         if (initializationCountDownLatch_.getCount() > 1) {
@@ -310,14 +336,14 @@ class SctTreeView {
                 restoreExpanded();
                 
                 synchronized (refreshInProgress_) {
-                    refreshInProgress_.set(false);
+                    refreshInProgress_.decrementAndGet();
                 }
             }
 
             @Override
             protected void failed() {
                 synchronized (refreshInProgress_) {
-                    refreshInProgress_.set(false);
+                    refreshInProgress_.decrementAndGet();
                 }
                 Throwable ex = getException();
                 String title = "Unexpected error waiting for init() to complete";
@@ -649,7 +675,7 @@ class SctTreeView {
     {
         LOG.info("Shutdown taxonomy instance");
         synchronized (refreshInProgress_) {  //hack way to disable future refresh calls
-            refreshInProgress_.set(true);
+            refreshInProgress_.incrementAndGet();
         }
         if (refreshRequiredListenerHack != null) {
             refreshRequiredListenerHack.clearBindings();
@@ -667,6 +693,11 @@ class SctTreeView {
     }
     
     private void saveExpanded() {
+        if (rootTreeItem.getChildren().size() == 0)
+        {
+            //keep the last save
+            return;
+        }
         TreeItem<ConceptChronology<? extends ConceptVersion<?>>> selected = treeView_.getSelectionModel().getSelectedItem();
         selectedItem_ = Optional.ofNullable(selected == null ? null : selected.getValue().getPrimordialUuid());
         expandedUUIDs_.clear();
