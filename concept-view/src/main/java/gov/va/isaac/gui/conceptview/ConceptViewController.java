@@ -279,7 +279,7 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(stampToggle, 			Images.STAMP.createImageView(), 	"Show/Hide STAMP Columns");
 		FxUtils.assignImageToButton(plusDescriptionButton, 	Images.PLUS.createImageView(), 		"Create Description");
 		FxUtils.assignImageToButton(minusDescriptionButton, 	Images.MINUS.createImageView(), 	"Retire/Unretire Description");
-		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.EDIT.createImageView(), 		"Edit Description");
+		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.COPY.createImageView(), 		"Edit Description");
 		FxUtils.assignImageToButton(panelPreferencesPopupButton, 	Images.CONFIGURE.createImageView(), 		"Panel Preferences");
 		FxUtils.assignImageToButton(panelVsGlobalPreferencesToggleButton, 	Images.CONFIGURE.createImageView(), "Use Local Preferences");
 
@@ -689,7 +689,7 @@ public class ConceptViewController {
 										miHistory.setOnAction(new EventHandler<ActionEvent>() {
 											@Override
 											public void handle(ActionEvent arg0) {
-												//PopupHelper.showDescriptionHistory(conceptDescription, conceptLabel);
+												PopupHelper.showConceptHistory(conceptProperty.getValue(), conceptLabel);
 											}
 										});
 										conceptLabel.getContextMenu().getItems().add(miHistory);
@@ -760,9 +760,25 @@ public class ConceptViewController {
 						} else {
 							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelTaxonomyCoordinate.get().getStampCoordinate(), Get.configurationService().getDefaultLanguageCoordinate());
 							
-							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							if (! cs.isPresent()) {
+								final int finalNid = nid;
+								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Missing ConceptSnapshot", "No ConceptSnapshot found for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
+
+								// Return existing concept label contents
+								return conceptLabel.getText();
+							}
+							
 							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
-							return desc.isPresent() ? desc.get().value().getText() : null;
+							if (! desc.isPresent()) {
+								final int finalNid = nid;
+								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Not using dropped concept", "Failed to load Fully Specified Name for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
+								
+								// Return existing concept label contents
+								return conceptLabel.getText();
+							}
+
+							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							return desc.get().value().getText();
 						}
 					}
 				});
@@ -1116,8 +1132,34 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
-				//conceptSequence = conceptDescription.getSequence();
-				//conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+//				conceptNid = conceptDescription.getStampedVersion().getNid();
+//				conceptSequence = Get.identifierService().getConceptSequenceForDescriptionNid(conceptNid);
+//				final int finalConceptNid = conceptDescription.getStampedVersion().getNid();
+//				final int finalConceptSequence = conceptSequence;
+//				CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
+//				builder.setMenuItemsToExclude(
+//						CommonMenuItem.COPY,
+//						CommonMenuItem.COPY_CONTENT,
+//						CommonMenuItem.COPY_NID,
+//						CommonMenuItem.COPY_SCTID,
+//						CommonMenuItem.COPY_UUID,
+//						CommonMenuItem.CONCEPT_VIEW_LEGACY,
+//						CommonMenuItem.LOINC_REQUEST_VIEW,
+//						CommonMenuItem.USCRS_REQUEST_VIEW,
+//						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
+//				CommonMenus.addCommonMenus(cm,
+//						builder,
+//						new CommonMenusDataProvider() {
+//					@Override
+//					public String[] getStrings() {
+//						return conceptDescription.getValueProperty().get() == null ? new String[0] : new String[] { conceptDescription.getValueProperty().get() };
+//					}
+//				}, new CommonMenusNIdProvider() {
+//					@Override
+//					public Collection<Integer> getNIds() {
+//						return Arrays.asList(new Integer[] { finalConceptNid });
+//					}
+//				});
 				break;
 				
 			case TYPE:
@@ -1317,9 +1359,11 @@ public class ConceptViewController {
 						CommonMenuItem.COPY_NID,
 						CommonMenuItem.COPY_SCTID,
 						CommonMenuItem.COPY_UUID,
+						CommonMenuItem.CONCEPT_VIEW_LEGACY,
 						CommonMenuItem.LOINC_REQUEST_VIEW,
 						CommonMenuItem.USCRS_REQUEST_VIEW,
-						CommonMenuItem.SEND_TO);
+						CommonMenuItem.SEND_TO,
+						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
 				CommonMenus.addCommonMenus(cm,
 						builder,
 						new CommonMenusDataProvider() {

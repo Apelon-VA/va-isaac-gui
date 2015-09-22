@@ -22,7 +22,7 @@ public class ConceptNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 		this(logicalNode, Get.identifierService().getConceptSequenceForUuids(logicalNode.getConceptUuid()), descriptionRenderer);
 	}
 	private ConceptNodeFxNode(AbstractNode logicalNode, int conceptId, Function<Integer, String> descriptionRenderer) {
-		super(logicalNode, logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\n" + descriptionRenderer.apply(conceptId));
+		super(logicalNode, descriptionRenderer.apply(conceptId));
 		this.conceptId = conceptId;
 	}
 	

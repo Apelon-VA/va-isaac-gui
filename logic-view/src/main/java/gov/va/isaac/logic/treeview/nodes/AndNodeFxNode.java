@@ -10,7 +10,7 @@ import javafx.scene.shape.Circle;
 
 public class AndNodeFxNode extends Label {
 	public AndNodeFxNode(AndNode logicalNode) {
-		super(logicalNode.getNodeSemantic().name());
+		super("AND");
 		setShape(new Circle(18));
 		TreeNodeUtils.configureFxNode(this, 38, 38);
 	}

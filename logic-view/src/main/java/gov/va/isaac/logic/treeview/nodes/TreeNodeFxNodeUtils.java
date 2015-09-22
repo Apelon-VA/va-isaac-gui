@@ -37,7 +37,11 @@ public class TreeNodeFxNodeUtils {
 				CommonMenuItem.COPY_SCTID,
 				CommonMenuItem.COPY_UUID,
 				CommonMenuItem.LOINC_REQUEST_VIEW,
-				CommonMenuItem.USCRS_REQUEST_VIEW);
+				CommonMenuItem.USCRS_REQUEST_VIEW,
+                                CommonMenuItem.TAXONOMY_VIEW,
+                                CommonMenuItem.USCRS_REQUEST_VIEW,
+                                CommonMenuItem.SEND_TO,
+                                CommonMenuItem.LOGIC_GRAPH_VIEW);
 		CommonMenus.addCommonMenus(cm, builder, new CommonMenusNIdProvider()
 		{
 			@Override
@@ -57,6 +61,7 @@ public class TreeNodeFxNodeUtils {
 	}
 	public static String getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		Optional<LatestVersion<DescriptionSememe<?>>> opt = Get.conceptService().getSnapshot(stampCoordinate, languageCoordinate).getDescriptionOptional(conceptId);
+		//Optional<LatestVersion<DescriptionSememe<?>>> opt = Get.conceptService().getSnapshot(stampCoordinate, languageCoordinate).getFullySpecifiedDescription(conceptId);
 
 		return opt.isPresent() ? opt.get().value().getText() : "No description found for concept (id=" + conceptId + ", uuid=" + Get.identifierService().getUuidPrimordialFromConceptSequence(conceptId) + ")";
 	}

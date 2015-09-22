@@ -10,6 +10,6 @@ import javafx.scene.control.Label;
 // ConceptNodeWithUuids
 public class SubstitutionNodeStringFxNode extends Label {
 	public SubstitutionNodeStringFxNode(SubstitutionNodeString logicalNode) {
-		super(logicalNode.getNodeSemantic().name() + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode));
+		super(LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode));
 	}
 }

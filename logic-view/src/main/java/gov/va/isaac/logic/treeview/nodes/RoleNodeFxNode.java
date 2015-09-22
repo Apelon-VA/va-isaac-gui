@@ -9,6 +9,7 @@ import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeAllWithSequences;
 import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import javafx.scene.control.Label;
 
@@ -21,26 +22,35 @@ public class RoleNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 	
 	public int getTypeSequence() { return typeSequence; }
 	
-	public RoleNodeFxNode(RoleNodeAllWithSequences logicalNode) {
+	public RoleNodeFxNode(RoleNodeAllWithSequences logicalNode, Function<Integer, String> descriptionRenderer) {
 		this(logicalNode, ((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence(), 
-				Frills.getSctId(Get.identifierService().getConceptNid(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()), null));
+				Frills.getSctId(Get.identifierService().getConceptNid(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()), null),
+                                Get.identifierService().getConceptNid(((RoleNodeAllWithSequences)logicalNode).getTypeConceptSequence()), 
+                                descriptionRenderer);
 	}
-	public RoleNodeFxNode(RoleNodeSomeWithSequences logicalNode) {
+	public RoleNodeFxNode(RoleNodeSomeWithSequences logicalNode, Function<Integer, String> descriptionRenderer) {
 		this(logicalNode, ((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence(), 
-				Frills.getSctId(Get.identifierService().getConceptNid(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()), null));
+				Frills.getSctId(Get.identifierService().getConceptNid(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()), null),
+                                Get.identifierService().getConceptNid(((RoleNodeSomeWithSequences)logicalNode).getTypeConceptSequence()),
+                                descriptionRenderer);
 	}
-	public RoleNodeFxNode(RoleNodeAllWithUuids logicalNode) {
+	public RoleNodeFxNode(RoleNodeAllWithUuids logicalNode, Function<Integer, String> descriptionRenderer) {
 		this(logicalNode, Get.identifierService().getConceptSequenceForUuids(((RoleNodeAllWithUuids)logicalNode).getTypeConceptUuid()), 
-				Frills.getSctId(Get.identifierService().getNidForUuids(((RoleNodeAllWithUuids)logicalNode).getTypeConceptUuid()), null));
+				Frills.getSctId(Get.identifierService().getNidForUuids(((RoleNodeAllWithUuids)logicalNode).getTypeConceptUuid()), null),
+                                Get.identifierService().getNidForUuids(((RoleNodeAllWithUuids)logicalNode).getTypeConceptUuid()),
+                                descriptionRenderer);
 	}
-	public RoleNodeFxNode(RoleNodeSomeWithUuids logicalNode) {
+	public RoleNodeFxNode(RoleNodeSomeWithUuids logicalNode, Function<Integer, String> descriptionRenderer) {
 		this(logicalNode, Get.identifierService().getConceptSequenceForUuids(((RoleNodeSomeWithUuids)logicalNode).getTypeConceptUuid()), 
-				Frills.getSctId(Get.identifierService().getNidForUuids(((RoleNodeSomeWithUuids)logicalNode).getTypeConceptUuid()), null));
+				Frills.getSctId(Get.identifierService().getNidForUuids(((RoleNodeSomeWithUuids)logicalNode).getTypeConceptUuid()), null),
+                                Get.identifierService().getNidForUuids(((RoleNodeSomeWithUuids)logicalNode).getTypeConceptUuid()),
+                                descriptionRenderer);
 	}
-	
-	private RoleNodeFxNode(AbstractNode logicalNode, int typeSequence, Optional<Long> sctId) {
-		super(logicalNode, logicalNode.getNodeSemantic().name() + /* "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) + */ "\n" + /* "type=" + */ 
-				Get.conceptDescriptionText(typeSequence) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
+	/*
+sctId.isPresent() && sctId.get() <= Integer.MAX_VALUE ? "\n" + descriptionRenderer.apply(sctId.get().intValue())
+*/
+	private RoleNodeFxNode(AbstractNode logicalNode, int typeSequence, Optional<Long> sctId, int sequenceId, Function<Integer, String> descriptionRenderer) {
+		super(logicalNode, logicalNode.getNodeSemantic().name() + (sctId.isPresent() ? descriptionRenderer.apply(sequenceId) : ""));
 		this.typeSequence = typeSequence;
 	}
 

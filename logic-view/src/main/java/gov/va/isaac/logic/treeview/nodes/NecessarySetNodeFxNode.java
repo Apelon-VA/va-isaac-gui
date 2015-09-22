@@ -10,7 +10,7 @@ import javafx.scene.shape.Circle;
 
 public class NecessarySetNodeFxNode extends Label {
 	public NecessarySetNodeFxNode(NecessarySetNode logicalNode) {
-		super(logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
+		super("NECESSARY" /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */);
 
 		setShape(new Circle(18));
 		TreeNodeUtils.configureFxNode(this, 94, 38);
