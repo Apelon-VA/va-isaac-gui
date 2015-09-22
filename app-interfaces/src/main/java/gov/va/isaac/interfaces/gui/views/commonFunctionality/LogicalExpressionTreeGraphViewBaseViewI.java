@@ -8,17 +8,34 @@ import java.util.UUID;
 public interface LogicalExpressionTreeGraphViewBaseViewI {
 
 	/**
-	 * @return Integer conceptId set by user
+	 * @return Integer required conceptId set by user
 	 */
 	public Integer getConceptId();
 	
 	/**
-	 * Tell this view to display the Logical Expression tree graph for a particular concept 
-	 * 
-	 * @param conceptId - the id of the concept to graph.
+	 * @return Short optional sememeSequence of version set by user
 	 */
-	public abstract void setConcept(int componentNid);
+	public Short getSememeSequence();
+	
+	/**
+	 * Tell this view to display the Logical Expression tree graph for a particular concept
+	 * Always displays latest LogicGraph sememe version.
+	 * 
+	 * @param conceptId - id of the concept to graph.
+	 */
+	public abstract void setConcept(int conceptNid);
+	
+	/**
+	 * Tell this view to display the Logical Expression tree graph for a particular concept
+	 * Always displays the LogicGraph sememe version corresponding to the passed sememeSequence
+	 * 
+	 * @param conceptNid id of the concept to graph.
+	 * @param sememeSequence sememe sequence of the version of the sememe to graph.
+	 */
+	public abstract void setConcept(int conceptNid, short sememeSequence);
 
+	public void setConcept(UUID uuid, short sememeSequence);
+	
 	public abstract void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,
 			int componentNid);
