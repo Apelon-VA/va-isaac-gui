@@ -92,6 +92,7 @@ import java.util.function.Function;
 
 
 
+
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -115,6 +116,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -145,8 +147,10 @@ import javafx.util.StringConverter;
 
 
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 
 
@@ -914,16 +918,46 @@ public class ConceptViewController {
 				loadStatusComboBoxFromConcept(newValue);
 			}
 		});
-		
+		statusComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<State>() {
+			@Override
+			public void changed(ObservableValue<? extends State> observable,
+					State oldValue, State newValue) {
+				if (newValue == null || conceptProperty.get() == null) {
+					// IGNORE
+				} else if (newValue == conceptProperty.get().getState()) {
+					// No change
+				} else {
+					// TODO Modifying State not yet supported
+					AppContext.getCommonDialogs().showInformationDialog("Unsupported Feature", "Modifying Concept State not yet supported");
+
+					statusComboBox.getSelectionModel().select(conceptProperty.get().getState());
+				}
+			}
+		});
 		loadStatusComboBoxFromConcept(conceptProperty.get());
 	}
-	// In read-only view, set contents/choices of statusComboBox
-	// to state of loaded property only
+
 	private void loadStatusComboBoxFromConcept(ConceptSnapshot concept) {
 		statusComboBox.getItems().clear();
+		
 		if (concept != null) {
+			// TODO add both ACTIVE and INACTIVE once modifying State supported
+//			statusComboBox.getItems().add(State.ACTIVE);
+//			statusComboBox.getItems().add(State.INACTIVE);
 			statusComboBox.getItems().add(concept.getState());
-			statusComboBox.getSelectionModel().clearAndSelect(0);
+			
+			switch(concept.getState()) {
+			case ACTIVE:
+			case INACTIVE:
+				statusComboBox.getSelectionModel().select(concept.getState());
+				break;
+			default:
+				AppContext.getCommonDialogs().showErrorDialog("Unsupported Concept State", "ConceptSnapshot State " + concept.getState().name() + " not supported", "Only ACTIVE and INACTIVE State values supported");
+
+				statusComboBox.getSelectionModel().select(null);
+				statusComboBox.buttonCellProperty().set(null);
+				break;
+			}
 		} else {
 			statusComboBox.buttonCellProperty().set(null);
 		}
