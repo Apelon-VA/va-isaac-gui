@@ -30,21 +30,25 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 	
 	/**
 	 * Tell this view to display the Logical Expression tree graph for a particular concept
-	 * Always displays the LogicGraph sememe version corresponding to the passed sememeSequence
+	 * Always displays the LogicGraph sememe version corresponding to the passed sememeVersionSequence
 	 * 
 	 * @param conceptNid id of the concept to graph.
 	 * @param sememeSequence sememe sequence of the version of the sememe to graph.
 	 */
-	public abstract void setConcept(int conceptNid, int sememeSequence);
-
-	public void setConcept(UUID uuid, int sememeSequence);
+	public abstract void setConcept(int conceptNid, short sememeVersionSequence);
 	
 	public abstract void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,
 			int componentNid);
-
+	public abstract void setConcept(
+			TaxonomyCoordinate taxonomyCoordinate,
+			int componentNid,
+			short sememeVersionSequence);
+	
 	public abstract void setConcept(
 			ObservableTaxonomyCoordinate taxonomyCoordinate, int componentNid);
+	public abstract void setConcept(
+			ObservableTaxonomyCoordinate taxonomyCoordinate, int componentNid, short sememeVersionSequence);
 
 	/**
 	 * Tell this view to display the Logical Expression tree graph for a particular concept 
@@ -52,7 +56,7 @@ public interface LogicalExpressionTreeGraphViewBaseViewI {
 	 * @param conceptUuid - the UUID of the concept to graph.
 	 */
 	public abstract void setConcept(UUID uuid);
-
+	
 	public abstract void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,
 			UUID uuid);

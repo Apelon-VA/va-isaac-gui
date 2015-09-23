@@ -394,6 +394,7 @@ public class ConceptViewController {
 		});
 		
 		panelVsGlobalPreferencesToggleButton.setSelected(false);
+		panelVsGlobalPreferencesToggleButton.setTooltip(unselectedTooltip);
 	}
 
 	private void setupPanelPreferencesPopupButton() {
