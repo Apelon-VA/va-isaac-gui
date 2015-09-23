@@ -42,6 +42,8 @@ import gov.va.isaac.util.ValidBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
@@ -147,7 +149,7 @@ public class SearchViewController implements TaskCompleteCallback
 	private ConceptNode searchInDynamicSememe;
 	private ConceptNode searchInSememe;
 	private ObservableList<SimpleDisplayConcept> dynamicRefexList_ = new ObservableListWrapper<>(new ArrayList<>());
-	private Tooltip tooltip = new Tooltip();
+	private Tooltip searchTextTooltip = new Tooltip();
 	private Integer currentlyEnteredAssemblageSequence = null;
 	private FlowPane searchInColumnsHolder = new FlowPane();
 	private enum SearchInOptions {Descriptions, Sememes, DynamicSememes};
@@ -199,10 +201,10 @@ public class SearchViewController implements TaskCompleteCallback
 
 		searchIn.getSelectionModel().select(0);
 		
-		tooltip.setText("Enter the description text to search for.  Advanced query syntax such as 'AND', 'NOT' is supported.  You may also enter UUIDs for concepts.");
-		tooltip.setWrapText(true);
-		tooltip.setMaxWidth(600);
-		searchText.setTooltip(tooltip);
+		searchTextTooltip.setText("Enter the description text to search for.  Advanced query syntax such as 'AND', 'NOT' is supported.  You may also enter UUIDs for concepts.");
+		searchTextTooltip.setWrapText(true);
+		searchTextTooltip.setMaxWidth(600);
+		searchText.setTooltip(searchTextTooltip);
 		
 		optionsContentVBox.getChildren().remove(searchInRefexHBox);
 		
@@ -210,7 +212,7 @@ public class SearchViewController implements TaskCompleteCallback
 		{
 			if (searchIn.getSelectionModel().getSelectedItem() == SearchInOptions.Descriptions)
 			{
-				tooltip.setText("Enter the description text to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported.  You may also enter UUIDs "
+				searchTextTooltip.setText("Enter the description text to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported.  You may also enter UUIDs "
 						+ "or NIDs for concepts.");
 				optionsContentVBox.getChildren().remove(searchInRefexHBox);
 				optionsContentVBox.getChildren().remove(searchInColumnsHolder);
@@ -219,7 +221,7 @@ public class SearchViewController implements TaskCompleteCallback
 			}
 			else if (searchIn.getSelectionModel().getSelectedItem() == SearchInOptions.DynamicSememes)
 			{
-				tooltip.setText("Enter the dynamic sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
+				searchTextTooltip.setText("Enter the dynamic sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
 						+ "are indexed as string values.  For numeric values, mathematical interval syntax is supported - such as [4,6] or (-5,10]."
 						+ "  You may also search for 1 or more UUIDs and/or NIDs.");
 				optionsContentVBox.getChildren().remove(searchInDescriptionHBox);
@@ -239,7 +241,7 @@ public class SearchViewController implements TaskCompleteCallback
 			}
 			else if (searchIn.getSelectionModel().getSelectedItem() == SearchInOptions.Sememes)
 			{
-				tooltip.setText("Enter the sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
+				searchTextTooltip.setText("Enter the sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
 						+ "are indexed as string values.");
 				optionsContentVBox.getChildren().remove(searchInDescriptionHBox);
 				searchInRefexHBox.getChildren().remove(searchInDynamicSememe.getNode());
@@ -523,6 +525,30 @@ public class SearchViewController implements TaskCompleteCallback
 									box.getChildren().add(matchString);
 								}
 							}
+							
+							StringBuilder tooltip = new StringBuilder();
+							tooltip.append("Modules:\r");
+							HashSet<Integer> modules = new HashSet<>();
+							for (IdentifiedObjectLocal iol : item.getMatchingComponents())
+							{
+								if (iol instanceof ObjectChronology)
+								{
+									ObjectChronology<? extends StampedVersion> oc = (ObjectChronology<? extends StampedVersion>)iol;
+									for (StampedVersion sv : oc.getVersionList())
+									{
+										modules.add(sv.getModuleSequence());
+									}
+								}
+							}
+							
+							for (int i : modules)
+							{
+								tooltip.append(OchreUtility.getDescription(i).orElse("Unknown module") + "\r");
+							}
+							
+							tooltip.setLength(tooltip.length() - 1);
+							
+							Tooltip.install(box, new Tooltip(tooltip.toString()));
 							setGraphic(box);
 
 							// Also show concept details on double-click.
