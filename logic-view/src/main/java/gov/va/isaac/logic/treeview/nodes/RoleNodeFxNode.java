@@ -11,8 +11,6 @@ import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javafx.scene.control.Label;
-
 // RoleNodeAllWithUuids
 // RoleNodeSomeWithUuids
 // RoleNodeAllWithSequences
@@ -50,7 +48,7 @@ public class RoleNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 sctId.isPresent() && sctId.get() <= Integer.MAX_VALUE ? "\n" + descriptionRenderer.apply(sctId.get().intValue())
 */
 	private RoleNodeFxNode(AbstractNode logicalNode, int typeSequence, Optional<Long> sctId, int sequenceId, Function<Integer, String> descriptionRenderer) {
-		super(logicalNode, logicalNode.getNodeSemantic().name() + (sctId.isPresent() ? descriptionRenderer.apply(sequenceId) : ""));
+		super(logicalNode, logicalNode.getNodeSemantic().name() + "\n" + descriptionRenderer.apply(sequenceId) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
 		this.typeSequence = typeSequence;
 	}
 

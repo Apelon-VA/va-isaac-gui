@@ -26,6 +26,7 @@ import gov.vha.isaac.ochre.observable.model.coordinate.ObservableTaxonomyCoordin
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -33,7 +34,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -120,19 +123,19 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 	private final MenuItem rootPanePremiseTypeMenuItem = new MenuItem();
 
-	private void resetRootPanePremiseTypeMenuItemText(PremiseType pt) {
+	private void resetPremiseTypeMenuItemText(PremiseType pt) {
 		rootPanePremiseTypeMenuItem.setText("Switch to " + pt.name() + " view");
 	}
-	private void resetRootPaneTooltipText(PremiseType pt) {
-		if (rootScrollPane != null) {
-			rootScrollPane.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view"));
+	private void resetPremiseTypeMenuItemTooltipText(PremiseType pt) {
+		if (title != null) {
+			title.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view"));
 		}
 	}
 	private void updateRootPanePremiseTypeMenuItem() {
 		switch (taxonomyCoordinate.get().premiseTypeProperty().get()) {
 		case STATED:
-			resetRootPanePremiseTypeMenuItemText(PremiseType.INFERRED);
-			resetRootPaneTooltipText(PremiseType.INFERRED);
+			resetPremiseTypeMenuItemText(PremiseType.INFERRED);
+			resetPremiseTypeMenuItemTooltipText(PremiseType.INFERRED);
 			rootPanePremiseTypeMenuItem.setOnAction(new EventHandler<ActionEvent>() {
 				@Override
 				public void handle(ActionEvent event)
@@ -142,8 +145,8 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			});
 			break;
 		case INFERRED:
-			resetRootPanePremiseTypeMenuItemText(PremiseType.STATED);
-			resetRootPaneTooltipText(PremiseType.STATED);
+			resetPremiseTypeMenuItemText(PremiseType.STATED);
+			resetPremiseTypeMenuItemTooltipText(PremiseType.STATED);
 			rootPanePremiseTypeMenuItem.setOnAction(new EventHandler<ActionEvent>() {
 				@Override
 				public void handle(ActionEvent event)
@@ -180,6 +183,15 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		}
 	};
 	
+	private static String getTabLabelText(LogicalExpressionTreeGraphEmbeddableViewI view, LocalDate priorDate, LocalDate currentDate) {
+		String text = null;
+		if (currentDate.equals(priorDate)) {
+			text = DATETIME_FORMAT.format(view.getLogicGraphSememe().getTime());
+		} else {
+			text = DATE_FORMAT.format(view.getLogicGraphSememe().getTime());
+		}
+		return text;
+	}
 	private void init() {
 		if (rootScrollPane == null) {
 			noRefresh_.getAndIncrement();
@@ -245,20 +257,39 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 					public void handle(ActionEvent arg0) {
 						//VBox historicalLogicGraphViewNode = new VBox();
 						TabPane historicalLogicGraphViewNode = new TabPane();
+						historicalLogicGraphViewNode.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 						List<LogicalExpressionTreeGraphEmbeddableViewI> historicalViews = getHistoricalViews();
 						Collections.sort(historicalViews, TREEGRAPH_COMPARATOR);
+
+						// Place views into buckets by date to determine which dates gave multiple views
+						// which will result in the tab displaying both date and time
+						Map<LocalDate, List<LogicalExpressionTreeGraphEmbeddableViewI>> dateToViewsMap = new HashMap<>();
 						for (LogicalExpressionTreeGraphEmbeddableViewI version : historicalViews) {
 							Date date = new Date(version.getLogicGraphSememe().getTime());
 							LocalDateTime time = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
-							Tab tab = new Tab();
-							if (time.toLocalTime().toSecondOfDay() > 0) {
-								tab.setText(DATETIME_FORMAT.format(version.getLogicGraphSememe().getTime()));
-							} else {
-								tab.setText(DATE_FORMAT.format(version.getLogicGraphSememe().getTime()));
+							LocalDate currentDate = time.toLocalDate();
+							if (dateToViewsMap.get(currentDate) == null) {
+								dateToViewsMap.put(currentDate, new ArrayList<LogicalExpressionTreeGraphEmbeddableViewI>());
 							}
+							dateToViewsMap.get(currentDate).add(version);
+						}
+						
+						for (LogicalExpressionTreeGraphEmbeddableViewI version : historicalViews) {
+							Date date = new Date(version.getLogicGraphSememe().getTime());
+							LocalDateTime time = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+							LocalDate currentDate = time.toLocalDate();
+							
+							Tab tab = new Tab();
+							if (dateToViewsMap.get(currentDate).size() > 1) {
+								tab.setText(DATETIME_FORMAT.format(date));
+							} else {
+								tab.setText(DATE_FORMAT.format(date));
+							}
+							
 							tab.setContent(version.getView());
 							historicalLogicGraphViewNode.getTabs().add(tab);
 						}
+						
 						DetachablePopOverHelper.showDetachachablePopOver(title, DetachablePopOverHelper.newDetachachablePopoverWithCloseButton(title.getText() + " History", historicalLogicGraphViewNode));
 					}
 				});
@@ -272,11 +303,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 						ObservableValue<? extends PremiseType> observable,
 						PremiseType oldValue, PremiseType newValue) {
 					if (newValue == PremiseType.INFERRED) {
-						resetRootPanePremiseTypeMenuItemText(PremiseType.STATED);
-						resetRootPaneTooltipText(PremiseType.STATED);
+						resetPremiseTypeMenuItemText(PremiseType.STATED);
+						resetPremiseTypeMenuItemTooltipText(PremiseType.STATED);
 					} else {
-						resetRootPanePremiseTypeMenuItemText(PremiseType.INFERRED);
-						resetRootPaneTooltipText(PremiseType.INFERRED);
+						resetPremiseTypeMenuItemText(PremiseType.INFERRED);
+						resetPremiseTypeMenuItemTooltipText(PremiseType.INFERRED);
 					}
 				}
 				
