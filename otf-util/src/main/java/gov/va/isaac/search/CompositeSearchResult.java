@@ -30,6 +30,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -140,10 +141,24 @@ public class CompositeSearchResult {
 					strings.add("No description available on stamp coordinate!");
 				}
 			}
+			else if (iol instanceof SememeChronology<?> && ((SememeChronology<?>)iol).getSememeType() == SememeType.STRING)
+			{
+				Optional<LatestVersion<StringSememe>> ds = ((SememeChronology<StringSememe>)iol).getLatestVersion(StringSememe.class, 
+						AppContext.getService(UserProfileBindings.class).getStampCoordinate().get());
+				if (ds.isPresent())
+				{
+					strings.add(ds.get().value().getString());
+				}
+				else
+				{
+					strings.add("No sememe available on stamp coordinate!");
+				}
+			}
 			else
 			{
 				strings.add("ERROR: No string extractor available for " + iol.getClass().getName());
 			}
+			//TODO need to implement more of these, for other sememe types.
 		}
 		return strings;
 	}
