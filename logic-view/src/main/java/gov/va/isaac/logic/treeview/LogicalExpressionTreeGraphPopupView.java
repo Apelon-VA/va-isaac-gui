@@ -128,8 +128,8 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 	}
 
 	@Override
-	public void setConcept(int conceptNid, short sememeVersionSequence) {
-		embeddableView.setConcept(conceptNid, sememeVersionSequence);
+	public void setConcept(LogicGraphSememe<?> logicGraphSememe) {
+		embeddableView.setConcept(logicGraphSememe);
 	}
 
 	@Override
@@ -139,13 +139,12 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 
 	@Override
 	public void setConcept(TaxonomyCoordinate taxonomyCoordinate,
-			int componentNid, short sememeVersionSequence) {
-		// TODO
+			LogicGraphSememe<?> specifiedLogicGraphSememe) {
+		embeddableView.setConcept(taxonomyCoordinate, specifiedLogicGraphSememe);
 	}
 	@Override
 	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
-			int componentNid, short sememeVersionSequence) {
-		// TODO Auto-generated method stub
-		
+			LogicGraphSememe<?> specifiedLogicGraphSememe) {
+		embeddableView.setConcept(taxonomyCoordinate, specifiedLogicGraphSememe);
 	}
 }

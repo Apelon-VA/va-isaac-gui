@@ -80,9 +80,9 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 	private Integer conceptId = null;
 
-	private Short specifiedLogicGraphSememeVersionSequence = null;
+	private LogicGraphSememe<?> specifiedLogicGraphSememe = null;
 	
-	private LogicGraphSememeImpl cachedLogicGraphSememe = null;
+	private LogicGraphSememe<?> cachedLogicGraphSememe = null;
 	
 	private ObjectProperty<ObservableTaxonomyCoordinate> passedObservableTaxonomyCoordinateProperty = new SimpleObjectProperty();
 	
@@ -235,9 +235,9 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 				rootScrollPane.getContextMenu().getItems().add(mi);
 			}
 			
-			if (this.specifiedLogicGraphSememeVersionSequence == null)
+			// Only offer to display history if not already displaying history
+			if (this.specifiedLogicGraphSememe == null)
 			{
-				// Only offer to display history if not already displaying history
 				MenuItem mi = new MenuItem("Display History");
 				mi.visibleProperty().bind(textGraph.textProperty().isNotNull());
 				mi.setOnAction(new EventHandler<ActionEvent>() {
@@ -365,17 +365,18 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 //		Utility.execute(task);
 	}
 	
-	private LogicGraphSememeImpl loadLogicGraphSememe(Short sememeVersionSequence) {
-		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
-		if (! defChronologyOptional.isPresent()) {
-			String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate";
-			AppContext.getCommonDialogs().showErrorDialog("Missing Definition Chronology", taxonomyCoordinate.get().getTaxonomyType().name() + " not found", error);
-			logger_.error(error);
-			
-			return null;
-		}
-		
-		if (sememeVersionSequence == null) {
+	private LogicGraphSememe<?> loadLogicGraphSememe(LogicGraphSememe<?> sememeVersion) {
+		if (sememeVersion != null) {
+			return sememeVersion;
+		} else {
+			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
+			if (! defChronologyOptional.isPresent()) {
+				String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate";
+				AppContext.getCommonDialogs().showErrorDialog("Missing Definition Chronology", taxonomyCoordinate.get().getTaxonomyType().name() + " not found", error);
+				logger_.error(error);
+
+				return null;
+			}
 			SememeChronology rawDefChronology = defChronologyOptional.get();
 			Optional<LatestVersion<LogicGraphSememeImpl>> latestGraphLatestVersionOptional = rawDefChronology.getLatestVersion(LogicGraphSememeImpl.class, taxonomyCoordinate.get().getStampCoordinate());
 			if (! latestGraphLatestVersionOptional.isPresent()) {
@@ -386,23 +387,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 			} else {
 				return (LogicGraphSememeImpl)latestGraphLatestVersionOptional.get().value();
 			}
-		} else {
-			for (SememeVersion<?> version : defChronologyOptional.get().getVersionList()) {
-				LogicGraphSememeImpl logicGraphSememe = (LogicGraphSememeImpl) version;
-				if (logicGraphSememe.getVersionSequence() == sememeVersionSequence) {
-					return logicGraphSememe;
-				}
-			}
-
-			String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " relationship LogicGraph found for " + Get.conceptDescriptionText(conceptId) + " for specified logicGraph sememe version sequence " + sememeVersionSequence;
-			AppContext.getCommonDialogs().showErrorDialog("Missing LogicGraph", "Specified LogicGraph version not found", error);
-
-			return null;
 		}
 	}
 	
 	private LogicalExpression loadData() {
-		cachedLogicGraphSememe = loadLogicGraphSememe(specifiedLogicGraphSememeVersionSequence);
+		cachedLogicGraphSememe = loadLogicGraphSememe(specifiedLogicGraphSememe);
 	
 		if (cachedLogicGraphSememe == null) {
 			return null;
@@ -418,7 +407,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		logicalExpressionTreeGraph.getChildren().clear();
 
 		if (le != null) {
-			if (specifiedLogicGraphSememeVersionSequence == null) { 
+			if (specifiedLogicGraphSememe == null) { 
 				title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
 			} else {
 				title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")");
@@ -443,60 +432,30 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		}
 	}
 
-	@Override
-	public void setConcept(int conceptNid, short sememeVersionSequence) {
-		setConcept(conceptNid, Short.valueOf(sememeVersionSequence));
-	}
+
 	@Override
 	public void setConcept(int id) {
-		setConcept(id, (Short)null);
-	}
-	private void setConcept(int id, Short versionSequence) {
-		if ((conceptId != null && conceptId != id) || versionSequence != specifiedLogicGraphSememeVersionSequence) {
+		if ((conceptId != null && conceptId != id) || specifiedLogicGraphSememe != null) {
 			clear();
 		}
 
-		specifiedLogicGraphSememeVersionSequence = versionSequence;
+		specifiedLogicGraphSememe = null;
 		conceptId = id;
 		
 		init();
 		
 		refresh();
 	}
-	
 	@Override
-	public void setConcept(UUID uuid) {
-		uuid.getClass(); // Throw NPE if null
-		Utility.execute(() -> setConcept(Get.identifierService().getConceptSequenceForUuids(uuid)));
-	}
-	
-	@Override
-	public void setConcept(
-			TaxonomyCoordinate taxonomyCoordinate,
-			int componentNid) {
-		setConcept(taxonomyCoordinate, componentNid, (Short)null);
-	}
-	@Override
-	public void setConcept(
-			TaxonomyCoordinate taxonomyCoordinate,
-			int componentNid, short sememeVersionSequence) {
-		setConcept(taxonomyCoordinate, componentNid, Short.valueOf(sememeVersionSequence));
-	}
-	public void setConcept(
-			TaxonomyCoordinate taxonomyCoordinate,
-			int componentNid, Short sememeVersionSequence) {
-		if (passedObservableTaxonomyCoordinateProperty.get() != null) {
-			unbindFromPassedObservableTaxonomyCoordinate();
-		}
-		passedObservableTaxonomyCoordinateProperty.set(null);
+	public void setConcept(LogicGraphSememe<?> specifiedLogicGraphSememe) {
+		clear();
+
+		this.specifiedLogicGraphSememe = specifiedLogicGraphSememe;
+		conceptId = specifiedLogicGraphSememe.getReferencedComponentNid();
 		
-		this.taxonomyCoordinate.get().languageCoordinateProperty().set(new ObservableLanguageCoordinateImpl(taxonomyCoordinate.getLanguageCoordinate()));
-		this.taxonomyCoordinate.get().stampCoordinateProperty().set(new ObservableStampCoordinateImpl(taxonomyCoordinate.getStampCoordinate()));
-		this.taxonomyCoordinate.get().logicCoordinateProperty().set(new ObservableLogicCoordinateImpl(taxonomyCoordinate.getLogicCoordinate()));
-		this.taxonomyCoordinate.get().premiseTypeProperty().set(taxonomyCoordinate.getTaxonomyType());
-		this.taxonomyCoordinate.get().uuidProperty().set(taxonomyCoordinate.getUuid());
+		init();
 		
-		setConcept(componentNid, sememeVersionSequence);
+		refresh();
 	}
 
 	private void unbindFromPassedObservableTaxonomyCoordinate() {
@@ -508,17 +467,43 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	}
 
 	@Override
-	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
-			int componentNid) {
-		setConcept(taxonomyCoordinate, componentNid, (Short)null);
+	public void setConcept(
+			TaxonomyCoordinate taxonomyCoordinate,
+			LogicGraphSememe<?> specifiedLogicGraphSememe) {
+		if (passedObservableTaxonomyCoordinateProperty.get() != null) {
+			unbindFromPassedObservableTaxonomyCoordinate();
+		}
+		passedObservableTaxonomyCoordinateProperty.set(null);
+		
+		this.taxonomyCoordinate.get().languageCoordinateProperty().set(new ObservableLanguageCoordinateImpl(taxonomyCoordinate.getLanguageCoordinate()));
+		this.taxonomyCoordinate.get().stampCoordinateProperty().set(new ObservableStampCoordinateImpl(taxonomyCoordinate.getStampCoordinate()));
+		this.taxonomyCoordinate.get().logicCoordinateProperty().set(new ObservableLogicCoordinateImpl(taxonomyCoordinate.getLogicCoordinate()));
+		this.taxonomyCoordinate.get().premiseTypeProperty().set(taxonomyCoordinate.getTaxonomyType());
+		this.taxonomyCoordinate.get().uuidProperty().set(taxonomyCoordinate.getUuid());
+		
+		setConcept(specifiedLogicGraphSememe);
 	}
 	@Override
-	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
-			int componentNid, short sememeSequenceVersion) {
-		setConcept(taxonomyCoordinate, componentNid, Short.valueOf(sememeSequenceVersion));
+	public void setConcept(
+			TaxonomyCoordinate taxonomyCoordinate,
+			int componentNid) {
+		if (passedObservableTaxonomyCoordinateProperty.get() != null) {
+			unbindFromPassedObservableTaxonomyCoordinate();
+		}
+		passedObservableTaxonomyCoordinateProperty.set(null);
+		
+		this.taxonomyCoordinate.get().languageCoordinateProperty().set(new ObservableLanguageCoordinateImpl(taxonomyCoordinate.getLanguageCoordinate()));
+		this.taxonomyCoordinate.get().stampCoordinateProperty().set(new ObservableStampCoordinateImpl(taxonomyCoordinate.getStampCoordinate()));
+		this.taxonomyCoordinate.get().logicCoordinateProperty().set(new ObservableLogicCoordinateImpl(taxonomyCoordinate.getLogicCoordinate()));
+		this.taxonomyCoordinate.get().premiseTypeProperty().set(taxonomyCoordinate.getTaxonomyType());
+		this.taxonomyCoordinate.get().uuidProperty().set(taxonomyCoordinate.getUuid());
+		
+		setConcept(componentNid);
 	}
-	private void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
-			int componentNid, Short sememeSequenceVersion) {
+
+	@Override
+	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
+			int componentNid) {
 		if (passedObservableTaxonomyCoordinateProperty.get() != null) {
 			unbindFromPassedObservableTaxonomyCoordinate();
 		}
@@ -530,9 +515,31 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		this.taxonomyCoordinate.get().premiseTypeProperty().bind(taxonomyCoordinate.premiseTypeProperty());
 		this.taxonomyCoordinate.get().uuidProperty().bind(taxonomyCoordinate.uuidProperty());
 		
-		setConcept(componentNid, sememeSequenceVersion);
+		setConcept(componentNid);	
+	}
+	@Override
+	public void setConcept(ObservableTaxonomyCoordinate taxonomyCoordinate,
+			LogicGraphSememe<?> specifiedLogicGraphSememe) {
+		if (passedObservableTaxonomyCoordinateProperty.get() != null) {
+			unbindFromPassedObservableTaxonomyCoordinate();
+		}
+		passedObservableTaxonomyCoordinateProperty.set(taxonomyCoordinate);
+		
+		this.taxonomyCoordinate.get().languageCoordinateProperty().bind(taxonomyCoordinate.languageCoordinateProperty());
+		this.taxonomyCoordinate.get().stampCoordinateProperty().bind(taxonomyCoordinate.stampCoordinateProperty());
+		this.taxonomyCoordinate.get().logicCoordinateProperty().bind(taxonomyCoordinate.logicCoordinateProperty());
+		this.taxonomyCoordinate.get().premiseTypeProperty().bind(taxonomyCoordinate.premiseTypeProperty());
+		this.taxonomyCoordinate.get().uuidProperty().bind(taxonomyCoordinate.uuidProperty());
+		
+		setConcept(specifiedLogicGraphSememe);
 	}
 
+	@Override
+	public void setConcept(UUID uuid) {
+		uuid.getClass(); // Throw NPE if null
+		Utility.execute(() -> setConcept(Get.identifierService().getConceptSequenceForUuids(uuid)));
+	}
+	
 	@Override
 	public void setConcept(
 			TaxonomyCoordinate taxonomyCoordinate,
@@ -550,7 +557,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	@Override
 	public void clear() {
 		cachedLogicGraphSememe = null;
-		specifiedLogicGraphSememeVersionSequence = null;
+		specifiedLogicGraphSememe = null;
 		if (logicalExpressionTreeGraph != null) {
 			logicalExpressionTreeGraph.getChildren().clear();
 			logicalExpressionTreeGraph.setRootNode(null);
@@ -577,7 +584,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		for (SememeVersion<?> version : defChronologyOptional.get().getVersionList()) {
 			LogicalExpressionTreeGraphEmbeddableViewI embeddableView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
 
-			embeddableView.setConcept(taxonomyCoordinate.get(), conceptId, ((LogicGraphSememeImpl)version).getVersionSequence());
+			embeddableView.setConcept(taxonomyCoordinate.get(), (LogicGraphSememe<?>)version);
 			
 			if (embeddableView.getLogicGraphSememe() != null) {
 				historicalViews.add(embeddableView);
