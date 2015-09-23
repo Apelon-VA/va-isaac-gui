@@ -912,7 +912,8 @@ public class SememeView implements SememeViewI
 						}
 						else
 						{
-							throw e;
+							//TODO need to figure out how to handle the case where the thing they click on isn't used as an assemblage, and isn't a dynamic assemblage
+							throw new RuntimeException("Keyword", e);  //HACK alert (look in the catch)
 						}
 					}
 					for (DynamicSememeColumnInfo col : rdud.getColumnInfo())
@@ -1226,10 +1227,26 @@ public class SememeView implements SememeViewI
 			}
 			catch (Exception e)
 			{
-				logger_.error("Unexpected error building the sememe display", e);
-				//null check, as the error may happen before the scene is visible
-				AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the sememe display", e.getMessage(), 
-						(rootNode_.getScene() == null ? null : rootNode_.getScene().getWindow()));
+				if (e.getMessage().equals("Keyword"))
+				{
+					logger_.info("The specified concept is not specified correctly as a dynamic sememe, and is not utilized as a static sememe", e);
+					Platform.runLater(() ->
+					{
+						addButton_.setDisable(true);
+						treeRoot_.getChildren().clear();
+						summary_.setText(0 + " entries");
+						placeholderText.setText("The specified concept is not specified correctly as a dynamic sememe, and is not utilized as a static sememe");
+						ttv_.setPlaceholder(placeholderText);
+						ttv_.getSelectionModel().clearSelection();
+					});
+				}
+				else
+				{
+					logger_.error("Unexpected error building the sememe display", e);
+					//null check, as the error may happen before the scene is visible
+					AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the sememe display", e.getMessage(), 
+							(rootNode_.getScene() == null ? null : rootNode_.getScene().getWindow()));
+				}
 			}
 			finally
 			{
