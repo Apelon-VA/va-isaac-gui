@@ -18,25 +18,6 @@
  */
 package gov.va.isaac.gui.searchview;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.function.Consumer;
-import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
-import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
-import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableListWrapper;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
@@ -70,6 +51,19 @@ import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.util.Interval;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
@@ -108,6 +102,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableListWrapper;
 
 
 /**
@@ -144,12 +144,13 @@ public class SearchViewController implements TaskCompleteCallback
 
 	private final BooleanProperty searchRunning = new SimpleBooleanProperty(false);
 	private SearchHandle ssh = null;
-	private ConceptNode searchInRefex;
+	private ConceptNode searchInDynamicSememe;
+	private ConceptNode searchInSememe;
 	private ObservableList<SimpleDisplayConcept> dynamicRefexList_ = new ObservableListWrapper<>(new ArrayList<>());
 	private Tooltip tooltip = new Tooltip();
 	private Integer currentlyEnteredAssemblageSequence = null;
 	private FlowPane searchInColumnsHolder = new FlowPane();
-	private enum SearchInOptions {Descriptions, Sememes};
+	private enum SearchInOptions {Descriptions, Sememes, DynamicSememes};
 	private ArrayList<Consumer<IndexServiceBI>> changeNotificationConsumers_ = new ArrayList<>();
 	private SimpleBooleanProperty displayIndexConfigMenu_ = new SimpleBooleanProperty(false);
 
@@ -179,6 +180,23 @@ public class SearchViewController implements TaskCompleteCallback
 		
 		searchIn.getItems().add(SearchInOptions.Descriptions);
 		searchIn.getItems().add(SearchInOptions.Sememes);
+		searchIn.getItems().add(SearchInOptions.DynamicSememes);
+		searchIn.setConverter(new StringConverter<SearchInOptions>()
+		{
+			@Override
+			public String toString(SearchInOptions object)
+			{
+				return (object == SearchInOptions.DynamicSememes ? "Dynamic Sememes" : object.toString());
+			}
+
+			@Override
+			public SearchInOptions fromString(String string)
+			{
+				// never used
+				return null;
+			}
+		}); 
+
 		searchIn.getSelectionModel().select(0);
 		
 		tooltip.setText("Enter the description text to search for.  Advanced query syntax such as 'AND', 'NOT' is supported.  You may also enter UUIDs for concepts.");
@@ -197,29 +215,57 @@ public class SearchViewController implements TaskCompleteCallback
 				optionsContentVBox.getChildren().remove(searchInRefexHBox);
 				optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 				optionsContentVBox.getChildren().add(searchInDescriptionHBox);
-				searchInRefex.clear();  //make sure an invalid state here doesn't prevent the search, when the field is hidden.
+				searchInDynamicSememe.clear();  //make sure an invalid state here doesn't prevent the search, when the field is hidden.
 			}
-			else
+			else if (searchIn.getSelectionModel().getSelectedItem() == SearchInOptions.DynamicSememes)
 			{
-				tooltip.setText("Enter the sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
+				tooltip.setText("Enter the dynamic sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
 						+ "are indexed as string values.  For numeric values, mathematical interval syntax is supported - such as [4,6] or (-5,10]."
 						+ "  You may also search for 1 or more UUIDs and/or NIDs.");
 				optionsContentVBox.getChildren().remove(searchInDescriptionHBox);
-				optionsContentVBox.getChildren().add(searchInRefexHBox);
+				searchInRefexHBox.getChildren().remove(searchInSememe.getNode());
+				if (!searchInRefexHBox.getChildren().contains(searchInDynamicSememe.getNode()))
+				{
+					searchInRefexHBox.getChildren().add(searchInDynamicSememe.getNode());
+				}
+				if (!optionsContentVBox.getChildren().contains(searchInRefexHBox))
+				{
+					optionsContentVBox.getChildren().add(searchInRefexHBox);
+				}
 				if (searchInColumnsHolder.getChildren().size() > 0)
 				{
 					optionsContentVBox.getChildren().add(searchInColumnsHolder);
 				}
 			}
+			else if (searchIn.getSelectionModel().getSelectedItem() == SearchInOptions.Sememes)
+			{
+				tooltip.setText("Enter the sememe value to search for.  Advanced query syntax such as 'AND', 'NOT', 'OR' is supported for sememe data fields that "
+						+ "are indexed as string values.");
+				optionsContentVBox.getChildren().remove(searchInDescriptionHBox);
+				searchInRefexHBox.getChildren().remove(searchInDynamicSememe.getNode());
+				optionsContentVBox.getChildren().remove(searchInColumnsHolder);
+				if (!searchInRefexHBox.getChildren().contains(searchInSememe.getNode()))
+				{
+					searchInRefexHBox.getChildren().add(searchInSememe.getNode());
+				}
+				if (!optionsContentVBox.getChildren().contains(searchInRefexHBox))
+				{
+					optionsContentVBox.getChildren().add(searchInRefexHBox);
+				}
+			}
+			else
+			{
+				throw new RuntimeException("oops");
+			}
 		});
 		
-		searchInRefex = new ConceptNode(null, false, dynamicRefexList_, null);
-		searchInRefex.getConceptProperty().addListener(new InvalidationListener()
+		searchInDynamicSememe = new ConceptNode(null, false, dynamicRefexList_, null);
+		searchInDynamicSememe.getConceptProperty().addListener(new InvalidationListener()
 		{
 			@Override
 			public void invalidated(Observable observable)
 			{
-				ConceptSnapshot newValue = searchInRefex.getConceptProperty().get();
+				ConceptSnapshot newValue = searchInDynamicSememe.getConceptProperty().get();
 				if (newValue != null)
 				{
 					searchInColumnsHolder.getChildren().clear();
@@ -231,7 +277,7 @@ public class SearchViewController implements TaskCompleteCallback
 						Integer[] indexedColumns = DynamicSememeIndexerConfiguration.readIndexInfo(currentlyEnteredAssemblageSequence);
 						if (indexedColumns == null || indexedColumns.length == 0)
 						{
-							searchInRefex.isValid().setInvalid("Sememe searches can only be performed on indexed columns in the sememe.  The selected "
+							searchInDynamicSememe.isValid().setInvalid("Sememe searches can only be performed on indexed columns in the sememe.  The selected "
 									+ "sememe does not contain any indexed data columns.  Please configure the indexes to search this sememe.");
 							optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 						}
@@ -271,7 +317,7 @@ public class SearchViewController implements TaskCompleteCallback
 							}
 							else
 							{
-								searchInRefex.isValid().setInvalid("Sememe searches can only be performed on the data in the sememe.  The selected "
+								searchInDynamicSememe.isValid().setInvalid("Sememe searches can only be performed on the data in the sememe.  The selected "
 										+ "sememe does not contain any data columns.");
 								optionsContentVBox.getChildren().remove(searchInColumnsHolder);
 							}
@@ -279,7 +325,7 @@ public class SearchViewController implements TaskCompleteCallback
 					}
 					catch (Exception e1)
 					{
-						searchInRefex.isValid().setInvalid("Sememe searches can only be limited to valid Dynamic Sememe Assemblage concept types."
+						searchInDynamicSememe.isValid().setInvalid("Sememe searches can only be limited to valid Dynamic Sememe Assemblage concept types."
 								+ "  The current value is not a Dynamic Sememe Assemblage concept.");
 						LOG.debug("Exception while checking is sememe concept field in search box was a dynamic sememe", e1);
 						displayIndexConfigMenu_.set(false);
@@ -298,10 +344,28 @@ public class SearchViewController implements TaskCompleteCallback
 			}
 		});
 		
+		searchInSememe = new ConceptNode(null, false);
+		searchInSememe.getConceptProperty().addListener(new InvalidationListener()
+		{
+			@Override
+			public void invalidated(Observable observable)
+			{
+				ConceptSnapshot newValue = searchInSememe.getConceptProperty().get();
+				if (newValue != null)
+				{
+					currentlyEnteredAssemblageSequence = newValue.getConceptSequence();
+				}
+				else
+				{
+					currentlyEnteredAssemblageSequence = null;
+				}
+			}
+		});
+		
 		MenuItem configureIndex =  new MenuItem("Configure Sememe Indexing");
 		configureIndex.setOnAction((action) ->
 		{
-			ConceptSnapshot c = searchInRefex.getConceptProperty().get();
+			ConceptSnapshot c = searchInDynamicSememe.getConceptProperty().get();
 			if (c != null)
 			{
 				new ConfigureDynamicRefexIndexingView(c.getNid()).showView(null);
@@ -309,7 +373,7 @@ public class SearchViewController implements TaskCompleteCallback
 		});
 		configureIndex.setGraphic(Images.CONFIGURE.createImageView());
 		configureIndex.visibleProperty().bind(displayIndexConfigMenu_);
-		searchInRefex.addMenu(configureIndex);
+		searchInDynamicSememe.addMenu(configureIndex);
 		
 		searchLimit.setConverter(new StringConverter<Integer>()
 		{
@@ -335,8 +399,9 @@ public class SearchViewController implements TaskCompleteCallback
 		searchLimit.getItems().add(Integer.MAX_VALUE);
 		searchLimit.getSelectionModel().select(0);
 		
-		searchInRefexHBox.getChildren().add(searchInRefex.getNode());
-		HBox.setHgrow(searchInRefex.getNode(), Priority.ALWAYS);
+		searchInRefexHBox.getChildren().add(searchInDynamicSememe.getNode());
+		HBox.setHgrow(searchInDynamicSememe.getNode(), Priority.ALWAYS);
+		HBox.setHgrow(searchInSememe.getNode(), Priority.ALWAYS);
 		
 		descriptionTypeSelection.getItems().add(new SimpleDisplayConcept("All", Integer.MIN_VALUE));
 		descriptionTypeSelection.getItems().add(new SimpleDisplayConcept("Fully Specified Name", LuceneDescriptionType.FSN.ordinal()));
@@ -563,7 +628,7 @@ public class SearchViewController implements TaskCompleteCallback
 			@Override
 			protected boolean computeValue()
 			{
-				if ((searchIn.getValue() == SearchInOptions.Sememes && searchText.getText().length() > 0) || searchText.getText().length() > 1)
+				if ((searchIn.getValue() == SearchInOptions.DynamicSememes && searchText.getText().length() > 0) || searchText.getText().length() > 1)
 				{
 					return true;
 				}
@@ -575,7 +640,7 @@ public class SearchViewController implements TaskCompleteCallback
 		};
 		
 		searchProgress.visibleProperty().bind(searchRunning);
-		searchButton.disableProperty().bind(searchTextValid.not().or(searchInRefex.isValid().not()));
+		searchButton.disableProperty().bind(searchTextValid.not().or(searchInDynamicSememe.isValid().not()));
 
 		// Perform search or cancel when button pressed.
 		searchButton.setOnAction(new EventHandler<ActionEvent>()
@@ -638,7 +703,7 @@ public class SearchViewController implements TaskCompleteCallback
 					if (t.getIndexerName().equals(DynamicSememeIndexer.INDEX_NAME))
 					{
 						//swap the concept in and out, to fire our change listener, so we recheck if the referenced concept is configured in a valid way.
-						searchInRefex.revalidate();
+						searchInDynamicSememe.revalidate();
 					}
 				});
 			}
@@ -650,7 +715,7 @@ public class SearchViewController implements TaskCompleteCallback
 		//delay this
 		if (dynamicRefexList_.size() == 0)
 		{
-			populateDynamicRefexList();
+			populateDynamicSememeList();
 		}
 		if (descriptionTypeSelection.getItems().size() == 5)
 		{
@@ -783,14 +848,14 @@ public class SearchViewController implements TaskCompleteCallback
 						null, null, null, true, false);
 				}
 			}
-			else
+			else if (searchIn.getValue() == SearchInOptions.DynamicSememes)
 			{
 				String searchString = searchText.getText().trim();
 				try
 				{
 					DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseUnknown(searchString));
 					LOG.debug("Doing a sememe search with a numeric value");
-					ssh = SearchHandler.dynamicRefexSearch((indexer) ->
+					ssh = SearchHandler.dynamicSememeSearch((indexer) ->
 					{
 						try
 						{
@@ -810,7 +875,7 @@ public class SearchViewController implements TaskCompleteCallback
 					{
 						Interval interval = new Interval(searchString);
 						LOG.debug("Doing a sememe search with an interval value");
-						ssh = SearchHandler.dynamicRefexSearch((indexer) ->
+						ssh = SearchHandler.dynamicSememeSearch((indexer) ->
 						{
 							try
 							{
@@ -829,7 +894,7 @@ public class SearchViewController implements TaskCompleteCallback
 					{
 						//run it as a string search
 						LOG.debug("Doing a sememe search as a string search");
-						ssh = SearchHandler.dynamicRefexSearch((indexer) ->
+						ssh = SearchHandler.dynamicSememeSearch((indexer) ->
 						{
 							try
 							{
@@ -845,6 +910,18 @@ public class SearchViewController implements TaskCompleteCallback
 					}
 				}
 			}
+			else if (searchIn.getValue() == SearchInOptions.Sememes)
+			{
+				//run it as a string search
+				LOG.debug("Doing a sememe search as a string search");
+				ssh = SearchHandler.sememeSearch(searchText.getText(), searchLimit.getValue(), currentlyEnteredAssemblageSequence,
+						((searchHandle) -> {taskComplete(searchHandle.getSearchStartTime(), searchHandle.getTaskId());}),
+				null, null, null, true, false);
+			}
+			else
+			{
+				throw new RuntimeException("oops");
+			}
 		}
 		catch (Exception e)
 		{
@@ -855,7 +932,7 @@ public class SearchViewController implements TaskCompleteCallback
 	}
 	
 	//TODO (artf231420) a listener to trigger this after a user makes a new one...
-	private void populateDynamicRefexList()
+	private void populateDynamicSememeList()
 	{
 		Task<Void> t = new Task<Void>()
 		{

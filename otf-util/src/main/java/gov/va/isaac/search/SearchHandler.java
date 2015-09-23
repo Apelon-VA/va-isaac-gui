@@ -46,6 +46,7 @@ import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
 import org.ihtsdo.otf.query.lucene.LuceneIndexer;
 import org.ihtsdo.otf.query.lucene.indexers.DescriptionIndexer;
 import org.ihtsdo.otf.query.lucene.indexers.DynamicSememeIndexer;
+import org.ihtsdo.otf.query.lucene.indexers.SememeIndexer;
 import org.ihtsdo.otf.tcc.api.blueprint.ComponentProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -437,7 +438,7 @@ public class SearchHandler
 	 *   out that are not on THE CURRENT COORDINATE configuration 
 	 * @return A handle to the running search.
 	 */
-	public static SearchHandle dynamicRefexSearch(
+	public static SearchHandle dynamicSememeSearch(
 			Function<DynamicSememeIndexer, List<SearchResult>> searchFunction,
 			final Consumer<SearchHandle> operationToRunWhenSearchComplete, 
 			final Integer taskId, 
@@ -468,40 +469,8 @@ public class SearchHandler
 					{
 						
 						List<SearchResult> searchResults = searchFunction.apply(refexIndexer);
-
 						LOG.debug(searchResults.size() + " results");
-
-						if (searchResults.size() > 0)
-						{
-							// Compute the max score of all results.
-							float maxScore = 0.0f;
-							for (SearchResult searchResult : searchResults)
-							{
-								float score = searchResult.getScore();
-								if (score > maxScore)
-								{
-									maxScore = score;
-								}
-							}
-
-							for (SearchResult searchResult : searchResults)
-							{
-								// Abort if search has been cancelled.
-								if (searchHandle.isCancelled())
-								{
-									break;
-								}
-
-								// Get the match object.
-								Optional<? extends ObjectChronology<? extends StampedVersion>> io = Get.identifiedObjectService()
-										.getIdentifiedObjectChronology(searchResult.getNid());
-								// normalize the scores between 0 and 1
-								float normScore = (searchResult.getScore() / maxScore);
-								CompositeSearchResult csr = (io.isPresent() ? new CompositeSearchResult(io.get(), normScore) :
-									new CompositeSearchResult(searchResult.getNid(), normScore));
-								initialSearchResults.add(csr);
-							}
-						}
+						initialSearchResults = normalizeScores(searchResults, searchHandle);
 					}
 
 					// sort, filter and merge the results as necessary
@@ -557,7 +526,7 @@ public class SearchHandler
 			boolean mergeOnConcepts, 
 			boolean includeOffPathResults)
 	{
-		return dynamicRefexSearch(index -> 
+		return dynamicSememeSearch(index -> 
 			{
 				try
 				{
@@ -568,6 +537,165 @@ public class SearchHandler
 					throw new RuntimeException(e);
 				}
 			}, operationToRunWhenSearchComplete, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults);
+	}
+	
+	/**
+	 * Execute a Query against the sememe indexes in a background thread, hand back a handle to the search object which will 
+	 * allow you to get the results (when they are ready) and also cancel an in-progress query.
+	 * 
+	 * If there is a problem with the internal indexes - an error will be logged, and the exception will be re-thrown when the 
+	 * {@link SearchHandle#getResults()} method of the SearchHandle is called.
+	 * 
+	 * This is really just a convenience wrapper with threading and results conversion on top of the APIs available in {@link SememeIndexer}
+	 * 
+	 * @param searchFunction A function that will call one of the query(...) methods within {@link SememeIndexer}.  See
+	 * that class for documentation on the various search types supported.
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
+	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
+	 *   requests to this method with callbacks.
+	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
+	 * @param comparator - The comparator to use for sorting the results
+	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
+	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
+	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
+	 * @return A handle to the running search.
+	 */
+	public static SearchHandle sememeSearch(
+			Function<SememeIndexer, List<SearchResult>> searchFunction,
+			final Consumer<SearchHandle> operationToRunWhenSearchComplete, 
+			final Integer taskId, 
+			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
+			Comparator<CompositeSearchResult> comparator,
+			boolean mergeOnConcepts,
+			boolean includeOffPathResults)
+	{
+		final SearchHandle searchHandle = new SearchHandle(taskId);
+		
+		// Do search in background.
+		Runnable r = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				try
+				{
+					List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
+					SememeIndexer refexIndexer = AppContext.getService(SememeIndexer.class);
+					
+					if (refexIndexer == null)
+					{
+						LOG.warn("No sememe indexer found, aborting.");
+						searchHandle.setError(new Exception("No sememe indexer available, cannot search"));
+					}
+					else
+					{
+						List<SearchResult> searchResults = searchFunction.apply(refexIndexer);
+
+						LOG.debug(searchResults.size() + " results");
+						initialSearchResults = normalizeScores(searchResults, searchHandle);
+					}
+
+					// sort, filter and merge the results as necessary
+					processResults(searchHandle, initialSearchResults, filter, comparator, mergeOnConcepts, includeOffPathResults);
+				}
+				catch (Exception ex)
+				{
+					LOG.error("Unexpected error during lucene search", ex);
+					searchHandle.setError(ex);
+				}
+				if (operationToRunWhenSearchComplete != null)
+				{
+					operationToRunWhenSearchComplete.accept(searchHandle);
+				}
+			}
+		};
+
+		Utility.execute(r);
+		return searchHandle;
+	}
+	
+	/**
+	 * A convenience wrapper for {@link #sememeSearch(Function, TaskCompleteCallback, Integer, Function, Comparator, boolean)}
+	 * which builds a function that handles basic string searches.
+	 * 
+	 * @param searchString - The value to search for within the refex index
+	 * @param resultLimit - cap the number of results
+	 * @param assemblageNid - (optional) limit the search to the specified assemblage type, or all assemblage objects (if null)
+	 * @param operationToRunWhenSearchComplete - (optional) Pass the function that you want to have executed when the search is complete and the results 
+	 * are ready for use.  Note that this function will also be executed in the background thread.
+	 * @param taskId - An optional field that is simply handed back during the callback when results are complete.  Useful for matching 
+	 *   requests to this method with callbacks.
+	 * @param filter - An optional filter than can add or remove items from the tentative result set before it is returned.
+	 * @param comparator - The comparator to use for sorting the results
+	 * @param mergeOnConcepts - If true, when multiple description objects within the same concept match the search, this will be returned 
+	 *   as a single result representing the concept - with each matching string listed, and the score being the best score of any of the 
+	 *   matching strings.  When false, you will get one search result per description match - so concepts can be returned multiple times.
+	 * @param includeOffPathResults - true to give back results for all hits (which may have unresolvable concepts) or false to filter those
+	 *   out that are not on THE CURRENT COORDINATE configuration 
+	 * @return A handle to the running search.
+	 */
+	public static SearchHandle sememeSearch(
+			String searchString, 
+			int resultLimit,
+			Integer assemblageNid,
+			Consumer<SearchHandle> operationToRunWhenSearchComplete,
+			final Integer taskId, 
+			final Function<List<CompositeSearchResult>, List<CompositeSearchResult>> filter,
+			Comparator<CompositeSearchResult> comparator,
+			boolean mergeOnConcepts, 
+			boolean includeOffPathResults)
+	{
+		return sememeSearch(index -> 
+			{
+				try
+				{
+					return index.query(searchString, assemblageNid, resultLimit, Long.MIN_VALUE);
+				}
+				catch (Exception e)
+				{
+					throw new RuntimeException(e);
+				}
+			}, operationToRunWhenSearchComplete, taskId, filter, comparator, mergeOnConcepts, includeOffPathResults);
+	}
+	
+	private static List<CompositeSearchResult> normalizeScores(List<SearchResult> searchResults, SearchHandle searchHandle)
+	{
+		List<CompositeSearchResult> initialSearchResults = new ArrayList<>();
+		if (searchResults.size() > 0)
+		{
+			// Compute the max score of all results.
+			float maxScore = 0.0f;
+			for (SearchResult searchResult : searchResults)
+			{
+				float score = searchResult.getScore();
+				if (score > maxScore)
+				{
+					maxScore = score;
+				}
+			}
+
+			for (SearchResult searchResult : searchResults)
+			{
+				// Abort if search has been cancelled.
+				if (searchHandle.isCancelled())
+				{
+					break;
+				}
+
+				// Get the match object.
+				Optional<? extends ObjectChronology<? extends StampedVersion>> io = Get.identifiedObjectService()
+						.getIdentifiedObjectChronology(searchResult.getNid());
+				// normalize the scores between 0 and 1
+				float normScore = (searchResult.getScore() / maxScore);
+				CompositeSearchResult csr = (io.isPresent() ? new CompositeSearchResult(io.get(), normScore) :
+					new CompositeSearchResult(searchResult.getNid(), normScore));
+				initialSearchResults.add(csr);
+			}
+		}
+		return initialSearchResults;
 	}
 	
 	private static void processResults(SearchHandle searchHandle, List<CompositeSearchResult> rawResults, 
@@ -636,4 +764,5 @@ public class SearchHandler
 		
 		searchHandle.setResults(rawResults);
 	}
+
 }
