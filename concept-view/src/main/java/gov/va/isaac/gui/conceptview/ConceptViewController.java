@@ -93,6 +93,10 @@ import java.util.function.Function;
 
 
 
+
+
+
+
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -115,7 +119,9 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -148,8 +154,16 @@ import javafx.util.StringConverter;
 
 
 
+
+
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+
+
 
 
 
@@ -183,6 +197,9 @@ public class ConceptViewController {
 	@FXML private AnchorPane	footerPane;
 	@FXML private GridPane		headerGridPane;
 	@FXML private VBox			relationshipsVBox;
+	@FXML private ScrollPane	relationshipsPane;
+	@FXML private ProgressIndicator	relationshipsProgress;
+	@FXML private StackPane		relationshipsStackPane;
 	
 	@FXML private TableView<ConceptDescription> descriptionTableView;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionTypeTableColumn;
@@ -226,6 +243,8 @@ public class ConceptViewController {
 	private ObjectProperty<ConceptChronology<? extends StampedVersion>> conceptChronologyProperty = new SimpleObjectProperty<ConceptChronology<? extends StampedVersion>>();
 	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
 
+	private final ProgressBar genericProgressBar = new ProgressBar(-1.0);
+
 	// TODO should modules be displayed and selectable that are off path of panel coordinates?
 	//private ReadOnlyObjectProperty<StampCoordinate> panelStampCoordinateProperty;
 	//private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
@@ -260,13 +279,16 @@ public class ConceptViewController {
 		assert descriptionsPane 			!= null : "fx:id=\"descriptionsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert headerGridPane 				!= null : "fx:id=\"headerGridPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert relationshipsVBox			!= null : "fx:id=\"relationshipsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsPane			!= null : "fx:id=\"relationshipsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsProgress		!= null : "fx:id=\"relationshipsProgress\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsStackPane		!= null : "fx:id=\"relationshipsStackPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert conceptLabel 			!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert conceptLabel 				!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
-		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert modulesComboBox 			!= null : "fx:id=\"modulesComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert uuidsVBox 			!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert statusComboBox 				!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert modulesComboBox 				!= null : "fx:id=\"modulesComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert uuidsVBox 					!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert duplicateDescriptionButton 	!= null : "fx:id=\"editDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -287,6 +309,8 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(panelPreferencesPopupButton, 	Images.CONFIGURE.createImageView(), 		"Panel Preferences");
 		FxUtils.assignImageToButton(panelVsGlobalPreferencesToggleButton, 	Images.CONFIGURE.createImageView(), "Use Local Preferences");
 
+		genericProgressBar.setMinWidth(100.0);
+		
 		setColumnWidths();
 		setupPreferences();
 		setupColumnTypes();
@@ -498,7 +522,8 @@ public class ConceptViewController {
 	}
 
 	private void setupRelationshipsView() {
-		// TODO Make this work
+		relationshipsPane.prefHeightProperty().bind(relationshipsStackPane.heightProperty());
+		relationshipsPane.prefWidthProperty().bind(relationshipsStackPane.widthProperty());
 		relationshipsView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
 		relationshipsVBox.getChildren().add(relationshipsView.getView());
 	}
@@ -566,10 +591,17 @@ public class ConceptViewController {
 		Utility.execute(task);
 	}
 	public void setConcept(UUID conceptUuid) {
-		Utility.execute(() -> {
-			ConceptChronology<?> concept = Get.conceptService().getConcept(conceptUuid);
-			setConcept(concept.getConceptSequence());
-		});
+		Task<Integer> task = new Task<Integer>() {
+			@Override
+			protected Integer call() throws Exception {
+				return Get.conceptService().getConcept(conceptUuid).getConceptSequence();
+			}
+			@Override 
+			protected void succeeded() {
+				setConcept(getValue());
+			}
+		};
+		Utility.execute(task);
 	}
 	
 	private void refresh() {
@@ -637,11 +669,14 @@ public class ConceptViewController {
 	
 	private void setupConceptLabel() {
 		conceptLabel.setPadding(new Insets(10,0,10,10));
+		conceptLabel.setGraphic(genericProgressBar);
+		
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				conceptLabel.setGraphic(genericProgressBar);
 				if (newValue != null) {
 					Task<String> task = new Task<String>() {
 						@Override
@@ -652,6 +687,7 @@ public class ConceptViewController {
 						@Override
 						public void succeeded() {
 							Platform.runLater(() -> {
+								conceptLabel.setGraphic(null);
 								conceptLabel.setText(getValue());
 								conceptLabel.setContextMenu(null);
 								if (conceptLabel.getText() != null) {
@@ -722,6 +758,7 @@ public class ConceptViewController {
 
 					Utility.execute(task);
 				} else {
+					conceptLabel.setGraphic(null);
 					conceptLabel.setText("Drop a concept here");
 				}
 			}
@@ -806,6 +843,7 @@ public class ConceptViewController {
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				conceptCodeLabel.setGraphic(genericProgressBar);
 				Platform.runLater(() -> loadConceptCodeFromConcept(newValue));
 			}
 		});
@@ -822,6 +860,7 @@ public class ConceptViewController {
 
 				@Override
 				protected void succeeded() {
+					conceptCodeLabel.setGraphic(null);
 					conceptCodeLabel.setText(getValue().isPresent() ? getValue().get().toString() : null);
 					conceptCodeLabel.setContextMenu(null);
 					if (conceptCodeLabel.getText() != null) {
@@ -842,11 +881,15 @@ public class ConceptViewController {
 	}
 	
 	private void setupUuidsVBox() {
+		uuidsVBox.getChildren().clear();
+		uuidsVBox.getChildren().add(genericProgressBar);
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				uuidsVBox.getChildren().clear();
+				uuidsVBox.getChildren().add(genericProgressBar);
 				Platform.runLater(() -> loadUuidsVBoxFromConcept(newValue));
 			}
 		});
@@ -1465,25 +1508,38 @@ public class ConceptViewController {
 		
 		descriptionTableView.getItems().clear();
 		descriptionTableView.getSelectionModel().clearSelection();
-		descriptionTableView.setPlaceholder(new ProgressIndicator());
+		descriptionTableView.setPlaceholder(new ProgressIndicator(-1.0));
 		
 		if (conceptProperty.get() != null) {
-			ObservableList<ConceptDescription> descriptionList =
-					ConceptDescription.makeDescriptionList(
+			Task<ObservableList<ConceptDescription>> task = new Task<ObservableList<ConceptDescription>>() {
+				@Override
+				protected ObservableList<ConceptDescription> call() throws Exception {
+					return ConceptDescription.makeDescriptionList(
 							conceptProperty.get().getChronology().getConceptDescriptionList(),
 							panelTaxonomyCoordinate.get().getStampCoordinate(),
 							activeOnlyToggle.selectedProperty().get());
-			descriptionTableView.setItems(descriptionList);
+				}
+				@Override
+				protected void succeeded() {
+					Platform.runLater(() -> {
+						descriptionTableView.setItems(getValue());
+						descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
+						descriptionTableView.getSortOrder().clear();
+						descriptionTableView.getSortOrder().addAll(sortColumns);
+					});
+				}
+			};
+			Utility.execute(task);
 		}
-		descriptionTableView.getSortOrder().clear();
-		descriptionTableView.getSortOrder().addAll(sortColumns);
 	}
 	
 	private void refreshLogicGraph() {
+		relationshipsProgress.toFront();
 		if (conceptProperty.get() != null) {
 			relationshipsView.setConcept(panelTaxonomyCoordinate.get(), conceptProperty.get().getNid());
 		} else {
 			relationshipsView.clear();
 		}
+		relationshipsPane.toFront();
 	}
 }
