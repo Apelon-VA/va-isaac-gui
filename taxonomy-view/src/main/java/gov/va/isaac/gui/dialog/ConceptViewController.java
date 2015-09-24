@@ -32,6 +32,7 @@ import gov.va.isaac.gui.util.CopyableLabel;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphPopupViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.util.CommonlyUsedConcepts;
 import gov.va.isaac.util.OchreUtility;
@@ -120,28 +121,30 @@ public class ConceptViewController {
 	private int conceptNid = 0;
 	
 	private BooleanProperty displayFSN_ = new SimpleBooleanProperty();
+	
+	private static final boolean isLogicGraphAvailable = AppContext.getService(LogicalExpressionTreeGraphPopupViewI.class) != null;
 
 	// Contains StampCoordinate, LanguageCoordinate and LogicCoordinate
-    private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
-    
-    public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
-    	if (taxonomyCoordinate.get() == null) {
-    		taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
-    	}
-    	
-    	return taxonomyCoordinate;
-    }
-    
-    private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
-    public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
-    	if (conceptSnapshotService.get() == null) {
-    		conceptSnapshotService.set(LookupService.getService(ConceptService.class).getSnapshot(
-    				getTaxonomyCoordinate().get().getStampCoordinate(),
-    				getTaxonomyCoordinate().get().getLanguageCoordinate()));
-    	}
-    	
-    	return conceptSnapshotService;
-    }
+	private ReadOnlyObjectWrapper<TaxonomyCoordinate> taxonomyCoordinate = new ReadOnlyObjectWrapper<>();
+	
+	public ReadOnlyObjectProperty<TaxonomyCoordinate> getTaxonomyCoordinate() {
+		if (taxonomyCoordinate.get() == null) {
+			taxonomyCoordinate.bind(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate());
+		}
+		
+		return taxonomyCoordinate;
+	}
+	
+	private ReadOnlyObjectWrapper<ConceptSnapshotService> conceptSnapshotService = new ReadOnlyObjectWrapper<>();
+	public ReadOnlyObjectProperty<ConceptSnapshotService> getConceptSnapshotService() {
+		if (conceptSnapshotService.get() == null) {
+			conceptSnapshotService.set(LookupService.getService(ConceptService.class).getSnapshot(
+					getTaxonomyCoordinate().get().getStampCoordinate(),
+					getTaxonomyCoordinate().get().getLanguageCoordinate()));
+		}
+		
+		return conceptSnapshotService;
+	}
 
 	@FXML
 	void initialize()
@@ -248,14 +251,35 @@ public class ConceptViewController {
 
 		try
 		{
+			if (isLogicGraphAvailable)
+			{
+				Button launchGraphView = new Button();
+				launchGraphView.setPadding(new Insets(2.0));
+				ImageView launchGraphViewImage = Images.ROOT.createImageView();
+				Tooltip.install(launchGraphView, new Tooltip("Click to display the Logical Graph"));
+				launchGraphView.setGraphic(launchGraphViewImage);
+				launchGraphView.setOnAction(new EventHandler<ActionEvent>()
+				{
+					@Override
+					public void handle(ActionEvent event)
+					{
+						LogicalExpressionTreeGraphPopupViewI popup = AppContext.getService(LogicalExpressionTreeGraphPopupViewI.class);
+						popup.setConcept(getConceptNid());
+						popup.showView(null);
+					}
+				});
+				HBox.setMargin(launchGraphView, new Insets(0, 0, 0, 5.0));
+				sourceRelTitleHBox.getChildren().add(launchGraphView);
+			}
+			
 			Button taxonomyViewMode = new Button();
 			taxonomyViewMode.setPadding(new Insets(2.0));
 			ImageView taxonomyInferred = Images.TAXONOMY_INFERRED.createImageView();
 			taxonomyInferred.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(PremiseType.INFERRED));
-			Tooltip.install(taxonomyInferred, new Tooltip("Displaying the Inferred view- click to display the Inferred then Stated view"));
+			Tooltip.install(taxonomyInferred, new Tooltip("Displaying the Inferred view, click to display the Inferred then Stated view"));
 			ImageView taxonomyStated = Images.TAXONOMY_STATED.createImageView();
 			taxonomyStated.visibleProperty().bind(AppContext.getService(UserProfileBindings.class).getStatedInferredPolicy().isEqualTo(PremiseType.STATED));
-			Tooltip.install(taxonomyStated, new Tooltip("Displaying the Stated view- click to display the Inferred view"));
+			Tooltip.install(taxonomyStated, new Tooltip("Displaying the Stated view, click to display the Inferred view"));
 			taxonomyViewMode.setGraphic(new StackPane(taxonomyInferred, taxonomyStated));
 			taxonomyViewMode.setOnAction(new EventHandler<ActionEvent>()
 			{
