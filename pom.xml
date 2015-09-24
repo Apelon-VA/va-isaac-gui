@@ -205,7 +205,6 @@
 		<module>sync-view</module>
 		<module>sync-git</module>
 		<module>sync-svn</module>
-		<module>db-processing-rules</module>
 		<module>mapping</module>
 		<module>logic-view</module>
 		<module>concept-view</module>
