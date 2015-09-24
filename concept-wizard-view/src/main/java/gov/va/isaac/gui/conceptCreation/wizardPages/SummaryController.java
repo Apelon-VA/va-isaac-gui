@@ -22,16 +22,9 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 
-import java.io.IOException;
 import java.util.List;
 
 import javafx.event.ActionEvent;
