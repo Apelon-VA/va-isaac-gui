@@ -258,6 +258,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 						//VBox historicalLogicGraphViewNode = new VBox();
 						TabPane historicalLogicGraphViewNode = new TabPane();
 						historicalLogicGraphViewNode.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+						historicalLogicGraphViewNode.setMaxSize(800, 800);
 						List<LogicalExpressionTreeGraphEmbeddableViewI> historicalViews = getHistoricalViews();
 						Collections.sort(historicalViews, TREEGRAPH_COMPARATOR);
 
@@ -286,7 +287,9 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 								tab.setText(DATE_FORMAT.format(date));
 							}
 							
-							tab.setContent(version.getView());
+							ScrollPane sp = new ScrollPane();
+							sp.setContent(version.getView());
+							tab.setContent(sp);
 							historicalLogicGraphViewNode.getTabs().add(tab);
 						}
 						
