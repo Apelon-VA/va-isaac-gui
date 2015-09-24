@@ -25,6 +25,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.IdentifiedObjectLocal;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -66,19 +67,8 @@ public class CompositeSearchResult {
 		} else {
 			this.matchingComponentNid_ = matchingComponent.getNid();
 		}
+		this.containingConcept = locateContainingConcept(matchingComponent.getNid());
 		
-		if (matchingComponent instanceof SememeChronology<?>)
-		{
-			this.containingConcept = OchreUtility.getConceptSnapshot(((SememeChronology<?>)matchingComponent).getReferencedComponentNid(), null, null);
-		}
-		else if (matchingComponent instanceof ConceptChronology<?>)
-		{
-			this.containingConcept = OchreUtility.getConceptSnapshot(matchingComponent.getNid(), null, null);
-		}
-		else
-		{
-			LOG.warn("Unexpected!");
-		}
 	}
 	public CompositeSearchResult(int matchingComponentNid, float score) {
 		this.bestScore = score;
@@ -97,7 +87,7 @@ public class CompositeSearchResult {
 	}
 	
 	/**
-	 * This may return null, if the concept and/or matching component was not on the path
+	 * This may return an empty, if the concept and/or matching component was not on the path
 	 */
 	public Optional<ConceptSnapshot> getContainingConcept() {
 		return containingConcept;
@@ -283,5 +273,26 @@ public class CompositeSearchResult {
 		
 		builder.append("]");
 		return builder.toString();
+	}
+	
+	private Optional<ConceptSnapshot> locateContainingConcept(int componentNid)
+	{
+		ObjectChronologyType type = Get.identifierService().getChronologyTypeForNid(componentNid);
+		if (type == ObjectChronologyType.UNKNOWN_NID)
+		{
+			return Optional.empty();
+		}
+		else if (type == ObjectChronologyType.CONCEPT)
+		{
+			return OchreUtility.getConceptSnapshot(componentNid, null, null);
+		}
+		else if (type == ObjectChronologyType.SEMEME)
+		{
+			return locateContainingConcept(Get.sememeService().getSememe(componentNid).getReferencedComponentNid());
+		}
+		else
+		{
+			throw new RuntimeException("oops");
+		}
 	}
 }

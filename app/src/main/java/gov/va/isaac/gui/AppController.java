@@ -109,7 +109,7 @@ public class AppController {
     public AppController() {
 
         AppContext.getServiceLocator().inject(this);
-        ToolTipDefaultsFixer.setTooltipTimers(100, 20000, 200);
+        ToolTipDefaultsFixer.setTooltipTimers(250, 5000, 200);
         
         root_ = new BorderPane();
         mainSplitPane = new SplitPane();
