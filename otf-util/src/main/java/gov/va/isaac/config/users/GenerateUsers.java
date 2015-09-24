@@ -21,26 +21,6 @@ package gov.va.isaac.config.users;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.UUID;
-import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import org.ihtsdo.otf.tcc.api.blueprint.InvalidCAB;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.IsaacUserCreation;
 import gov.va.isaac.config.generated.User;
@@ -60,6 +40,24 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.util.UuidT5Generator;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.UUID;
+import javax.xml.XMLConstants;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 /**
  * {@link GenerateUsers}
@@ -151,7 +149,7 @@ public class GenerateUsers {
                     logger.debug("User profile already exists");
                 }
             }
-        } catch (ContradictionException | IOException | InvalidCAB e) {
+        } catch (IOException e) {
             logger.error("Unexpected error building the user concepts", e);
             throw new RuntimeException("Unexpected error building user concepts", e);
         } catch (InvalidUserException e) {
@@ -162,7 +160,7 @@ public class GenerateUsers {
     /**
      * Create a concept in the DB, for the specified user. Only call this if {@link #alreadyExists(User)) return false
      */
-    public static void createUserConcept(User user) throws IOException, InvalidCAB, ContradictionException {
+    public static void createUserConcept(User user) {
         logger.info("Creating user " + toString(user) + " in DB");
         AppContext.getRuntimeGlobals().disableAllCommitListeners();
         try {

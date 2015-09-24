@@ -1,5 +1,6 @@
 package gov.va.isaac.gui.conceptViews.enhanced;
 
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.vha.isaac.ochre.api.LookupService;
 import javafx.geometry.Insets;
@@ -35,7 +36,7 @@ public class EnhancedConceptDynamicRefexPopup {
 		Scene scene = new Scene( vb );
 		final Prompt prompt = new Prompt( title, owner, scene);
 		
-		SememeViewI v = LookupService.getNamedServiceIfPossible(SememeViewI.class, "DynamicRefexView");
+		SememeViewI v = LookupService.getNamedServiceIfPossible(SememeViewI.class, SharedServiceNames.SEMEME_VIEW);
 		v.setComponent(conNid, null, null, null, true);
 		v.getView().setMinHeight(200.0);
 		v.getView().setMinWidth(200.0);

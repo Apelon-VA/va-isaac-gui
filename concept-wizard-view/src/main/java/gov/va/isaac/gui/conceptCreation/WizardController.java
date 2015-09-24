@@ -18,16 +18,6 @@
  */
 package gov.va.isaac.gui.conceptCreation;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.wizardPages.RelRow;
@@ -50,6 +40,16 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.impl.lang.LanguageCode;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -148,7 +148,6 @@ public class WizardController {
 	public ConceptChronology<?> createNewConcept()  throws IOException {
 		logger.info("Creating concept " + fsn + " " + prefTerm + " in DB");
 		AppContext.getRuntimeGlobals().disableAllCommitListeners();
-		ConceptChronology<?> chronology = null;
 		try {
 			
 			ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
@@ -236,12 +235,13 @@ public class WizardController {
 				}
 			}
 			
-			chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
-		} finally {
+			ConceptChronology<?> chronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
+			
+			return chronology;
+		}
+		finally {
 			AppContext.getRuntimeGlobals().enableAllCommitListeners(); //TODO - do we want this
 		}
-		return chronology;
-		
 		//OLD CODE TODO check these are all satisfied
 //		String fsn = this.fsn;
 //		String prefTerm = this.prefTerm;

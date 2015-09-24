@@ -92,6 +92,11 @@ import java.util.function.Function;
 
 
 
+
+
+
+
+
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -114,7 +119,10 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -145,8 +153,18 @@ import javafx.util.StringConverter;
 
 
 
+
+
+
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+
+
+
 
 
 
@@ -179,6 +197,9 @@ public class ConceptViewController {
 	@FXML private AnchorPane	footerPane;
 	@FXML private GridPane		headerGridPane;
 	@FXML private VBox			relationshipsVBox;
+	@FXML private ScrollPane	relationshipsPane;
+	@FXML private ProgressIndicator	relationshipsProgress;
+	@FXML private StackPane		relationshipsStackPane;
 	
 	@FXML private TableView<ConceptDescription> descriptionTableView;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionTypeTableColumn;
@@ -222,6 +243,8 @@ public class ConceptViewController {
 	private ObjectProperty<ConceptChronology<? extends StampedVersion>> conceptChronologyProperty = new SimpleObjectProperty<ConceptChronology<? extends StampedVersion>>();
 	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
 
+	private final ProgressBar genericProgressBar = new ProgressBar(-1.0);
+
 	// TODO should modules be displayed and selectable that are off path of panel coordinates?
 	//private ReadOnlyObjectProperty<StampCoordinate> panelStampCoordinateProperty;
 	//private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
@@ -256,13 +279,16 @@ public class ConceptViewController {
 		assert descriptionsPane 			!= null : "fx:id=\"descriptionsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert headerGridPane 				!= null : "fx:id=\"headerGridPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert relationshipsVBox			!= null : "fx:id=\"relationshipsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsPane			!= null : "fx:id=\"relationshipsPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsProgress		!= null : "fx:id=\"relationshipsProgress\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert relationshipsStackPane		!= null : "fx:id=\"relationshipsStackPane\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		assert conceptCodeLabel 			!= null : "fx:id=\"conceptCodeLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert conceptLabel 			!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert conceptLabel 				!= null : "fx:id=\"conceptLabel\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
-		assert statusComboBox 			!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert modulesComboBox 			!= null : "fx:id=\"modulesComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert uuidsVBox 			!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert statusComboBox 				!= null : "fx:id=\"statusComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert modulesComboBox 				!= null : "fx:id=\"modulesComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert uuidsVBox 					!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
 		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert duplicateDescriptionButton 	!= null : "fx:id=\"editDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
@@ -279,10 +305,12 @@ public class ConceptViewController {
 		FxUtils.assignImageToButton(stampToggle, 			Images.STAMP.createImageView(), 	"Show/Hide STAMP Columns");
 		FxUtils.assignImageToButton(plusDescriptionButton, 	Images.PLUS.createImageView(), 		"Create Description");
 		FxUtils.assignImageToButton(minusDescriptionButton, 	Images.MINUS.createImageView(), 	"Retire/Unretire Description");
-		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.EDIT.createImageView(), 		"Edit Description");
+		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.COPY.createImageView(), 		"Edit Description");
 		FxUtils.assignImageToButton(panelPreferencesPopupButton, 	Images.CONFIGURE.createImageView(), 		"Panel Preferences");
 		FxUtils.assignImageToButton(panelVsGlobalPreferencesToggleButton, 	Images.CONFIGURE.createImageView(), "Use Local Preferences");
 
+		genericProgressBar.setMinWidth(100.0);
+		
 		setColumnWidths();
 		setupPreferences();
 		setupColumnTypes();
@@ -390,6 +418,7 @@ public class ConceptViewController {
 		});
 		
 		panelVsGlobalPreferencesToggleButton.setSelected(false);
+		panelVsGlobalPreferencesToggleButton.setTooltip(unselectedTooltip);
 	}
 
 	private void setupPanelPreferencesPopupButton() {
@@ -493,7 +522,8 @@ public class ConceptViewController {
 	}
 
 	private void setupRelationshipsView() {
-		// TODO Make this work
+		relationshipsPane.prefHeightProperty().bind(relationshipsStackPane.heightProperty());
+		relationshipsPane.prefWidthProperty().bind(relationshipsStackPane.widthProperty());
 		relationshipsView = AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
 		relationshipsVBox.getChildren().add(relationshipsView.getView());
 	}
@@ -561,10 +591,17 @@ public class ConceptViewController {
 		Utility.execute(task);
 	}
 	public void setConcept(UUID conceptUuid) {
-		Utility.execute(() -> {
-			ConceptChronology<?> concept = Get.conceptService().getConcept(conceptUuid);
-			setConcept(concept.getConceptSequence());
-		});
+		Task<Integer> task = new Task<Integer>() {
+			@Override
+			protected Integer call() throws Exception {
+				return Get.conceptService().getConcept(conceptUuid).getConceptSequence();
+			}
+			@Override 
+			protected void succeeded() {
+				setConcept(getValue());
+			}
+		};
+		Utility.execute(task);
 	}
 	
 	private void refresh() {
@@ -632,11 +669,14 @@ public class ConceptViewController {
 	
 	private void setupConceptLabel() {
 		conceptLabel.setPadding(new Insets(10,0,10,10));
+		conceptLabel.setGraphic(genericProgressBar);
+		
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				conceptLabel.setGraphic(genericProgressBar);
 				if (newValue != null) {
 					Task<String> task = new Task<String>() {
 						@Override
@@ -647,6 +687,7 @@ public class ConceptViewController {
 						@Override
 						public void succeeded() {
 							Platform.runLater(() -> {
+								conceptLabel.setGraphic(null);
 								conceptLabel.setText(getValue());
 								conceptLabel.setContextMenu(null);
 								if (conceptLabel.getText() != null) {
@@ -689,7 +730,7 @@ public class ConceptViewController {
 										miHistory.setOnAction(new EventHandler<ActionEvent>() {
 											@Override
 											public void handle(ActionEvent arg0) {
-												//PopupHelper.showDescriptionHistory(conceptDescription, conceptLabel);
+												PopupHelper.showConceptHistory(conceptProperty.getValue(), conceptLabel);
 											}
 										});
 										conceptLabel.getContextMenu().getItems().add(miHistory);
@@ -717,6 +758,7 @@ public class ConceptViewController {
 
 					Utility.execute(task);
 				} else {
+					conceptLabel.setGraphic(null);
 					conceptLabel.setText("Drop a concept here");
 				}
 			}
@@ -760,9 +802,25 @@ public class ConceptViewController {
 						} else {
 							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelTaxonomyCoordinate.get().getStampCoordinate(), Get.configurationService().getDefaultLanguageCoordinate());
 							
-							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							if (! cs.isPresent()) {
+								final int finalNid = nid;
+								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Missing ConceptSnapshot", "No ConceptSnapshot found for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
+
+								// Return existing concept label contents
+								return conceptLabel.getText();
+							}
+							
 							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
-							return desc.isPresent() ? desc.get().value().getText() : null;
+							if (! desc.isPresent()) {
+								final int finalNid = nid;
+								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Not using dropped concept", "Failed to load Fully Specified Name for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
+								
+								// Return existing concept label contents
+								return conceptLabel.getText();
+							}
+
+							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							return desc.get().value().getText();
 						}
 					}
 				});
@@ -785,6 +843,7 @@ public class ConceptViewController {
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				conceptCodeLabel.setGraphic(genericProgressBar);
 				Platform.runLater(() -> loadConceptCodeFromConcept(newValue));
 			}
 		});
@@ -801,6 +860,7 @@ public class ConceptViewController {
 
 				@Override
 				protected void succeeded() {
+					conceptCodeLabel.setGraphic(null);
 					conceptCodeLabel.setText(getValue().isPresent() ? getValue().get().toString() : null);
 					conceptCodeLabel.setContextMenu(null);
 					if (conceptCodeLabel.getText() != null) {
@@ -821,11 +881,15 @@ public class ConceptViewController {
 	}
 	
 	private void setupUuidsVBox() {
+		uuidsVBox.getChildren().clear();
+		uuidsVBox.getChildren().add(genericProgressBar);
 		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends ConceptSnapshot> observable,
 					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+				uuidsVBox.getChildren().clear();
+				uuidsVBox.getChildren().add(genericProgressBar);
 				Platform.runLater(() -> loadUuidsVBoxFromConcept(newValue));
 			}
 		});
@@ -898,16 +962,46 @@ public class ConceptViewController {
 				loadStatusComboBoxFromConcept(newValue);
 			}
 		});
-		
+		statusComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<State>() {
+			@Override
+			public void changed(ObservableValue<? extends State> observable,
+					State oldValue, State newValue) {
+				if (newValue == null || conceptProperty.get() == null) {
+					// IGNORE
+				} else if (newValue == conceptProperty.get().getState()) {
+					// No change
+				} else {
+					// TODO Modifying State not yet supported
+					AppContext.getCommonDialogs().showInformationDialog("Unsupported Feature", "Modifying Concept State not yet supported");
+
+					statusComboBox.getSelectionModel().select(conceptProperty.get().getState());
+				}
+			}
+		});
 		loadStatusComboBoxFromConcept(conceptProperty.get());
 	}
-	// In read-only view, set contents/choices of statusComboBox
-	// to state of loaded property only
+
 	private void loadStatusComboBoxFromConcept(ConceptSnapshot concept) {
 		statusComboBox.getItems().clear();
+		
 		if (concept != null) {
+			// TODO add both ACTIVE and INACTIVE once modifying State supported
+//			statusComboBox.getItems().add(State.ACTIVE);
+//			statusComboBox.getItems().add(State.INACTIVE);
 			statusComboBox.getItems().add(concept.getState());
-			statusComboBox.getSelectionModel().clearAndSelect(0);
+			
+			switch(concept.getState()) {
+			case ACTIVE:
+			case INACTIVE:
+				statusComboBox.getSelectionModel().select(concept.getState());
+				break;
+			default:
+				AppContext.getCommonDialogs().showErrorDialog("Unsupported Concept State", "ConceptSnapshot State " + concept.getState().name() + " not supported", "Only ACTIVE and INACTIVE State values supported");
+
+				statusComboBox.getSelectionModel().select(null);
+				statusComboBox.buttonCellProperty().set(null);
+				break;
+			}
 		} else {
 			statusComboBox.buttonCellProperty().set(null);
 		}
@@ -1116,8 +1210,34 @@ public class ConceptViewController {
 				
 			case TERM:
 				textProperty = conceptDescription.getValueProperty();
-				//conceptSequence = conceptDescription.getSequence();
-				//conceptNid = Get.identifierService().getConceptNid(conceptSequence);
+//				conceptNid = conceptDescription.getStampedVersion().getNid();
+//				conceptSequence = Get.identifierService().getConceptSequenceForDescriptionNid(conceptNid);
+//				final int finalConceptNid = conceptDescription.getStampedVersion().getNid();
+//				final int finalConceptSequence = conceptSequence;
+//				CommonMenuBuilderI builder = CommonMenuBuilder.newInstance();
+//				builder.setMenuItemsToExclude(
+//						CommonMenuItem.COPY,
+//						CommonMenuItem.COPY_CONTENT,
+//						CommonMenuItem.COPY_NID,
+//						CommonMenuItem.COPY_SCTID,
+//						CommonMenuItem.COPY_UUID,
+//						CommonMenuItem.CONCEPT_VIEW_LEGACY,
+//						CommonMenuItem.LOINC_REQUEST_VIEW,
+//						CommonMenuItem.USCRS_REQUEST_VIEW,
+//						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
+//				CommonMenus.addCommonMenus(cm,
+//						builder,
+//						new CommonMenusDataProvider() {
+//					@Override
+//					public String[] getStrings() {
+//						return conceptDescription.getValueProperty().get() == null ? new String[0] : new String[] { conceptDescription.getValueProperty().get() };
+//					}
+//				}, new CommonMenusNIdProvider() {
+//					@Override
+//					public Collection<Integer> getNIds() {
+//						return Arrays.asList(new Integer[] { finalConceptNid });
+//					}
+//				});
 				break;
 				
 			case TYPE:
@@ -1317,9 +1437,11 @@ public class ConceptViewController {
 						CommonMenuItem.COPY_NID,
 						CommonMenuItem.COPY_SCTID,
 						CommonMenuItem.COPY_UUID,
+						CommonMenuItem.CONCEPT_VIEW_LEGACY,
 						CommonMenuItem.LOINC_REQUEST_VIEW,
 						CommonMenuItem.USCRS_REQUEST_VIEW,
-						CommonMenuItem.SEND_TO);
+						CommonMenuItem.SEND_TO,
+						CommonMenuItem.WORKFLOW_INITIALIZATION_VIEW);
 				CommonMenus.addCommonMenus(cm,
 						builder,
 						new CommonMenusDataProvider() {
@@ -1386,25 +1508,38 @@ public class ConceptViewController {
 		
 		descriptionTableView.getItems().clear();
 		descriptionTableView.getSelectionModel().clearSelection();
-		descriptionTableView.setPlaceholder(new ProgressIndicator());
+		descriptionTableView.setPlaceholder(new ProgressIndicator(-1.0));
 		
 		if (conceptProperty.get() != null) {
-			ObservableList<ConceptDescription> descriptionList =
-					ConceptDescription.makeDescriptionList(
+			Task<ObservableList<ConceptDescription>> task = new Task<ObservableList<ConceptDescription>>() {
+				@Override
+				protected ObservableList<ConceptDescription> call() throws Exception {
+					return ConceptDescription.makeDescriptionList(
 							conceptProperty.get().getChronology().getConceptDescriptionList(),
 							panelTaxonomyCoordinate.get().getStampCoordinate(),
 							activeOnlyToggle.selectedProperty().get());
-			descriptionTableView.setItems(descriptionList);
+				}
+				@Override
+				protected void succeeded() {
+					Platform.runLater(() -> {
+						descriptionTableView.setItems(getValue());
+						descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
+						descriptionTableView.getSortOrder().clear();
+						descriptionTableView.getSortOrder().addAll(sortColumns);
+					});
+				}
+			};
+			Utility.execute(task);
 		}
-		descriptionTableView.getSortOrder().clear();
-		descriptionTableView.getSortOrder().addAll(sortColumns);
 	}
 	
 	private void refreshLogicGraph() {
+		relationshipsProgress.toFront();
 		if (conceptProperty.get() != null) {
 			relationshipsView.setConcept(panelTaxonomyCoordinate.get(), conceptProperty.get().getNid());
 		} else {
 			relationshipsView.clear();
 		}
+		relationshipsPane.toFront();
 	}
 }

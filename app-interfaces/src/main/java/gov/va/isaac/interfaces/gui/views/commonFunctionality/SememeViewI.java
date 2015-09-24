@@ -19,6 +19,7 @@
 package gov.va.isaac.interfaces.gui.views.commonFunctionality;
 
 import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
+import gov.va.isaac.interfaces.gui.views.PopupViewI;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.layout.Region;
 import org.jvnet.hk2.annotations.Contract;
@@ -34,7 +35,7 @@ import org.jvnet.hk2.annotations.Contract;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
 @Contract
-public interface SememeViewI extends EmbeddableViewI
+public interface SememeViewI extends EmbeddableViewI, PopupViewI
 {
 	/**
 	 * Tell this view to display the refexes for a particular component (typically, a concept, but could also 

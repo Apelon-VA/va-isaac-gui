@@ -18,19 +18,13 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
-import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.dragAndDrop.DragRegistry;
 import gov.va.isaac.gui.dragAndDrop.SingleConceptIdProvider;
-import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
 import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuItem;
@@ -40,12 +34,18 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
 import javafx.concurrent.Task;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.text.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link ComponentDataCell}
@@ -108,19 +108,9 @@ public class ComponentDataCell extends TreeTableCell<SememeGUI, SememeGUI>
 					{
 						case CONCEPT:
 						{
-							if (SememeGUIColumnType.ASSEMBLAGE == type_)
+							if (SememeGUIColumnType.ASSEMBLAGE == type_ && DynamicSememeUsageDescription.isDynamicSememe(nid))
 							{
-								MenuItem mi = new MenuItem("View Sememe Assemblage Usage");
-								mi.setOnAction((action) ->
-								{
-									SimpleDisplayConcept sdc = new SimpleDisplayConcept(nid);
-									DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
-									driv.showView(null);
-								});
-								mi.setGraphic(Images.SEARCH.createImageView());
-								cm.getItems().add(mi);
-								
-								mi = new MenuItem("Configure Sememe Indexing");
+								MenuItem mi = new MenuItem("Configure Sememe Indexing");
 								mi.setOnAction((action) ->
 								{
 									new ConfigureDynamicRefexIndexingView(nid).showView(null);

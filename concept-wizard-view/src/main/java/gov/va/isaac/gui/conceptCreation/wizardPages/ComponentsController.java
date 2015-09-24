@@ -21,8 +21,10 @@ package gov.va.isaac.gui.conceptCreation.wizardPages;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.util.UpdateableBooleanBinding;
+
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -33,6 +35,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +85,6 @@ public class ComponentsController implements PanelControllers {
 	@Override
 	public void initialize() {
 		LOG.debug("Creating a ComponentsController");
-		//vc = OTFUtility.getViewCoordinate();
 			
 		// Buttons
 		cancelButton.setOnAction(new EventHandler<ActionEvent>() {

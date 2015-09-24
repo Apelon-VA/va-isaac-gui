@@ -18,17 +18,15 @@
  */
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+
+import java.util.List;
+
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -39,6 +37,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * 
  * {@link SummaryController}
@@ -191,7 +192,7 @@ public class SummaryController implements PanelControllers {
 	public void processValues() {
 		try {
 			
-			ConceptChronology<?> newChronology = processController.getWizard().createNewConcept();
+			ConceptChronology newChronology = processController.getWizard().createNewConcept();
 			
 			Get.commitService().addUncommitted(newChronology);
 			Get.commitService().commit(

@@ -22,7 +22,7 @@ public class FeatureNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 				Get.identifierService().getConceptSequenceForUuids(((FeatureNodeWithUuids)logicalNode).getTypeConceptUuid()), descriptionRenderer);
 	}
 	private FeatureNodeFxNode(AbstractNode logicalNode, int conceptId, Function<Integer, String> descriptionRenderer) {
-		super(logicalNode, logicalNode.getNodeSemantic().name() /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\ntype=" + descriptionRenderer.apply(conceptId) + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name());
+		super(logicalNode, "FEATURE" /* + "\n" + LogicalExpressionTreeGraph.logicalNodeTypeToString(logicalNode) */ + "\ntype=" + descriptionRenderer.apply(conceptId) + "\noperator=" + ((FeatureNodeWithSequences)logicalNode).getOperator().name());
 		this.conceptId = conceptId;
 	}
 	

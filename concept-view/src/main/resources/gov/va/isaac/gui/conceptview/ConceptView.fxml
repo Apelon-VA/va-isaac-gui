@@ -140,11 +140,16 @@
                               <Font size="14.0" />
                            </font>
                         </Label>
-                        <ScrollPane AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="35.0">
-                           <content>
-                              <VBox fx:id="relationshipsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="100.0" />
-                           </content>
-                        </ScrollPane>
+                        <StackPane fx:id="relationshipsStackPane" prefHeight="150.0" prefWidth="200.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="35.0">
+                           <children>
+                              <ProgressIndicator fx:id="relationshipsProgress" />
+                              <ScrollPane fx:id="relationshipsPane">
+                                 <content>
+                                    <VBox fx:id="relationshipsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="100.0" />
+                                 </content>
+                              </ScrollPane>
+                           </children>
+                        </StackPane>
                      </children></AnchorPane>
               </items>
             </SplitPane>

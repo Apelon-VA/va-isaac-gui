@@ -5,6 +5,7 @@ import gov.va.isaac.gui.conceptview.ConceptViewColumnType;
 import gov.va.isaac.gui.conceptview.ConceptViewController;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
+import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.dialog.DetachablePopOverHelper;
 import gov.va.isaac.gui.util.CustomClipboard;
 import gov.va.isaac.gui.util.Images;
@@ -26,6 +27,8 @@ import java.util.List;
 import org.controlsfx.control.PopOver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.sun.javafx.tk.Toolkit;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -49,6 +52,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 
@@ -69,26 +73,31 @@ public class PopupList {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PopupList.class);
 
-	public void addData(ConceptId data) {
-		PopupData pd = new PopupData(data);
-		if (pd.isValid()) {
-			_data.add(pd);
-		}
-	}
-	public void addData(ConceptDescription data) {
+	public void addData(Object data) {
 		PopupData pd = new PopupData(data);
 		if (pd.isValid()) {
 			_data.add(pd);
 		}
 	}
 	
+	@SuppressWarnings("restriction")
 	protected void showPopup() {
 		_tableView = new TableView<PopupData>();
 		_tableView.getColumns().clear();
+
+		// Hack to dynamically set column min widths
+		Font font = new Font("System Bold", 13.0);
+		
+		double tableWidth = 0;
 		for (int i = 0; i < _columnTypes.length; i++) {
 			ConceptViewColumnType columnType = _columnTypes[i];
 			TableColumn<PopupData,PopupData> column = new TableColumn<PopupData,PopupData>(columnType.toString());
 			column.setUserData(columnType);
+			column.setPrefWidth(TableView.USE_COMPUTED_SIZE);
+			Double columnWidth = Double.max(columnType.getColumnWidth(), Toolkit.getToolkit().getFontLoader().computeStringWidth(column.getText(), font) + 30);
+			column.setMinWidth(columnWidth);
+			tableWidth += columnWidth;
+			
 			_tableView.getColumns().add(column);
 			
 			column.setCellValueFactory(new Callback<CellDataFeatures<PopupData, PopupData>, ObservableValue<PopupData>>() {
@@ -113,8 +122,12 @@ public class PopupList {
 		}
 		
 		_tableView.setItems(_data);
+		_tableView.setMinWidth(tableWidth);
 		
 		PopOver po = DetachablePopOverHelper.newDetachachablePopoverWithCloseButton(_title, _tableView);
+		po.setMinWidth(tableWidth);
+		po.setMaxWidth(tableWidth);
+		
 		if (_popOverRegion == null) {
 			po.detach();
 			po.show(AppContext.getMainApplicationWindow().getPrimaryStage());
@@ -151,8 +164,9 @@ public class PopupList {
 				default:
 					break;
 				}
-				
-			} else if (popupData.isConceptDescription()) {
+			} 
+			
+			if (popupData.isConceptDescription()) {
 				ConceptDescription conceptDescription = popupData.getConceptDescription();
 				switch (columnType) {
 				case TERM:
@@ -182,25 +196,30 @@ public class PopupList {
 					conceptSequence = conceptDescription.getSignificanceSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
+				}
+			}
+			if (popupData.isStampedItem()) {
+				StampedItem<?> stampedItem = popupData.getStampedItem();
+				switch (columnType) {
 				case STAMP_STATE:
-					textProperty = conceptDescription.getStateProperty();
+					textProperty = stampedItem.getStateProperty();
 					break;
 				case STAMP_TIME:
-					textProperty = conceptDescription.getTimeProperty();
+					textProperty = stampedItem.getTimeProperty();
 					break;
 				case STAMP_AUTHOR:
-					textProperty = conceptDescription.getAuthorProperty();
-					conceptSequence = conceptDescription.getAuthorSequence();
+					textProperty = stampedItem.getAuthorProperty();
+					conceptSequence = stampedItem.getAuthorSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
 				case STAMP_MODULE:
-					textProperty = conceptDescription.getModuleProperty();
-					conceptSequence = conceptDescription.getModuleSequence();
+					textProperty = stampedItem.getModuleProperty();
+					conceptSequence = stampedItem.getModuleSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
 				case STAMP_PATH:
-					textProperty = conceptDescription.getPathProperty();
-					conceptSequence = conceptDescription.getPathSequence();
+					textProperty = stampedItem.getPathProperty();
+					conceptSequence = stampedItem.getPathSequence();
 					conceptNid = Get.identifierService().getConceptNid(conceptSequence);
 					break;
 				default:
