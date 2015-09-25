@@ -218,10 +218,21 @@ public class CommonDialogs implements CommonDialogsI
 	@Override
 	public DialogResponse showYesNoDialog(String title, String question)
 	{
-		init();
-		return yesNoDialog_.showYesNoDialog(title, question);
+		//init();
+		//return yesNoDialog_.showYesNoDialog(title, question);
+		return showYesNoDialog(title, question, null);
 	}
 
+	public DialogResponse showYesNoDialog(String title, String question, Window parentWindow)
+	{
+		init();
+		YesNoDialog ynd = yesNoDialog_;
+		if (parentWindow != null) {
+			ynd = new YesNoDialog(parentWindow);
+		}
+		return ynd.showYesNoDialog(title, question);
+	}
+	
 	/**
 	 * @see gov.va.isaac.interfaces.gui.CommonDialogsI#showErrorDialog(java.lang.String, java.lang.String, java.lang.String, javafx.stage.Window)
 	 */
