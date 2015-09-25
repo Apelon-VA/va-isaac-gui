@@ -853,6 +853,8 @@ public class ConceptViewController {
 		conceptCodeLabel.setText(null);
 		if (concept != null) {
 			Task<Optional<Long>> task = new Task<Optional<Long>>() {
+				
+				//TODO this doesn't handle LOINC or RXNorm types....
 				@Override
 				protected Optional<Long> call() throws Exception {
 					return Frills.getSctId(concept.getChronology().getNid(), concept.getStampCoordinate());
