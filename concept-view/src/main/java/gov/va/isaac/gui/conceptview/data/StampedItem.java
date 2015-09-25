@@ -102,6 +102,10 @@ public abstract class StampedItem<T extends StampedVersion>
 	public int getModuleSequence() { return _stampedVersion.getModuleSequence(); }
 	public int getPathSequence()   { return _stampedVersion.getPathSequence(); }
 	
+	public String toggledStateName() {
+		return (_stampedVersion.getState().inverse().toString());
+	}
+	
 	public static final Comparator<StampedItem<?>> statusComparator = new Comparator<StampedItem<?>>() {
 		@Override
 		public int compare(StampedItem<?> o1, StampedItem<?> o2) {

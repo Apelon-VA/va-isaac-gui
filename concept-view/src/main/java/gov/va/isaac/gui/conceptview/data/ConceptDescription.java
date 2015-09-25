@@ -1,8 +1,10 @@
 package gov.va.isaac.gui.conceptview.data;
 
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
@@ -149,6 +151,19 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	public int getAcceptabilitySortValue()	{ return _acceptabilitySortValue; }
 	public int getTypeSortValue() 			{ return _typeSortValue; }
 	public int getSememesSortValue() 		{ return (_hasSememes)? Integer.MIN_VALUE : Integer.MAX_VALUE; }
+	
+	public void toggleState() {
+		// TODO implement
+		State newState = getStampedVersion().getState().inverse();
+		DescriptionSememe<?> descriptionSememe = (DescriptionSememe<?>) getStampedVersion();
+		SememeChronology<?> chronology = descriptionSememe.getChronology();
+		
+		LOG.debug("Setting description state to " + newState.toString());
+		// TODO I don't know exactly how to do this. DT
+		//chronology.createMutableVersion(DescriptionSememe.class, newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+		//Get.commitService().addUncommitted(chronology);
+		
+	}
 	
 	public static final Comparator<ConceptDescription> typeComparator = new Comparator<ConceptDescription>() {
 		@Override
