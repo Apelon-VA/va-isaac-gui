@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.5-SNAPSHOT</version>
+	</parent>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
+	<artifactId>integration-tests</artifactId>
+	<packaging>jar</packaging>
+
+	<name>ISAAC Integration Tests</name>
+	<description>ISAAC GUI Integration Tests</description>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2-testng</artifactId>
+			<version>${hk2.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+		</dependency>
+		
+		<!-- ISAAC App Utils. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>gui-util</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+
+		<!-- ISAAC OTF Utils. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>otf-util</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<!--  ISAAC Logic -->
+		<dependency>
+			<groupId>gov.vha.isaac.logic.modules</groupId>
+			<artifactId>logic</artifactId>
+		</dependency>
+		
+		<!-- ISAAC Data Model. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>data-model</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<!-- ISAAC Taxonomy View. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>taxonomy-view</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<!-- ISAAC Content-Request -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>content-request</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+	</dependencies>
+
+	<!--  <build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>extract-test-dependencies</id>
+						<phase>generate-test-resources</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+						   <skip>${skipTests}</skip>
+						   <artifactItems>
+								<artifact>
+									<groupId>gov.vha.isaac.terminology.converters</groupId>
+									<artifactId>term-convert-rf2-econcept-sct</artifactId>
+									<version>20150731-loader-2.1-S</version>
+									<type>jbin.zip</type>
+									<classifier>Snapshot</classifier>
+								</artifact>
+								<artifact>
+									<groupId>gov.vha.isaac.isaac-metadata.modules</groupId>
+									<artifactId>isaac-metadata-artifacts</artifactId>
+									<version>${isaac-metadata.version}</version>
+									<classifier>all</classifier>
+									<type>econ.zip</type>
+								</artifact>
+						   </artifactItems>
+						   <outputDirectory>${project.build.directory}/data</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<forkCount>1</forkCount>
+					<reuseForks>true</reuseForks>
+					<parallel>false</parallel>
+					<useSystemClassLoader>true</useSystemClassLoader>
+					<useManifestOnlyJar>false</useManifestOnlyJar>
+					<argLine>-ea -d64 -Xmx12g</argLine>
+					 <argLine>-Xmx8g -Xms8g -agentpath:/Applications/jprofiler8/bin/macos/libjprofilerti.jnilib=port=8849</argLine>
+					<debugForkedProcess>true</debugForkedProcess
+					<includes>
+						<include>**/*.class</include>
+					</includes>
+					<systemPropertyVariables> 
+						<org.ihtsdo.otf.tcc.query.lucene-root-location>${project.build.directory}</org.ihtsdo.otf.tcc.query.lucene-root-location> 
+					</systemPropertyVariables
+				</configuration>
+			</plugin>
+		</plugins>
+	</build> -->
+</project>

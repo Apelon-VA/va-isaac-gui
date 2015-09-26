@@ -86,7 +86,7 @@ import javafx.concurrent.Task;
  *  
  */
 @Mojo( name = "release-export")
-public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetchedConceptDataBI, Exporter
+public class ReleaseExporter extends AbstractMojo
 {
 	public enum ExportMojoFormat
 	{
@@ -227,7 +227,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 			
 			try
 			{
-				//if(validPath(path)) { //allPaths != null && 
+				//if(validPath(path)) { //allPaths != null &&  TODO: fix this
 				if(true) {
 					if(exportFormat.equalsIgnoreCase(ExportMojoFormat.Uscrs.name()) || exportFormat.equalsIgnoreCase("all")) //USCRS EXPORT
 					{
@@ -328,15 +328,17 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		IntStream moduleSequences = modules.stream()
 											.mapToInt( module -> {
 												String error = "USCRS Export Mojo Config Error - Invalid Module";
-												if(Get.identifierService().hasUuid(UUID.fromString(module))) {
+												if(true) {
+												//if(Get.identifierService().hasUuid(UUID.fromString(module))) {
 													int moduleSeq = Get.identifierService().getConceptSequenceForUuids(UUID.fromString(module));
+													//TODO: Enable Exception getting tossed if not child of MODULE
+													if(true) {
 													//if(Get.taxonomyService().isChildOf(moduleSeq, IsaacMetadataAuxiliaryBinding.MODULE.getNid(), 
-													//		ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get())) {
+														//	ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get())) {
 														return moduleSeq;
-													//} else {
-													//	return moduleSeq;
-														//throw new RuntimeException(error);
-													// }
+													} else {
+														throw new RuntimeException(error);
+													}
 												} else {
 													throw new RuntimeException(error);
 												}
@@ -468,7 +470,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		
 		ReleaseExporter export = new ReleaseExporter();
 		
-		export.outputFolder = new File("target/output"); //todo - Add FS Seperator 
+		export.outputFolder = new File("target/output"); //TODO - Add FS Seperator 
 		export.exportType = new ExportReleaseType[]{ExportReleaseType.SNAPSHOT};
 		export.skipExportAssembly = false;
 		
@@ -477,9 +479,9 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		mojoConceptSpec.setUuid(IsaacMetadataAuxiliaryBinding.DEVELOPMENT.getPrimodialUuid().toString()); //32d7e06d-c8ae-516d-8a33-df5bcc9c9ec7
 		
 		HashSet<String> modules = new HashSet<String>();
-		modules.add("45dc5146-b0bb-3ca9-8876-0e702fa29f42"); //The module was manually copied from one of the concepts, uknown name
-		//modules.add(Snomed.US_EXTENSION_MODULE.getPrimodialUuid().toString());
-		//modules.add(Snomed.CORE_MODULE.getPrimodialUuid().toString());
+		//modules.add("45dc5146-b0bb-3ca9-8876-0e702fa29f42"); //The module was manually copied from one of the concepts
+		modules.add(Snomed.US_EXTENSION_MODULE.getPrimodialUuid().toString());
+		modules.add(Snomed.CORE_MODULE.getPrimodialUuid().toString());
 		export.modules = modules;
 		
 		export.path = mojoConceptSpec;
@@ -488,7 +490,7 @@ public class ReleaseExporter extends AbstractMojo // implements ProcessUnfetched
 		export.exportFormat = ExportMojoFormat.Uscrs.name.toString();
 		
 		//export.uscrsDateFilter = new Date(668822400000L); // 3/13/1991
-		//export.uscrsDateFilter = new Date(1331596800000L); //3/13/2012
+		//export.uscrsDateFilter = new Date(1079136000000); //3/13/2004
 		export.uscrsDateFilter = new Date(1296432000000L); // 1/31/2011
 		//export.uscrsDateFilter  = new Date(1422747000000L); // 1/31/2015 11:30 PM
 		

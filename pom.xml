@@ -208,5 +208,6 @@
 		<module>mapping</module>
 		<module>logic-view</module>
 		<module>concept-view</module>
+		<module>integration-tests</module>
 	</modules>
 </project>
