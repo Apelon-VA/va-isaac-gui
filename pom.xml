@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>1.10-SNAPSHOT</version>
+		<version>1.10</version>
 	</parent>
 	
 	<groupId>gov.vha.isaac.gui</groupId>
@@ -32,12 +32,12 @@
 	</distributionManagement>
 
 	<properties>
-		<logic.version>1.17-SNAPSHOT</logic.version>
-		<query.version>2.17-SNAPSHOT</query.version>
-		<ochre.version>2.33-SNAPSHOT</ochre.version>
-		<isaac-mojo.version>1.12-SNAPSHOT</isaac-mojo.version>
-		<isaac-metadata.version>1.36-SNAPSHOT</isaac-metadata.version>
-		<newtons-cradle.version>1.22-SNAPSHOT</newtons-cradle.version>
+		<logic.version>1.17</logic.version>
+		<query.version>2.17</query.version>
+		<ochre.version>2.33</ochre.version>
+		<isaac-mojo.version>1.12</isaac-mojo.version>
+		<isaac-metadata.version>1.36</isaac-metadata.version>
+		<newtons-cradle.version>1.22</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>
@@ -208,6 +208,16 @@
 		<module>mapping</module>
 		<module>logic-view</module>
 		<module>concept-view</module>
-		<module>integration-tests</module>
 	</modules>
+	<profiles>
+		<profile>
+			<id>integration-tests</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+				<module>integration-tests</module>
+			</modules>
+		</profile>
+	</profiles>
 </project>
