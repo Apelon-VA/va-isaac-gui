@@ -13,6 +13,14 @@
 	<name>ISAAC Integration Tests</name>
 	<description>ISAAC GUI Integration Tests</description>
 	
+	<properties>
+		<dbGroupId>gov.vha.solor.modules</dbGroupId>
+
+		<dbArtifactId>snomed</dbArtifactId>
+		<dbVersion>1.13</dbVersion>
+		<dbClassifier>all</dbClassifier>
+	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.glassfish.hk2</groupId>
@@ -69,7 +77,7 @@
 		
 	</dependencies>
 
-	<!--  <build>
+	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -82,24 +90,28 @@
 							<goal>unpack</goal>
 						</goals>
 						<configuration>
-						   <skip>${skipTests}</skip>
-						   <artifactItems>
-								<artifact>
-									<groupId>gov.vha.isaac.terminology.converters</groupId>
-									<artifactId>term-convert-rf2-econcept-sct</artifactId>
-									<version>20150731-loader-2.1-S</version>
-									<type>jbin.zip</type>
-									<classifier>Snapshot</classifier>
-								</artifact>
-								<artifact>
-									<groupId>gov.vha.isaac.isaac-metadata.modules</groupId>
-									<artifactId>isaac-metadata-artifacts</artifactId>
-									<version>${isaac-metadata.version}</version>
-									<classifier>all</classifier>
-									<type>econ.zip</type>
-								</artifact>
-						   </artifactItems>
-						   <outputDirectory>${project.build.directory}/data</outputDirectory>
+							<skip>${skipTests}</skip>
+							<artifactItems>
+								<!-- The database to start with -->
+								<artifactItem>
+									<groupId>${dbGroupId}</groupId>
+									<artifactId>${dbArtifactId}</artifactId>
+									<version>${dbVersion}</version>
+									<classifier>${dbClassifier}</classifier>
+									<type>cradle.zip</type>
+									<outputDirectory>${project.build.directory}/db/</outputDirectory>
+								</artifactItem>
+								
+								<!-- The corresponding index -->
+								<artifactItem>
+									<groupId>${dbGroupId}</groupId>
+									<artifactId>${dbArtifactId}</artifactId>
+									<version>${dbVersion}</version>
+									<classifier>${dbClassifier}</classifier>
+									<type>lucene.zip</type>
+									<outputDirectory>${project.build.directory}/db/</outputDirectory>
+								</artifactItem>
+							</artifactItems>
 						</configuration>
 					</execution>
 				</executions>
@@ -108,22 +120,21 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<forkCount>1</forkCount>
+					<forkCount>0</forkCount>
 					<reuseForks>true</reuseForks>
 					<parallel>false</parallel>
-					<useSystemClassLoader>true</useSystemClassLoader>
+					<useSystemClassLoader>false</useSystemClassLoader>
 					<useManifestOnlyJar>false</useManifestOnlyJar>
-					<argLine>-ea -d64 -Xmx12g</argLine>
-					 <argLine>-Xmx8g -Xms8g -agentpath:/Applications/jprofiler8/bin/macos/libjprofilerti.jnilib=port=8849</argLine>
-					<debugForkedProcess>true</debugForkedProcess
+					<argLine>-ea -d64 -Xmx8g</argLine>
+					<debugForkedProcess>false</debugForkedProcess>
 					<includes>
 						<include>**/*.class</include>
 					</includes>
-					<systemPropertyVariables> 
-						<org.ihtsdo.otf.tcc.query.lucene-root-location>${project.build.directory}</org.ihtsdo.otf.tcc.query.lucene-root-location> 
-					</systemPropertyVariables
+					<additionalClasspathElements>
+						<additionalClasspathElement>${java.home}/lib/jfxrt.jar</additionalClasspathElement>
+					</additionalClasspathElements>
 				</configuration>
 			</plugin>
 		</plugins>
-	</build> -->
+	</build>
 </project>

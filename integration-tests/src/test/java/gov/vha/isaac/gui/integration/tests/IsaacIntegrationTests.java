@@ -5,31 +5,8 @@
  */
 package gov.vha.isaac.gui.integration.tests;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.drools.core.command.assertion.AssertEquals;
-import org.glassfish.hk2.api.MultiException;
-import org.jvnet.testing.hk2testng.HK2;
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeGroups;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
+import static org.testng.Assert.fail;
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
@@ -40,6 +17,23 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.glassfish.hk2.api.MultiException;
+import org.jvnet.testing.hk2testng.HK2;
+import org.testng.annotations.AfterGroups;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeGroups;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -52,20 +46,20 @@ public class IsaacIntegrationTests {
 
 	ArrayList<ConceptSnapshot> concepts = new ArrayList<>();
 	
-	public static void main(String[] args) {
-		try {
-			IsaacIntegrationTests cit = new IsaacIntegrationTests();
-			try {
-				cit.setUpSuite();
-				cit.testLoad();
-			} finally {
-				cit.tearDownSuite();
-			}
-		} catch (Exception ex) {
-			log.fatal(ex.getLocalizedMessage(), ex);
-		}
-		System.exit(0);
-	}
+//	public static void main(String[] args) {
+//		try {
+//			IsaacIntegrationTests cit = new IsaacIntegrationTests();
+//			try {
+//				cit.setUpSuite();
+//				cit.testLoad();
+//			} finally {
+//				cit.tearDownSuite();
+//			}
+//		} catch (Exception ex) {
+//			log.fatal(ex.getLocalizedMessage(), ex);
+//		}
+//		System.exit(0);
+//	}
 
 	private static final Logger log = LogManager.getLogger();
 	private boolean dbExists = false;
@@ -244,14 +238,14 @@ public class IsaacIntegrationTests {
 		
 		Exception dataStoreLocationInitException = null;
 		try {
-			dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("../../va-isaac-gui-pa/app-assembly/"));
+			dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("db/"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		if (dataStoreLocationInitException != null)
 		{
 			System.err.println("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
-			System.exit(-1);
+			fail("Configuration of datastore path failed.  DB will not be able to start properly!  " + dataStoreLocationInitException);
 		}
 		
 		LookupService.startupIsaac();
