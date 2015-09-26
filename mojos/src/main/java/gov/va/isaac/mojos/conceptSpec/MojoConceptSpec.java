@@ -18,6 +18,8 @@
  */
 package gov.va.isaac.mojos.conceptSpec;
 
+import java.util.UUID;
+
 import org.ihtsdo.otf.tcc.api.spec.ConceptSpec;
 
 /**
@@ -59,4 +61,8 @@ public class MojoConceptSpec
 	public String getUuid() {
 		return uuid;
 	}
+	
+//	public UUID getUuid() {
+//		return UUID.fromString(uuid);
+//	}
 }

@@ -19,7 +19,6 @@
 package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ViewCoordinateComponents;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
@@ -27,6 +26,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
@@ -35,12 +35,14 @@ import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -52,11 +54,13 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
+
 import javax.inject.Singleton;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
+
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sun.javafx.collections.ObservableSetWrapper;
 /**
  * {@link UserProfileBindings}
@@ -76,12 +80,12 @@ public class UserProfileBindings
 	private final ReadOnlyObjectWrapper<UUID> editCoordinateModule = new ReadOnlyObjectWrapper<>();
 
 	// View Coordinate Components
-	private final ReadOnlyObjectWrapper<StatedInferredOptions> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<PremiseType> statedInferredPolicy = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<UUID> viewCoordinatePath = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<Long> viewCoordinateTime = new ReadOnlyObjectWrapper<>();
 
-	private final SetProperty<Status> viewCoordinateStatuses = new SimpleSetProperty<Status>(new ObservableSetWrapper<>(new HashSet<>()));
-	private final ReadOnlySetWrapper<Status> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
+	private final SetProperty<State> viewCoordinateStatuses = new SimpleSetProperty<State>(new ObservableSetWrapper<>(new HashSet<>()));
+	private final ReadOnlySetWrapper<State> readOnlyViewCoordinateStatuses = new ReadOnlySetWrapper<>(viewCoordinateStatuses);
 
 	private final SetProperty<UUID> viewCoordinateModules = new SimpleSetProperty<UUID>(new ObservableSetWrapper<>(new HashSet<>(new HashSet<>())));
 	private final ReadOnlySetWrapper<UUID> readOnlyViewCoordinateModules = new ReadOnlySetWrapper<>(viewCoordinateModules);
@@ -149,7 +153,7 @@ public class UserProfileBindings
 	/**
 	 * @return the statedInferredPolicy
 	 */
-	public ReadOnlyObjectProperty<StatedInferredOptions> getStatedInferredPolicy()
+	public ReadOnlyObjectProperty<PremiseType> getStatedInferredPolicy()
 	{
 		return statedInferredPolicy.getReadOnlyProperty();
 	}
@@ -170,7 +174,7 @@ public class UserProfileBindings
 	/**
 	 * @return the viewCoordinateStatuses
 	 */
-	public ReadOnlySetProperty<Status> getViewCoordinateStatuses()
+	public ReadOnlySetProperty<State> getViewCoordinateStatuses()
 	{
 		return readOnlyViewCoordinateStatuses;
 	}
@@ -334,8 +338,8 @@ public class UserProfileBindings
 
 					EnumSet<State> allowedStates = EnumSet.allOf(State.class);
 					allowedStates.clear();
-					for (Status status : viewCoordinateStatuses.get()) {
-						allowedStates.add(status.getState());
+					for (State status : viewCoordinateStatuses.get()) {
+						allowedStates.add(status);
 					}
 					
 					CountDownLatch cdl = new CountDownLatch(1);

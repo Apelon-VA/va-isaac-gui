@@ -41,6 +41,8 @@ public class ConceptView implements EmbeddableViewI, PopupConceptViewI  {
 		s.initOwner(parent);
 		s.initModality(Modality.NONE);
 		s.initStyle(StageStyle.DECORATED);
+		s.setMinHeight(ConceptViewController.MIN_HEIGHT);
+		s.setMinWidth(ConceptViewController.MIN_WIDTH);
 
 		s.setScene(new Scene(controller.getRoot()));
 		s.getIcons().add(Images.CONCEPT_VIEW.getImage());
@@ -69,7 +71,7 @@ public class ConceptView implements EmbeddableViewI, PopupConceptViewI  {
 	}
 	@Override
 	public void viewDiscarded() {
-		// TODO need to stop any background operations, dispose of any javaFX hooks that might cause leaks
+		controller.viewDiscarded();
 	}
 	@Override
 	public UUID getConceptUuid()

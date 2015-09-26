@@ -18,6 +18,20 @@
  */
 package gov.va.isaac.gui.refexViews.dynamicRefexListView;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.gui.refexViews.util.DynamicSememeDataColumnListCell;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
+import gov.va.isaac.util.CommonMenus;
+import gov.va.isaac.util.CommonMenusNIdProvider;
+import gov.va.isaac.util.OchreUtility;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,22 +40,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.ResourceBundle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.ConfigureDynamicRefexIndexingView;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
-import gov.va.isaac.gui.refexViews.util.DynamicSememeDataColumnListCell;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.util.CommonMenus;
-import gov.va.isaac.util.CommonMenusNIdProvider;
-import gov.va.isaac.util.OchreUtility;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
-import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -62,6 +60,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link DynamicSememeListViewController}
@@ -75,6 +75,7 @@ public class DynamicSememeListViewController
 	@FXML private URL location;
 	@FXML private ListView<SimpleDisplayConcept> refexList;
 	@FXML private Label referencedComponentTypeLabel;
+	@FXML private Label referencedComponentSubTypeLabel;
 	@FXML private AnchorPane rootPane;
 	@FXML private Button clearFilterButton;
 	@FXML private TextField descriptionMatchesFilter;
@@ -179,7 +180,8 @@ public class DynamicSememeListViewController
 			SimpleDisplayConcept sdc = refexList.getSelectionModel().getSelectedItem();
 			if (sdc != null)
 			{
-				DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
+				SememeViewI driv = AppContext.getService(SememeViewI.class);
+				driv.setAssemblage(sdc.getNid(), null, null, null, true);
 				driv.showView(null);
 			}
 		});
@@ -225,7 +227,8 @@ public class DynamicSememeListViewController
 		
 		viewUsage.setDisable(true);
 		viewUsage.setOnAction((event) -> {
-			DynamicReferencedItemsView driv = new DynamicReferencedItemsView(refexList.getSelectionModel().getSelectedItem());
+			SememeViewI driv = AppContext.getService(SememeViewI.class);
+			driv.setAssemblage(refexList.getSelectionModel().getSelectedItem().getNid(), null, null, null, true);
 			driv.showView(null);
 		});
 		extensionFields.setCellFactory(new Callback<ListView<DynamicSememeColumnInfo>, ListCell<DynamicSememeColumnInfo>>()
@@ -412,6 +415,7 @@ public class DynamicSememeListViewController
 		selectedRefexNameLabel.setText("");
 		selectedRefexDescriptionLabel.setText("");
 		referencedComponentTypeLabel.setText("");
+		referencedComponentSubTypeLabel.setText("");
 		extensionFields.getItems().clear();
 		
 		if (sdn == null)
@@ -441,6 +445,8 @@ public class DynamicSememeListViewController
 					selectedRefexDescriptionLabel.setText(rdud.getDynamicSememeUsageDescription());
 					referencedComponentTypeLabel.setText(rdud.getReferencedComponentTypeRestriction() == null ? "No restriction" : 
 						"Must be " + rdud.getReferencedComponentTypeRestriction().toString());
+					referencedComponentSubTypeLabel.setText(rdud.getReferencedComponentTypeSubRestriction() == null ? "No restriction" : 
+						"Must be " + rdud.getReferencedComponentTypeSubRestriction().toString());
 				});
 				
 				//now fill in the data column details...

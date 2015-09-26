@@ -20,12 +20,14 @@ package gov.va.isaac.config.profiles;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.config.generated.RoleOption;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileBindings.RelationshipDirection;
 import gov.va.isaac.util.PasswordHasher;
 import gov.va.isaac.util.json.InterfaceAdapter;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.model.coordinate.LanguageCoordinateImpl;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -35,10 +37,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -47,7 +50,7 @@ import com.google.gson.GsonBuilder;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class UserProfile
+public class UserProfile implements UserProfileI
 {
 	private static Logger logger = LoggerFactory.getLogger(UserProfile.class);
 
@@ -62,7 +65,7 @@ public class UserProfile
 	
 	private UUID conceptUUID;
 
-	private StatedInferredOptions statedInferredPolicy = UserProfileDefaults.getDefaultStatedInferredPolicy();
+	private PremiseType statedInferredPolicy = UserProfileDefaults.getDefaultStatedInferredPolicy();
 	
 	private RelationshipDirection displayRelDirection = UserProfileDefaults.getDefaultDisplayRelDirection();
 	
@@ -100,7 +103,7 @@ public class UserProfile
 
 	private String extensionNamespace = null;
 
-	private Status[] viewCoordinateStatuses = null;
+	private State[] viewCoordinateStatuses = null;
 
 	private UUID[] viewCoordinateModules = null;
 	
@@ -185,6 +188,7 @@ public class UserProfile
 		}
 	}
 
+	@Override
 	public boolean isCorrectPassword(String password)
 	{
 		try
@@ -208,6 +212,7 @@ public class UserProfile
 	 * 
 	 * This call saves the changes to the preferences file.
 	 */
+	@Override
 	public void setPassword(String currentPassword, String newPassword) throws InvalidPasswordException
 	{
 		if (!isCorrectPassword(currentPassword))
@@ -244,26 +249,31 @@ public class UserProfile
 		}
 	}
 
+	@Override
 	public String getUserLogonName()
 	{
 		return userLogonName;
 	}
 
-	public StatedInferredOptions getStatedInferredPolicy()
+	@Override
+	public PremiseType getStatedInferredPolicy()
 	{
 		return statedInferredPolicy;
 	}
 
-	public void setStatedInferredPolicy(StatedInferredOptions statedInferredPolicy)
+	@Override
+	public void setStatedInferredPolicy(PremiseType statedInferredPolicy)
 	{
 		this.statedInferredPolicy = statedInferredPolicy;
 	}
-	
+
+	@Override
 	public void setLanguageCoordinate(LanguageCoordinate languageCoordinate)
 	{
 		this.languageCoordinate = languageCoordinate;
 	}
-	
+
+	@Override
 	public LanguageCoordinate getLanguageCoordinate()
 	{
 		if (languageCoordinate == null)
@@ -272,37 +282,44 @@ public class UserProfile
 		}
 		return languageCoordinate;
 	}
-	
+
+	@Override
 	public void setDisplayRelDirection(RelationshipDirection displayRelationshipDirection)
 	{
 		this.displayRelDirection = displayRelationshipDirection;
 	}
-	
+
+	@Override
 	public RelationshipDirection getDisplayRelDirection()
 	{
 		return displayRelDirection;
 	}
-	
+
+	@Override
 	public String getWorkflowUsername()
 	{
 		return workflowUsername;
 	}
 
+	@Override
 	public void setWorkflowUsername(String workflowUsername)
 	{
 		this.workflowUsername = workflowUsername;
 	}
 
+	@Override
 	public String getSyncUsername()
 	{
 		return syncUsername;
 	}
 
+	@Override
 	public void setSyncUsername(String syncUsername)
 	{
 		this.syncUsername = syncUsername;
 	}
-	
+
+	@Override
 	public void setWorkflowPassword(String workflowPassword)
 	{
 		if (clearTextPassword == null)
@@ -320,6 +337,7 @@ public class UserProfile
 		}
 	}
 
+	@Override
 	public String getWorkflowPassword() throws InvalidPasswordException
 	{
 		if (clearTextPassword == null)
@@ -340,6 +358,7 @@ public class UserProfile
 		}
 	}
 
+	@Override
 	public void setSyncPassword(String syncPassword)
 	{
 		if (clearTextPassword == null)
@@ -356,7 +375,8 @@ public class UserProfile
 			throw new RuntimeException("Unexpected error encrypting sync password");
 		}
 	}
-	
+
+	@Override
 	public String getSyncPassword()
 	{
 		if (clearTextPassword == null)
@@ -380,11 +400,13 @@ public class UserProfile
 	/**
 	 * The UUID of the concept in the DB that represents this user.
 	 */
+	@Override
 	public UUID getConceptUUID()
 	{
 		return conceptUUID;
 	}
 
+	@Override
 	public boolean hasRole(RoleOption role)
 	{
 		if (role == null)
@@ -398,6 +420,7 @@ public class UserProfile
 	/**
 	 * @return the launchWorkflowForEachCommit
 	 */
+	@Override
 	public boolean isLaunchWorkflowForEachCommit()
 	{
 		return launchWorkflowForEachCommit;
@@ -406,6 +429,7 @@ public class UserProfile
 	/**
 	 * @param launchWorkflowForEachCommit the launchWorkflowForEachCommit to set
 	 */
+	@Override
 	public void setLaunchWorkflowForEachCommit(boolean launchWorkflowForEachCommit)
 	{
 		this.launchWorkflowForEachCommit = launchWorkflowForEachCommit;
@@ -414,6 +438,7 @@ public class UserProfile
 	/**
 	 * @return the runDroolsBeforeEachCommit
 	 */
+	@Override
 	public boolean isRunDroolsBeforeEachCommit()
 	{
 		return runDroolsBeforeEachCommit;
@@ -422,6 +447,7 @@ public class UserProfile
 	/**
 	 * @param runDroolsBeforeEachCommit the runDroolsBeforeEachCommit to set
 	 */
+	@Override
 	public void setRunDroolsBeforeEachCommit(boolean runDroolsBeforeEachCommit)
 	{
 		this.runDroolsBeforeEachCommit = runDroolsBeforeEachCommit;
@@ -430,6 +456,7 @@ public class UserProfile
 	/**
 	 * @return workflowServerDeploymentId
 	 */
+	@Override
 	public String getWorkflowServerDeploymentId()
 	{
 		if (StringUtils.isBlank(workflowServerDeploymentId))
@@ -441,18 +468,21 @@ public class UserProfile
 	/**
 	 * @param workflowServerDeploymentId
 	 */
+	@Override
 	public void setWorkflowServerDeploymentId(String workflowServerDeploymentId)
 	{
 		this.workflowServerDeploymentId = workflowServerDeploymentId;
 	}
-	
+
+	@Override
 	public Long getViewCoordinateTime() {
 		if(viewCoordinateTime == null) {
 			return UserProfileDefaults.getDefaultViewCoordinateTime();
 		}
 		return viewCoordinateTime;
 	}
-	
+
+	@Override
 	public void setViewCoordinateTime(Long time) {
 		this.viewCoordinateTime = time;
 	}
@@ -460,6 +490,7 @@ public class UserProfile
 	/**
 	 * @return viewCoordinatePath
 	 */
+	@Override
 	public UUID getViewCoordinatePath()
 	{
 		if (viewCoordinatePath == null)
@@ -471,6 +502,7 @@ public class UserProfile
 	/**
 	 * @param viewCoordinatePath
 	 */
+	@Override
 	public void setViewCoordinatePath(UUID viewCoordinatePath)
 	{
 		this.viewCoordinatePath = viewCoordinatePath;
@@ -479,6 +511,7 @@ public class UserProfile
 	/**
 	 * @return editCoordinatePath
 	 */
+	@Override
 	public UUID getEditCoordinatePath()
 	{
 		if (editCoordinatePath == null)
@@ -490,6 +523,7 @@ public class UserProfile
 	/**
 	 * @param editCoordinatePath
 	 */
+	@Override
 	public void setEditCoordinatePath(UUID editCoordinatePath)
 	{
 		this.editCoordinatePath = editCoordinatePath;
@@ -498,6 +532,7 @@ public class UserProfile
 	/**
 	 * @return editCoordinatePath
 	 */
+	@Override
 	public UUID getEditCoordinateModule()
 	{
 		if (editCoordinateModule == null)
@@ -509,6 +544,7 @@ public class UserProfile
 	/**
 	 * @param editCoordinatePath
 	 */
+	@Override
 	public void setEditCoordinateModule(UUID editCoordinateModule)
 	{
 		this.editCoordinateModule = editCoordinateModule;
@@ -517,6 +553,7 @@ public class UserProfile
 	/**
 	 * @return workflowPromotionPath
 	 */
+	@Override
 	public UUID getWorkflowPromotionPath()
 	{
 		if (workflowPromotionPath == null)
@@ -528,6 +565,7 @@ public class UserProfile
 	/**
 	 * @param workflowPromotionPath
 	 */
+	@Override
 	public void setWorkflowPromotionPath(UUID workflowPromotionPath)
 	{
 		this.workflowPromotionPath = workflowPromotionPath;
@@ -536,6 +574,7 @@ public class UserProfile
 	/**
 	 * @return workflowServerUrl
 	 */
+	@Override
 	public String getWorkflowServerUrl()
 	{
 		if (StringUtils.isBlank(workflowServerUrl))
@@ -547,6 +586,7 @@ public class UserProfile
 	/**
 	 * @param workflowServerUrl
 	 */
+	@Override
 	public void setWorkflowServerUrl(String workflowServerUrl)
 	{
 		this.workflowServerUrl = workflowServerUrl;
@@ -555,6 +595,7 @@ public class UserProfile
 	/**
 	 * @return changeSetUrl
 	 */
+	@Override
 	public String getChangeSetUrl()
 	{
 		if (StringUtils.isBlank(changeSetUrl))
@@ -566,6 +607,7 @@ public class UserProfile
 	/**
 	 * @param changeSetUrl
 	 */
+	@Override
 	public void setChangeSetUrl(String changeSetUrl)
 	{
 		this.changeSetUrl = changeSetUrl;
@@ -574,6 +616,7 @@ public class UserProfile
 	/**
 	 * @return releaseVersion
 	 */
+	@Override
 	public String getReleaseVersion()
 	{
 		if (StringUtils.isBlank(releaseVersion))
@@ -585,6 +628,7 @@ public class UserProfile
 	/**
 	 * @param releaseVersion
 	 */
+	@Override
 	public void setReleaseVersion(String releaseVersion)
 	{
 		this.releaseVersion = releaseVersion;
@@ -593,6 +637,7 @@ public class UserProfile
 	/**
 	 * @return extensionNamespace
 	 */
+	@Override
 	public String getExtensionNamespace()
 	{
 		if (StringUtils.isBlank(extensionNamespace))
@@ -604,6 +649,7 @@ public class UserProfile
 	/**
 	 * @param extensionNamespace
 	 */
+	@Override
 	public void setExtensionNamespace(String extensionNamespace)
 	{
 		this.extensionNamespace = extensionNamespace;
@@ -612,15 +658,16 @@ public class UserProfile
 	/**
 	 * @return viewCoordinateStatuses unmodifiable set of viewCoordinateStatus
 	 * 
-	 * Always returns a unique unmodifiable set of 1 or more Status values.
+	 * Always returns a unique unmodifiable set of 1 or more State values.
 	 * Returns unmodifiable set of default status values if stored array is null or contains no non-null values
 	 */
-	public Set<Status> getViewCoordinateStatuses()
+	@Override
+	public Set<State> getViewCoordinateStatuses()
 	{
-		Set<Status> statuses = new HashSet<>();
+		Set<State> statuses = new HashSet<>();
 		if (viewCoordinateStatuses != null)
 		{
-			for (Status status : viewCoordinateStatuses) {
+			for (State status : viewCoordinateStatuses) {
 				if (status != null) {
 					statuses.add(status);
 				}
@@ -637,22 +684,23 @@ public class UserProfile
 	/**
 	 * @param viewCoordinateStatuses set of viewCoordinateStatus
 	 * 
-	 * Sets a unique set of non-null Status values.
+	 * Sets a unique set of non-null State values.
 	 * If passed set is null or contains no non-null values then empty array is used.
 	 */
-	public void setViewCoordinateStatuses(Set<Status> viewCoordinateStatusesSet) {
-		setViewCoordinateStatuses(viewCoordinateStatusesSet != null ? viewCoordinateStatusesSet.toArray(new Status[viewCoordinateStatusesSet.size()]) : new Status[0]);
+	@Override
+	public void setViewCoordinateStatuses(Set<State> viewCoordinateStatusesSet) {
+		setViewCoordinateStatuses(viewCoordinateStatusesSet != null ? viewCoordinateStatusesSet.toArray(new State[viewCoordinateStatusesSet.size()]) : new State[0]);
 	}
 	/**
 	 * @param viewCoordinateStatuses variable length parameter array of viewCoordinateStatus
 	 * 
-	 * Sets a unique set of non-null Status values.
+	 * Sets a unique set of non-null State values.
 	 * If passed parameter array is null or contains no non-null values then empty array is used.
 	 */
-	public void setViewCoordinateStatuses(Status...viewCoordinateStatusesSet) {
-		Set<Status> validPassedStatuses = new HashSet<>();
+	public void setViewCoordinateStatuses(State...viewCoordinateStatusesSet) {
+		Set<State> validPassedStatuses = new HashSet<>();
 		if (viewCoordinateStatusesSet != null) {
-			for (Status status : viewCoordinateStatusesSet) {
+			for (State status : viewCoordinateStatusesSet) {
 				if (status != null) {
 					validPassedStatuses.add(status);
 				}
@@ -660,9 +708,9 @@ public class UserProfile
 		}
 		
 		if (validPassedStatuses.size() > 0) {
-			viewCoordinateStatuses = validPassedStatuses.toArray(new Status[validPassedStatuses.size()]);
+			viewCoordinateStatuses = validPassedStatuses.toArray(new State[validPassedStatuses.size()]);
 		} else {
-			viewCoordinateStatuses = new Status[0];
+			viewCoordinateStatuses = new State[0];
 		}
 	}
 
@@ -672,6 +720,7 @@ public class UserProfile
 	 * Always returns a unique unmodifiable set of 0 or more module UUIDs.
 	 * An empty returned set means NO RESTRICTION for the purposes of filtering.
 	 */
+	@Override
 	public Set<UUID> getViewCoordinateModules() {
 		Set<UUID> modules = new HashSet<>();
 		if (viewCoordinateModules != null) {
@@ -693,6 +742,7 @@ public class UserProfile
 	 * Sets a unique set of zero or more non-null UUID values.
 	 * If passed set is null or contains no non-null values then empty array is used.
 	 */
+	@Override
 	public void setViewCoordinateModules(Set<UUID> viewCoordinateModulesSet) {
 		setViewCoordinateModules(viewCoordinateModulesSet != null ? viewCoordinateModulesSet.toArray(new UUID[viewCoordinateModulesSet.size()]) : new UUID[0]);
 	}
@@ -702,6 +752,7 @@ public class UserProfile
 	 * Sets a unique set of zero or more non-null UUID values.
 	 * If passed variable length parameter array is null or contains no non-null values then empty array is used.
 	 */
+	@Override
 	public void setViewCoordinateModules(UUID...viewCoordinateModulesSet) {
 		Set<UUID> validPassedUuids = new HashSet<>();
 		if (viewCoordinateModulesSet != null) {
@@ -718,8 +769,7 @@ public class UserProfile
 			viewCoordinateModules = new UUID[0];
 		}
 	}
-	
-	
+
 	// Persistence methods
 	protected void store(File fileToWrite) throws IOException
 	{

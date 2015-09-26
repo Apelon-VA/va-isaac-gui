@@ -2,7 +2,6 @@ package gov.va.isaac.gui.conceptViews.enhanced;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerLabelHelper;
 import gov.va.isaac.gui.conceptViews.helpers.ConceptViewerTooltipHelper;
@@ -12,9 +11,12 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
+
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -33,6 +35,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
@@ -127,10 +130,10 @@ public class EnhancedConceptViewController {
 			}
 			
 			{
-				ChangeListener<StatedInferredOptions> changeListener = new ChangeListener<StatedInferredOptions>()
+				ChangeListener<PremiseType> changeListener = new ChangeListener<PremiseType>()
 				{
 					@Override
-					public void changed(ObservableValue<? extends StatedInferredOptions> observable, StatedInferredOptions oldValue, StatedInferredOptions newValue)
+					public void changed(ObservableValue<? extends PremiseType> observable, PremiseType oldValue, PremiseType newValue)
 					{
 						LOG.info("Kicking off refresh() due to stated / inferred from {} to {}", oldValue, newValue);
 						setConcept(currentCon, mode, conceptHistoryStack);
@@ -138,7 +141,7 @@ public class EnhancedConceptViewController {
 				};
 				//Need to keep a ref, otherwise, it will be GC'ed right away
 				changeListeners.add(changeListener);
-				userProfileManager.getPropertyBindings().getStatedInferredPolicy().addListener(new WeakChangeListener<StatedInferredOptions>(changeListener));
+				userProfileManager.getPropertyBindings().getStatedInferredPolicy().addListener(new WeakChangeListener<PremiseType>(changeListener));
 			}
 
 			initializeWindow(conceptHistoryStack, mode);

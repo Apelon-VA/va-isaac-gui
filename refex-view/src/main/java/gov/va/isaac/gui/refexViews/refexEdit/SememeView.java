@@ -18,6 +18,29 @@
  */
 package gov.va.isaac.gui.refexViews.refexEdit;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.gui.SimpleDisplayConcept;
+import gov.va.isaac.gui.dialog.YesNoDialog;
+import gov.va.isaac.gui.refexViews.refexEdit.HeaderNode.Filter;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.gui.util.TableHeaderRowTooltipInstaller;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
+import gov.va.isaac.interfaces.utility.DialogResponse;
+import gov.va.isaac.util.UpdateableBooleanBinding;
+import gov.va.isaac.util.Utility;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
+import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
+import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,36 +56,6 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import javax.inject.Named;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.glassfish.hk2.api.PerLookup;
-import org.jvnet.hk2.annotations.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.javafx.collections.ObservableMapWrapper;
-import com.sun.javafx.tk.Toolkit;
-import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.gui.SimpleDisplayConcept;
-import gov.va.isaac.gui.dialog.YesNoDialog;
-import gov.va.isaac.gui.refexViews.dynamicRefexListView.referencedItemsView.DynamicReferencedItemsView;
-import gov.va.isaac.gui.refexViews.refexEdit.HeaderNode.Filter;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.gui.util.TableHeaderRowTooltipInstaller;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
-import gov.va.isaac.interfaces.utility.DialogResponse;
-import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.va.isaac.util.Utility;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.State;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
-import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
-import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import javafx.application.Platform;
 import javafx.beans.binding.FloatBinding;
 import javafx.beans.property.BooleanProperty;
@@ -77,6 +70,8 @@ import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -88,6 +83,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -95,6 +91,18 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
+import javax.inject.Named;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.glassfish.hk2.api.PerLookup;
+import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.sun.javafx.collections.ObservableMapWrapper;
+import com.sun.javafx.tk.Toolkit;
 
 
 /**
@@ -105,7 +113,7 @@ import javafx.scene.text.Text;
  */
 
 @Service
-@Named (value="DynamicSememeView")
+@Named (value=SharedServiceNames.SEMEME_VIEW)
 @PerLookup
 public class SememeView implements SememeViewI
 {
@@ -338,13 +346,13 @@ public class SememeView implements SememeViewI
 			t.getItems().add(editButton_);
 			
 			viewUsageButton_ = new Button(null, Images.SEARCH.createImageView());
-			viewUsageButton_.setTooltip(new Tooltip("The displayed concept also defines a sememe dynamic itself.  Click to see the usage of this sememe."));
+			viewUsageButton_.setTooltip(new Tooltip("The displayed concept also defines a dynamic sememe itself.  Click to see the usage of this sememe."));
 			viewUsageButton_.setOnAction((action) ->
 			{
 				try
 				{
-					SimpleDisplayConcept sdc = new SimpleDisplayConcept(viewFocusNid_, null);
-					DynamicReferencedItemsView driv = new DynamicReferencedItemsView(sdc);
+					SememeViewI driv = AppContext.getService(SememeViewI.class);
+					driv.setAssemblage(viewFocusNid_, null, null, null, true);
 					driv.showView(null);
 				}
 				catch (Exception e)
@@ -605,6 +613,41 @@ public class SememeView implements SememeViewI
 		//setting up the binding stuff is causing refresh calls
 		initialInit();
 		return rootNode_;
+	}
+	
+	/**
+	 * @see gov.va.isaac.interfaces.gui.views.PopupViewI#showView(javafx.stage.Window)
+	 */
+	@Override
+	public void showView(Window parent)
+	{
+		Stage stage = new Stage(StageStyle.DECORATED);
+		stage.initModality(Modality.NONE);
+		stage.initOwner(parent);
+		
+		BorderPane root = new BorderPane();
+		
+		Label title = new Label("Sememe View");
+		title.getStyleClass().add("titleLabel");
+		title.setAlignment(Pos.CENTER);
+		title.setMaxWidth(Double.MAX_VALUE);
+		title.setPadding(new Insets(5, 5, 5, 5));
+		root.setTop(title);
+		root.setCenter(getView());
+		
+		Scene scene = new Scene(root);
+		stage.setScene(scene);
+		stage.setTitle("Sememe View");
+		stage.getScene().getStylesheets().add(SememeView.class.getResource("/isaac-shared-styles.css").toString());
+		stage.setWidth(800);
+		stage.setHeight(600);
+		stage.onHiddenProperty().set((eventHandler) ->
+		{
+			stage.setScene(null);
+			viewDiscarded();
+		});
+		stage.show();
+//		drv_.setAssemblage(assemblageConcept_.getNid(), null, null, null, true);
 	}
 
 	/**
@@ -869,7 +912,8 @@ public class SememeView implements SememeViewI
 						}
 						else
 						{
-							throw e;
+							//TODO need to figure out how to handle the case where the thing they click on isn't used as an assemblage, and isn't a dynamic assemblage
+							throw new RuntimeException("Keyword", e);  //HACK alert (look in the catch)
 						}
 					}
 					for (DynamicSememeColumnInfo col : rdud.getColumnInfo())
@@ -1117,6 +1161,10 @@ public class SememeView implements SememeViewI
 								{
 									for (TreeTableColumn<SememeGUI, ?> nCol : col.getColumns())
 									{
+										if (nCol.getText().equals("String"))
+										{
+											nCol.setPrefWidth(250);  //these are common, and commonly long
+										}
 										bind(nCol.widthProperty());
 										bind(nCol.visibleProperty());
 									}
@@ -1179,10 +1227,26 @@ public class SememeView implements SememeViewI
 			}
 			catch (Exception e)
 			{
-				logger_.error("Unexpected error building the sememe display", e);
-				//null check, as the error may happen before the scene is visible
-				AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the sememe display", e.getMessage(), 
-						(rootNode_.getScene() == null ? null : rootNode_.getScene().getWindow()));
+				if (e.getMessage().equals("Keyword"))
+				{
+					logger_.info("The specified concept is not specified correctly as a dynamic sememe, and is not utilized as a static sememe", e);
+					Platform.runLater(() ->
+					{
+						addButton_.setDisable(true);
+						treeRoot_.getChildren().clear();
+						summary_.setText(0 + " entries");
+						placeholderText.setText("The specified concept is not specified correctly as a dynamic sememe, and is not utilized as a static sememe");
+						ttv_.setPlaceholder(placeholderText);
+						ttv_.getSelectionModel().clearSelection();
+					});
+				}
+				else
+				{
+					logger_.error("Unexpected error building the sememe display", e);
+					//null check, as the error may happen before the scene is visible
+					AppContext.getCommonDialogs().showErrorDialog("Error", "There was an unexpected error building the sememe display", e.getMessage(), 
+							(rootNode_.getScene() == null ? null : rootNode_.getScene().getWindow()));
+				}
 			}
 			finally
 			{

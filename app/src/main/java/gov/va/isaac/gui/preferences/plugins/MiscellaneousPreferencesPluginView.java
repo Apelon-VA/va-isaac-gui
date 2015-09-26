@@ -29,13 +29,18 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginCheckBoxProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import javafx.scene.control.Control;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -84,7 +89,7 @@ public class MiscellaneousPreferencesPluginView extends AbstractPreferencesPlugi
 	 * @param properties
 	 */
 	protected MiscellaneousPreferencesPluginView() {
-		super("Display Options", createProperties());
+		super(SharedServiceNames.DISPLAY_OPTIONS_PREFERENCES_PLUGIN, createProperties());
 	}
 	
 	/**

@@ -22,7 +22,8 @@ import gov.va.isaac.gui.ConceptNode;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.va.isaac.util.OTFUtility;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.Get;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -32,8 +33,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
-import org.ihtsdo.otf.tcc.api.metadata.binding.Snomed;
-import org.ihtsdo.otf.tcc.api.relationship.RelationshipType;
 
 /**
  * {@link RelRow}
@@ -44,7 +43,7 @@ public class RelRow
 {
 	ConceptNode relationship;
 	ConceptNode target;
-	ChoiceBox<String> type;
+	ChoiceBox<RoleType> type;
 	Node typeNode;
 	TextField group;
 	Node groupNode;
@@ -64,19 +63,19 @@ public class RelRow
 	public RelRow()
 	{
 		ObservableList<SimpleDisplayConcept> dropDownOptions = FXCollections.observableArrayList();
-		dropDownOptions.add(new SimpleDisplayConcept(OTFUtility.getConceptVersion(Snomed.IS_A.getUuids()[0])));
+		dropDownOptions.add(new SimpleDisplayConcept(Get.conceptSnapshot().getConceptSnapshot(IsaacMetadataAuxiliaryBinding.IS_A.getNid())));
 		relationship = new ConceptNode(null, true, dropDownOptions, null);
 		target = new ConceptNode(null, true);
 		
 		//TODO (artf231868) add validation icons / reasons
-		type = new ChoiceBox<String>(FXCollections.observableArrayList("Role", "Qualifier"));
-		type.valueProperty().addListener(new ChangeListener<String>()
+		type = new ChoiceBox<RoleType>(FXCollections.observableArrayList(RoleType.All_Role, RoleType.Some_Role));
+		type.valueProperty().addListener(new ChangeListener<RoleType>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			public void changed(ObservableValue<? extends RoleType> observable, RoleType oldValue, RoleType newValue)
 			{
 				
-				String type = newValue.trim();
+				String type = newValue.toString().trim();
 				
 				if (type.length() == 0)
 				{
@@ -172,15 +171,15 @@ public class RelRow
 		return typeNode;
 	}
 
-	public RelationshipType getType()
+	public RoleType getType()
 	{
-		if ("Role".equalsIgnoreCase(type.getSelectionModel().getSelectedItem()))
+		if ("All Role".equalsIgnoreCase(type.getSelectionModel().getSelectedItem().toString()))
 		{
-			return RelationshipType.STATED_ROLE;
+			return RoleType.All_Role;
 		}
 		else
 		{
-			return RelationshipType.QUALIFIER;
+			return RoleType.Some_Role;
 		}
 	}
 

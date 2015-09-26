@@ -19,24 +19,24 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
 import gov.va.isaac.util.OchreUtility;
-//import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.Utility;
 import gov.va.isaac.util.ValidBooleanBinding;
-import gov.va.isaac.util.ViewCoordinateComponents;
 import gov.va.isaac.util.ViewCoordinateFactory;
 import gov.vha.isaac.metadata.coordinates.LanguageCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 
 import java.io.IOException;
@@ -58,18 +58,16 @@ import java.util.UUID;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleSetProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.ObservableSet;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -92,7 +90,6 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,16 +103,6 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 
 public class ViewCoordinatePreferencesPluginViewController {
 	private final static Logger log = LoggerFactory.getLogger(ViewCoordinatePreferencesPluginViewController.class);
-
-	public static interface PersistenceInterface {
-		public UUID getPath();
-		public StatedInferredOptions getStatedInferredOption();
-		public Long getTime();
-		public Set<Status> getStatuses();
-		public Set<UUID> getModules();
-		
-		public void save(ViewCoordinateComponents components) throws IOException;
-	}
 
 	/**
 	 * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
@@ -150,7 +137,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	private boolean contentLoaded = false;
 	
-	private PersistenceInterface persistenceInterface = null;
+	private PreferencesPersistenceI persistenceInterface = null;
 
 	final private TaxonomyCoordinate panelViewCoordinate = TaxonomyCoordinates.getStatedTaxonomyCoordinate(StampCoordinates.getDevelopmentLatest(), LanguageCoordinates.getUsEnglishLanguageFullySpecifiedNameCoordinate());
 	
@@ -168,12 +155,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 	private ValidBooleanBinding allValid_ = null;
 
 	// ValidBooleanBinding allValid_ dependencies
-	private final ObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
+	private final ObjectProperty<PremiseType> currentStatedInferredOptionProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<UUID> currentPathProperty = new SimpleObjectProperty<>();
 	private final ObjectProperty<Long> currentTimeProperty = new SimpleObjectProperty<>();
-	private final SimpleSetProperty<Status> currentStatusesProperty = new SimpleSetProperty<>(new ObservableSetWrapper<Status>(new HashSet<Status>()));
+	private final SimpleSetProperty<State> currentStatusesProperty = new SimpleSetProperty<>(new ObservableSetWrapper<State>(new HashSet<State>()));
 	private final SelectableModule allModulesMarker = new SelectableModule();
-	private final ObservableSet<UUID> selectedModules = FXCollections.observableSet(new HashSet<UUID>());
+	private final SetProperty<UUID> selectedModules = new SimpleSetProperty<UUID>(FXCollections.observableSet(new HashSet<UUID>()));
 
 	private final List<RadioButton> statedInferredOptionButtons = new ArrayList<>();
 
@@ -232,8 +219,23 @@ public class ViewCoordinatePreferencesPluginViewController {
 		initializeValidBooleanBinding();
 	}
 
-	public void setPersistenceInterface(PersistenceInterface pi) {
+	/**
+	 * 
+	 * Set persistent interface prior to any interaction with either UserProfile or local data structures.
+	 * Cannot be called after getContent(), as getContent() invokes PreferencesPersistenceI methods.
+	 * setPersistenceInterface() may be called any number of times before getContent() and should not have any side effects.
+	 * 
+	 * @param pi PreferencesPersistenceI for saving and load preferences from either UserProfile or local data structures
+	 * 
+	 */
+	public void setPersistenceInterface(PreferencesPersistenceI pi) {
+		if (contentLoaded) {
+			throw new RuntimeException("Cannot call setPersistenceInterface() after getContent()");
+		}
 		persistenceInterface = pi;
+	}
+	PreferencesPersistenceI getPersistenceInterface() {
+		return persistenceInterface;
 	}
 	
 	private void setCurrentTimePropertyFromDatePicker() {
@@ -411,7 +413,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		activeStatusButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
 			if (newValue) {
 				currentStatusesProperty.get().clear();
-				currentStatusesProperty.add(Status.ACTIVE);
+				currentStatusesProperty.add(State.ACTIVE);
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(activeStatusButton);
@@ -423,7 +425,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 		inactiveStatusButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
 			if (newValue) {
 				currentStatusesProperty.get().clear();
-				currentStatusesProperty.add(Status.INACTIVE);
+				currentStatusesProperty.add(State.INACTIVE);
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(inactiveStatusButton);
@@ -435,8 +437,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 		activeAndInactiveStatusButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
 			if (newValue) {
 				currentStatusesProperty.get().clear();
-				currentStatusesProperty.add(Status.ACTIVE);
-				currentStatusesProperty.add(Status.INACTIVE);
+				currentStatusesProperty.add(State.ACTIVE);
+				currentStatusesProperty.add(State.INACTIVE);
 			}
 		});
 		statusesToggleGroupVBox.getChildren().add(activeAndInactiveStatusButton);
@@ -445,12 +447,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 	private void initializeStatedInferredToggleGroup() {
 		statedInferredToggleGroup = new ToggleGroup(); //Stated / Inferred
 
-		for (StatedInferredOptions option : StatedInferredOptions.values()) {
+		for (PremiseType option : PremiseType.values()) {
 			RadioButton optionButton = new RadioButton();
-			if (option == StatedInferredOptions.STATED) {
+			if (option == PremiseType.STATED) {
 				optionButton.setText("Stated");
 			}
-			else if (option == StatedInferredOptions.INFERRED) {
+			else if (option == PremiseType.INFERRED) {
 				optionButton.setText("Inferred");
 			}
 			else {
@@ -463,7 +465,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 			statedInferredOptionButtons.add(optionButton);
 		}
 		statedInferredToggleGroup.selectedToggleProperty().addListener(
-				(observable, oldValue, newValue) -> runLaterIfNotFXApplicationThread(() -> currentStatedInferredOptionProperty.set((StatedInferredOptions)newValue.getUserData())));
+				(observable, oldValue, newValue) -> runLaterIfNotFXApplicationThread(() -> currentStatedInferredOptionProperty.set((PremiseType)newValue.getUserData())));
 	}
 
 	private void initializeValidBooleanBinding() {
@@ -547,9 +549,9 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 				if (selectedModules.size() > 0) {
 					// Remove this check when modules supported by ViewCoordinateFactory.get()
-					this.setInvalidReason("Selection of specific module(s) not currently supported.  Currently, only ALL is supported.");
-					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
-					return false;
+//					this.setInvalidReason("Selection of specific module(s) not currently supported.  Currently, only ALL is supported.");
+//					TextErrorColorHelper.setTextErrorColor(selectableModuleListView);
+//					return false;
 				} else if (allModulesMarker.selectedProperty().get()
 						&& selectedModules.size() > 0) {
 					this.setInvalidReason("ALL module cannot be selected while any (currently " + selectedModules.size() + ") specific module selected");
@@ -645,7 +647,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 					// Reload storedModules
 					final Set<UUID> storedModuleUuids = getStoredModules();
 					if (storedModuleUuids.size() == 0) {
-						allModulesMarker.setSelected(true);
+						runLaterIfNotFXApplicationThread(() -> allModulesMarker.setSelected(true));
 					} else {
 						// Check to make sure that stored UUID refers to an existing, known module
 						for (UUID storedModuleUuid : storedModuleUuids) {
@@ -707,8 +709,8 @@ public class ViewCoordinatePreferencesPluginViewController {
 				removeProgressIndicator();
 				
 				Throwable ex = getException();
-				log.error("loadContent() caught " + ex.getClass().getName() + " " + ex.getLocalizedMessage(), ex);
-				AppContext.getCommonDialogs().showErrorDialog("Failed loading content. See logs.", ex);
+				log.error("getContent() caught " + ex.getClass().getName() + " " + ex.getLocalizedMessage(), ex);
+				AppContext.getCommonDialogs().showErrorDialog("Failed getting content. See logs.", ex);
 			}
 		};
 
@@ -721,29 +723,29 @@ public class ViewCoordinatePreferencesPluginViewController {
 	
 	private void loadStoredStatedInferredOption() {
 		// Reload storedStatedInferredOption
-		final StatedInferredOptions storedStatedInferredOption = getStoredStatedInferredOption();
+		final PremiseType storedStatedInferredOption = getStoredStatedInferredOption();
 		for (Toggle toggle : statedInferredToggleGroup.getToggles()) {
 			if (toggle.getUserData() == storedStatedInferredOption) {
-				toggle.setSelected(true);
+				Platform.runLater(() -> toggle.setSelected(true));
 			}
 		}
 	}
 
 	private void loadStoredStatuses() {
 		// Reload storedStatuses
-		final Set<Status> storedStatuses = getStoredStatuses();
-		if (storedStatuses.contains(Status.ACTIVE) && storedStatuses.contains(Status.INACTIVE)) {
+		final Set<State> storedStatuses = getStoredStatuses();
+		if (storedStatuses.contains(State.ACTIVE) && storedStatuses.contains(State.INACTIVE)) {
 			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(activeAndInactiveStatusButton));
-		} else if (storedStatuses.contains(Status.ACTIVE)) {
+		} else if (storedStatuses.contains(State.ACTIVE)) {
 			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(activeStatusButton));
-		} else if (storedStatuses.contains(Status.INACTIVE)) {
+		} else if (storedStatuses.contains(State.INACTIVE)) {
 			runLaterIfNotFXApplicationThread(() -> statusesToggleGroup.selectToggle(inactiveStatusButton));
 		} else if (storedStatuses.size() == 0) {
-			log.warn("No view coordinate Status values");
+			log.warn("No view coordinate State values");
 		} else {
-			log.error("Unsupported view coordinate Status values: {}", storedStatuses.toArray());
+			log.error("Unsupported view coordinate State values: {}", storedStatuses.toArray());
 			AppContext.getCommonDialogs().showErrorDialog(
-					"Unsupported View Coordinate Status",
+					"Unsupported View Coordinate State",
 					"Unsupported view coordinate Status values",
 					Arrays.toString(storedStatuses.toArray()));
 		}
@@ -764,13 +766,7 @@ public class ViewCoordinatePreferencesPluginViewController {
 	}
 
 	public void save() throws IOException {
-		persistenceInterface.save(
-				new ViewCoordinateComponents(
-						currentStatedInferredOptionProperty.get(),
-						currentPathProperty.get(),
-						currentStatusesProperty.get(),
-						currentTimeProperty.get(),
-						selectedModules));
+		persistenceInterface.save();
 	}
 
 	public static Date getEndOfDay(Date date) {
@@ -818,12 +814,12 @@ public class ViewCoordinatePreferencesPluginViewController {
 
 	}
 
-	protected StatedInferredOptions getStoredStatedInferredOption() {
+	protected PremiseType getStoredStatedInferredOption() {
 		return persistenceInterface.getStatedInferredOption();
 
 	}
 
-	protected Set<Status> getStoredStatuses() {
+	protected Set<State> getStoredStatuses() {
 		return persistenceInterface.getStatuses();
 	}
 
@@ -842,21 +838,21 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return UserProfileDefaults.getDefaultViewCoordinateTime();
 	}
 
-	protected StatedInferredOptions getDefaultStatedInferredOption() {
+	protected PremiseType getDefaultStatedInferredOption() {
 		return UserProfileDefaults.getDefaultStatedInferredPolicy();
 	}
-	protected Set<Status> getDefaultStatuses() {
+	protected Set<State> getDefaultStatuses() {
 		return UserProfileDefaults.getDefaultViewCoordinateStatuses();
 	}
 
-	public ReadOnlySetProperty<Status> currentStatusesProperty() {
+	public ReadOnlySetProperty<State> currentStatusesProperty() {
 		return currentStatusesProperty;
 	}
 	public ReadOnlyObjectProperty<Long> currentTimeProperty() {
 		return currentTimeProperty;
 	}
 
-	public ReadOnlyObjectProperty<StatedInferredOptions> currentStatedInferredOptionProperty() {
+	public ReadOnlyObjectProperty<PremiseType> currentStatedInferredOptionProperty() {
 		return currentStatedInferredOptionProperty;
 	}
 
@@ -864,6 +860,10 @@ public class ViewCoordinatePreferencesPluginViewController {
 		return currentPathProperty;
 	}
 
+	public ReadOnlySetProperty<UUID> currentSelectedModulesProperty() {
+		return this.selectedModules;
+	}
+	
 	private class SelectableModule implements Comparable<SelectableModule> {
 		private final BooleanProperty selected = new SimpleBooleanProperty(false);
 		private final String description;

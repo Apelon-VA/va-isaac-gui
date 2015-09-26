@@ -265,7 +265,7 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 			{
 				DynamicSememeDataBI data = NumberUtilities.wrapIntoRefexHolder(NumberUtilities.parseUnknown(searchString));
 				LOG.debug("Doing a sememe search with a numeric value");
-				ssh = SearchHandler.dynamicRefexSearch((indexer) ->
+				ssh = SearchHandler.dynamicSememeSearch((indexer) ->
 				{
 					try
 					{
@@ -283,8 +283,8 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				try
 				{
 					Interval interval = new Interval(searchString);
-					LOG.debug("Doing a sememe search with an interval value");
-					ssh = SearchHandler.dynamicRefexSearch((indexer) ->
+					LOG.debug("Doing a dynamic sememe search with an interval value");
+					ssh = SearchHandler.dynamicSememeSearch((indexer) ->
 					{
 						try
 						{
@@ -301,8 +301,8 @@ public class SememeSearchTypeModel extends SearchTypeModel implements TaskComple
 				catch (NumberFormatException e1) 
 				{
 					//run it as a string search
-					LOG.debug("Doing a sememe search as a string search");
-					ssh = SearchHandler.dynamicRefexSearch((indexer) ->
+					LOG.debug("Doing a  dynamic sememe search as a string search");
+					ssh = SearchHandler.dynamicSememeSearch((indexer) ->
 					{
 						try
 						{

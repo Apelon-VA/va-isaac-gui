@@ -324,6 +324,10 @@ public class USCRSBatchTemplate
 					});
 		}
 	}
+	
+	public Workbook getWb() {
+		return wb;
+	}
 
 	private Sheet getSheet(SHEET sheet)
 	{

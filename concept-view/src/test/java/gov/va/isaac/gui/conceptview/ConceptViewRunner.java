@@ -38,8 +38,8 @@ public class ConceptViewRunner extends Application {
 		 */
         view = LookupService.getService(ConceptView.class, SharedServiceNames.DIAGRAM_STYLE);
         
-        view.setConcept(UUID.fromString("9549a066-7d57-371d-8958-82a6a0b5b175"));
-        //view.setConcept(UUID.fromString("4bf05b37-076a-3a6a-ad53-b10bbf83cfc5"));
+        //view.setConcept(UUID.fromString("9549a066-7d57-371d-8958-82a6a0b5b175"));
+        view.setConcept(UUID.fromString("4bf05b37-076a-3a6a-ad53-b10bbf83cfc5"));
     }
 
     @Override

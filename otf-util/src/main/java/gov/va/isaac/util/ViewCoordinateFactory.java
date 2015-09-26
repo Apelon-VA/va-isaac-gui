@@ -1,14 +1,17 @@
 package gov.va.isaac.util;
 
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.vha.isaac.metadata.coordinates.ViewCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.mahout.math.Arrays;
 import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.ihtsdo.otf.tcc.api.coordinate.Position;
@@ -46,11 +49,11 @@ public class ViewCoordinateFactory {
 	}
 	public static ViewCoordinate getViewCoordinate(
 			UUID path,
-			StatedInferredOptions statedInferredOption,
-			Set<Status> statusesSet,
+			PremiseType statedInferredOption,
+			Set<State> statusesSet,
 			long time,
 			Set<UUID> modules) {
-		final EnumSet<Status> statuses = EnumSet.allOf(Status.class); // Have to have non-empty set to create
+		final EnumSet<State> statuses = EnumSet.allOf(State.class); // Have to have non-empty set to create
 		statuses.clear();
 		statuses.addAll(statusesSet);
 
@@ -64,7 +67,7 @@ public class ViewCoordinateFactory {
 			relAssertionType = RelAssertionType.INFERRED;
 			break;
 		default:
-			throw new IllegalArgumentException("Unsupported " + StatedInferredOptions.class.getName() + " value " + statedInferredOption + ".  Expected one of " + StatedInferredOptions.STATED + " or " + StatedInferredOptions.INFERRED);
+			throw new IllegalArgumentException("Unsupported " + PremiseType.class.getName() + " value " + statedInferredOption + ".  Expected one of " + PremiseType.STATED + " or " + PremiseType.INFERRED);
 		}
 
 		try {
@@ -155,7 +158,23 @@ public class ViewCoordinateFactory {
 
 				viewCoordinate.setViewPosition(viewPosition);
 				viewCoordinate.setRelationshipAssertionType(relAssertionType);
-				viewCoordinate.setAllowedStatus(statuses);
+				EnumSet<Status> oldStatuses = EnumSet.allOf(Status.class);
+				oldStatuses.clear();
+				for (State state : statuses) {
+					switch (state) {
+					case ACTIVE:
+						oldStatuses.add(Status.ACTIVE);
+						break;
+					case INACTIVE:
+						oldStatuses.add(Status.INACTIVE);
+						break;
+					case PRIMORDIAL:
+					case CANCELED:
+						default:
+							throw new IllegalArgumentException("Unsupported State value " + state);
+					}
+				}
+				viewCoordinate.setAllowedStatus(oldStatuses);
 				viewCoordinate.setDescriptionLogicProfileSpec(IsaacMetadataAuxiliaryBinding.EL_PLUS_PLUS);
 				viewCoordinate.setStatedAssemblageSpec(IsaacMetadataAuxiliaryBinding.EL_PLUS_PLUS_STATED_FORM);
 				viewCoordinate.setInferredAssemblageSpec(IsaacMetadataAuxiliaryBinding.EL_PLUS_PLUS_INFERRED_FORM);

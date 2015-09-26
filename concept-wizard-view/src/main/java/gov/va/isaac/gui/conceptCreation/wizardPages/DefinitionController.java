@@ -18,18 +18,21 @@
  */
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
-import gov.va.isaac.gui.ConceptNode;
-import gov.va.isaac.gui.conceptCreation.PanelControllers;
-import gov.va.isaac.gui.conceptCreation.ScreensController;
-import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.util.OTFUtility;
-import gov.va.isaac.util.UpdateableBooleanBinding;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gov.va.isaac.gui.ConceptNode;
+import gov.va.isaac.gui.conceptCreation.PanelControllers;
+import gov.va.isaac.gui.conceptCreation.ScreensController;
+import gov.va.isaac.gui.util.ErrorMarkerUtils;
+import gov.va.isaac.util.UpdateableBooleanBinding;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
 import javafx.event.ActionEvent;
@@ -46,9 +49,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -231,14 +231,15 @@ public class DefinitionController implements PanelControllers {
 
 	@Override
 	public void processValues() {
-		List<ConceptVersionBI> parents = new ArrayList<>();
+		List<Integer> parents = new ArrayList<>();
 		
 		for (Node parentNode : parentVBox.getChildren()) {
 			ConceptNode parent = nodeToConMap.get(parentNode);
-			parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
+			//parents.add(OTFUtility.getConceptVersion(parent.getConcept().getNid()));  //Temp stupid hack till this is rewritten to ochre
+			parents.add(parent.getConcept().getConceptSequence());
+			
 		}
-		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents,
-												isPrimitive.isSelected()); 
+		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents); 
 	}
 
 	private void removeNewParentHandler(int idx) {

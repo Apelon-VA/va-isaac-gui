@@ -22,13 +22,9 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
-import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
-import gov.va.isaac.interfaces.gui.views.DockedViewI;
-import gov.va.isaac.interfaces.gui.views.commonFunctionality.ListBatchViewI;
-import gov.va.isaac.util.OTFUtility;
-import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 
-import java.io.IOException;
 import java.util.List;
 
 import javafx.event.ActionEvent;
@@ -42,11 +38,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import org.ihtsdo.otf.tcc.api.concept.ConceptChronicleBI;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
-import org.ihtsdo.otf.tcc.api.contradiction.ContradictionException;
-import org.ihtsdo.otf.tcc.api.coordinate.ViewCoordinate;
-import org.ihtsdo.otf.tcc.api.store.Ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -84,7 +75,6 @@ public class SummaryController implements PanelControllers {
 	@FXML private Button commitButton;
 	@FXML private Button backButton;
 
-	static ViewCoordinate vc = null;
 	static ScreensController processController;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SummaryController.class);
@@ -126,7 +116,6 @@ public class SummaryController implements PanelControllers {
 	private void setupConcept() {
 		conceptFSN.setText(processController.getWizard().getConceptFSN());
 		conceptPT.setText(processController.getWizard().getConceptPT());
-		conceptPrimDef.setText(processController.getWizard().getConceptPrimDef());
 
 		addAllParents(processController.getWizard().getParents());
 	}
@@ -178,14 +167,14 @@ public class SummaryController implements PanelControllers {
 		}
 	}
 
-	private void addAllParents(List<ConceptVersionBI> parents) {
+	private void addAllParents(List<Integer> parents) {
 		try {
-			for (ConceptVersionBI p : parents) {
-				Label tf = new Label(p.getPreferredDescription().getText());
+			for (int p : parents) {
+				Label tf = new Label(Get.conceptService().getConcept(p).getConceptDescriptionText());
 				parentVBox.getChildren().add(tf);
 			}
 				
-		} catch (IOException | ContradictionException e) {
+		} catch (Exception e) {
 			LOGGER.error("Could not find preferred description of one or more parents", e);
 		}
 	}
@@ -202,18 +191,18 @@ public class SummaryController implements PanelControllers {
 	@Override
 	public void processValues() {
 		try {
-			ConceptChronicleBI newCon = processController.getWizard().createNewConcept();
 			
-			for (int i = 0; i < processController.getWizard().getSynonymsCreated(); i++) {
-					processController.getWizard().createNewDescription(newCon, i);
-			}
-
-			for (int i = 0; i < processController.getWizard().getRelationshipsCreated(); i++) {
-				processController.getWizard().createNewRelationship(newCon, i);
-			}
-			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
+			ConceptChronology newChronology = processController.getWizard().createNewConcept();
+			
+			Get.commitService().addUncommitted(newChronology);
+			Get.commitService().commit(
+					newChronology, 
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
+					"WizardController adding concept: " + "fsn");
+			
+//			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
 			//boolean committed = 
-			Ts.get().commit(/* newCon.getNid() */);
+//			Ts.get().commit(/* newCon.getNid() */);
 			//TODO OCHRE - figure out how commits get voided now that they don't return boolean
 //			if (!committed)
 //			{

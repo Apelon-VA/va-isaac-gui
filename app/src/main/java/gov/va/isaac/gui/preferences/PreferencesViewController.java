@@ -29,13 +29,18 @@ import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.util.TextErrorColorHelper;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
 import gov.va.isaac.util.ValidBooleanBinding;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -50,7 +55,9 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TabPane.TabClosingPolicy;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+
 import javax.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.hk2.api.IterableProvider;
 import org.slf4j.Logger;
@@ -66,16 +73,23 @@ public class PreferencesViewController {
 	private Logger logger = LoggerFactory.getLogger(PreferencesViewController.class);
 
 	@Inject
-	private IterableProvider<PreferencesPluginViewI> plugins_;
+	private IterableProvider<PreferencesPluginViewI> allPlugins_;
+	
+	private List<PreferencesPluginViewI> requestedPlugins = null;
+	private final Set<String> requestedPluginNames = new HashSet<>();
 
 	private @FXML TabPane tabPane_;
 
 	private @FXML Button okButton_;
 	private @FXML Button cancelButton_;
 	
+	private @FXML Label titleLabel_;
+	
 	private PreferencesView stage_;
 	
 	private ValidBooleanBinding allValid_ = null;
+	
+	private boolean aboutToShowCalled_ = false;
 	
 	public PreferencesViewController() {
 		AppContext.getServiceLocator().inject(this);
@@ -87,6 +101,7 @@ public class PreferencesViewController {
 		assert tabPane_ != null : "fx:id=\"tabPane\" was not injected: check your FXML file 'PreferencesView.fxml'.";
 		assert okButton_ != null : "fx:id=\"okButton\" was not injected: check your FXML file 'PreferencesView.fxml'.";
 		assert cancelButton_ != null : "fx:id=\"cancelButton_\" was not injected: check your FXML file 'PreferencesView.fxml'.";
+		assert titleLabel_ != null : "fx:id=\"titleLable_\" was not injected: check your FXML file 'PreferencesView.fxml'.";
 
 		tabPane_.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
 		tabPane_.setMaxWidth(Double.MAX_VALUE);
@@ -100,28 +115,87 @@ public class PreferencesViewController {
 		this.stage_ = stage;
 	}
 	
+	void setPanelTitle(String title) {
+		titleLabel_.setText(title);
+	}
+	
+	/**
+	 * 
+	 * Allow specification by name of plugins to display before calling aboutToShow().
+	 * If no plugin names specified, then all available plugins will be displayed.
+	 * Throws RuntimeException if called after aboutToShow()
+	 * 
+	 * @param requiredPluginName a required plugin name
+	 * @param optionalPluginNames optional additional plugin names
+	 * 
+	 */
+	public void setRequestedPlugins(String requiredPluginName, String...optionalPluginNames) {
+		if (allValid_ != null) {
+			throw new RuntimeException("Cannot set or reset requested plugins after calling aboutToShow()");
+		}
+		requestedPluginNames.clear();
+		requestedPluginNames.add(requiredPluginName);
+		if (optionalPluginNames != null) {
+			for (String name : optionalPluginNames) {
+				requestedPluginNames.add(name);
+			}
+		}
+	}
+	
+	/**
+	 * Load instances of all available PreferencesPluginViewI classes,
+	 * unless requestedPluginNames is non-empty, in which case ignore non-specified PreferencesPluginViewI classes.
+	 * PreferencesPersistenceI may be reset in plugins after this call, but cannot be reset after aboutToShow().
+	 * 
+	 * loadPlugins() only performs load on first call, subsequently performing noop.
+	 */
+	public void loadPlugins() {
+		if (requestedPlugins == null) {
+			requestedPlugins = new ArrayList<>();
+
+			for (PreferencesPluginViewI plugin : allPlugins_) {
+				if (requestedPluginNames.size() == 0 || requestedPluginNames.contains(plugin.getName())) {
+					requestedPlugins.add(plugin);
+				}
+			}
+		}
+	}
+
+	public PreferencesPluginViewI getPlugin(String name) {
+		loadPlugins();
+		
+		for (PreferencesPluginViewI plugin : requestedPlugins) {
+			if (plugin.getName().equals(name)) {
+				return plugin;
+			}
+		}
+
+		return null;
+	}
+
 	public void aboutToShow()
 	{
 		// Using allValid_ to prevent rerunning content of aboutToShow()
-		if (allValid_ == null) {
+		if (! aboutToShowCalled_) {
+			aboutToShowCalled_ = true;
+			
 			// These listeners are for debug and testing only. They may be removed at any time.
-			UserProfileBindings  userProfileBindings = AppContext.getService(UserProfileBindings.class);
-			for (Property<?> property : userProfileBindings.getAll()) 
-			{
-				property.addListener(new ChangeListener<Object>()
-				{
-					@Override
-					public void changed(ObservableValue<? extends Object> observable, Object oldValue, Object newValue)
-					{
-						logger.debug("{} property changed from {} to {}", property.getName(), oldValue, newValue);
-					}
-				});
-			}
+//			UserProfileBindings  userProfileBindings = AppContext.getService(UserProfileBindings.class);
+//			for (Property<?> property : userProfileBindings.getAll()) 
+//			{
+//				property.addListener(new ChangeListener<Object>()
+//				{
+//					@Override
+//					public void changed(ObservableValue<? extends Object> observable, Object oldValue, Object newValue)
+//					{
+//						logger.debug("{} property changed from {} to {}", property.getName(), oldValue, newValue);
+//					}
+//				});
+//			}
 
 			// load fields before initializing allValid_
 			// in case plugin.validationFailureMessageProperty() initialized by getNode()
 			tabPane_.getTabs().clear();
-			List<PreferencesPluginViewI> sortableList = new ArrayList<>();
 			Comparator<PreferencesPluginViewI> comparator = new Comparator<PreferencesPluginViewI>() {
 				@Override
 				public int compare(PreferencesPluginViewI o1, PreferencesPluginViewI o2) {
@@ -132,11 +206,10 @@ public class PreferencesViewController {
 					}
 				}
 			};
-			for (PreferencesPluginViewI plugin : plugins_) {
-				sortableList.add(plugin);
-			}
-			Collections.sort(sortableList, comparator);
-			for (PreferencesPluginViewI plugin : sortableList) {
+			loadPlugins();
+			
+			Collections.sort(requestedPlugins, comparator);
+			for (PreferencesPluginViewI plugin : requestedPlugins) {
 				logger.debug("Adding PreferencesPluginView tab \"{}\"", plugin.getName());
 				Label tabLabel = new Label(plugin.getName());
 				
@@ -184,7 +257,7 @@ public class PreferencesViewController {
 			allValid_ = new ValidBooleanBinding() {
 				{
 					ArrayList<ReadOnlyStringProperty> pluginValidationFailureMessages = new ArrayList<>();
-					for (PreferencesPluginViewI plugin : plugins_) {
+					for (PreferencesPluginViewI plugin : requestedPlugins) {
 						pluginValidationFailureMessages.add(plugin.validationFailureMessageProperty());
 					}
 					bind(pluginValidationFailureMessages.toArray(new ReadOnlyStringProperty[pluginValidationFailureMessages.size()]));
@@ -193,7 +266,7 @@ public class PreferencesViewController {
 
 				@Override
 				protected boolean computeValue() {
-					for (PreferencesPluginViewI plugin : plugins_) {
+					for (PreferencesPluginViewI plugin : requestedPlugins) {
 						if (plugin.validationFailureMessageProperty().get() != null && plugin.validationFailureMessageProperty().get().length() > 0) {
 							this.setInvalidReason(plugin.validationFailureMessageProperty().get());
 
@@ -215,7 +288,7 @@ public class PreferencesViewController {
 		}
 		
 		// Reload persisted values every time view opened
-		for (PreferencesPluginViewI plugin : plugins_) {
+		for (PreferencesPluginViewI plugin : requestedPlugins) {
 			plugin.getContent();
 		}
 	}
@@ -225,7 +298,7 @@ public class PreferencesViewController {
 		
 		final Map<PreferencesPluginViewI, Exception> caughtExceptions = Collections.synchronizedMap(new WeakHashMap<>());
 		
-		for (PreferencesPluginViewI plugin : plugins_) {		
+		for (PreferencesPluginViewI plugin : requestedPlugins) {		
 			try {
 				plugin.save();
 			} catch (IOException e) {

@@ -2,23 +2,29 @@ package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
-import gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewController.PersistenceInterface;
-import gov.va.isaac.util.ViewCoordinateComponents;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ViewCoordinatePreferencesPluginViewI;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
-import org.ihtsdo.otf.tcc.api.coordinate.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements PersistenceInterface {
+public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements PreferencesPersistenceI {
 	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
+
+	private final ViewCoordinatePreferencesPluginViewI view;
+	
+	public ViewCoordinatePreferencesUserProfilePersistenceInterface(ViewCoordinatePreferencesPluginViewI ctrl) {
+		this.view = ctrl;
+	}
 
 	@Override
 	public UUID getPath() {
@@ -27,7 +33,7 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 	}
 
 	@Override
-	public StatedInferredOptions getStatedInferredOption() {
+	public PremiseType getStatedInferredOption() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getStatedInferredPolicy();
 	}
@@ -39,7 +45,7 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 	}
 
 	@Override
-	public Set<Status> getStatuses() {
+	public Set<State> getStatuses() {
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 		return loggedIn.getViewCoordinateStatuses();
 	}
@@ -51,29 +57,29 @@ public class ViewCoordinatePreferencesUserProfilePersistenceInterface implements
 	}
 	
 	@Override
-	public void save(ViewCoordinateComponents components) throws IOException {
+	public void save() throws IOException {
 		LOG.debug("Saving ViewCoordinatePreferencesPluginView data");
 		UserProfile loggedIn = ExtendedAppContext.getCurrentlyLoggedInUserProfile();
 
 		//Path Property
-		LOG.debug("Setting stored VC path (currently \"{}\") to {}", getPath(), components.getPath()); 
-		loggedIn.setViewCoordinatePath(components.getPath());
+		LOG.debug("Setting stored VC path (currently \"{}\") to {}", getPath(), view.getCurrentPath()); 
+		loggedIn.setViewCoordinatePath(view.getCurrentPath());
 
 		//Stated/Inferred Policy
-		LOG.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", getStatedInferredOption(), components.getStatedInferredOption()); 
-		loggedIn.setStatedInferredPolicy(components.getStatedInferredOption());
+		LOG.debug("Setting stored VC StatedInferredPolicy (currently \"{}\") to {}", getStatedInferredOption(), view.getCurrentStatedInferredOption()); 
+		loggedIn.setStatedInferredPolicy(view.getCurrentStatedInferredOption());
 
 		//Time Property
-		LOG.debug("Setting stored VC time to :" + components.getTime());
-		loggedIn.setViewCoordinateTime(components.getTime());
+		LOG.debug("Setting stored VC time to :" + view.getCurrentTime());
+		loggedIn.setViewCoordinateTime(view.getCurrentTime());
 
 		//Statuses Property
-		LOG.debug("Setting stored VC statuses to :" + components.getStatuses());
-		loggedIn.setViewCoordinateStatuses(components.getStatuses());
+		LOG.debug("Setting stored VC statuses to :" + view.getCurrentStatuses());
+		loggedIn.setViewCoordinateStatuses(view.getCurrentStatuses());
 
 		//Modules Property
-		LOG.debug("Setting stored VC modules to :" + components.getModules());
-		loggedIn.setViewCoordinateModules(components.getModules());
+		LOG.debug("Setting stored VC modules to :" + view.getCurrentSelectedModules());
+		loggedIn.setViewCoordinateModules(view.getCurrentSelectedModules());
 
 		try {
 			AppContext.getService(UserProfileManager.class).saveChanges(loggedIn);

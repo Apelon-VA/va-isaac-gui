@@ -197,7 +197,11 @@ public class IsaacAppConfigWrapper extends IsaacAppConfig implements IsaacAppCon
 										} catch (Throwable t) {
 											log_.debug("Problem reading \"classifier\" element for {}", artifactId);
 										}
+										try {
 										dependency.put("type", ((Node)xPath.evaluate("/project/dependencies/dependency[artifactId='" + artifactId + "']/type", dDoc, XPathConstants.NODE)).getTextContent());
+										} catch (Throwable t) {
+											log_.debug("Problem reading \"type\" element for {}", artifactId);
+										}
 
 										dbDependencies.add(dependency);
 

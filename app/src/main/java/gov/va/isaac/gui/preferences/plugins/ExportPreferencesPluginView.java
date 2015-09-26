@@ -29,11 +29,16 @@ import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileDefaults;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginProperty;
 import gov.va.isaac.gui.preferences.plugins.properties.PreferencesPluginTextFieldProperty;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import javafx.scene.control.Control;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -99,7 +104,7 @@ public class ExportPreferencesPluginView extends AbstractPreferencesPluginView {
 	 * @param properties
 	 */
 	protected ExportPreferencesPluginView() {
-		super("Export", createProperties());
+		super(SharedServiceNames.EXPORT_PREFERENCES_PLUGIN, createProperties());
 	}
 	
 	/**

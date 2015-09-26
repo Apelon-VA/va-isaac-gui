@@ -19,10 +19,20 @@
 package gov.va.isaac.gui.preferences.plugins;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.interfaces.PreferencesPersistenceI;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ViewCoordinatePreferencesPluginViewI;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+import java.util.UUID;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -31,6 +41,7 @@ import javafx.scene.layout.Region;
 
 import javax.inject.Singleton;
 
+import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +52,18 @@ import org.slf4j.LoggerFactory;
  * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 @Service
-@Singleton
-public class ViewCoordinatePreferencesPluginView implements PreferencesPluginViewI
+@PerLookup
+public class ViewCoordinatePreferencesPluginView implements ViewCoordinatePreferencesPluginViewI
 {
+	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
+	
 	ViewCoordinatePreferencesPluginViewController drlvc_;
 	
-	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
+	/**
+	 * persistenceInterfaceToSetInController is necessary to allow setPersistenceInterface
+	 * to be called before getContent()
+	 */
+	private PreferencesPersistenceI persistenceInterfaceToSetInController;
 	
 	/**
 	 * This slave property, bound to controller validationFailureMessageProperty only after controller construction,
@@ -75,7 +92,12 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 			try
 			{
 				drlvc_ = ViewCoordinatePreferencesPluginViewController.construct();
-				drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface());
+				// If PreferencesPersistenceI not set, then create and apply default
+				if (persistenceInterfaceToSetInController == null) {
+					drlvc_.setPersistenceInterface(new ViewCoordinatePreferencesUserProfilePersistenceInterface(this));
+				} else {
+					drlvc_.setPersistenceInterface(persistenceInterfaceToSetInController);
+				}
 				slaveValidationFailureMessageProperty.bind(drlvc_.validationFailureMessageProperty());
 			}
 			catch (IOException e)
@@ -94,7 +116,7 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	 */
 	@Override
 	public String getName() {
-		return "View Coordinate";
+		return SharedServiceNames.VIEW_COORDINATE_PREFERENCES_PLUGIN;
 	}
 
 	/* (non-Javadoc)
@@ -128,5 +150,52 @@ public class ViewCoordinatePreferencesPluginView implements PreferencesPluginVie
 	@Override
 	public int getTabOrder() {
 		return 10;
+	}
+
+	@Override
+	public void setPersistenceInterface(PreferencesPersistenceI persistenceInterface) {
+		persistenceInterfaceToSetInController = persistenceInterface;
+		if (drlvc_ != null) {
+			drlvc_.setPersistenceInterface(persistenceInterface);
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentStatusesProperty()
+	 */
+	@Override
+	public Set<State> getCurrentStatuses() {
+		return Collections.unmodifiableSet(drlvc_.currentStatusesProperty());
+	}
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentTimeProperty()
+	 */
+	@Override
+	public Long getCurrentTime() {
+		return drlvc_.currentTimeProperty().get();
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentStatedInferredOptionProperty()
+	 */
+	@Override
+	public PremiseType getCurrentStatedInferredOption() {
+		return drlvc_.currentStatedInferredOptionProperty().get();
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentPathProperty()
+	 */
+	@Override
+	public UUID getCurrentPath() {
+		return drlvc_.currentPathProperty().get();
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.plugins.ViewCoordinatePreferencesPluginViewI#currentSelectedModulesProperty()
+	 */
+	@Override
+	public Set<UUID> getCurrentSelectedModules() {
+		return Collections.unmodifiableSet(drlvc_.currentSelectedModulesProperty());
 	}
 }

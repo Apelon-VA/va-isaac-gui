@@ -24,12 +24,21 @@
  */
 package gov.va.isaac.gui.preferences;
 
+import gov.va.isaac.AppContext;
+import gov.va.isaac.gui.users.AddUserDialog;
+import gov.va.isaac.gui.util.Images;
+import gov.va.isaac.interfaces.gui.ApplicationMenus;
+import gov.va.isaac.interfaces.gui.MenuItemI;
+import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
+import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesPluginViewI;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesViewI;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Singleton;
-import org.jvnet.hk2.annotations.Service;
+
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -40,13 +49,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import gov.va.isaac.AppContext;
-import gov.va.isaac.gui.users.AddUserDialog;
-import gov.va.isaac.gui.util.Images;
-import gov.va.isaac.interfaces.gui.ApplicationMenus;
-import gov.va.isaac.interfaces.gui.MenuItemI;
-import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
-import gov.va.isaac.interfaces.gui.views.PopupViewI;
+
+import org.glassfish.hk2.api.PerLookup;
+import org.jvnet.hk2.annotations.Service;
 
 /**
  * PreferencesView
@@ -55,8 +60,8 @@ import gov.va.isaac.interfaces.gui.views.PopupViewI;
  *
  */
 @Service
-@Singleton
-public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithMenusI {
+@PerLookup
+public class PreferencesView extends Stage implements PreferencesViewI {
 	private PreferencesViewController controller = null;
 	
 	private PreferencesView() throws IOException
@@ -84,6 +89,35 @@ public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithM
 		this.controller = loader.getController();
 		this.controller.setStage(this);
 	}
+
+	@Override
+	public void setPanelTitle(String value) {
+		controller.setPanelTitle(value);
+	}
+	
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.PreferencesViewI#setRequestedPlugins(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void setRequestedPlugins(String requiredPluginName, String...optionalPluginNames) {
+		controller.setRequestedPlugins(requiredPluginName, optionalPluginNames);
+	}
+	
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.PreferencesViewI#loadPlugins()
+	 */
+	@Override
+	public void loadPlugins() {
+		controller.loadPlugins();
+	}
+	
+	/* (non-Javadoc)
+	 * @see gov.va.isaac.gui.preferences.PreferencesViewI#getPlugin(java.lang.String)
+	 */
+	@Override
+	public PreferencesPluginViewI getPlugin(String name) {
+		return controller.getPlugin(name);
+	}
 	
 	/* (non-Javadoc)
 	 * @see gov.va.isaac.interfaces.gui.views.PopupViewI#showView(javafx.stage.Window)
@@ -96,7 +130,7 @@ public class PreferencesView extends Stage implements PopupViewI, IsaacViewWithM
 	}
 
 	/* (non-Javadoc)
-	 * @see gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI#getMenuBarMenus()
+	 * @see gov.va.isaac.gui.preferences.PreferencesViewI#getMenuBarMenus()
 	 */
 	@Override
 	public List<MenuItemI> getMenuBarMenus() {

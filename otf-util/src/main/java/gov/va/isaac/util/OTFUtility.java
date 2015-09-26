@@ -20,13 +20,15 @@ package gov.va.isaac.util;
 
 import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
-import gov.va.isaac.config.generated.StatedInferredOptions;
 import gov.va.isaac.config.profiles.UserProfile;
 import gov.va.isaac.config.profiles.UserProfileManager;
 import gov.va.isaac.config.users.InvalidUserException;
 import gov.vha.isaac.cradle.Builder;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+
 import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
 import org.ihtsdo.otf.tcc.api.blueprint.ConceptCB;
 import org.ihtsdo.otf.tcc.api.blueprint.DescriptionCAB;
 import org.ihtsdo.otf.tcc.api.blueprint.IdDirective;
@@ -118,9 +121,9 @@ public class OTFUtility {
 				}
 			}
 
-			StatedInferredOptions relAssertionType = userProfile.getStatedInferredPolicy();
+			PremiseType relAssertionType = userProfile.getStatedInferredPolicy();
 			UUID path = userProfile.getViewCoordinatePath();
-			Set<Status> statuses = userProfile.getViewCoordinateStatuses();
+			Set<State> statuses = userProfile.getViewCoordinateStatuses();
 			long time = userProfile.getViewCoordinateTime();
 			Set<UUID> modules = userProfile.getViewCoordinateModules();
 

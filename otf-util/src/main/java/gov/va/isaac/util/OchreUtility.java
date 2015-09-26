@@ -13,6 +13,7 @@ import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
@@ -54,6 +55,20 @@ public final class OchreUtility {
 
 	private OchreUtility() {}
 
+	/**
+	 * Takes a string and returns the Semantic Tag (the string in parentheses)
+	 * @param The string that contains a semantic tag in parentheses
+	 * @return the semantic tag
+	 * @throws Exception
+	 */
+	public static String getSemanticTag(String input) {
+		if (input.indexOf('(') != -1) {
+			String st = input.substring(input.lastIndexOf('(') + 1, input.lastIndexOf(')'));
+			return st;
+		} else {
+			return "";
+		}
+	}
 
 	/**
 	 * Simple utility method to get the latest version of a concept without having to do the class conversion stuff
@@ -374,7 +389,16 @@ public final class OchreUtility {
 						IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence(), 5, Long.MIN_VALUE);
 				if (result.size() > 0)
 				{
-					return Get.conceptService().getOptionalConcept(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
+					int componentNid = Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid();
+					if (Get.identifierService().getChronologyTypeForNid(componentNid) == ObjectChronologyType.CONCEPT)
+					{
+						return Get.conceptService().getOptionalConcept(componentNid);
+					}
+					else
+					{
+						LOG.warn("Passed in SCTID is not a Concept ID!");
+						return Optional.empty();
+					}
 				}
 			}
 			else
@@ -554,5 +578,25 @@ public final class OchreUtility {
 
 		Collections.sort(allDynamicSememeDefConcepts);
 		return allDynamicSememeDefConcepts;
+	}
+	
+	public static Optional<Integer> getNidForSCTID(long sctID)
+	{
+		SememeIndexer si = LookupService.get().getService(SememeIndexer.class);
+		if (si != null)
+		{
+			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+			List<SearchResult> result = si.query(sctID + " ", true, 
+					IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence(), 5, Long.MIN_VALUE);
+			if (result.size() > 0)
+			{
+				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
+			}
+		}
+		else
+		{
+			LOG.warn("Sememe Index not available - can't lookup SCTID");
+		}
+		return Optional.empty();
 	}
 }
