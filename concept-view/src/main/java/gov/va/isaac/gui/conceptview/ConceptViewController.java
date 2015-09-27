@@ -1508,10 +1508,12 @@ public class ConceptViewController {
 	{
 		TableColumn[] sortColumns = descriptionTableView.getSortOrder().toArray(new TableColumn[0]);
 		
-		descriptionTableView.getItems().clear();
-		descriptionTableView.getSelectionModel().clearSelection();
-		descriptionTableView.setPlaceholder(new ProgressIndicator(-1.0));
-		
+		Platform.runLater(() -> {
+			descriptionTableView.getItems().clear();
+			descriptionTableView.getSelectionModel().clearSelection();
+			descriptionTableView.setPlaceholder(new ProgressIndicator(-1.0));
+		});
+
 		if (conceptProperty.get() != null) {
 			Task<ObservableList<ConceptDescription>> task = new Task<ObservableList<ConceptDescription>>() {
 				@Override
@@ -1536,12 +1538,12 @@ public class ConceptViewController {
 	}
 	
 	private void refreshLogicGraph() {
-		relationshipsProgress.toFront();
+		Platform.runLater(() -> relationshipsProgress.toFront());
 		if (conceptProperty.get() != null) {
 			relationshipsView.setConcept(panelTaxonomyCoordinate.get(), conceptProperty.get().getNid());
 		} else {
-			relationshipsView.clear();
+			Platform.runLater(() -> relationshipsView.clear());
 		}
-		relationshipsPane.toFront();
+		Platform.runLater(() -> relationshipsPane.toFront());
 	}
 }
