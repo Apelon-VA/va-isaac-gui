@@ -1500,19 +1500,18 @@ public class ConceptViewController {
 	}
 	
 	private void cancelButton_Click() {
-		// TODO implement cancel
 		LOG.debug("Cancel clicked");
+		mainPane.getScene().getWindow().hide();
 	}
 	
 	private void commitButton_Click() {
-		// TODO implement commit
 		LOG.debug("Commit clicked");
         Get.commitService().commit(conceptProperty.get().getChronology(), EditCoordinates.getDefaultUserSolorOverlay(), "Committing new concept " + conceptLabel.getText());
-        
+		mainPane.getScene().getWindow().hide();
 	}
 	
 	private void newConceptButton_Click() {
-		// TODO launch new concept wizard
+		// launch new concept wizard
 		LOG.debug("New Concept clicked");
 		
 		ConceptCreationViewI cv = LookupService.getService(ConceptCreationViewI.class);
@@ -1534,7 +1533,7 @@ public class ConceptViewController {
 			if (response == DialogResponse.YES) {
 				LOG.debug("Setting concept state to " + newState.toString());
 				// TODO I have no idea if this is even close to correct.  DT
-				//concept = (ConceptSnapshot) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				// = (ConceptSnapshot) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 				//Get.commitService().addUncommitted(concept.getChronology());
 				//conceptProperty.set(concept);
 			}
