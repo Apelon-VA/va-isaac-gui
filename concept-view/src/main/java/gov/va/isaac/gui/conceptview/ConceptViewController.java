@@ -1,7 +1,9 @@
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
+import gov.va.isaac.gui.conceptview.data.Concept;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.conceptview.popups.PopupHelper;
@@ -40,6 +42,7 @@ import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -100,6 +103,7 @@ import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
@@ -1071,6 +1075,40 @@ public class ConceptViewController {
 			column.setMinWidth(Toolkit.getToolkit().getFontLoader().computeStringWidth(column.getText(), f) + 30);
 		}
 		
+		TableColumn<ConceptDescription, Boolean> uncommittedColumn = new TableColumn<ConceptDescription, Boolean>("Uncomitted");
+		//uncommittedColumn.setVisible(false);
+		//uncommittedColumn.setMaxWidth(0);
+		//uncommittedColumn.setCellValueFactory(new PropertyValueFactory<ConceptDescription, Boolean>("getUncommittedProperty"));
+		
+		uncommittedColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ConceptDescription, Boolean>, ObservableValue<Boolean>>()	{
+			@Override
+			public ObservableValue<Boolean> call(CellDataFeatures<ConceptDescription, Boolean> param) {
+				return param.getValue().getUncommittedProperty();
+			}
+		});
+		
+		uncommittedColumn.setCellFactory(new Callback<TableColumn<ConceptDescription, Boolean>, TableCell<ConceptDescription, Boolean>>() {
+			@Override public TableCell<ConceptDescription, Boolean> call(TableColumn<ConceptDescription, Boolean> ucTableColumn) {
+				return new TableCell<ConceptDescription, Boolean>() {
+					@Override public void updateItem(final Boolean uncommitted, final boolean empty) {
+						super.updateItem(uncommitted, empty);
+						// clear any custom styles
+						this.setStyle("");
+						this.getTableRow().setStyle("");
+						// update the item and set a custom style if necessary
+						if (uncommitted != null) {
+							this.setText(uncommitted.toString());
+							if (uncommitted.booleanValue()) {
+								this.setStyle("font-style: italic;");
+								this.getTableRow().setStyle("font-style: italic;");
+								timeTableColumn.setVisible(true);
+							}
+						}
+					}
+				};
+			}
+		});
+		descriptionTableView.getColumns().add(uncommittedColumn);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -1521,7 +1559,8 @@ public class ConceptViewController {
 	private void toggleDescriptionState(ConceptDescription conceptDescription) {
 		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this description " + conceptDescription.toggledStateName() + "?", getRoot().getScene().getWindow());
 		if (response == DialogResponse.YES) {
-			conceptDescription.toggleState();
+			//conceptDescription.toggleState();
+			conceptDescription.getUncommittedProperty().set(!conceptDescription.isUncommitted());
 		}
 	}
 	
@@ -1533,9 +1572,10 @@ public class ConceptViewController {
 			if (response == DialogResponse.YES) {
 				LOG.debug("Setting concept state to " + newState.toString());
 				// TODO I have no idea if this is even close to correct.  DT
-				// = (ConceptSnapshot) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-				//Get.commitService().addUncommitted(concept.getChronology());
-				//conceptProperty.set(concept);
+				ConceptVersion<?> newConceptVersion = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				Get.commitService().addUncommitted(newConceptVersion.getChronology());
+				ConceptSnapshot cs = Get.conceptSnapshot().getConceptSnapshot(concept.getConceptSequence());
+				conceptProperty.set(cs);
 			}
 		}
 		statusComboBox.getSelectionModel().select(concept.getState());
