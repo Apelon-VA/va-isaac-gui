@@ -214,7 +214,7 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	acceptabilityTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	significanceTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	dialectTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem<?>>			statusTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>>		statusTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionValueTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	sememeTableColumn;
 	
@@ -1391,6 +1391,15 @@ public class ConceptViewController {
 				mi.setGraphic(Images.COPY.createImageView());
 				cm.getItems().add(mi);
 
+				MenuItem miEdit = new MenuItem("Edit Description");
+				miEdit.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						editDescription(conceptDescription);
+					}
+				});
+				cm.getItems().add(miEdit);
+
 				MenuItem miWrap = new MenuItem("Wrap Text");
 				miWrap.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
@@ -1596,5 +1605,9 @@ public class ConceptViewController {
 			}
 		}
 		statusComboBox.getSelectionModel().select(concept.getState());
+	}
+	
+	private void editDescription(ConceptDescription conceptDescription) {
+		// TODO implement
 	}
 }
