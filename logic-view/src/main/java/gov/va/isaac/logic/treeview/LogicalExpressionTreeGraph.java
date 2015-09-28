@@ -32,6 +32,7 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.Node;
+import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.model.logic.node.AndNode;
 import gov.vha.isaac.ochre.model.logic.node.NecessarySetNode;
 import gov.vha.isaac.ochre.model.logic.node.OrNode;
@@ -92,13 +93,24 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		System.out.println("Root is " + le.getRoot().getNodeSemantic().name());
 
 		if (le.getNodeCount() > 0) {
-			if (le.getNodeCount() > 1) {
-				LOG.warn("Passed LogicalExpression with {} > 1 nodes.  Displaying only the first", le.getNodeCount());
-			}
-			TreeNodeImpl rootTreeNode = new TreeNodeImpl(null, createFxNodeFromLogicalExpression(le, stampCoordinate, languageCoordinate));
-			setRootNode(rootTreeNode);
-			for (Node child : le.getNode(0).getChildren()) {
-				displayLogicalNode(rootTreeNode, le.getNode(0), child, stampCoordinate, languageCoordinate);
+//			LOG.debug("Passed LogicalExpression with {} > 1 nodes", le.getNodeCount());			
+//			for (int i = 0; i < le.getNodeCount(); ++i) {
+//				System.out.println("node #" + i + 1 + " of " + le.getNodeCount() + ": class=" + le.getNode(i).getClass().getName() + ", semanticType=" + le.getNode(i).getNodeSemantic() + ", " + le.getNode(i));
+//			}
+
+			// Iterate the nodes until DEFINITION_ROOT found
+			for (int i = 0; i < le.getNodeCount(); ++i) {
+				Node currentNode = le.getNode(i);
+				
+				if (currentNode.getNodeSemantic() == NodeSemantic.DEFINITION_ROOT) {
+					TreeNodeImpl rootTreeNode = new TreeNodeImpl(null, createFxNodeFromLogicalExpression(le, stampCoordinate, languageCoordinate));
+					setRootNode(rootTreeNode);
+					for (Node child : currentNode.getChildren()) {
+						displayLogicalNode(rootTreeNode, currentNode, child, stampCoordinate, languageCoordinate);
+					}
+					
+					break;
+				}
 			}
 		} else if (le.getNodeCount() == 0) {
 			LOG.warn("Passed LogicalExpression with no children");

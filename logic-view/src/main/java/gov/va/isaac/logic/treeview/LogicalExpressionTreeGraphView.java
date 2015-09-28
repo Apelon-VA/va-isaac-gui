@@ -61,6 +61,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import javax.inject.Named;
+import javafx.application.Platform;
 
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
@@ -128,7 +129,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	}
 	private void resetPremiseTypeMenuItemTooltipText(PremiseType pt) {
 		if (title != null) {
-			title.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view"));
+			Platform.runLater(() -> title.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view")));
 		}
 	}
 	private void updateRootPanePremiseTypeMenuItem() {
@@ -361,9 +362,11 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		// TODO get background processes working
 		LogicalExpression le = loadData();
 		
-		displayData(le);
-		
-		noRefresh_.decrementAndGet();
+		Platform.runLater(() -> {
+			displayData(le);
+
+			noRefresh_.decrementAndGet();
+		});
 
 //		Task<LogicalExpression> task = new Task<LogicalExpression>() {
 //			@Override
@@ -405,7 +408,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		} else {
 			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
 			if (! defChronologyOptional.isPresent()) {
-				String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate";
+				String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for specified TaxonomyCoordinate";
 				AppContext.getCommonDialogs().showErrorDialog("Missing Definition Chronology", taxonomyCoordinate.get().getTaxonomyType().name() + " not found", error);
 				logger_.error(error);
 
