@@ -247,7 +247,7 @@ public class IsaacIntegrationTests {
 		
 		Exception dataStoreLocationInitException = null;
 		try {
-			dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("db/"));
+			dataStoreLocationInitException = SystemInit.doBasicSystemInit(new File("target/db/"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

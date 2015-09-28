@@ -90,25 +90,18 @@
                         </TableView>
                         <FlowPane alignment="BOTTOM_RIGHT" columnHalignment="RIGHT" layoutX="711.0" prefHeight="30.0" prefWidth="463.0" rowValignment="BOTTOM" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <Button fx:id="plusDescriptionButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="+">
-                                 <FlowPane.margin>
-                                    <Insets right="5.0" />
-                                 </FlowPane.margin>
-                              </Button>
-                              <Button fx:id="minusDescriptionButton" disable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="-">
-                                 <FlowPane.margin>
-                                    <Insets right="5.0" />
-                                 </FlowPane.margin>
-                              </Button>
-                              <Button fx:id="duplicateDescriptionButton" disable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="D" textAlignment="CENTER">
+                              <Button fx:id="newDescriptionButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" text="Add New Description">
                                  <FlowPane.margin>
                                     <Insets right="30.0" />
                                  </FlowPane.margin>
                               </Button>
-                              <ToggleButton fx:id="panelVsGlobalPreferencesToggleButton" layoutX="380.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="G" />
-                              <Button fx:id="panelPreferencesPopupButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="Button">
+                              <ToggleButton fx:id="panelVsGlobalPreferencesToggleButton" layoutX="380.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="G">
                                  <FlowPane.margin>
                                     <Insets right="5.0" />
+                                 </FlowPane.margin></ToggleButton>
+                              <Button fx:id="panelPreferencesPopupButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="Button">
+                                 <FlowPane.margin>
+                                    <Insets right="30.0" />
                                  </FlowPane.margin>
                               </Button>
                               <ToggleButton fx:id="stampToggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="26.0" prefWidth="26.0" text="S">
@@ -168,7 +161,7 @@
             </FlowPane>
             <FlowPane layoutY="13.0" prefHeight="25.0" prefWidth="353.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0">
                <children>
-                  <Button mnemonicParsing="false" prefWidth="150.0" text="Create New Concept" />
+                  <Button fx:id="newConceptButton" mnemonicParsing="false" prefWidth="150.0" text="Create New Concept" />
                </children>
             </FlowPane>
          </children></AnchorPane>

@@ -1,6 +1,7 @@
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
@@ -17,6 +18,7 @@ import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTr
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.ViewCoordinatePreferencesPluginViewI;
+import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.CommonMenuBuilderI;
 import gov.va.isaac.util.CommonMenus;
 import gov.va.isaac.util.CommonMenus.CommonMenuBuilder;
@@ -97,6 +99,8 @@ import java.util.function.Function;
 
 
 
+
+
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -158,8 +162,12 @@ import javafx.util.StringConverter;
 
 
 
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
 
 
 
@@ -206,7 +214,7 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	acceptabilityTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	significanceTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	dialectTableColumn;
-	@FXML private TableColumn<ConceptDescription, StampedItem<?>>			statusTableColumn;
+	@FXML private TableColumn<ConceptDescription, StampedItem<?>>		statusTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionValueTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	sememeTableColumn;
 	
@@ -223,9 +231,7 @@ public class ConceptViewController {
 	@FXML private ComboBox<Integer> modulesComboBox;
 	@FXML private VBox uuidsVBox;
 	
-	@FXML private Button minusDescriptionButton;
-	@FXML private Button plusDescriptionButton;
-	@FXML private Button duplicateDescriptionButton;
+	@FXML private Button newDescriptionButton;
 	@FXML private Button panelPreferencesPopupButton;
 	@FXML private ToggleButton panelVsGlobalPreferencesToggleButton;
 
@@ -235,6 +241,7 @@ public class ConceptViewController {
 
 	@FXML private Button cancelButton;
 	@FXML private Button commitButton;
+	@FXML private Button newConceptButton;
 
 	private ObjectProperty<ConceptSnapshot> conceptProperty = new SimpleObjectProperty<ConceptSnapshot>();
 	private UpdateableBooleanBinding refreshBinding;
@@ -290,22 +297,18 @@ public class ConceptViewController {
 		assert modulesComboBox 				!= null : "fx:id=\"modulesComboBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert uuidsVBox 					!= null : "fx:id=\"uuidsVBox\" was not injected: check your FXML file 'ConceptView.fxml'.";
 
-		assert minusDescriptionButton 		!= null : "fx:id=\"minusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert duplicateDescriptionButton 	!= null : "fx:id=\"editDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert plusDescriptionButton 		!= null : "fx:id=\"plusDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert newDescriptionButton 		!= null : "fx:id=\"newDescriptionButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert activeOnlyToggle 			!= null : "fx:id=\"activeOnlyToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert stampToggle 					!= null : "fx:id=\"stampToggleToggle\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert panelPreferencesPopupButton 			!= null : "fx:id=\"panelPreferencesPopupButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert panelVsGlobalPreferencesToggleButton 	!= null : "fx:id=\"panelVsGlobalPreferencesToggleButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
-		assert cancelButton 	!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
-		assert commitButton 	!= null : "fx:id=\"commitButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
-
+		assert cancelButton 		!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert commitButton 		!= null : "fx:id=\"commitButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert newConceptButton		!= null : "fx:id=\"newConceptButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		
 		FxUtils.assignImageToButton(activeOnlyToggle, 		Images.FILTER_16.createImageView(), "Show Active Only / Show All");
 		FxUtils.assignImageToButton(stampToggle, 			Images.STAMP.createImageView(), 	"Show/Hide STAMP Columns");
-		FxUtils.assignImageToButton(plusDescriptionButton, 	Images.PLUS.createImageView(), 		"Create Description");
-		FxUtils.assignImageToButton(minusDescriptionButton, 	Images.MINUS.createImageView(), 	"Retire/Unretire Description");
-		FxUtils.assignImageToButton(duplicateDescriptionButton, 	Images.COPY.createImageView(), 		"Edit Description");
 		FxUtils.assignImageToButton(panelPreferencesPopupButton, 	Images.CONFIGURE.createImageView(), 		"Panel Preferences");
 		FxUtils.assignImageToButton(panelVsGlobalPreferencesToggleButton, 	Images.CONFIGURE.createImageView(), "Use Local Preferences");
 
@@ -315,6 +318,7 @@ public class ConceptViewController {
 		setupPreferences();
 		setupColumnTypes();
 		setupDescriptionTable();
+		setupButtonEvents();
 		setupRelationshipsView();
 		setupStatusComboBox();
 		setupModulesComboBox();
@@ -322,8 +326,6 @@ public class ConceptViewController {
 		setupUuidsVBox();
 		setupActiveOnlyToggle();
 		setupStampToggle();
-		setupCancelButton();
-		setupCommitButton();
 		setupConceptLabel();
 		setupPanelPreferencesPopupButton();
 		setupPanelVsGlobalPreferencesToggleButton();
@@ -375,25 +377,33 @@ public class ConceptViewController {
 		return new SimpleStringProperty("Concept Viewer");
 	}
 	
-	private void setupCancelButton() {
+	private void setupButtonEvents() {
+		newDescriptionButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent arg0) {
+				newDescriptionButton_Click();
+			}
+		});
 		cancelButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				// TODO setupCancelButton()
-				LOG.debug("Cancel button pressed");
+				cancelButton_Click();
 			}
 		});
-	}
-	private void setupCommitButton() {
 		commitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				// TODO setupCommitButton()
-				LOG.debug("Commit button pressed");
+				commitButton_Click();
+			}
+		});
+		newConceptButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				newConceptButton_Click();
 			}
 		});
 	}
-
+	
 	private void setupPreferences() {
 		// Effectively clone the TaxonomyCoordinate from UserProfileBindings
 		panelTaxonomyCoordinate.set(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get().makeAnalog(AppContext.getService(UserProfileBindings.class).getTaxonomyCoordinate().get().getTaxonomyType()));
@@ -968,16 +978,7 @@ public class ConceptViewController {
 			@Override
 			public void changed(ObservableValue<? extends State> observable,
 					State oldValue, State newValue) {
-				if (newValue == null || conceptProperty.get() == null) {
-					// IGNORE
-				} else if (newValue == conceptProperty.get().getState()) {
-					// No change
-				} else {
-					// TODO Modifying State not yet supported
-					AppContext.getCommonDialogs().showInformationDialog("Unsupported Feature", "Modifying Concept State not yet supported");
-
-					statusComboBox.getSelectionModel().select(conceptProperty.get().getState());
-				}
+				setConceptState(newValue);
 			}
 		});
 		loadStatusComboBoxFromConcept(conceptProperty.get());
@@ -988,9 +989,10 @@ public class ConceptViewController {
 		
 		if (concept != null) {
 			// TODO add both ACTIVE and INACTIVE once modifying State supported
-//			statusComboBox.getItems().add(State.ACTIVE);
-//			statusComboBox.getItems().add(State.INACTIVE);
-			statusComboBox.getItems().add(concept.getState());
+			statusComboBox.getItems().add(State.ACTIVE);
+			statusComboBox.getItems().add(State.INACTIVE);
+			//statusComboBox.getItems().add(concept.getState());
+			statusComboBox.getSelectionModel().select(concept.getState());
 			
 			switch(concept.getState()) {
 			case ACTIVE:
@@ -1202,7 +1204,7 @@ public class ConceptViewController {
 			{
 				StackPane sp = new StackPane();
 				sp.setPrefSize(25, 25);
-				String tooltipText = conceptDescription.isActive()? "Active" : "Inactive";
+				String tooltipText = conceptDescription.getStampedVersion().getState().toString();
 				ImageView image    = conceptDescription.isActive()? Images.BLACK_DOT.createImageView() : Images.GREY_DOT.createImageView();
 				sizeAndPosition(image, sp, Pos.CENTER);
 				cell.setTooltip(new Tooltip(tooltipText));
@@ -1275,12 +1277,12 @@ public class ConceptViewController {
 //					if (conceptDescription.getDescriptionSememe().getState() == State.ACTIVE)
 //					{
 //						sizeAndPosition(Images.BLACK_DOT.createImageView(), sp, Pos.TOP_LEFT);
-//						tooltipText += "Active";
+//						tooltipText += State.ACTIVE.toString();
 //					}
 //					else
 //					{
 //						sizeAndPosition(Images.GREY_DOT.createImageView(), sp, Pos.TOP_LEFT);
-//						tooltipText += "Inactive";
+//						tooltipText += State.INACTIVE.toString();
 //					}
 					
 //					if (!conceptDescription.getDescriptionSememe().isCurrent())
@@ -1391,6 +1393,15 @@ public class ConceptViewController {
 				mi.setGraphic(Images.COPY.createImageView());
 				cm.getItems().add(mi);
 
+				MenuItem miEdit = new MenuItem("Edit Description");
+				miEdit.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						editDescription(conceptDescription);
+					}
+				});
+				cm.getItems().add(miEdit);
+
 				MenuItem miWrap = new MenuItem("Wrap Text");
 				miWrap.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
@@ -1408,6 +1419,16 @@ public class ConceptViewController {
 					}
 				});
 				cm.getItems().add(miWrap);
+
+				MenuItem miToggleState = new MenuItem("Make " + conceptDescription.toggledStateName());
+				miToggleState.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent arg0) {
+						toggleDescriptionState(conceptDescription);
+						miToggleState.setText("Make " + conceptDescription.toggledStateName());
+					}
+				});
+				cm.getItems().add(miToggleState);
 
 				MenuItem miIds = new MenuItem("Display IDs");
 				miIds.setOnAction(new EventHandler<ActionEvent>() {
@@ -1545,5 +1566,52 @@ public class ConceptViewController {
 			Platform.runLater(() -> relationshipsView.clear());
 		}
 		Platform.runLater(() -> relationshipsPane.toFront());
+	}
+	
+	private void newDescriptionButton_Click() {
+		// TODO Launch new description wizard
+		LOG.debug("New Description clicked");
+	}
+	
+	private void cancelButton_Click() {
+		// TODO implement cancel
+		LOG.debug("Cancel clicked");
+	}
+	
+	private void commitButton_Click() {
+		// TODO implement commit
+		LOG.debug("Commit clicked");
+	}
+	
+	private void newConceptButton_Click() {
+		// TODO launch new concept wizard
+		LOG.debug("New Concept clicked");
+	}
+	
+	private void toggleDescriptionState(ConceptDescription conceptDescription) {
+		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this description " + conceptDescription.toggledStateName() + "?", getRoot().getScene().getWindow());
+		if (response == DialogResponse.YES) {
+			conceptDescription.toggleState();
+		}
+	}
+	
+	private void setConceptState(State newState) {
+		// TODO implement
+		ConceptSnapshot concept = getConceptSnapshot();
+		if (concept != null && newState != null && concept.getState() != newState) {
+			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this concept " + newState.toString() + "?", getRoot().getScene().getWindow());
+			if (response == DialogResponse.YES) {
+				LOG.debug("Setting concept state to " + newState.toString());
+				// TODO I have no idea if this is even close to correct.  DT
+				//concept = (ConceptSnapshot) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				//Get.commitService().addUncommitted(concept.getChronology());
+				//conceptProperty.set(concept);
+			}
+		}
+		statusComboBox.getSelectionModel().select(concept.getState());
+	}
+	
+	private void editDescription(ConceptDescription conceptDescription) {
+		// TODO implement
 	}
 }
