@@ -5,6 +5,7 @@ import gov.va.isaac.gui.conceptview.data.Concept;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.ConceptId;
 import gov.va.isaac.gui.conceptview.data.ConceptIdType;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -70,7 +71,8 @@ public class PopupHelper {
 		popup.setPopOverRegion(popOverRegion);
 		
 		// TODO use default stamp coordinate?
-		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, Get.configurationService().getDefaultStampCoordinate());
+		//SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, Get.configurationService().getDefaultStampCoordinate());
+		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, StampCoordinates.getDevelopmentLatest());
 		int descNid = conceptDescription.getStampedVersion().getNid();
 		
 		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(descNid, IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence()).findFirst();
