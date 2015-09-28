@@ -13,14 +13,12 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Optional;
 import java.util.UUID;
-
 import javafx.scene.layout.Region;
 
 public class PopupHelper {
@@ -38,15 +36,26 @@ public class PopupHelper {
 		popup.setPopOverRegion(popOverRegion);
 		
 		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, concept.getStampCoordinate());
-		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence()).findFirst();
+		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), 
+				IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence()).findFirst();
 		if (sctSememe.isPresent()) {
 			ConceptId id = new ConceptId(ConceptIdType.SCT, sctSememe.get().value().getString(), TIMESTAMP_FORMAT.format(sctSememe.get().value().getTime()));
 			popup.addData(id);
 		}
 		
-		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), IsaacMetadataAuxiliaryBinding.LOINC_NUM.getConceptSequence()).findFirst();
+		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), 
+				IsaacMetadataAuxiliaryBinding.LOINC_NUM.getConceptSequence()).findFirst();
 		if (loincSememe.isPresent()) {
 			ConceptId id = new ConceptId(ConceptIdType.LOINC, loincSememe.get().value().getString(), TIMESTAMP_FORMAT.format(loincSememe.get().value().getTime()));
+			popup.addData(id);
+		}
+		
+		SememeSnapshotService<DynamicSememe> dsvc = Get.sememeService().getSnapshot(DynamicSememe.class, concept.getStampCoordinate());
+		Optional<LatestVersion<DynamicSememe>> rxnSememe = dsvc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), 
+				IsaacMetadataAuxiliaryBinding.RXCUI.getConceptSequence()).findFirst();
+		if (rxnSememe.isPresent()) {
+			ConceptId id = new ConceptId(ConceptIdType.RXNORM, rxnSememe.get().value().getData()[0].getDataObject().toString(), 
+					TIMESTAMP_FORMAT.format(rxnSememe.get().value().getTime()));
 			popup.addData(id);
 		}
 		
@@ -81,13 +90,8 @@ public class PopupHelper {
 			popup.addData(id);
 		}
 		
-		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(descNid, IsaacMetadataAuxiliaryBinding.LOINC_NUM.getConceptSequence()).findFirst();
-		if (loincSememe.isPresent()) {
-			ConceptId id = new ConceptId(ConceptIdType.LOINC, loincSememe.get().value().getString(), TIMESTAMP_FORMAT.format(loincSememe.get().value().getTime()));
-			popup.addData(id);
-		}
-		
-		// TODO RxNorm ID
+		// TODO RxNorm ID ?? RxNorm does have ids assigned to the descriptions, but I'm not sure we even want to surface them, they aren't 
+		//as 'official' as sctids.  LOINC doesn't have any IDs for descriptions.
 		
 		
 		for (UUID uuid : conceptDescription.getStampedVersion().getUuidList()) {

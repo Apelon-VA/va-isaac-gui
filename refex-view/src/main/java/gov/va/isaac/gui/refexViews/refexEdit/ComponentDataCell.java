@@ -149,7 +149,8 @@ public class ComponentDataCell extends TreeTableCell<SememeGUI, SememeGUI>
 									@Override
 									public Collection<Integer> getNIds()
 									{
-										return Arrays.asList(new Integer[] {sv.get().value().getNid()});
+										//TODO won't work for nested sememes!  need to recurse
+										return Arrays.asList(new Integer[] {sv.get().value().getReferencedComponentNid()});
 									}
 								});
 							}

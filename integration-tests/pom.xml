@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>gov.vha.isaac.gui</groupId>
+		<artifactId>isaac-gui-parent</artifactId>
+		<version>23.6-SNAPSHOT</version>
+	</parent>
+	<groupId>gov.vha.isaac.gui.modules</groupId>
+	<artifactId>integration-tests</artifactId>
+	<packaging>jar</packaging>
+
+	<name>ISAAC Integration Tests</name>
+	<description>ISAAC GUI Integration Tests</description>
+	
+	<properties>
+		<dbGroupId>gov.vha.solor.modules</dbGroupId>
+		<dbArtifactId>solor-all</dbArtifactId>
+		<dbVersion>1.14-SNAPSHOT</dbVersion>
+		<dbClassifier>all</dbClassifier>
+	</properties>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2-testng</artifactId>
+			<version>${hk2.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+		</dependency>
+		
+		<!-- ISAAC App Utils. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>gui-util</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+
+		<!-- ISAAC OTF Utils. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>otf-util</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<!--  ISAAC Logic -->
+		<dependency>
+			<groupId>gov.vha.isaac.logic.modules</groupId>
+			<artifactId>logic</artifactId>
+		</dependency>
+		
+		<!-- ISAAC Data Model. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>data-model</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<!-- ISAAC Taxonomy View. -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>taxonomy-view</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+		<!-- ISAAC Content-Request -->
+		<dependency>
+			<groupId>gov.vha.isaac.gui.modules</groupId>
+			<artifactId>content-request</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>extract-test-dependencies</id>
+						<phase>generate-test-resources</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<skip>${skipTests}</skip>
+							<artifactItems>
+								<!-- The database to start with -->
+								<artifactItem>
+									<groupId>${dbGroupId}</groupId>
+									<artifactId>${dbArtifactId}</artifactId>
+									<version>${dbVersion}</version>
+									<classifier>${dbClassifier}</classifier>
+									<type>cradle.zip</type>
+									<outputDirectory>${project.build.directory}/db/</outputDirectory>
+								</artifactItem>
+								
+								<!-- The corresponding index -->
+								<artifactItem>
+									<groupId>${dbGroupId}</groupId>
+									<artifactId>${dbArtifactId}</artifactId>
+									<version>${dbVersion}</version>
+									<classifier>${dbClassifier}</classifier>
+									<type>lucene.zip</type>
+									<outputDirectory>${project.build.directory}/db/</outputDirectory>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<forkCount>1</forkCount>
+					<reuseForks>true</reuseForks>
+					<parallel>false</parallel>
+					<useSystemClassLoader>true</useSystemClassLoader>
+					<useManifestOnlyJar>false</useManifestOnlyJar>
+					<argLine>-ea -d64 -Xmx8g</argLine>
+					<debugForkedProcess>false</debugForkedProcess>
+					<includes>
+						<include>**/*.class</include>
+					</includes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

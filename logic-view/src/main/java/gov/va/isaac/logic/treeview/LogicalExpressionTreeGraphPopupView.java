@@ -49,21 +49,12 @@ import org.slf4j.LoggerFactory;
 public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTreeGraphPopupViewI
 {
 	private final Logger logger = LoggerFactory.getLogger(LogicalExpressionTreeGraphPopupView.class);
-	private Stage stage;
 	private LogicalExpressionTreeGraphView embeddableView;
 	
 	private LogicalExpressionTreeGraphPopupView() throws IOException
 	{
 		// created by HK2
-		stage = new Stage();
-		stage.initModality(Modality.NONE);
-		stage.initStyle(StageStyle.DECORATED);
 		embeddableView = (LogicalExpressionTreeGraphView) AppContext.getService(LogicalExpressionTreeGraphEmbeddableViewI.class);
-		stage.setScene(new Scene(embeddableView.getView(), 800, 600));
-//		stage.getScene().getStylesheets().add(LogicalExpressionTreeGraphPopupView.class.getResource("/info-model-view-style.css").toString());
-//		stage.getScene().getStylesheets().add(LogicalExpressionTreeGraphPopupView.class.getResource("/isaac-shared-styles.css").toString());
-		stage.setTitle("Logical Expression Tree Graph Popup View");
-		stage.getIcons().add(Images.ROOT.getImage());
 	}
 
 	/**
@@ -72,6 +63,14 @@ public class LogicalExpressionTreeGraphPopupView implements LogicalExpressionTre
 	@Override
 	public void showView(Window parent)
 	{
+		Stage stage = new Stage();
+		stage.initModality(Modality.NONE);
+		stage.initStyle(StageStyle.DECORATED);
+		stage.setScene(new Scene(embeddableView.getView(), 800, 600));
+//		stage.getScene().getStylesheets().add(LogicalExpressionTreeGraphPopupView.class.getResource("/info-model-view-style.css").toString());
+//		stage.getScene().getStylesheets().add(LogicalExpressionTreeGraphPopupView.class.getResource("/isaac-shared-styles.css").toString());
+		stage.setTitle("Logical Expression Tree Graph Popup View");
+		stage.getIcons().add(Images.ROOT.getImage());
 		if (embeddableView.getConceptId() == null)
 		{
 			throw new RuntimeException("Must call setConcept(...) first");
