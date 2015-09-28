@@ -46,20 +46,20 @@ public class IsaacIntegrationTests {
 
 	ArrayList<ConceptSnapshot> concepts = new ArrayList<>();
 	
-//	public static void main(String[] args) {
-//		try {
-//			IsaacIntegrationTests cit = new IsaacIntegrationTests();
-//			try {
-//				cit.setUpSuite();
-//				cit.testLoad();
-//			} finally {
-//				cit.tearDownSuite();
-//			}
-//		} catch (Exception ex) {
-//			log.fatal(ex.getLocalizedMessage(), ex);
-//		}
-//		System.exit(0);
-//	}
+	public static void main(String[] args) {
+		try {
+			IsaacIntegrationTests cit = new IsaacIntegrationTests();
+			try {
+				cit.setUpSuite();
+				cit.testLoad();
+			} finally {
+				cit.tearDownSuite();
+			}
+		} catch (Exception ex) {
+			log.fatal(ex.getLocalizedMessage(), ex);
+		}
+		System.exit(0);
+	}
 
 	private static final Logger log = LogManager.getLogger();
 	private boolean dbExists = false;
@@ -101,6 +101,7 @@ public class IsaacIntegrationTests {
 		}
 		
 		testUscrsContentRequestHandler();
+		testSolorLoad();
 
 	}
 	
@@ -217,6 +218,14 @@ public class IsaacIntegrationTests {
 		}
 		
 		return uscrsExpectedResults;
+	}
+	
+	private void testSolorLoad()
+	{
+		//Check for Loinc concept
+		assertTrue(Get.conceptService().getConcept(UUID.fromString("abee1011-03d1-58f4-bc49-757d8e84518a")).containsDescription("Creatine 24h Ur-sCnc"));
+		//Check for RxNorm concept
+		assertTrue(Get.conceptService().getConcept(UUID.fromString("f0be9bd3-270e-5b52-84f9-808757ce9c92")).containsDescription("Photofrin"));
 	}
 
 	private void loadDatabase() throws ExecutionException, IOException, MultiException, InterruptedException {
