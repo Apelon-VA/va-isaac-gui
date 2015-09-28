@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.gui</groupId>
 		<artifactId>isaac-gui-parent</artifactId>
-		<version>23.5</version>
+		<version>23.6-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.vha.isaac.gui.modules</groupId>
 	<artifactId>integration-tests</artifactId>
@@ -16,7 +16,7 @@
 	<properties>
 		<dbGroupId>gov.vha.solor.modules</dbGroupId>
 		<dbArtifactId>solor-all</dbArtifactId>
-		<dbVersion>1.13</dbVersion>
+		<dbVersion>1.14-SNAPSHOT</dbVersion>
 		<dbClassifier>all</dbClassifier>
 	</properties>
 	
