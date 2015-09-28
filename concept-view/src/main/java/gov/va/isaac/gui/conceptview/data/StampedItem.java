@@ -60,8 +60,13 @@ public abstract class StampedItem<T extends StampedVersion>
 	{
 		_stampedVersion = stampedVersion;
 
-		stateSSP.set(Get.commitService().isUncommitted(stampedVersion.getStampSequence()) ? "U" : isActive() ? "A" : "I");
-		timeSSP.set(new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(getCreationDate()));
+		// Not using "U" any longer
+		//stateSSP.set(Get.commitService().isUncommitted(stampedVersion.getStampSequence()) ? "U" : isActive() ? "A" : "I");
+		stateSSP.set(_stampedVersion.getState().getAbbreviation());
+		timeSSP.set(Get.commitService().isUncommitted(stampedVersion.getStampSequence()) ? 
+				"Uncommitted" : 
+				new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(getCreationDate())
+		);
 		
 		Utility.execute(() ->
 		{
