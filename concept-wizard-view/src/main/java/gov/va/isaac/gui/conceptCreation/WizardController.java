@@ -61,6 +61,8 @@ import gov.vha.isaac.ochre.api.logic.LogicService;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
+import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
 import gov.vha.isaac.ochre.impl.lang.LanguageCode;
 
 import java.io.IOException;
@@ -82,19 +84,19 @@ import org.slf4j.LoggerFactory;
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  * @author <a href="mailto:vkaloidis@apelon.com.com">Vas Kaloidis</a>
+ * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 public class WizardController {
 
 	private static Logger logger = LoggerFactory.getLogger(WizardController.class);
 	private String fsn;
-	private String prefTerm;
+	//private String prefTerm;
 	private List<Integer> parents;
 	private List<TermRow> syns;
 	private List<RelRow> rels;
 	
-	public void setConceptDefinitionVals(String fsn, String prefTerm, List<Integer> parents) {
+	public void setConceptDefinitionVals(String fsn, List<Integer> parents) {
 		this.fsn = fsn;
-		this.prefTerm = prefTerm;
 		this.parents = parents;
 	}
 
@@ -105,10 +107,6 @@ public class WizardController {
 
 	public String getConceptFSN() {
 		return fsn;
-	}
-
-	public String getConceptPT() {
-		return prefTerm;
 	}
 
 	public List<Integer> getParents() {
@@ -170,7 +168,7 @@ public class WizardController {
 	}
 
 	public ConceptChronology<?> createNewConcept()  throws IOException {
-		logger.info("Creating concept " + fsn + " " + prefTerm + " in DB");
+		logger.info("Creating concept " + fsn + " in DB");
 		AppContext.getRuntimeGlobals().disableAllCommitListeners();
 		try {
 			
@@ -185,14 +183,18 @@ public class WizardController {
 
 			//Parents
 			LogicalExpressionBuilder parentBuilder = expressionBuilderService.getLogicalExpressionBuilder();
-			for(int parent : parents) {
-				// TODO compare with UserCreationWizard...
-				LogicalExpressionBuilder.NecessarySet(LogicalExpressionBuilder.And(LogicalExpressionBuilder.ConceptAssertion(
-						Get.conceptService().getConcept(parent), parentBuilder)));
+			ConceptAssertion[] parentConceptAssertions = new ConceptAssertion[parents.size()];
+			for(int i = 0; i < parents.size(); ++i) {
+				int parentNid = parents.get(i);
+				parentConceptAssertions[i] = LogicalExpressionBuilder.ConceptAssertion(
+					Get.conceptService().getConcept(parentNid), parentBuilder);
 			} 
+			LogicalExpressionBuilder.NecessarySet(
+					LogicalExpressionBuilder.And(parentConceptAssertions));
 			LogicalExpression parentsDef = parentBuilder.build();
 			
-			ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(this.fsn, OchreUtility.getSemanticTag(this.fsn), parentsDef);
+			// TODO Remove semantic tag from FSN, use as second arg
+			ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(OchreUtility.stripSemanticTag(this.fsn), OchreUtility.getSemanticTag(this.fsn), parentsDef);
 			
 			//Descriptions
 			for (int i = 0; i < getSynonymsCreated(); i++) {
@@ -207,12 +209,12 @@ public class WizardController {
 			}
 			
 			//Preferred Term
-			DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>> definitionBuilderPT 
-					= descriptionBuilderService.getDescriptionBuilder(this.prefTerm, conBuilder, IsaacMetadataAuxiliaryBinding.PREFERRED, IsaacMetadataAuxiliaryBinding.ENGLISH);
-			definitionBuilderPT.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
-			definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
-			Get.commitService().addUncommitted(definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE)); //TODO verify commit
-			conBuilder.addDescription(definitionBuilderPT);
+//			DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>> definitionBuilderPT 
+//					= descriptionBuilderService.getDescriptionBuilder(this.prefTerm, conBuilder, IsaacMetadataAuxiliaryBinding.PREFERRED, IsaacMetadataAuxiliaryBinding.ENGLISH);
+//			definitionBuilderPT.setPreferredInDialectAssemblage(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT);
+//			definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE);
+//			Get.commitService().addUncommitted(definitionBuilderPT.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE)); //TODO verify commit
+//			conBuilder.addDescription(definitionBuilderPT);
 			
 			//FSN
 //			DescriptionBuilder<? extends SememeChronology<?>, ? extends MutableDescriptionSememe<?>>  definitionBuilderFSN = 
@@ -247,37 +249,39 @@ public class WizardController {
 			LogicalExpressionBuilder relBuilder;
 			for(int group: relMap.keySet()) {
 				relBuilder = expressionBuilderService.getLogicalExpressionBuilder();
-				for(RelRow rel : relMap.get(group)) {					
+				Assertion assertions[] = new Assertion[relMap.get(group) != null ? relMap.get(group).size() : 0];
+				for(int i = 0; i < relMap.get(group).size(); ++i) {	
+					RelRow rel = relMap.get(group).get(i);
+					
 					switch (rel.getType()) {
+					// Pull Necessary set out of loop
 					case Some_Role: {
 						ConceptChronology<?> roleTypeChronology = Get.conceptService().getConcept(rel.getRelationshipNid());
 						ConceptChronology<?> restrictionConceptChronology = Get.conceptService().getConcept(rel.getTargetNid());
-						LogicalExpressionBuilder.NecessarySet(
-								LogicalExpressionBuilder.And(
-										LogicalExpressionBuilder.SomeRole(roleTypeChronology,
-												LogicalExpressionBuilder.ConceptAssertion(restrictionConceptChronology, relBuilder))));
+						
+						assertions[i] = LogicalExpressionBuilder.SomeRole(roleTypeChronology,
+								LogicalExpressionBuilder.ConceptAssertion(restrictionConceptChronology, relBuilder));
 						break;
 					}
 					case All_Role: {
 						ConceptChronology<?> roleTypeChronology = Get.conceptService().getConcept(rel.getRelationshipNid());
 						ConceptChronology<?> restrictionConceptChronology = Get.conceptService().getConcept(rel.getTargetNid());
-						LogicalExpressionBuilder.NecessarySet(
-								LogicalExpressionBuilder.And(
-										LogicalExpressionBuilder.AllRole(roleTypeChronology,
-												LogicalExpressionBuilder.ConceptAssertion(restrictionConceptChronology, relBuilder))));
+						
+						assertions[i] = LogicalExpressionBuilder.AllRole(roleTypeChronology,
+								LogicalExpressionBuilder.ConceptAssertion(restrictionConceptChronology, relBuilder));
 						break;
 					}
 					default:
 						throw new RuntimeException("Unsupported " + RoleType.class.getName() + " value " + rel.getType());
 					}
+					
+					LogicalExpressionBuilder.NecessarySet(LogicalExpressionBuilder.And(assertions));
 						
 					conBuilder.addLogicalExpression(relBuilder.build());
 				}
 			}
 			
 			ConceptChronology<?> newComponentChronology = conBuilder.build(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
-			
-			Get.commitService().addUncommitted(newComponentChronology);
 			
 			return newComponentChronology;
 		}

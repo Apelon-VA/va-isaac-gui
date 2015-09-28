@@ -1,7 +1,6 @@
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
@@ -14,6 +13,7 @@ import gov.va.isaac.gui.util.FxUtils;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.PreferencesPersistenceI;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.ConceptCreationViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.LogicalExpressionTreeGraphEmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PreferencesViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.SememeViewI;
@@ -28,9 +28,11 @@ import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.EditCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
@@ -50,19 +52,6 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
-
-
-
-
-
-
-
-
-
-
-
-
-
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 
@@ -78,32 +67,10 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -126,7 +93,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -144,48 +110,8 @@ import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 import com.sun.javafx.tk.Toolkit;
 
@@ -1581,11 +1507,16 @@ public class ConceptViewController {
 	private void commitButton_Click() {
 		// TODO implement commit
 		LOG.debug("Commit clicked");
+        Get.commitService().commit(conceptProperty.get().getChronology(), EditCoordinates.getDefaultUserSolorOverlay(), "Committing new concept " + conceptLabel.getText());
+        
 	}
 	
 	private void newConceptButton_Click() {
 		// TODO launch new concept wizard
 		LOG.debug("New Concept clicked");
+		
+		ConceptCreationViewI cv = LookupService.getService(ConceptCreationViewI.class);
+		cv.showView(null);
 	}
 	
 	private void toggleDescriptionState(ConceptDescription conceptDescription) {

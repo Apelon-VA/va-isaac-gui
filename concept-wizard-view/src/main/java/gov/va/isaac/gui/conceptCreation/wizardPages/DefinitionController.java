@@ -56,6 +56,7 @@ import javafx.stage.Stage;
  *
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 public class DefinitionController implements PanelControllers {
 	@FXML private ResourceBundle resources;
@@ -63,7 +64,6 @@ public class DefinitionController implements PanelControllers {
 	
 	@FXML private TextField fsn;
 	@FXML private Button continueCreation;
-	@FXML private TextArea prefTerm;
 	@FXML private VBox addParentButtonVBox;
 	@FXML private RadioButton isFullyDefined;
 	@FXML private VBox removeParentButtonVBox;
@@ -78,7 +78,7 @@ public class DefinitionController implements PanelControllers {
 	
 	ScreensController processController;
 	
-	private StringBinding prefTermInvalidReason, fsnInvalidReason;
+	private StringBinding fsnInvalidReason;
 	private BooleanBinding allValid;
 	private Map<Node, ConceptNode> nodeToConMap = new HashMap<>();
 	private UpdateableBooleanBinding parentsBinding;
@@ -102,25 +102,6 @@ public class DefinitionController implements PanelControllers {
 					processController.setScreen(ScreensController.COMPONENTS_SCREEN);
 				}
 			});
-		
-		prefTermInvalidReason = new StringBinding()
-		{
-			{
-				bind(prefTerm.textProperty());
-			}
-			@Override
-			protected String computeValue()
-			{
-				if (prefTerm.getText().trim().isEmpty())
-				{
-					return "The Preferred Term is required";
-				}
-				else
-				{
-					return "";
-				}
-			}
-		};
 
 		fsnInvalidReason = new StringBinding()
 		{
@@ -142,8 +123,7 @@ public class DefinitionController implements PanelControllers {
 					if (frontParenCount != 1 || backParenCount != 1) 
 					{
 						// TODO (artf231891): Put this back after demo and only throw if under SCT
-						// return "FSNs must have a single set of parenthesis to define the semantic tag";
-						return "";
+						return "FSNs must have a single set of parenthesis to define the semantic tag";
 					} else if (fsn.getText().trim().indexOf(")") != fsn.getText().trim().length() - 1) {
 						return "FSNs may not have characters available after their semantic tag";
 					} else {
@@ -194,12 +174,12 @@ public class DefinitionController implements PanelControllers {
 		allValid = new BooleanBinding()
 		{
 			{
-				bind(prefTermInvalidReason, fsnInvalidReason, parentsBinding);
+				bind(fsnInvalidReason, parentsBinding);
 			}
 			@Override
 			protected boolean computeValue()
 			{
-				if (fsnInvalidReason.get().isEmpty() && prefTermInvalidReason.get().isEmpty() && parentsBinding.get())
+				if (fsnInvalidReason.get().isEmpty() && parentsBinding.get())
 				{
 					return true;
 				}
@@ -214,8 +194,6 @@ public class DefinitionController implements PanelControllers {
 		ErrorMarkerUtils.setupErrorMarker(fsn, sp, fsnInvalidReason);
 		
 		sp = new StackPane();
-		ErrorMarkerUtils.swapGridPaneComponents(prefTerm, sp, gridPane);
-		ErrorMarkerUtils.setupErrorMarker(prefTerm, sp, prefTermInvalidReason);
 		
 		addNewParentHandler();
 		
@@ -239,7 +217,7 @@ public class DefinitionController implements PanelControllers {
 			parents.add(parent.getConcept().getConceptSequence());
 			
 		}
-		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), prefTerm.getText().trim(), parents); 
+		processController.getWizard().setConceptDefinitionVals(fsn.getText().trim(), parents); 
 	}
 
 	private void removeNewParentHandler(int idx) {

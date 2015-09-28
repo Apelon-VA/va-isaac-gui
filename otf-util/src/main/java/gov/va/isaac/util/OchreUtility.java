@@ -69,7 +69,14 @@ public final class OchreUtility {
 			return "";
 		}
 	}
-
+	public static String stripSemanticTag(String input) {
+		if (input.lastIndexOf('(') != -1) {
+			String st = input.substring(0, input.lastIndexOf('(')).trim();
+			return st;
+		} else {
+			return "";
+		}
+	}
 	/**
 	 * Simple utility method to get the latest version of a concept without having to do the class conversion stuff
 	 * @param conceptChronology the chronlogy to get the concept version for

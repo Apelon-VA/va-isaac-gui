@@ -63,7 +63,7 @@
 				<Button fx:id="cancelButton" mnemonicParsing="false" text="Cancel" />
 				<Button fx:id="startOverButton" mnemonicParsing="false" text="Start Over" />
 				<Button fx:id="backButton" mnemonicParsing="false" text="Back" />
-				<Button fx:id="commitButton" mnemonicParsing="false" text="Commit" />
+				<Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
 			</children>
 			<BorderPane.margin>
 				<Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

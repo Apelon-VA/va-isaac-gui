@@ -19,10 +19,13 @@
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
 import gov.va.isaac.AppContext;
-import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 
 import java.util.List;
@@ -46,6 +49,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 public class SummaryController implements PanelControllers {
 	
@@ -72,7 +76,7 @@ public class SummaryController implements PanelControllers {
 	@FXML private BorderPane summaryPane;
 	@FXML private Button cancelButton;
 	@FXML private Button startOverButton;
-	@FXML private Button commitButton;
+	@FXML private Button saveButton;
 	@FXML private Button backButton;
 
 	static ScreensController processController;
@@ -88,7 +92,7 @@ public class SummaryController implements PanelControllers {
 			}
 		});
 	
-		commitButton.setOnAction(new EventHandler<ActionEvent>() {
+		saveButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
 				processValues();
@@ -115,7 +119,7 @@ public class SummaryController implements PanelControllers {
 	
 	private void setupConcept() {
 		conceptFSN.setText(processController.getWizard().getConceptFSN());
-		conceptPT.setText(processController.getWizard().getConceptPT());
+		conceptPT.setText(OchreUtility.stripSemanticTag(processController.getWizard().getConceptFSN()));
 
 		addAllParents(processController.getWizard().getParents());
 	}
@@ -194,11 +198,18 @@ public class SummaryController implements PanelControllers {
 			
 			ConceptChronology newChronology = processController.getWizard().createNewConcept();
 			
-			Get.commitService().addUncommitted(newChronology);
-			Get.commitService().commit(
-					newChronology, 
-					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
-					"WizardController adding concept: " + "fsn");
+//			Get.commitService().addUncommitted(newChronology);
+//			Get.commitService().commit(
+//					newChronology, 
+//					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
+//					"WizardController adding concept: " + "fsn");
+			
+			PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.DIAGRAM_STYLE);
+			cv.setConcept(newChronology.getNid());
+
+			cv.showView(null);
+
+			
 			
 //			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
 			//boolean committed = 
