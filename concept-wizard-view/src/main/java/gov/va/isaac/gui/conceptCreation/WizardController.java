@@ -192,7 +192,7 @@ public class WizardController {
 			} 
 			LogicalExpression parentsDef = parentBuilder.build();
 			
-			ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(this.fsn, prefTerm, parentsDef);
+			ConceptBuilder conBuilder = conceptBuilderService.getDefaultConceptBuilder(this.fsn, OchreUtility.getSemanticTag(this.fsn), parentsDef);
 			
 			//Descriptions
 			for (int i = 0; i < getSynonymsCreated(); i++) {
