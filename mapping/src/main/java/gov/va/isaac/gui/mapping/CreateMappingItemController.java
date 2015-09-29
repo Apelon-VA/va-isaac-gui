@@ -63,7 +63,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import org.ihtsdo.otf.query.lucene.LuceneDescriptionType;
-import org.ihtsdo.otf.tcc.api.concept.ConceptVersionBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -443,10 +442,10 @@ public class CreateMappingItemController {
 			searchObject_ = searchObject;
 			SearchHandle searchHandle = null;
 			scrapeSearchRestriction();
-			
-			if (searchObject instanceof ConceptVersionBI) {
+
+			if (searchObject instanceof ConceptSnapshot) {
 				searchHandle = MappingUtils.search(
-						((ConceptVersionBI)searchObject).getNid(), 
+						((ConceptSnapshot)searchObject).getNid(), 
 						null, 
 						searchRestriction.getDescriptionType(), 
 						searchRestriction.getAdvancedDescriptionTypeUUID(), 
