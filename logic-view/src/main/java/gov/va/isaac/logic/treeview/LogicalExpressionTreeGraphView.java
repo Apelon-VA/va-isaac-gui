@@ -362,11 +362,9 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		// TODO get background processes working
 		LogicalExpression le = loadData();
 		
-		Platform.runLater(() -> {
-			displayData(le);
+		displayData(le);
 
-			noRefresh_.decrementAndGet();
-		});
+		noRefresh_.decrementAndGet();
 
 //		Task<LogicalExpression> task = new Task<LogicalExpression>() {
 //			@Override
