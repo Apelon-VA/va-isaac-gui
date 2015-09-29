@@ -28,7 +28,6 @@ import gov.va.isaac.util.CommonMenusNIdProvider;
 import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
-import gov.vha.isaac.metadata.coordinates.EditCoordinates;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.api.Get;
@@ -54,7 +53,6 @@ import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -68,7 +66,6 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -109,11 +106,10 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.tk.Toolkit;
+
 
 public class ConceptViewController {
 	
@@ -1507,8 +1503,28 @@ public class ConceptViewController {
 	private void commitButton_Click() {
 		// TODO implement commit
 		LOG.debug("Commit clicked");
-        Get.commitService().commit(conceptProperty.get().getChronology(), EditCoordinates.getDefaultUserSolorOverlay(), "Committing new concept " + conceptLabel.getText());
-        
+		//TODO see what Keith says about committing the reference components.
+		//in the meantime, do a global commit.  The concept level commit is not committing the related description sememes, among other things.
+		//note that the global commit method that takes an edit coord is also broken... so just use the deprecated one...
+
+		//get at the end, makes it block till committed
+		//TODO figure out if / how we want to thread this - don't really want to wait
+		Task<Optional<CommitRecord>> cr = Get.commitService().commit("Committing new concept " + conceptLabel.getText());
+		Utility.execute(() ->
+		{
+			try
+			{
+				//wait for commit completion
+				cr.get();
+				//hit the lucene indexes, tell them to update (rather than waiting for up to 60 seconds)
+				Frills.refreshIndexes();
+			}
+			catch (Exception e)
+			{
+				LOG.error("unexpected error waiting for commit", e);
+			}
+		});
+		
 	}
 	
 	private void newConceptButton_Click() {
