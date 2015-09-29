@@ -1,3 +1,4 @@
+
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
@@ -110,6 +111,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -1074,41 +1076,6 @@ public class ConceptViewController {
 		for (TableColumn<ConceptDescription,?> column : descriptionTableView.getColumns()) {
 			column.setMinWidth(Toolkit.getToolkit().getFontLoader().computeStringWidth(column.getText(), f) + 30);
 		}
-		
-		TableColumn<ConceptDescription, Boolean> uncommittedColumn = new TableColumn<ConceptDescription, Boolean>("Uncomitted");
-		//uncommittedColumn.setVisible(false);
-		//uncommittedColumn.setMaxWidth(0);
-		//uncommittedColumn.setCellValueFactory(new PropertyValueFactory<ConceptDescription, Boolean>("getUncommittedProperty"));
-		
-		uncommittedColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ConceptDescription, Boolean>, ObservableValue<Boolean>>()	{
-			@Override
-			public ObservableValue<Boolean> call(CellDataFeatures<ConceptDescription, Boolean> param) {
-				return param.getValue().getUncommittedProperty();
-			}
-		});
-		
-		uncommittedColumn.setCellFactory(new Callback<TableColumn<ConceptDescription, Boolean>, TableCell<ConceptDescription, Boolean>>() {
-			@Override public TableCell<ConceptDescription, Boolean> call(TableColumn<ConceptDescription, Boolean> ucTableColumn) {
-				return new TableCell<ConceptDescription, Boolean>() {
-					@Override public void updateItem(final Boolean uncommitted, final boolean empty) {
-						super.updateItem(uncommitted, empty);
-						// clear any custom styles
-						this.setStyle("");
-						this.getTableRow().setStyle("");
-						// update the item and set a custom style if necessary
-						if (uncommitted != null) {
-							this.setText(uncommitted.toString());
-							if (uncommitted.booleanValue()) {
-								this.setStyle("font-style: italic;");
-								this.getTableRow().setStyle("font-style: italic;");
-								timeTableColumn.setVisible(true);
-							}
-						}
-					}
-				};
-			}
-		});
-		descriptionTableView.getColumns().add(uncommittedColumn);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -1340,6 +1307,16 @@ public class ConceptViewController {
 				// TODO Make text overrun work on text property
 				Text text = new Text();
 				text.textProperty().bind(textProperty);
+				conceptDescription.getUncommittedProperty().addListener(new ChangeListener<Boolean>() {
+					@Override
+					public void changed(ObservableValue<? extends Boolean> arg0,
+							Boolean oldValue, Boolean newValue) {
+						Font f = text.getFont();
+						text.setFont(Font.font(f.getFamily(), (newValue.booleanValue())? FontPosture.ITALIC : FontPosture.REGULAR, f.getSize()));
+					}
+					
+				});
+				
 				//text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
 				cell.setGraphic(text);
 				
@@ -1347,6 +1324,7 @@ public class ConceptViewController {
 				tooltip.textProperty().bind(textProperty);
 				cell.setTooltip(tooltip);
 	
+				
 				MenuItem mi = new MenuItem("Copy Value");
 				mi.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
@@ -1560,8 +1538,7 @@ public class ConceptViewController {
 	private void toggleDescriptionState(ConceptDescription conceptDescription) {
 		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this description " + conceptDescription.toggledStateName() + "?", getRoot().getScene().getWindow());
 		if (response == DialogResponse.YES) {
-			//conceptDescription.toggleState();
-			conceptDescription.getUncommittedProperty().set(!conceptDescription.isUncommitted());
+			conceptDescription.toggleState();
 		}
 	}
 	
@@ -1575,7 +1552,7 @@ public class ConceptViewController {
 				// TODO I have no idea if this is even close to correct.  DT
 				ConceptVersion<?> newConceptVersion = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 				Get.commitService().addUncommitted(newConceptVersion.getChronology());
-				ConceptSnapshot cs = Get.conceptSnapshot().getConceptSnapshot(concept.getConceptSequence());
+				ConceptSnapshot cs = Get.conceptService().getSnapshot(StampCoordinates.getDevelopmentLatest()).getConceptSnapshot(concept.getConceptSequence());
 				conceptProperty.set(cs);
 			}
 		}

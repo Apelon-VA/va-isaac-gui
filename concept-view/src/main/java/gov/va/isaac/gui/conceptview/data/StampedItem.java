@@ -25,6 +25,8 @@ import java.util.Comparator;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ProgressBar;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
@@ -62,6 +64,7 @@ public abstract class StampedItem<T extends StampedVersion>
 	protected void readStampDetails(T stampedVersion) 
 	{
 		_stampedVersion = stampedVersion;
+		
 		refreshCommittedProperty();
 
 		stateSSP.set(_stampedVersion.getState().getAbbreviation());
@@ -106,6 +109,7 @@ public abstract class StampedItem<T extends StampedVersion>
 	public SimpleStringProperty getPathProperty()   { return pathSSP; }
 	public SimpleStringProperty getStateProperty()  { return stateSSP; }
 	public SimpleStringProperty getTimeProperty()   { return timeSSP; }
+
 	public SimpleBooleanProperty getUncommittedProperty() { return uncommittedSBP; }
 	
 	public int getAuthorSequence() { return _stampedVersion.getAuthorSequence(); }
