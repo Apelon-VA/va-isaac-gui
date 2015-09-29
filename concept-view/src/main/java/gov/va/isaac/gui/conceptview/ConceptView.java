@@ -7,9 +7,12 @@ import gov.va.isaac.interfaces.gui.views.EmbeddableViewI;
 import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
+
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -18,7 +21,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+
 import javax.inject.Named;
+
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 
@@ -76,14 +81,14 @@ public class ConceptView implements EmbeddableViewI, PopupConceptViewI  {
 	@Override
 	public UUID getConceptUuid()
 	{
-		ConceptSnapshot cs = controller.getConceptSnapshot();
-		return (cs == null ? null : cs.getPrimordialUuid());
+		ConceptVersion<?> cs = controller.getConceptVersion();
+		return (cs == null ? null : cs.getChronology().getPrimordialUuid());
 	}
 	@Override
 	public int getConceptNid()
 	{
-		ConceptSnapshot cs = controller.getConceptSnapshot();
-		return (cs == null ? Integer.MIN_VALUE : cs.getNid());
+		ConceptVersion<?> cs = controller.getConceptVersion();
+		return (cs == null ? Integer.MIN_VALUE : cs.getChronology().getNid());
 	}
 	@Override
 	public void setViewMode(ConceptViewMode mode)

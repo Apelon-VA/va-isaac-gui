@@ -175,7 +175,7 @@ public class ConceptViewController {
 	@FXML private Button commitButton;
 	@FXML private Button newConceptButton;
 
-	private ObjectProperty<ConceptSnapshot> conceptProperty = new SimpleObjectProperty<ConceptSnapshot>();
+	private ObjectProperty<ConceptVersion<?>> conceptProperty = new SimpleObjectProperty<ConceptVersion<?>>();
 	private UpdateableBooleanBinding refreshBinding;
 	
 	private ObjectProperty<ChronologyChangeListener> conceptChronologyChangeListenerProperty = new SimpleObjectProperty<ChronologyChangeListener>();
@@ -184,10 +184,6 @@ public class ConceptViewController {
 
 	private final ProgressBar genericProgressBar = new ProgressBar(-1.0);
 
-	// TODO should modules be displayed and selectable that are off path of panel coordinates?
-	//private ReadOnlyObjectProperty<StampCoordinate> panelStampCoordinateProperty;
-	//private ReadOnlyObjectProperty<LanguageCoordinate> panelLanguageCoordinateProperty;
-	
 	// All bindings and listeners for constituent coordinates should be on change of TaxonomyCoordinate
 	private ObjectProperty<TaxonomyCoordinate> panelTaxonomyCoordinate = new SimpleObjectProperty<TaxonomyCoordinate>();
 
@@ -504,17 +500,18 @@ public class ConceptViewController {
 		pathTableColumn.setUserData(ConceptViewColumnType.STAMP_PATH);
 	}
 
-	public ConceptSnapshot getConceptSnapshot() {
+	public ConceptVersion<?> getConceptVersion() {
 		return (conceptProperty.get() != null) ? conceptProperty.get() : null;
 	}
 	public void setConcept(int conceptId) {
 		setConcept(conceptId, panelTaxonomyCoordinate.get().getStampCoordinate(), panelTaxonomyCoordinate.get().getLanguageCoordinate());
 	}
 	public void setConcept(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
-		Task<ConceptSnapshot> task = new Task<ConceptSnapshot>() {
+		Task<ConceptVersion<?>> task = new Task<ConceptVersion<?>>() {
 			@Override
-			protected ConceptSnapshot call() throws Exception {
-				return OchreUtility.getConceptSnapshot(conceptId, stampCoordinate != null ? stampCoordinate : panelTaxonomyCoordinate.get().getStampCoordinate(), languageCoordinate != null ? languageCoordinate : panelTaxonomyCoordinate.get().getLanguageCoordinate()).get();
+			protected ConceptVersion<?> call() throws Exception {
+				Optional<LatestVersion<? extends ConceptVersion<?>>> opt = OchreUtility.getLatestConceptVersion(Get.conceptService().getConcept(conceptId), panelTaxonomyCoordinate.get().getStampCoordinate());
+				return opt.isPresent() ? opt.get().value() : null;
 			}
 
 			@Override
@@ -559,11 +556,11 @@ public class ConceptViewController {
 	}
 
 	private void setupConceptChronologyChangeListener() {
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptVersion<?>>() {
 			@Override
 			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+					ObservableValue<? extends ConceptVersion<?>> observable,
+							ConceptVersion<?> oldValue, ConceptVersion<?> newValue) {
 				removeConceptChronologyChangeListener();
 				
 				addConceptChronologyChangeListener(newValue);
@@ -577,7 +574,7 @@ public class ConceptViewController {
 		conceptChronologyProperty.set(null);
 		conceptCommitRecordProperty.set(null);
 	}
-	private void addConceptChronologyChangeListener(ConceptSnapshot newValue) {
+	private void addConceptChronologyChangeListener(ConceptVersion<?> newValue) {
 		if (newValue != null) {
 			final UUID listenerUuid = UUID.randomUUID();
 			ChronologyChangeListener listener = new ChronologyChangeListener() {
@@ -599,7 +596,7 @@ public class ConceptViewController {
 
 				@Override
 				public void handleCommit(CommitRecord commitRecord) {
-					LOG.debug("Handling CommitRecord for concept \"{}\" (nid={}, uuid={}) by resetting conceptCommitRecordProperty: CommitRecord: {}", Get.conceptDescriptionText(newValue.getNid()), newValue.getNid(), newValue.getPrimordialUuid(), commitRecord);
+					LOG.debug("Handling CommitRecord for concept \"{}\" (nid={}, uuid={}) by resetting conceptCommitRecordProperty: CommitRecord: {}", Get.conceptDescriptionText(newValue.getChronology().getNid()), newValue.getChronology().getNid(), newValue.getChronology().getPrimordialUuid(), commitRecord);
 					conceptCommitRecordProperty.set(commitRecord);
 				}
 			};
@@ -613,17 +610,17 @@ public class ConceptViewController {
 		conceptLabel.setPadding(new Insets(10,0,10,10));
 		conceptLabel.setGraphic(genericProgressBar);
 		
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptVersion<?>>() {
 			@Override
 			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+					ObservableValue<? extends ConceptVersion<?>> observable,
+							ConceptVersion<?> oldValue, ConceptVersion<?> newValue) {
 				conceptLabel.setGraphic(genericProgressBar);
 				if (newValue != null) {
 					Task<String> task = new Task<String>() {
 						@Override
 						protected String call() throws Exception {
-							Optional<LatestVersion<DescriptionSememe<?>>> desc = newValue.getLanguageCoordinate().getFullySpecifiedDescription(newValue.getChronology().getConceptDescriptionList(), newValue.getStampCoordinate());
+							Optional<LatestVersion<DescriptionSememe<?>>> desc = panelTaxonomyCoordinate.get().getLanguageCoordinate().getFullySpecifiedDescription(newValue.getChronology().getConceptDescriptionList(), panelTaxonomyCoordinate.get().getStampCoordinate());
 							return desc.isPresent() ? desc.get().value().getText() : null;
 						}
 						@Override
@@ -661,7 +658,7 @@ public class ConceptViewController {
 										mi.setOnAction(new EventHandler<ActionEvent>() {
 											@Override
 											public void handle(ActionEvent arg0) {
-												PopupHelper.showConceptIdList(conceptProperty.getValue(), conceptLabel);
+												PopupHelper.showConceptIdList(conceptProperty.getValue(), conceptLabel, panelTaxonomyCoordinate.get().getStampCoordinate());
 											}
 										});
 										conceptLabel.getContextMenu().getItems().add(mi);
@@ -684,7 +681,7 @@ public class ConceptViewController {
 										mi.setOnAction(new EventHandler<ActionEvent>() {
 											@Override
 											public void handle(ActionEvent arg0) {
-												CustomClipboard.set(conceptProperty.get().toUserString());
+												CustomClipboard.set(conceptProperty.get().toString());
 											}
 										});
 										conceptLabel.getContextMenu().getItems().add(mi);
@@ -712,7 +709,7 @@ public class ConceptViewController {
 					@Override
 					public String getConceptId()
 					{
-						return conceptProperty.getValue().getNid() + "";
+						return conceptProperty.getValue().getChronology().getNid() + "";
 					}
 				},
 				true,
@@ -742,7 +739,7 @@ public class ConceptViewController {
 							Platform.runLater(() -> conceptProperty.set(null));
 							return null;
 						} else {
-							Optional<ConceptSnapshot> cs = OchreUtility.getConceptSnapshot(nid, panelTaxonomyCoordinate.get().getStampCoordinate(), Get.configurationService().getDefaultLanguageCoordinate());
+							Optional<LatestVersion<? extends ConceptVersion<?>>> cs = OchreUtility.getLatestConceptVersion(Get.conceptService().getConcept(nid), panelTaxonomyCoordinate.get().getStampCoordinate());
 							
 							if (! cs.isPresent()) {
 								final int finalNid = nid;
@@ -752,7 +749,7 @@ public class ConceptViewController {
 								return conceptLabel.getText();
 							}
 							
-							Optional<LatestVersion<DescriptionSememe<?>>> desc = cs.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().getChronology().getConceptDescriptionList(), cs.get().getStampCoordinate());
+							Optional<LatestVersion<DescriptionSememe<?>>> desc = panelTaxonomyCoordinate.get().getLanguageCoordinate().getFullySpecifiedDescription(cs.get().value().getChronology().getConceptDescriptionList(), panelTaxonomyCoordinate.get().getStampCoordinate());
 							if (! desc.isPresent()) {
 								final int finalNid = nid;
 								Platform.runLater(() -> AppContext.getCommonDialogs().showInformationDialog("Not using dropped concept", "Failed to load Fully Specified Name for " + Get.conceptDescriptionText(finalNid) + " for specified TaxonomyCoordinate"));
@@ -761,7 +758,7 @@ public class ConceptViewController {
 								return conceptLabel.getText();
 							}
 
-							Platform.runLater(() -> conceptProperty.set(cs.get()));
+							Platform.runLater(() -> conceptProperty.set(cs.get().value()));
 							return desc.get().value().getText();
 						}
 					}
@@ -780,18 +777,18 @@ public class ConceptViewController {
 
 	private void setupConceptCodeLabel() {
 		
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptVersion<?>>() {
 			@Override
 			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+					ObservableValue<? extends ConceptVersion<?>> observable,
+							ConceptVersion<?> oldValue, ConceptVersion<?> newValue) {
 				conceptCodeLabel.setGraphic(genericProgressBar);
 				Platform.runLater(() -> loadConceptCodeFromConcept(newValue));
 			}
 		});
 		loadConceptCodeFromConcept(conceptProperty.get());
 	} 
-	private void loadConceptCodeFromConcept(ConceptSnapshot concept) {
+	private void loadConceptCodeFromConcept(ConceptVersion<?> concept) {
 		conceptCodeLabel.setText(null);
 		if (concept != null) {
 			Task<Optional<Long>> task = new Task<Optional<Long>>() {
@@ -799,7 +796,7 @@ public class ConceptViewController {
 				//TODO this doesn't handle LOINC or RXNorm types....
 				@Override
 				protected Optional<Long> call() throws Exception {
-					return Frills.getSctId(concept.getChronology().getNid(), concept.getStampCoordinate());
+					return Frills.getSctId(concept.getChronology().getNid(), panelTaxonomyCoordinate.get().getStampCoordinate());
 				}
 
 				@Override
@@ -827,11 +824,11 @@ public class ConceptViewController {
 	private void setupUuidsVBox() {
 		uuidsVBox.getChildren().clear();
 		uuidsVBox.getChildren().add(genericProgressBar);
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptVersion<?>>() {
 			@Override
 			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+					ObservableValue<? extends ConceptVersion<?>> observable,
+							ConceptVersion<?> oldValue, ConceptVersion<?> newValue) {
 				uuidsVBox.getChildren().clear();
 				uuidsVBox.getChildren().add(genericProgressBar);
 				Platform.runLater(() -> loadUuidsVBoxFromConcept(newValue));
@@ -839,10 +836,10 @@ public class ConceptViewController {
 		});
 		loadUuidsVBoxFromConcept(conceptProperty.get());
 	}
-	private void loadUuidsVBoxFromConcept(ConceptSnapshot concept) {
+	private void loadUuidsVBoxFromConcept(ConceptVersion<?> concept) {
 		uuidsVBox.getChildren().clear();
 		if (concept != null) {
-			for (final UUID uuid : concept.getUuidList()) {
+			for (final UUID uuid : concept.getChronology().getUuidList()) {
 				Label label = new Label(uuid.toString());
 				label.setContextMenu(new ContextMenu());
 				CommonMenus.addCommonMenus(label.getContextMenu(),
@@ -898,11 +895,11 @@ public class ConceptViewController {
 				return State.valueOf(state);
 			}
 		});
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptVersion<?>>() {
 			@Override
 			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+					ObservableValue<? extends ConceptVersion<?>> observable,
+							ConceptVersion<?> oldValue, ConceptVersion<?> newValue) {
 				loadStatusComboBoxFromConcept(newValue);
 			}
 		});
@@ -916,7 +913,7 @@ public class ConceptViewController {
 		loadStatusComboBoxFromConcept(conceptProperty.get());
 	}
 
-	private void loadStatusComboBoxFromConcept(ConceptSnapshot concept) {
+	private void loadStatusComboBoxFromConcept(ConceptVersion<?> concept) {
 		statusComboBox.getItems().clear();
 		
 		if (concept != null) {
@@ -1008,11 +1005,11 @@ public class ConceptViewController {
 				return null;
 			}
 		});
-		conceptProperty.addListener(new ChangeListener<ConceptSnapshot>() {
+		conceptProperty.addListener(new ChangeListener<ConceptVersion<?>>() {
 			@Override
 			public void changed(
-					ObservableValue<? extends ConceptSnapshot> observable,
-					ConceptSnapshot oldValue, ConceptSnapshot newValue) {
+					ObservableValue<? extends ConceptVersion<?>> observable,
+					ConceptVersion<?> oldValue, ConceptVersion<?> newValue) {
 				loadModulesComboBoxFromConcept(newValue);
 			}
 		});
@@ -1032,7 +1029,7 @@ public class ConceptViewController {
 	};
 	// In read-only view, set contents/choices of moduleComboBox
 	// to module of loaded concepts only
-	private void loadModulesComboBoxFromConcept(ConceptSnapshot concept) {
+	private void loadModulesComboBoxFromConcept(ConceptVersion<?> concept) {
 		// Must remove listener or will infinitely loop
 		modulesComboBox.getSelectionModel().selectedItemProperty().removeListener(modulesComboBoxSelectedItemChangeListener);
 		modulesComboBox.getItems().clear();
@@ -1503,7 +1500,7 @@ public class ConceptViewController {
 	private void refreshLogicGraph() {
 		Platform.runLater(() -> relationshipsProgress.toFront());
 		if (conceptProperty.get() != null) {
-			relationshipsView.setConcept(panelTaxonomyCoordinate.get(), conceptProperty.get().getNid());
+			relationshipsView.setConcept(panelTaxonomyCoordinate.get(), conceptProperty.get().getChronology().getNid());
 		} else {
 			Platform.runLater(() -> relationshipsView.clear());
 		}
@@ -1569,7 +1566,7 @@ public class ConceptViewController {
 	
 	private void setConceptState(State newState) {
 		// TODO implement
-		ConceptSnapshot concept = getConceptSnapshot();
+		ConceptVersion<?> concept = getConceptVersion();
 		if (concept != null && newState != null && concept.getState() != newState) {
 			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this concept " + newState.toString() + "?", getRoot().getScene().getWindow());
 			if (response == DialogResponse.YES) {
@@ -1577,8 +1574,7 @@ public class ConceptViewController {
 				// TODO I have no idea if this is even close to correct.  DT
 				ConceptVersion<?> newConceptVersion = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 				Get.commitService().addUncommitted(newConceptVersion.getChronology());
-				ConceptSnapshot cs = Get.conceptService().getSnapshot(StampCoordinates.getDevelopmentLatest()).getConceptSnapshot(concept.getConceptSequence());
-				conceptProperty.set(cs);
+				conceptProperty.set(newConceptVersion);
 			}
 		}
 		statusComboBox.getSelectionModel().select(concept.getState());

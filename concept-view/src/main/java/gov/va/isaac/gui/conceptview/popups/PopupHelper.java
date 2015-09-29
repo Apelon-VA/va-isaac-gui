@@ -14,20 +14,23 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Optional;
 import java.util.UUID;
+
 import javafx.scene.layout.Region;
 
 public class PopupHelper {
 	
 	private static final DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
 	
-	public static void showConceptIdList(ConceptSnapshot concept, Region popOverRegion) {
+	public static void showConceptIdList(ConceptVersion<?> concept, Region popOverRegion, StampCoordinate stampCoordinate) {
 		PopupList popup = new PopupList();
-		popup.setTitle("Display IDs for Concept " + Get.conceptDescriptionText(concept.getNid()));
+		popup.setTitle("Display IDs for Concept " + Get.conceptDescriptionText(concept.getChronology().getNid()));
 		popup.setColumnTypes(new ConceptViewColumnType[] { 
 			ConceptViewColumnType.ID_TYPE, 
 			ConceptViewColumnType.ID_VALUE, 
@@ -35,23 +38,23 @@ public class PopupHelper {
 		});
 		popup.setPopOverRegion(popOverRegion);
 		
-		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, concept.getStampCoordinate());
-		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), 
+		SememeSnapshotService<StringSememeImpl> svc = Get.sememeService().getSnapshot(StringSememeImpl.class, stampCoordinate);
+		Optional<LatestVersion<StringSememeImpl>> sctSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getChronology().getNid(), 
 				IsaacMetadataAuxiliaryBinding.SNOMED_INTEGER_ID.getConceptSequence()).findFirst();
 		if (sctSememe.isPresent()) {
 			ConceptId id = new ConceptId(ConceptIdType.SCT, sctSememe.get().value().getString(), TIMESTAMP_FORMAT.format(sctSememe.get().value().getTime()));
 			popup.addData(id);
 		}
 		
-		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), 
+		Optional<LatestVersion<StringSememeImpl>> loincSememe = svc.getLatestSememeVersionsForComponentFromAssemblage(concept.getChronology().getNid(), 
 				IsaacMetadataAuxiliaryBinding.LOINC_NUM.getConceptSequence()).findFirst();
 		if (loincSememe.isPresent()) {
 			ConceptId id = new ConceptId(ConceptIdType.LOINC, loincSememe.get().value().getString(), TIMESTAMP_FORMAT.format(loincSememe.get().value().getTime()));
 			popup.addData(id);
 		}
 		
-		SememeSnapshotService<DynamicSememe> dsvc = Get.sememeService().getSnapshot(DynamicSememe.class, concept.getStampCoordinate());
-		Optional<LatestVersion<DynamicSememe>> rxnSememe = dsvc.getLatestSememeVersionsForComponentFromAssemblage(concept.getNid(), 
+		SememeSnapshotService<DynamicSememe> dsvc = Get.sememeService().getSnapshot(DynamicSememe.class, stampCoordinate);
+		Optional<LatestVersion<DynamicSememe>> rxnSememe = dsvc.getLatestSememeVersionsForComponentFromAssemblage(concept.getChronology().getNid(), 
 				IsaacMetadataAuxiliaryBinding.RXCUI.getConceptSequence()).findFirst();
 		if (rxnSememe.isPresent()) {
 			ConceptId id = new ConceptId(ConceptIdType.RXNORM, rxnSememe.get().value().getData()[0].getDataObject().toString(), 
@@ -61,7 +64,7 @@ public class PopupHelper {
 		
 		// TODO RxNorm ID
 		
-		for (UUID uuid : concept.getUuidList()) {
+		for (UUID uuid : concept.getChronology().getUuidList()) {
 			ConceptId id = new ConceptId(ConceptIdType.UUID, uuid.toString());
 			popup.addData(id);
 		}
@@ -126,7 +129,7 @@ public class PopupHelper {
 		popup.showPopup();
 	}
 	
-	public static void showConceptHistory(ConceptSnapshot concept, Region popOverRegion) {
+	public static void showConceptHistory(ConceptVersion<?> concept, Region popOverRegion) {
 		PopupList popup = new PopupList();
 		popup.setTitle("Concept History");
 		popup.setColumnTypes(new ConceptViewColumnType[] { 
