@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="acceptabilityModificationPane" prefHeight="200.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.conceptview.descriptions.wizardPages.AcceptabilityController">
+	<children>
+		<BorderPane prefHeight="200.0" prefWidth="600.0">
+			<top>
+<VBox alignment="TOP_CENTER" spacing="5.0">
+<children>
+				<Label text="Define Acceptability" textAlignment="CENTER" BorderPane.alignment="CENTER">
+					<font>
+						<Font name="System Bold" size="33.0" />
+					</font>
+				</Label><Label fx:id="termLabel" text="Label" textAlignment="CENTER">
+<font>
+<Font name="System Bold" size="18.0" />
+</font></Label>
+</children>
+</VBox>
+			</top>
+			<center>
+				<VBox prefHeight="200.0" prefWidth="100.0" spacing="20.0" BorderPane.alignment="CENTER">
+					<children>
+						<VBox alignment="TOP_CENTER" spacing="5.0">
+							<children>
+								<GridPane fx:id="acceptabilityGridPane" hgap="1.0" prefWidth="571.0" vgap="10.0" BorderPane.alignment="TOP_LEFT">
+									<columnConstraints>
+										<ColumnConstraints halignment="LEFT" hgrow="ALWAYS" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+									</columnConstraints>
+									<rowConstraints>
+										<RowConstraints fillHeight="false" maxHeight="-Infinity" minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+										<RowConstraints fillHeight="false" vgrow="NEVER" />
+									</rowConstraints>
+									<BorderPane.margin>
+										<Insets left="5.0" right="5.0" />
+									</BorderPane.margin>
+									<padding>
+										<Insets left="5.0" right="5.0" />
+									</padding>
+								</GridPane>
+							</children>
+							<padding>
+								<Insets bottom="10.0" top="10.0" />
+							</padding>
+						</VBox>
+					</children>
+					<BorderPane.margin>
+						<Insets top="10.0" />
+					</BorderPane.margin>
+				</VBox>
+			</center>
+<bottom><HBox alignment="CENTER" fillHeight="false" spacing="30.0" BorderPane.alignment="CENTER">
+<children>
+<Button fx:id="cancelButton" mnemonicParsing="false" text="Cancel" />
+<Button fx:id="backButton" mnemonicParsing="false" text="Back" />
+<Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
+</children>
+<BorderPane.margin>
+<Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+</BorderPane.margin>
+</HBox>
+</bottom>
+		</BorderPane>
+	</children>
+</AnchorPane>

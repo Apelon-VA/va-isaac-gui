@@ -14,6 +14,7 @@ import gov.vha.isaac.ochre.impl.utility.Frills;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -34,6 +35,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	
 	private int _acceptabilitySortValue = Integer.MAX_VALUE;
 	private int _typeSortValue = Integer.MAX_VALUE;
+	private UUID primordialUuid;
 	
 	private boolean _hasSememes = false;
 	
@@ -100,6 +102,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	{
 		if (description != null) 
 		{
+			primordialUuid = description.getPrimordialUuid();
 			readStampDetails(description);
 			_acceptabilitySortValue = AcceptabilitiesHelper.getAcceptabilitySortValue(description);
 			_typeSortValue = (getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())			? 0 :
@@ -205,4 +208,8 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 			return Integer.compare(o1.getSememesSortValue(), o2.getSememesSortValue());
 		}
 	};
+
+	public UUID getPrimordialUuid() {
+		return primordialUuid;
+	}
 }
