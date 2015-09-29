@@ -58,6 +58,7 @@ import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -71,6 +72,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -116,8 +118,10 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sun.javafx.tk.Toolkit;
 
 
@@ -626,6 +630,9 @@ public class ConceptViewController {
 						@Override
 						public void succeeded() {
 							Platform.runLater(() -> {
+								conceptLabel.setFont(makeFont(conceptLabel.getFont(), newValue.getStampSequence()));
+								conceptCodeLabel.setFont(makeFont(conceptCodeLabel.getFont(), newValue.getStampSequence()));
+								
 								conceptLabel.setGraphic(null);
 								conceptLabel.setText(getValue());
 								conceptLabel.setContextMenu(null);
@@ -841,6 +848,7 @@ public class ConceptViewController {
 		if (concept != null) {
 			for (final UUID uuid : concept.getChronology().getUuidList()) {
 				Label label = new Label(uuid.toString());
+				label.setFont(makeFont(label.getFont(), concept.getStampSequence()));
 				label.setContextMenu(new ContextMenu());
 				CommonMenus.addCommonMenus(label.getContextMenu(),
 						new CommonMenusDataProvider() {
@@ -911,18 +919,13 @@ public class ConceptViewController {
 			}
 		});
 		loadStatusComboBoxFromConcept(conceptProperty.get());
+		statusComboBox.getItems().clear();
+		statusComboBox.getItems().add(State.ACTIVE);
+		statusComboBox.getItems().add(State.INACTIVE);
 	}
 
 	private void loadStatusComboBoxFromConcept(ConceptVersion<?> concept) {
-		statusComboBox.getItems().clear();
-		
 		if (concept != null) {
-			// TODO add both ACTIVE and INACTIVE once modifying State supported
-			statusComboBox.getItems().add(State.ACTIVE);
-			statusComboBox.getItems().add(State.INACTIVE);
-			//statusComboBox.getItems().add(concept.getState());
-			statusComboBox.getSelectionModel().select(concept.getState());
-			
 			switch(concept.getState()) {
 			case ACTIVE:
 			case INACTIVE:
@@ -1304,11 +1307,12 @@ public class ConceptViewController {
 				// TODO Make text overrun work on text property
 				Text text = new Text();
 				text.textProperty().bind(textProperty);
+				Font f = text.getFont();
+				text.setFont(Font.font(f.getFamily(), (conceptDescription.isUncommitted())? FontPosture.ITALIC : FontPosture.REGULAR, f.getSize()));
 				conceptDescription.getUncommittedProperty().addListener(new ChangeListener<Boolean>() {
 					@Override
 					public void changed(ObservableValue<? extends Boolean> arg0,
 							Boolean oldValue, Boolean newValue) {
-						Font f = text.getFont();
 						text.setFont(Font.font(f.getFamily(), (newValue.booleanValue())? FontPosture.ITALIC : FontPosture.REGULAR, f.getSize()));
 					}
 					
@@ -1514,8 +1518,9 @@ public class ConceptViewController {
 		stage.setMinWidth(600);
 		stage.setTitle("Define New Concept");
 		stage.getScene().getStylesheets().add(DescriptionModificationWizard.class.getResource("/isaac-shared-styles.css").toString());
-		stage.show();
+		stage.showAndWait();
 		LOG.debug("New Description clicked");
+		refreshConceptDescriptions();
 	}
 	
 	private void cancelButton_Click() {
@@ -1564,20 +1569,33 @@ public class ConceptViewController {
 		}
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
 	private void setConceptState(State newState) {
 		// TODO implement
 		ConceptVersion<?> concept = getConceptVersion();
+		ConceptChronology chronology = concept.getChronology();
+		
 		if (concept != null && newState != null && concept.getState() != newState) {
 			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this concept " + newState.toString() + "?", getRoot().getScene().getWindow());
 			if (response == DialogResponse.YES) {
-				LOG.debug("Setting concept state to " + newState.toString());
-				// TODO I have no idea if this is even close to correct.  DT
-				ConceptVersion<?> newConceptVersion = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-				Get.commitService().addUncommitted(newConceptVersion.getChronology());
-				conceptProperty.set(newConceptVersion);
+				if (Get.commitService().isUncommitted(concept.getStampSequence())) {
+					Get.commitService().cancel(chronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+					//Get.commitService().cancel(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+					Optional<LatestVersion<? extends ConceptVersion<?>>> oldConcept = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
+					//Optional<LatestVersion> oldConcept = chronology.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+					if (oldConcept.isPresent()) {
+						concept = oldConcept.get().value();
+					}
+				}
+				if (concept.getState() != newState) {
+					// Check again in case concept changed to previous version
+					LOG.debug("Setting concept state to " + newState.toString());
+					concept = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+					Get.commitService().addUncommitted(concept.getChronology());
+				}
+				conceptProperty.set(concept);
 			}
 		}
-		statusComboBox.getSelectionModel().select(concept.getState());
 	}
 	
 	private void editDescription(ConceptDescription desc) {
@@ -1587,7 +1605,12 @@ public class ConceptViewController {
 		stage.setMinWidth(600);
 		stage.setTitle("Define New Concept");
 		stage.getScene().getStylesheets().add(DescriptionModificationWizard.class.getResource("/isaac-shared-styles.css").toString());
-		stage.show();
+		stage.showAndWait();
 		LOG.debug("New Description clicked");
+		refreshConceptDescriptions();
+	}
+
+	private static Font makeFont(Font oldFont, int stampSequence) {
+		return Font.font(oldFont.getFamily(), (Get.commitService().isUncommitted(stampSequence))? FontPosture.ITALIC : FontPosture.REGULAR, oldFont.getSize());
 	}
 }
