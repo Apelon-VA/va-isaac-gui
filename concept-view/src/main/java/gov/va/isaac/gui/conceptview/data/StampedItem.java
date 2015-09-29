@@ -23,7 +23,10 @@ import java.text.SimpleDateFormat;
 import java.util.Comparator;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ProgressBar;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
@@ -54,19 +57,18 @@ public abstract class StampedItem<T extends StampedVersion>
 	private final SimpleStringProperty stateSSP  = new SimpleStringProperty("-");
 	private final SimpleStringProperty timeSSP   = new SimpleStringProperty("-");
 	
+	private final SimpleBooleanProperty uncommittedSBP	= new SimpleBooleanProperty(false);
+	
 	public T getStampedVersion() { return _stampedVersion; }
 	
 	protected void readStampDetails(T stampedVersion) 
 	{
 		_stampedVersion = stampedVersion;
+		
+		refreshCommittedProperty();
 
-		// Not using "U" any longer
-		//stateSSP.set(Get.commitService().isUncommitted(stampedVersion.getStampSequence()) ? "U" : isActive() ? "A" : "I");
 		stateSSP.set(_stampedVersion.getState().getAbbreviation());
-		timeSSP.set(Get.commitService().isUncommitted(stampedVersion.getStampSequence()) ? 
-				"Uncommitted" : 
-				new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(getCreationDate())
-		);
+		timeSSP.set(isUncommitted() ? "Uncommitted" : new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(getCreationDate()));
 		
 		Utility.execute(() ->
 		{
@@ -97,11 +99,18 @@ public abstract class StampedItem<T extends StampedVersion>
 		return _stampedVersion.getState() == State.ACTIVE;
 	}
 	
+	public boolean isUncommitted()	{ return uncommittedSBP.get(); }
+	public void refreshCommittedProperty()	{
+		uncommittedSBP.set(Get.commitService().isUncommitted(_stampedVersion.getStampSequence()));
+	}
+	
 	public SimpleStringProperty getAuthorProperty() { return authorSSP; }
 	public SimpleStringProperty getModuleProperty() { return moduleSSP; }
 	public SimpleStringProperty getPathProperty()   { return pathSSP; }
 	public SimpleStringProperty getStateProperty()  { return stateSSP; }
 	public SimpleStringProperty getTimeProperty()   { return timeSSP; }
+
+	public SimpleBooleanProperty getUncommittedProperty() { return uncommittedSBP; }
 	
 	public int getAuthorSequence() { return _stampedVersion.getAuthorSequence(); }
 	public int getModuleSequence() { return _stampedVersion.getModuleSequence(); }

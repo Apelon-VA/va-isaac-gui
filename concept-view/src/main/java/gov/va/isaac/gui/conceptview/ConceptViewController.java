@@ -1,7 +1,10 @@
+
 package gov.va.isaac.gui.conceptview;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.config.profiles.UserProfileBindings;
+import gov.va.isaac.gui.conceptview.data.Concept;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.data.StampedItem;
 import gov.va.isaac.gui.conceptview.popups.PopupHelper;
@@ -39,6 +42,7 @@ import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -97,12 +101,14 @@ import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -1066,7 +1072,6 @@ public class ConceptViewController {
 		for (TableColumn<ConceptDescription,?> column : descriptionTableView.getColumns()) {
 			column.setMinWidth(Toolkit.getToolkit().getFontLoader().computeStringWidth(column.getText(), f) + 30);
 		}
-		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -1298,6 +1303,16 @@ public class ConceptViewController {
 				// TODO Make text overrun work on text property
 				Text text = new Text();
 				text.textProperty().bind(textProperty);
+				conceptDescription.getUncommittedProperty().addListener(new ChangeListener<Boolean>() {
+					@Override
+					public void changed(ObservableValue<? extends Boolean> arg0,
+							Boolean oldValue, Boolean newValue) {
+						Font f = text.getFont();
+						text.setFont(Font.font(f.getFamily(), (newValue.booleanValue())? FontPosture.ITALIC : FontPosture.REGULAR, f.getSize()));
+					}
+					
+				});
+				
 				//text.wrappingWidthProperty().bind(cell.getTableColumn().widthProperty());
 				cell.setGraphic(text);
 				
@@ -1305,6 +1320,7 @@ public class ConceptViewController {
 				tooltip.textProperty().bind(textProperty);
 				cell.setTooltip(tooltip);
 	
+				
 				MenuItem mi = new MenuItem("Copy Value");
 				mi.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
@@ -1496,19 +1512,18 @@ public class ConceptViewController {
 	}
 	
 	private void cancelButton_Click() {
-		// TODO implement cancel
 		LOG.debug("Cancel clicked");
+		mainPane.getScene().getWindow().hide();
 	}
 	
 	private void commitButton_Click() {
-		// TODO implement commit
 		LOG.debug("Commit clicked");
 		//TODO see what Keith says about committing the reference components.
 		//in the meantime, do a global commit.  The concept level commit is not committing the related description sememes, among other things.
 		//note that the global commit method that takes an edit coord is also broken... so just use the deprecated one...
 
 		//get at the end, makes it block till committed
-		//TODO figure out if / how we want to thread this - don't really want to wait
+		//TODO figure out if / how we want to thread this - should we not wait, or shoudl we wait for commit to complete?
 		Task<Optional<CommitRecord>> cr = Get.commitService().commit("Committing new concept " + conceptLabel.getText());
 		Utility.execute(() ->
 		{
@@ -1524,11 +1539,11 @@ public class ConceptViewController {
 				LOG.error("unexpected error waiting for commit", e);
 			}
 		});
-		
+		mainPane.getScene().getWindow().hide();
 	}
 	
 	private void newConceptButton_Click() {
-		// TODO launch new concept wizard
+		// launch new concept wizard
 		LOG.debug("New Concept clicked");
 		
 		ConceptCreationViewI cv = LookupService.getService(ConceptCreationViewI.class);
@@ -1550,9 +1565,10 @@ public class ConceptViewController {
 			if (response == DialogResponse.YES) {
 				LOG.debug("Setting concept state to " + newState.toString());
 				// TODO I have no idea if this is even close to correct.  DT
-				//concept = (ConceptSnapshot) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-				//Get.commitService().addUncommitted(concept.getChronology());
-				//conceptProperty.set(concept);
+				ConceptVersion<?> newConceptVersion = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+				Get.commitService().addUncommitted(newConceptVersion.getChronology());
+				ConceptSnapshot cs = Get.conceptService().getSnapshot(StampCoordinates.getDevelopmentLatest()).getConceptSnapshot(concept.getConceptSequence());
+				conceptProperty.set(cs);
 			}
 		}
 		statusComboBox.getSelectionModel().select(concept.getState());
