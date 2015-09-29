@@ -1516,19 +1516,18 @@ public class ConceptViewController {
 	}
 	
 	private void cancelButton_Click() {
-		// TODO implement cancel
 		LOG.debug("Cancel clicked");
+		mainPane.getScene().getWindow().hide();
 	}
 	
 	private void commitButton_Click() {
-		// TODO implement commit
 		LOG.debug("Commit clicked");
         Get.commitService().commit(conceptProperty.get().getChronology(), EditCoordinates.getDefaultUserSolorOverlay(), "Committing new concept " + conceptLabel.getText());
-        
+		mainPane.getScene().getWindow().hide();
 	}
 	
 	private void newConceptButton_Click() {
-		// TODO launch new concept wizard
+		// launch new concept wizard
 		LOG.debug("New Concept clicked");
 		
 		ConceptCreationViewI cv = LookupService.getService(ConceptCreationViewI.class);
