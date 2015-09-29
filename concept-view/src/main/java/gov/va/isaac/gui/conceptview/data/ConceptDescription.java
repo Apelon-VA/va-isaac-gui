@@ -1,13 +1,19 @@
 package gov.va.isaac.gui.conceptview.data;
 
 import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.MutableStampedVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
@@ -39,7 +45,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	
 	private boolean _hasSememes = false;
 	
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static DescriptionSememe extractDescription(
 			SememeChronology<? extends DescriptionSememe> sememeChronology,
 			StampCoordinate stampCoordinate) {
@@ -155,17 +161,29 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	public int getTypeSortValue() 			{ return _typeSortValue; }
 	public int getSememesSortValue() 		{ return (_hasSememes)? Integer.MIN_VALUE : Integer.MAX_VALUE; }
 	
+	@SuppressWarnings("unchecked")
 	public void toggleState() {
 		// TODO implement
 		State newState = getStampedVersion().getState().inverse();
 		DescriptionSememe<?> descriptionSememe = (DescriptionSememe<?>) getStampedVersion();
-		SememeChronology<?> chronology = descriptionSememe.getChronology();
+		DescriptionSememe<?> oldDescriptionSememe = descriptionSememe;
 		
-		LOG.debug("Setting description state to " + newState.toString());
-		// TODO I don't know exactly how to do this. DT
-		//chronology.createMutableVersion(DescriptionSememe.class, newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-		//Get.commitService().addUncommitted(chronology);
+		SememeChronology<DescriptionSememe<?>> chronology = (SememeChronology<DescriptionSememe<?>>)descriptionSememe.getChronology();
 		
+		if (isUncommitted()) {
+			cancelCommit();
+		}
+		
+		if (getStampedVersion().getState() != newState) {
+			LOG.debug("Setting description state to " + newState.toString());
+			MutableDescriptionSememe<?> newDescription = chronology.createMutableVersion(MutableDescriptionSememe.class, newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			newDescription.setText(descriptionSememe.getText());
+			newDescription.setCaseSignificanceConceptSequence(oldDescriptionSememe.getCaseSignificanceConceptSequence());
+			newDescription.setDescriptionTypeConceptSequence(oldDescriptionSememe.getDescriptionTypeConceptSequence());
+			newDescription.setLanguageConceptSequence(oldDescriptionSememe.getLanguageConceptSequence());
+			Get.commitService().addUncommitted(chronology);
+			readDescription(newDescription);
+		}
 	}
 	
 	public static final Comparator<ConceptDescription> typeComparator = new Comparator<ConceptDescription>() {
@@ -211,5 +229,13 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 
 	public UUID getPrimordialUuid() {
 		return primordialUuid;
+	}
+	
+	public void cancelCommit() {
+		if (isUncommitted()) {
+			Get.commitService().cancel(getStampedVersion().getChronology(), ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			DescriptionSememe<?> ds = extractDescription(getStampedVersion().getChronology(), StampCoordinates.getDevelopmentLatest());
+			readDescription(ds);
+		}
 	}
 }

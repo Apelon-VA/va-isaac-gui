@@ -1569,7 +1569,7 @@ public class ConceptViewController {
 		}
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void setConceptState(State newState) {
 		// TODO implement
 		ConceptVersion<?> concept = getConceptVersion();
@@ -1580,9 +1580,7 @@ public class ConceptViewController {
 			if (response == DialogResponse.YES) {
 				if (Get.commitService().isUncommitted(concept.getStampSequence())) {
 					Get.commitService().cancel(chronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-					//Get.commitService().cancel(ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 					Optional<LatestVersion<? extends ConceptVersion<?>>> oldConcept = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
-					//Optional<LatestVersion> oldConcept = chronology.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
 					if (oldConcept.isPresent()) {
 						concept = oldConcept.get().value();
 					}
