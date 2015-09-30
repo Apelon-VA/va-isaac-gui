@@ -9,6 +9,6 @@ public abstract class AbstractTreeNodeFxNodeWithConcept extends Label {
 	protected AbstractTreeNodeFxNodeWithConcept(AbstractNode treeNode, String labelText) {
 		super(labelText);
 		
-		TreeNodeFxNodeUtils.addContextMenu(this);
+		javafx.application.Platform.runLater(() -> TreeNodeFxNodeUtils.addContextMenu(this));
 	}
 }

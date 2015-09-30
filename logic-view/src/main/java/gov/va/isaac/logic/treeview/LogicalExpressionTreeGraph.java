@@ -3,10 +3,8 @@ package gov.va.isaac.logic.treeview;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.shape.Circle;
@@ -34,6 +32,7 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.Node;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.model.logic.node.AndNode;
+import gov.vha.isaac.ochre.model.logic.node.LiteralNodeFloat;
 import gov.vha.isaac.ochre.model.logic.node.NecessarySetNode;
 import gov.vha.isaac.ochre.model.logic.node.OrNode;
 import gov.vha.isaac.ochre.model.logic.node.RootNode;
@@ -117,7 +116,14 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 		}
 	}
 	public static String logicalNodeTypeToString(Node node) {
-		return node.getClass().getName().replaceAll(".*\\.", "");
+		String temp = node.getClass().getName().replaceAll(".*\\.", "");
+		
+		if (node instanceof LiteralNodeFloat)
+		{
+			temp += ": " + ((LiteralNodeFloat)node).getLiteralValue();
+		}
+		
+		return temp;
 	}
 	private void displayLogicalNode(TreeNodeImpl parentTreeNode, Node parentLogicalNode, Node logicalNode, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) {
 		System.out.println("Processing " + logicalNode.getNodeSemantic().name() + " node");
@@ -132,6 +138,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 
 		// Add RoleNodeSomeWithSequences or RoleNodeAllWithSequences
 		// with type of "role group (ISAAC)" with single child directly to parent
+		// TODO change to check number of grandchildren if child is AND
 		if (isIgnoreSingleChildRoleGroups()
 				&& logicalNode.getChildren().length == 1
 				&& (
