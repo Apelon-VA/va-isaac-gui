@@ -116,6 +116,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
@@ -299,6 +300,16 @@ public class ConceptViewController {
             }
 		};
 		//updateableBooleanBinding.addBinding(conceptNode.getConceptProperty(), activeOnlyToggle.selectedProperty());
+		
+		mainPane.getScene().getWindow().setOnHiding(new EventHandler<WindowEvent>() {
+			@Override
+			public void handle(WindowEvent event) {
+				if (!okToCloseConceptView()) {
+					event.consume();
+				}
+			}
+		});
+		
 	}
 
 	public AnchorPane getRoot()	{
@@ -374,7 +385,6 @@ public class ConceptViewController {
 				PreferencesPersistenceI panelPersistenceInterface = new PreferencesPersistenceI() {
 					@Override
 					public UUID getPath() {
-						// TODO Auto-generated method stub
 						Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getStampPathSequence());
 						return opt.get();
 					}
@@ -595,7 +605,6 @@ public class ConceptViewController {
 
 				@Override
 				public void handleChange(SememeChronology<? extends SememeVersion<?>> sc) {
-					// TODO Auto-generated method stub
 				}
 
 				@Override
@@ -1490,10 +1499,17 @@ public class ConceptViewController {
 				@Override
 				protected void succeeded() {
 					Platform.runLater(() -> {
-						descriptionTableView.setItems(getValue());
+						ObservableList<ConceptDescription> descriptionList = getValue();
+						descriptionTableView.setItems(descriptionList);
 						descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 						descriptionTableView.getSortOrder().clear();
 						descriptionTableView.getSortOrder().addAll(sortColumns);
+						for (ConceptDescription cd : descriptionList) {
+							if (cd.isUncommitted()) {
+								stampToggle.setSelected(true);;
+								break;
+							}
+						}
 					});
 				}
 			};
@@ -1524,7 +1540,7 @@ public class ConceptViewController {
 	}
 	
 	private void cancelButton_Click() {
-		LOG.debug("Cancel clicked");
+		// Confirmation of cancel changes is done in window hiding event
 		mainPane.getScene().getWindow().hide();
 	}
 	
@@ -1569,25 +1585,17 @@ public class ConceptViewController {
 		}
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void setConceptState(State newState) {
-		// TODO implement
 		ConceptVersion<?> concept = getConceptVersion();
-		ConceptChronology chronology = concept.getChronology();
 		
 		if (concept != null && newState != null && concept.getState() != newState) {
 			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this concept " + newState.toString() + "?", getRoot().getScene().getWindow());
 			if (response == DialogResponse.YES) {
-				if (Get.commitService().isUncommitted(concept.getStampSequence())) {
-					Get.commitService().cancel(chronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-					Optional<LatestVersion<? extends ConceptVersion<?>>> oldConcept = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
-					if (oldConcept.isPresent()) {
-						concept = oldConcept.get().value();
-					}
+				if (isConceptUncommitted()) {
+					concept = cancelConceptUncommitted();
 				}
 				if (concept.getState() != newState) {
 					// Check again in case concept changed to previous version
-					LOG.debug("Setting concept state to " + newState.toString());
 					concept = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 					Get.commitService().addUncommitted(concept.getChronology());
 				}
@@ -1610,5 +1618,57 @@ public class ConceptViewController {
 
 	private static Font makeFont(Font oldFont, int stampSequence) {
 		return Font.font(oldFont.getFamily(), (Get.commitService().isUncommitted(stampSequence))? FontPosture.ITALIC : FontPosture.REGULAR, oldFont.getSize());
+	}
+
+	private boolean isConceptUncommitted() {
+		boolean rval = false;
+		ConceptVersion<?> concept = getConceptVersion();
+		if (concept != null) {
+			rval = Get.commitService().isUncommitted(concept.getStampSequence());
+		}
+		return rval;
+	}
+	
+	private boolean hasUncommittedItems() {
+		boolean hasUncommitted = isConceptUncommitted();
+		if (!hasUncommitted) {
+			ObservableList<ConceptDescription> descriptionList = descriptionTableView.getItems();
+			for (ConceptDescription cd : descriptionList) {
+				if (cd.isUncommitted()) {
+					hasUncommitted = true;
+					break;
+				}
+			}
+		}
+		return hasUncommitted;
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private ConceptVersion<?> cancelConceptUncommitted() {
+		ConceptVersion<?> concept = getConceptVersion();;
+		if (isConceptUncommitted()) {
+			ConceptChronology chronology = concept.getChronology();
+			Get.commitService().cancel(chronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			Optional<LatestVersion<? extends ConceptVersion<?>>> oldConcept = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
+			if (oldConcept.isPresent()) {
+				concept = oldConcept.get().value();
+			}
+		}
+		return concept;
+	}
+	
+	private boolean okToCloseConceptView() {
+		boolean proceed = true;
+		if (hasUncommittedItems()) {
+			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "This form contains uncommitted changes. Are you sure you want to cancel these changes?", getRoot().getScene().getWindow());
+			proceed = (response == DialogResponse.YES);
+		}
+		if (proceed) {
+			cancelConceptUncommitted();
+			for (ConceptDescription cd : descriptionTableView.getItems()) {
+				cd.cancelUncommitted();
+			}
+		}
+		return proceed;
 	}
 }
