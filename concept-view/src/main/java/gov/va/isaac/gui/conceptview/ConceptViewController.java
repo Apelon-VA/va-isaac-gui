@@ -74,6 +74,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -120,6 +121,7 @@ import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
+import org.reactfx.inhibeans.property.SimpleBooleanProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,6 +180,7 @@ public class ConceptViewController {
 
 	@FXML private Button cancelButton;
 	@FXML private Button commitButton;
+	@FXML private Button closeButton;
 	@FXML private Button newConceptButton;
 
 	private ObjectProperty<ConceptVersion<?>> conceptProperty = new SimpleObjectProperty<ConceptVersion<?>>();
@@ -187,6 +190,8 @@ public class ConceptViewController {
 	private ObjectProperty<ConceptChronology<? extends StampedVersion>> conceptChronologyProperty = new SimpleObjectProperty<ConceptChronology<? extends StampedVersion>>();
 	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
 
+	private BooleanProperty hasUncommittedItemsProperty = new SimpleBooleanProperty(false);
+	
 	private final ProgressBar genericProgressBar = new ProgressBar(-1.0);
 
 	// All bindings and listeners for constituent coordinates should be on change of TaxonomyCoordinate
@@ -238,6 +243,7 @@ public class ConceptViewController {
 		
 		assert cancelButton 		!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert commitButton 		!= null : "fx:id=\"commitButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert closeButton 			!= null : "fx:id=\"closeButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert newConceptButton		!= null : "fx:id=\"newConceptButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		FxUtils.assignImageToButton(activeOnlyToggle, 		Images.FILTER_16.createImageView(), "Show Active Only / Show All");
@@ -251,7 +257,7 @@ public class ConceptViewController {
 		setupPreferences();
 		setupColumnTypes();
 		setupDescriptionTable();
-		setupButtonEvents();
+		setupButtons();
 		setupRelationshipsView();
 		setupStatusComboBox();
 		setupModulesComboBox();
@@ -300,14 +306,17 @@ public class ConceptViewController {
             }
 		};
 		//updateableBooleanBinding.addBinding(conceptNode.getConceptProperty(), activeOnlyToggle.selectedProperty());
-		
-		mainPane.getScene().getWindow().setOnHiding(new EventHandler<WindowEvent>() {
-			@Override
-			public void handle(WindowEvent event) {
-				if (!okToCloseConceptView()) {
-					event.consume();
+
+		Platform.runLater(() -> {
+			getRoot().getScene().getWindow().setOnCloseRequest(new EventHandler<WindowEvent>() {
+				@Override
+				public void handle(WindowEvent event) {
+					if (hasUncommittedItems()) {
+						AppContext.getCommonDialogs().showInformationDialog("Cannot Close Concept View", "This Concept View cannot be closed until changes are either committed or canceled.", getRoot().getScene().getWindow());
+						event.consume();
+					}
 				}
-			}
+			});
 		});
 		
 	}
@@ -320,7 +329,13 @@ public class ConceptViewController {
 		return new SimpleStringProperty("Concept Viewer");
 	}
 	
-	private void setupButtonEvents() {
+	private void setupButtons() {
+		closeButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent arg0) {
+				getRoot().getScene().getWindow().hide();
+			}
+		});
 		newDescriptionButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent arg0) {
@@ -345,6 +360,10 @@ public class ConceptViewController {
 				newConceptButton_Click();
 			}
 		});
+
+		commitButton.disableProperty().bind(hasUncommittedItemsProperty.not());
+		cancelButton.disableProperty().bind(hasUncommittedItemsProperty.not());
+		closeButton.disableProperty().bind(hasUncommittedItemsProperty);
 	}
 	
 	private void setupPreferences() {
@@ -560,6 +579,7 @@ public class ConceptViewController {
 	private void refresh() {
 		refreshConceptDescriptions();
 		refreshLogicGraph();
+		hasUncommittedItemsProperty.set(hasUncommittedItems());
 	}
 
 	void viewDiscarded() {
@@ -1540,8 +1560,15 @@ public class ConceptViewController {
 	}
 	
 	private void cancelButton_Click() {
-		// Confirmation of cancel changes is done in window hiding event
-		mainPane.getScene().getWindow().hide();
+		if (hasUncommittedItems()) {
+			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to cancel changes?", getRoot().getScene().getWindow());
+			if (response == DialogResponse.YES) {
+				for (ConceptDescription cd : descriptionTableView.getItems()) {
+					cd.cancelUncommitted();
+				}
+				conceptProperty.set(cancelConceptUncommitted());
+			}
+		}
 	}
 	
 	private void commitButton_Click() {
@@ -1582,6 +1609,7 @@ public class ConceptViewController {
 		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this description " + conceptDescription.toggledStateName() + "?", getRoot().getScene().getWindow());
 		if (response == DialogResponse.YES) {
 			conceptDescription.toggleState();
+			hasUncommittedItemsProperty.set(hasUncommittedItems());
 		}
 	}
 	
@@ -1657,18 +1685,4 @@ public class ConceptViewController {
 		return concept;
 	}
 	
-	private boolean okToCloseConceptView() {
-		boolean proceed = true;
-		if (hasUncommittedItems()) {
-			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "This form contains uncommitted changes. Are you sure you want to cancel these changes?", getRoot().getScene().getWindow());
-			proceed = (response == DialogResponse.YES);
-		}
-		if (proceed) {
-			cancelConceptUncommitted();
-			for (ConceptDescription cd : descriptionTableView.getItems()) {
-				cd.cancelUncommitted();
-			}
-		}
-		return proceed;
-	}
 }

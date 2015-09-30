@@ -152,8 +152,9 @@
          <children>
             <FlowPane alignment="BOTTOM_RIGHT" columnHalignment="RIGHT" hgap="10.0" layoutX="702.0" layoutY="147.0" prefHeight="25.0" prefWidth="444.0" rowValignment="TOP" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0">
                <children>
-                  <Button fx:id="cancelButton" mnemonicParsing="false" prefWidth="150.0" text="Cancel" />
-                  <Button fx:id="commitButton" mnemonicParsing="false" prefWidth="150.0" text="Commit" />
+                  <Button fx:id="cancelButton" mnemonicParsing="false" prefWidth="125.0" text="Cancel" />
+                  <Button fx:id="commitButton" mnemonicParsing="false" prefWidth="125.0" text="Commit" />
+                  <Button fx:id="closeButton" mnemonicParsing="false" prefWidth="125.0" text="Close" />
                </children>
                <opaqueInsets>
                   <Insets />
