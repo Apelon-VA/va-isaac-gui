@@ -69,6 +69,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -131,6 +132,8 @@ import com.sun.javafx.tk.Toolkit;
 
 
 public class ConceptViewController {
+	
+	private static final boolean GLOBAL_COMMIT = true;
 	
 	public static final double MIN_HEIGHT = 150;
 	public static final double MIN_WIDTH  = 150;
@@ -1513,8 +1516,9 @@ public class ConceptViewController {
 			Task<ObservableList<ConceptDescription>> task = new Task<ObservableList<ConceptDescription>>() {
 				@Override
 				protected ObservableList<ConceptDescription> call() throws Exception {
+					List<SememeChronology<? extends DescriptionSememe<?>>> chronologyList = conceptProperty.get().getChronology().getConceptDescriptionList(); 
 					return ConceptDescription.makeDescriptionList(
-							conceptProperty.get().getChronology().getConceptDescriptionList(),
+							chronologyList,
 							panelTaxonomyCoordinate.get().getStampCoordinate(),
 							activeOnlyToggle.selectedProperty().get());
 				}
@@ -1565,7 +1569,7 @@ public class ConceptViewController {
 		if (hasUncommittedItems()) {
 			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to cancel changes?", getRoot().getScene().getWindow());
 			if (response == DialogResponse.YES) {
-				for (ConceptDescription cd : descriptionTableView.getItems()) {
+				for (ConceptDescription cd : getConceptDescriptions()) {
 					cd.cancelUncommitted();
 				}
 				conceptProperty.set(cancelConceptUncommitted());
@@ -1599,7 +1603,6 @@ public class ConceptViewController {
 		});
 		*/
 		commitAll();
-		conceptProperty.set(getLatestVersion(getConceptVersion().getChronology()));
 	}
 	
 	private void newConceptButton_Click() {
@@ -1665,8 +1668,7 @@ public class ConceptViewController {
 	private boolean hasUncommittedItems() {
 		boolean hasUncommitted = isConceptUncommitted();
 		if (!hasUncommitted) {
-			ObservableList<ConceptDescription> descriptionList = descriptionTableView.getItems();
-			for (ConceptDescription cd : descriptionList) {
+			for (ConceptDescription cd : getConceptDescriptions()) {
 				if (cd.isUncommitted()) {
 					hasUncommitted = true;
 					break;
@@ -1679,9 +1681,14 @@ public class ConceptViewController {
 	@SuppressWarnings({ "rawtypes" })
 	private ConceptVersion<?> cancelConceptUncommitted() {
 		ConceptVersion<?> concept = getConceptVersion();;
+		ConceptChronology chronology = concept.getChronology();
+
 		if (isConceptUncommitted()) {
-			ConceptChronology chronology = concept.getChronology();
-			Get.commitService().cancel(chronology, getEditCoordinate());
+			//if (GLOBAL_COMMIT) {
+			//	Get.commitService().cancel();
+			//} else {
+				Get.commitService().cancel(chronology, getEditCoordinate());
+			//}
 			ConceptVersion<?> oldConcept = getLatestVersion(chronology);
 			if (oldConcept != null) {
 				concept = oldConcept;
@@ -1694,16 +1701,39 @@ public class ConceptViewController {
 		ConceptVersion<?> concept = getConceptVersion();
 		if (concept != null) {
 			String commitComment = "Concept view commit of " + conceptLabel.getText();
-			if (isConceptUncommitted()) {
-				Get.commitService().commit(concept.getChronology(), getEditCoordinate(), commitComment);
-			}
-			SememeSequenceSet sememeSequenceSet = Get.sememeService().getSememeSequencesForComponent(concept.getChronology().getNid());
-			for (int sememeSequence : sememeSequenceSet.asArray()) {
-				SememeChronology<? extends SememeVersion<?>> chronology = Get.sememeService().getSememe(sememeSequence);
-				if (chronology.getVersionStampSequences().filter(seq -> Get.commitService().isUncommitted(seq)).findAny().isPresent()) {
-					Get.commitService().commit(chronology, getEditCoordinate(), commitComment);
+			
+			if (GLOBAL_COMMIT) {
+				Task<Optional<CommitRecord>> cr = Get.commitService().commit(commitComment);
+				Utility.execute(() -> {
+					try {
+						//wait for commit completion
+						cr.get();
+						//hit the lucene indexes, tell them to update (rather than waiting for up to 60 seconds)
+						Frills.refreshIndexes();
+						
+						ConceptVersion<?> committedConcept = getLatestVersion(concept.getChronology());
+						conceptProperty.set(committedConcept);
+					} catch (Exception e) {
+						LOG.error("unexpected error waiting for commit", e);
+					}
+				});
+				
+			} else {
+				// Component commit
+				SememeSequenceSet sememeSequenceSet = Get.sememeService().getSememeSequencesForComponent(concept.getChronology().getNid());
+				for (int sememeSequence : sememeSequenceSet.asArray()) {
+					SememeChronology<? extends SememeVersion<?>> chronology = Get.sememeService().getSememe(sememeSequence);
+					if (chronology.getVersionStampSequences().filter(seq -> Get.commitService().isUncommitted(seq)).findAny().isPresent()) {
+						Get.commitService().commit(chronology, getEditCoordinate(), commitComment);
+					}
 				}
+				if (isConceptUncommitted()) {
+					Get.commitService().commit(concept.getChronology(), getEditCoordinate(), commitComment);
+				}
+				
 			}
+			ConceptVersion<?> committedConcept = getLatestVersion(concept.getChronology());
+			conceptProperty.set(committedConcept);
 		}
 	}
 	
@@ -1720,4 +1750,9 @@ public class ConceptViewController {
 		}
 		return concept;
 	}
+	
+	private List<ConceptDescription> getConceptDescriptions() {
+		return descriptionTableView.getItems();
+	}
+
 }

@@ -238,4 +238,13 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 			readDescription(ds);
 		}
 	}
+	
+	public void commit(String commitComment) {
+		if (isUncommitted()) {
+			Get.commitService().commit(getStampedVersion().getChronology(), ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), commitComment);
+			DescriptionSememe<?> ds = extractDescription(getStampedVersion().getChronology(), StampCoordinates.getDevelopmentLatest());
+			readDescription(ds);
+		}
+	}
+	
 }
