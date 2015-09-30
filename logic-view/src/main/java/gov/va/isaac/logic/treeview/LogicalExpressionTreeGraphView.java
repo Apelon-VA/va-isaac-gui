@@ -439,13 +439,13 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 
 	private void displayData(LogicalExpression le) {
-		Platform.runLater(() -> logicalExpressionTreeGraph.getChildren().clear());
+		logicalExpressionTreeGraph.getChildren().clear();
 
 		if (le != null) {
 			if (specifiedLogicGraphSememe == null) { 
-				Platform.runLater(() -> title.setText(taxonomyCoordinate.get().getTaxonomyType().name()));
+				title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
 			} else {
-				Platform.runLater(() -> title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")"));
+				title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")");
 			}
 
 			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
