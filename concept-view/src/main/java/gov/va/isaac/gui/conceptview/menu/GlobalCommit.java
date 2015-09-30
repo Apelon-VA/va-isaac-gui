@@ -11,11 +11,13 @@ import javafx.concurrent.Task;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
+import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.util.Images;
 import gov.va.isaac.interfaces.gui.ApplicationMenus;
 import gov.va.isaac.interfaces.gui.MenuItemI;
 import gov.va.isaac.interfaces.gui.views.IsaacViewWithMenusI;
 import gov.va.isaac.interfaces.gui.views.PopupViewI;
+import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -131,13 +133,19 @@ public class GlobalCommit implements IsaacViewWithMenusI {
 
 	
 	private void doGlobalCommit() {
-		Task<Optional<CommitRecord>> cr = Get.commitService().commit("Global commit requested from application menu");
-		Utility.execute(cr);
+		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want COMMIT all outstanding changes?");
+		if (response == DialogResponse.YES) {
+			Task<Optional<CommitRecord>> cr = Get.commitService().commit("Global commit requested from application menu");
+			Utility.execute(cr);
+		}
 	}
 	
 	private void doGlobalCancel() {
-		Task<Void> cr = Get.commitService().cancel(); 
-		Utility.execute(cr);
+		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want CANCEL all outstanding changes?");
+		if (response == DialogResponse.YES) {
+			Task<Void> cr = Get.commitService().cancel(); 
+			Utility.execute(cr);
+		}
 	}
 
 
