@@ -47,6 +47,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
@@ -54,6 +55,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
@@ -74,6 +76,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -116,9 +119,11 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
+import org.reactfx.inhibeans.property.SimpleBooleanProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,6 +182,7 @@ public class ConceptViewController {
 
 	@FXML private Button cancelButton;
 	@FXML private Button commitButton;
+	@FXML private Button closeButton;
 	@FXML private Button newConceptButton;
 
 	private ObjectProperty<ConceptVersion<?>> conceptProperty = new SimpleObjectProperty<ConceptVersion<?>>();
@@ -186,6 +192,8 @@ public class ConceptViewController {
 	private ObjectProperty<ConceptChronology<? extends StampedVersion>> conceptChronologyProperty = new SimpleObjectProperty<ConceptChronology<? extends StampedVersion>>();
 	private ObjectProperty<CommitRecord> conceptCommitRecordProperty = new SimpleObjectProperty<CommitRecord>();
 
+	private BooleanProperty hasUncommittedItemsProperty = new SimpleBooleanProperty(false);
+	
 	private final ProgressBar genericProgressBar = new ProgressBar(-1.0);
 
 	// All bindings and listeners for constituent coordinates should be on change of TaxonomyCoordinate
@@ -237,6 +245,7 @@ public class ConceptViewController {
 		
 		assert cancelButton 		!= null : "fx:id=\"cancelButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert commitButton 		!= null : "fx:id=\"commitButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
+		assert closeButton 			!= null : "fx:id=\"closeButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		assert newConceptButton		!= null : "fx:id=\"newConceptButton\" was not injected: check your FXML file 'ConceptView.fxml'.";
 		
 		FxUtils.assignImageToButton(activeOnlyToggle, 		Images.FILTER_16.createImageView(), "Show Active Only / Show All");
@@ -250,7 +259,7 @@ public class ConceptViewController {
 		setupPreferences();
 		setupColumnTypes();
 		setupDescriptionTable();
-		setupButtonEvents();
+		setupButtons();
 		setupRelationshipsView();
 		setupStatusComboBox();
 		setupModulesComboBox();
@@ -299,6 +308,19 @@ public class ConceptViewController {
             }
 		};
 		//updateableBooleanBinding.addBinding(conceptNode.getConceptProperty(), activeOnlyToggle.selectedProperty());
+
+		Platform.runLater(() -> {
+			getRoot().getScene().getWindow().setOnCloseRequest(new EventHandler<WindowEvent>() {
+				@Override
+				public void handle(WindowEvent event) {
+					if (hasUncommittedItems()) {
+						AppContext.getCommonDialogs().showInformationDialog("Cannot Close Concept View", "This Concept View cannot be closed until changes are either committed or canceled.", getRoot().getScene().getWindow());
+						event.consume();
+					}
+				}
+			});
+		});
+		
 	}
 
 	public AnchorPane getRoot()	{
@@ -309,7 +331,13 @@ public class ConceptViewController {
 		return new SimpleStringProperty("Concept Viewer");
 	}
 	
-	private void setupButtonEvents() {
+	private void setupButtons() {
+		closeButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent arg0) {
+				getRoot().getScene().getWindow().hide();
+			}
+		});
 		newDescriptionButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent arg0) {
@@ -334,6 +362,10 @@ public class ConceptViewController {
 				newConceptButton_Click();
 			}
 		});
+
+		commitButton.disableProperty().bind(hasUncommittedItemsProperty.not());
+		cancelButton.disableProperty().bind(hasUncommittedItemsProperty.not());
+		closeButton.disableProperty().bind(hasUncommittedItemsProperty);
 	}
 	
 	private void setupPreferences() {
@@ -374,7 +406,6 @@ public class ConceptViewController {
 				PreferencesPersistenceI panelPersistenceInterface = new PreferencesPersistenceI() {
 					@Override
 					public UUID getPath() {
-						// TODO Auto-generated method stub
 						Optional<UUID> opt = Get.identifierService().getUuidPrimordialFromConceptSequence(panelTaxonomyCoordinate.get().getStampCoordinate().getStampPosition().getStampPathSequence());
 						return opt.get();
 					}
@@ -550,6 +581,7 @@ public class ConceptViewController {
 	private void refresh() {
 		refreshConceptDescriptions();
 		refreshLogicGraph();
+		hasUncommittedItemsProperty.set(hasUncommittedItems());
 	}
 
 	void viewDiscarded() {
@@ -595,7 +627,6 @@ public class ConceptViewController {
 
 				@Override
 				public void handleChange(SememeChronology<? extends SememeVersion<?>> sc) {
-					// TODO Auto-generated method stub
 				}
 
 				@Override
@@ -1490,10 +1521,17 @@ public class ConceptViewController {
 				@Override
 				protected void succeeded() {
 					Platform.runLater(() -> {
-						descriptionTableView.setItems(getValue());
+						ObservableList<ConceptDescription> descriptionList = getValue();
+						descriptionTableView.setItems(descriptionList);
 						descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 						descriptionTableView.getSortOrder().clear();
 						descriptionTableView.getSortOrder().addAll(sortColumns);
+						for (ConceptDescription cd : descriptionList) {
+							if (cd.isUncommitted()) {
+								stampToggle.setSelected(true);;
+								break;
+							}
+						}
 					});
 				}
 			};
@@ -1524,18 +1562,26 @@ public class ConceptViewController {
 	}
 	
 	private void cancelButton_Click() {
-		LOG.debug("Cancel clicked");
-		mainPane.getScene().getWindow().hide();
+		if (hasUncommittedItems()) {
+			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to cancel changes?", getRoot().getScene().getWindow());
+			if (response == DialogResponse.YES) {
+				for (ConceptDescription cd : descriptionTableView.getItems()) {
+					cd.cancelUncommitted();
+				}
+				conceptProperty.set(cancelConceptUncommitted());
+			}
+		}
 	}
 	
 	private void commitButton_Click() {
-		LOG.debug("Commit clicked");
 		//TODO see what Keith says about committing the reference components.
 		//in the meantime, do a global commit.  The concept level commit is not committing the related description sememes, among other things.
 		//note that the global commit method that takes an edit coord is also broken... so just use the deprecated one...
 
 		//get at the end, makes it block till committed
 		//TODO figure out if / how we want to thread this - should we not wait, or shoudl we wait for commit to complete?
+		
+		/*
 		Task<Optional<CommitRecord>> cr = Get.commitService().commit("Committing new concept " + conceptLabel.getText());
 		Utility.execute(() ->
 		{
@@ -1551,7 +1597,9 @@ public class ConceptViewController {
 				LOG.error("unexpected error waiting for commit", e);
 			}
 		});
-		mainPane.getScene().getWindow().hide();
+		*/
+		commitAll();
+		conceptProperty.set(getLatestVersion(getConceptVersion().getChronology()));
 	}
 	
 	private void newConceptButton_Click() {
@@ -1566,29 +1614,22 @@ public class ConceptViewController {
 		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this description " + conceptDescription.toggledStateName() + "?", getRoot().getScene().getWindow());
 		if (response == DialogResponse.YES) {
 			conceptDescription.toggleState();
+			hasUncommittedItemsProperty.set(hasUncommittedItems());
 		}
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void setConceptState(State newState) {
-		// TODO implement
 		ConceptVersion<?> concept = getConceptVersion();
-		ConceptChronology chronology = concept.getChronology();
 		
 		if (concept != null && newState != null && concept.getState() != newState) {
 			DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want to make this concept " + newState.toString() + "?", getRoot().getScene().getWindow());
 			if (response == DialogResponse.YES) {
-				if (Get.commitService().isUncommitted(concept.getStampSequence())) {
-					Get.commitService().cancel(chronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-					Optional<LatestVersion<? extends ConceptVersion<?>>> oldConcept = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
-					if (oldConcept.isPresent()) {
-						concept = oldConcept.get().value();
-					}
+				if (isConceptUncommitted()) {
+					concept = cancelConceptUncommitted();
 				}
 				if (concept.getState() != newState) {
 					// Check again in case concept changed to previous version
-					LOG.debug("Setting concept state to " + newState.toString());
-					concept = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+					concept = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, getEditCoordinate());
 					Get.commitService().addUncommitted(concept.getChronology());
 				}
 				conceptProperty.set(concept);
@@ -1610,5 +1651,73 @@ public class ConceptViewController {
 
 	private static Font makeFont(Font oldFont, int stampSequence) {
 		return Font.font(oldFont.getFamily(), (Get.commitService().isUncommitted(stampSequence))? FontPosture.ITALIC : FontPosture.REGULAR, oldFont.getSize());
+	}
+
+	private boolean isConceptUncommitted() {
+		boolean rval = false;
+		ConceptVersion<?> concept = getConceptVersion();
+		if (concept != null) {
+			rval = Get.commitService().isUncommitted(concept.getStampSequence());
+		}
+		return rval;
+	}
+	
+	private boolean hasUncommittedItems() {
+		boolean hasUncommitted = isConceptUncommitted();
+		if (!hasUncommitted) {
+			ObservableList<ConceptDescription> descriptionList = descriptionTableView.getItems();
+			for (ConceptDescription cd : descriptionList) {
+				if (cd.isUncommitted()) {
+					hasUncommitted = true;
+					break;
+				}
+			}
+		}
+		return hasUncommitted;
+	}
+	
+	@SuppressWarnings({ "rawtypes" })
+	private ConceptVersion<?> cancelConceptUncommitted() {
+		ConceptVersion<?> concept = getConceptVersion();;
+		if (isConceptUncommitted()) {
+			ConceptChronology chronology = concept.getChronology();
+			Get.commitService().cancel(chronology, getEditCoordinate());
+			ConceptVersion<?> oldConcept = getLatestVersion(chronology);
+			if (oldConcept != null) {
+				concept = oldConcept;
+			}
+		}
+		return concept;
+	}
+	
+	private void commitAll() {
+		ConceptVersion<?> concept = getConceptVersion();
+		if (concept != null) {
+			String commitComment = "Concept view commit of " + conceptLabel.getText();
+			if (isConceptUncommitted()) {
+				Get.commitService().commit(concept.getChronology(), getEditCoordinate(), commitComment);
+			}
+			SememeSequenceSet sememeSequenceSet = Get.sememeService().getSememeSequencesForComponent(concept.getChronology().getNid());
+			for (int sememeSequence : sememeSequenceSet.asArray()) {
+				SememeChronology<? extends SememeVersion<?>> chronology = Get.sememeService().getSememe(sememeSequence);
+				if (chronology.getVersionStampSequences().filter(seq -> Get.commitService().isUncommitted(seq)).findAny().isPresent()) {
+					Get.commitService().commit(chronology, getEditCoordinate(), commitComment);
+				}
+			}
+		}
+	}
+	
+	private EditCoordinate getEditCoordinate() {
+		return ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get();
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private static ConceptVersion<?> getLatestVersion(ConceptChronology chronology) {
+		ConceptVersion<?> concept = null;
+		Optional<LatestVersion<? extends ConceptVersion<?>>> latestVersion = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
+		if (latestVersion.isPresent()) {
+			concept = latestVersion.get().value();
+		}
+		return concept;
 	}
 }

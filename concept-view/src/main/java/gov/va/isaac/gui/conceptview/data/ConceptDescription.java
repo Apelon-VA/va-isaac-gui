@@ -171,7 +171,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 		SememeChronology<DescriptionSememe<?>> chronology = (SememeChronology<DescriptionSememe<?>>)descriptionSememe.getChronology();
 		
 		if (isUncommitted()) {
-			cancelCommit();
+			cancelUncommitted();
 		}
 		
 		if (getStampedVersion().getState() != newState) {
@@ -231,7 +231,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 		return primordialUuid;
 	}
 	
-	public void cancelCommit() {
+	public void cancelUncommitted() {
 		if (isUncommitted()) {
 			Get.commitService().cancel(getStampedVersion().getChronology(), ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
 			DescriptionSememe<?> ds = extractDescription(getStampedVersion().getChronology(), StampCoordinates.getDevelopmentLatest());
