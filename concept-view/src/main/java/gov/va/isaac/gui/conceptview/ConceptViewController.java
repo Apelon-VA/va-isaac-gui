@@ -47,6 +47,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
@@ -54,6 +55,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
@@ -1572,13 +1574,14 @@ public class ConceptViewController {
 	}
 	
 	private void commitButton_Click() {
-		LOG.debug("Commit clicked");
 		//TODO see what Keith says about committing the reference components.
 		//in the meantime, do a global commit.  The concept level commit is not committing the related description sememes, among other things.
 		//note that the global commit method that takes an edit coord is also broken... so just use the deprecated one...
 
 		//get at the end, makes it block till committed
 		//TODO figure out if / how we want to thread this - should we not wait, or shoudl we wait for commit to complete?
+		
+		/*
 		Task<Optional<CommitRecord>> cr = Get.commitService().commit("Committing new concept " + conceptLabel.getText());
 		Utility.execute(() ->
 		{
@@ -1594,7 +1597,9 @@ public class ConceptViewController {
 				LOG.error("unexpected error waiting for commit", e);
 			}
 		});
-		mainPane.getScene().getWindow().hide();
+		*/
+		commitAll();
+		conceptProperty.set(getLatestVersion(getConceptVersion().getChronology()));
 	}
 	
 	private void newConceptButton_Click() {
@@ -1624,7 +1629,7 @@ public class ConceptViewController {
 				}
 				if (concept.getState() != newState) {
 					// Check again in case concept changed to previous version
-					concept = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+					concept = (ConceptVersion<?>) concept.getChronology().createMutableVersion(newState, getEditCoordinate());
 					Get.commitService().addUncommitted(concept.getChronology());
 				}
 				conceptProperty.set(concept);
@@ -1671,18 +1676,48 @@ public class ConceptViewController {
 		return hasUncommitted;
 	}
 	
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes" })
 	private ConceptVersion<?> cancelConceptUncommitted() {
 		ConceptVersion<?> concept = getConceptVersion();;
 		if (isConceptUncommitted()) {
 			ConceptChronology chronology = concept.getChronology();
-			Get.commitService().cancel(chronology, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
-			Optional<LatestVersion<? extends ConceptVersion<?>>> oldConcept = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
-			if (oldConcept.isPresent()) {
-				concept = oldConcept.get().value();
+			Get.commitService().cancel(chronology, getEditCoordinate());
+			ConceptVersion<?> oldConcept = getLatestVersion(chronology);
+			if (oldConcept != null) {
+				concept = oldConcept;
 			}
 		}
 		return concept;
 	}
 	
+	private void commitAll() {
+		ConceptVersion<?> concept = getConceptVersion();
+		if (concept != null) {
+			String commitComment = "Concept view commit of " + conceptLabel.getText();
+			if (isConceptUncommitted()) {
+				Get.commitService().commit(concept.getChronology(), getEditCoordinate(), commitComment);
+			}
+			SememeSequenceSet sememeSequenceSet = Get.sememeService().getSememeSequencesForComponent(concept.getChronology().getNid());
+			for (int sememeSequence : sememeSequenceSet.asArray()) {
+				SememeChronology<? extends SememeVersion<?>> chronology = Get.sememeService().getSememe(sememeSequence);
+				if (chronology.getVersionStampSequences().filter(seq -> Get.commitService().isUncommitted(seq)).findAny().isPresent()) {
+					Get.commitService().commit(chronology, getEditCoordinate(), commitComment);
+				}
+			}
+		}
+	}
+	
+	private EditCoordinate getEditCoordinate() {
+		return ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get();
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private static ConceptVersion<?> getLatestVersion(ConceptChronology chronology) {
+		ConceptVersion<?> concept = null;
+		Optional<LatestVersion<? extends ConceptVersion<?>>> latestVersion = OchreUtility.getLatestConceptVersion(chronology, StampCoordinates.getDevelopmentLatest());
+		if (latestVersion.isPresent()) {
+			concept = latestVersion.get().value();
+		}
+		return concept;
+	}
 }
