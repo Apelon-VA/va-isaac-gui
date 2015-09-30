@@ -96,8 +96,7 @@ public class SummaryController implements PanelControllers {
 		commitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
-				processValues();
-				((Stage)summaryPane.getScene().getWindow()).close();
+					processValues();
 			}
 		});
 
@@ -207,9 +206,13 @@ public class SummaryController implements PanelControllers {
 			cv.setConcept(newChronology.getNid());
 
 			cv.showView(null);
+
+			((Stage)summaryPane.getScene().getWindow()).close();
 		} catch (Exception e) {
-			LOGGER.error("Unable to create and/or commit new concept", e);
-			AppContext.getCommonDialogs().showErrorDialog("Error Creating Concept", "Unexpected error creating the Concept", e.getMessage(), summaryPane.getScene().getWindow());
+			String error = "While committing " + conceptFSN.getText() + ", caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
+			
+			LOGGER.error(error, e);
+			AppContext.getCommonDialogs().showErrorDialog("Error Committing Concept", "Failed to commit concept", error, summaryPane.getScene().getWindow());
 		}
 	}
 }
