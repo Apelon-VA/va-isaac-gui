@@ -450,7 +450,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 
 			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
 
-			Platform.runLater(() -> textGraph.setText(le.toString()));
+			textGraph.setText(le.toString());
 		} else {
 			Platform.runLater(() -> title.setText(null));
 			Platform.runLater(() -> textGraph.setText(null));
