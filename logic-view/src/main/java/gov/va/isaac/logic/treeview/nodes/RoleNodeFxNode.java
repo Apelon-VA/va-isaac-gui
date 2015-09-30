@@ -48,7 +48,7 @@ public class RoleNodeFxNode extends AbstractTreeNodeFxNodeWithConcept {
 sctId.isPresent() && sctId.get() <= Integer.MAX_VALUE ? "\n" + descriptionRenderer.apply(sctId.get().intValue())
 */
 	private RoleNodeFxNode(AbstractNode logicalNode, int typeSequence, Optional<Long> sctId, int sequenceId, Function<Integer, String> descriptionRenderer) {
-		super(logicalNode, logicalNode.getNodeSemantic().name() + "\n" + descriptionRenderer.apply(sequenceId) + (sctId.isPresent() ? "\n" + sctId.get() : ""));
+		super(logicalNode, descriptionRenderer.apply(sequenceId));
 		this.typeSequence = typeSequence;
 	}
 

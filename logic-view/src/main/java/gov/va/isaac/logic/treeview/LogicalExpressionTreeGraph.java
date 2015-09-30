@@ -138,6 +138,7 @@ public class LogicalExpressionTreeGraph extends TreeGraph {
 
 		// Add RoleNodeSomeWithSequences or RoleNodeAllWithSequences
 		// with type of "role group (ISAAC)" with single child directly to parent
+		// TODO change to check number of grandchildren if child is AND
 		if (isIgnoreSingleChildRoleGroups()
 				&& logicalNode.getChildren().length == 1
 				&& (
