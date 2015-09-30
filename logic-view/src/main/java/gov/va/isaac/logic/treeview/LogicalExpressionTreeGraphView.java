@@ -439,21 +439,21 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 
 	private void displayData(LogicalExpression le) {
-		logicalExpressionTreeGraph.getChildren().clear();
+		Platform.runLater(() -> logicalExpressionTreeGraph.getChildren().clear());
 
 		if (le != null) {
 			if (specifiedLogicGraphSememe == null) { 
-				title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
+				Platform.runLater(() -> title.setText(taxonomyCoordinate.get().getTaxonomyType().name()));
 			} else {
-				title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")");
+				Platform.runLater(() -> title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")"));
 			}
 
 			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
 
-			textGraph.setText(le.toString());
+			Platform.runLater(() -> textGraph.setText(le.toString()));
 		} else {
-			title.setText(null);
-			textGraph.setText(null);
+			Platform.runLater(() -> title.setText(null));
+			Platform.runLater(() -> textGraph.setText(null));
 		}
 	}
 
