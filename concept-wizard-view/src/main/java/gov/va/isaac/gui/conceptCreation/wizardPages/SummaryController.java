@@ -19,6 +19,7 @@
 package gov.va.isaac.gui.conceptCreation.wizardPages;
 
 import gov.va.isaac.AppContext;
+import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
 import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
@@ -76,7 +77,7 @@ public class SummaryController implements PanelControllers {
 	@FXML private BorderPane summaryPane;
 	@FXML private Button cancelButton;
 	@FXML private Button startOverButton;
-	@FXML private Button saveButton;
+	@FXML private Button commitButton;
 	@FXML private Button backButton;
 
 	static ScreensController processController;
@@ -91,8 +92,8 @@ public class SummaryController implements PanelControllers {
 				((Stage)summaryPane.getScene().getWindow()).close();
 			}
 		});
-	
-		saveButton.setOnAction(new EventHandler<ActionEvent>() {
+
+		commitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
 				processValues();
@@ -194,37 +195,18 @@ public class SummaryController implements PanelControllers {
 
 	@Override
 	public void processValues() {
-		try {
+		try {		
+			ConceptChronology<?> newChronology = processController.getWizard().createNewConcept();
 			
-			ConceptChronology newChronology = processController.getWizard().createNewConcept();
-			
-//			Get.commitService().addUncommitted(newChronology);
-//			Get.commitService().commit(
-//					newChronology, 
-//					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
-//					"WizardController adding concept: " + "fsn");
+			Get.commitService().commit(
+					/* newChronology, */ // TODO Change to concept-level commit when attached sememes properly handled
+					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
+					"WizardController committing concept: " + conceptFSN.getText());
 			
 			PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.DIAGRAM_STYLE);
 			cv.setConcept(newChronology.getNid());
 
 			cv.showView(null);
-
-			
-			
-//			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
-			//boolean committed = 
-//			Ts.get().commit(/* newCon.getNid() */);
-			//TODO OCHRE - figure out how commits get voided now that they don't return boolean
-//			if (!committed)
-//			{
-//				AppContext.getCommonDialogs().showErrorDialog("Commit Failed", "The concept could not be committed", "The commit was vetoed by a validator");
-//				ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
-//				if (lv != null)
-//				{
-//					lv.addConcept(newCon.getNid());
-//					AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
-//				}
-//			}
 		} catch (Exception e) {
 			LOGGER.error("Unable to create and/or commit new concept", e);
 			AppContext.getCommonDialogs().showErrorDialog("Error Creating Concept", "Unexpected error creating the Concept", e.getMessage(), summaryPane.getScene().getWindow());
