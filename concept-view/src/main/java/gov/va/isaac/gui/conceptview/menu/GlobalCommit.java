@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.inject.Singleton;
+
+import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +26,8 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 
 
+@Service
+@Singleton
 public class GlobalCommit implements IsaacViewWithMenusI {
 
 	private static Logger log = LoggerFactory.getLogger(GlobalCommit.class);
