@@ -1730,7 +1730,7 @@ public class ConceptViewController {
 				if (isConceptUncommitted()) {
 					Get.commitService().commit(concept.getChronology(), getEditCoordinate(), commitComment);
 				}
-				
+				Frills.refreshIndexes();
 			}
 			ConceptVersion<?> committedConcept = getLatestVersion(concept.getChronology());
 			conceptProperty.set(committedConcept);

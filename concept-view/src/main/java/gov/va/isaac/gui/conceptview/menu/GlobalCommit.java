@@ -24,6 +24,8 @@ import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 
 
 @Service
@@ -137,14 +139,25 @@ public class GlobalCommit implements IsaacViewWithMenusI {
 	}
 
 	
+	@SuppressWarnings("deprecation")
 	private void doGlobalCommit() {
 		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want COMMIT all outstanding changes?");
 		if (response == DialogResponse.YES) {
 			Task<Optional<CommitRecord>> cr = Get.commitService().commit("Global commit requested from application menu");
-			Utility.execute(cr);
+			Utility.execute(() -> {
+				try {
+					//wait for commit completion
+					cr.get();
+					//hit the lucene indexes, tell them to update (rather than waiting for up to 60 seconds)
+					Frills.refreshIndexes();
+				} catch (Exception e) {
+					log.error("unexpected error waiting for commit", e);
+				}
+			});
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	private void doGlobalCancel() {
 		DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Are you sure you want CANCEL all outstanding changes?");
 		if (response == DialogResponse.YES) {
