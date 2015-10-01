@@ -16,7 +16,7 @@
 	<properties>
 		<dbGroupId>gov.vha.solor.modules</dbGroupId>
 		<dbArtifactId>solor-all</dbArtifactId>
-		<dbVersion>1.14-SNAPSHOT</dbVersion>
+		<dbVersion>1.14</dbVersion>
 		<dbClassifier>all</dbClassifier>
 	</properties>
 	
