@@ -178,11 +178,11 @@ public class AcceptabilityRow
         }
         
         public boolean isAcceptable() {
-            return preferred.isSelected();
+            return acceptable.isSelected();
         }
         
         public boolean isNeither() {
-            return preferred.isSelected();
+            return neither.isSelected();
         }
 
     private ObservableList<SimpleDisplayConcept> populateDialectFromLanguage() {
