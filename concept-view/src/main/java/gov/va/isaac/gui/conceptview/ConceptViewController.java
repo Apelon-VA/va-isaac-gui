@@ -42,7 +42,6 @@ import gov.vha.isaac.ochre.api.chronicle.StampedVersion;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
@@ -129,6 +128,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.javafx.tk.Toolkit;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
 
 public class ConceptViewController {
@@ -1374,7 +1374,11 @@ public class ConceptViewController {
 				miEdit.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent arg0) {
-						editDescription(conceptDescription);
+                                            if (conceptDescription.getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence()) {
+                                                AppContext.getCommonDialogs().showInformationDialog("Edit Description Failed", "Cannot edit a Fully Specified Name");
+                                            } else {
+                                                editDescription(conceptDescription);
+                                            }
 					}
 				});
 				cm.getItems().add(miEdit);
@@ -1556,8 +1560,7 @@ public class ConceptViewController {
 	private void newDescriptionButton_Click() {
 		Stage stage = new Stage(StageStyle.DECORATED);
 		stage.initModality(Modality.NONE);
-		stage.setScene(new Scene(new ScreensController(conceptProperty.get().getChronology().getConceptSequence()), 450, 300));
-		stage.setMinWidth(600);
+                stage.setScene(new Scene(new ScreensController(conceptProperty.get().getChronology(), panelTaxonomyCoordinate.get().getStampCoordinate())));
 		stage.setTitle("Define New Concept");
 		stage.getScene().getStylesheets().add(DescriptionModificationWizard.class.getResource("/isaac-shared-styles.css").toString());
 		stage.showAndWait();
@@ -1643,8 +1646,7 @@ public class ConceptViewController {
 	private void editDescription(ConceptDescription desc) {
 		Stage stage = new Stage(StageStyle.DECORATED);
 		stage.initModality(Modality.NONE);
-		stage.setScene(new Scene(new ScreensController(conceptProperty.get().getChronology().getConceptSequence(), desc), 450, 300));
-		stage.setMinWidth(600);
+		stage.setScene(new Scene(new ScreensController(conceptProperty.get().getChronology(), panelTaxonomyCoordinate.get().getStampCoordinate(), desc)));
 		stage.setTitle("Define New Concept");
 		stage.getScene().getStylesheets().add(DescriptionModificationWizard.class.getResource("/isaac-shared-styles.css").toString());
 		stage.showAndWait();

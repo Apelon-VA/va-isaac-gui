@@ -18,13 +18,17 @@
  */
 package gov.va.isaac.gui.conceptview.descriptions.wizardPages;
 
+import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.conceptview.descriptions.PanelControllers;
 import gov.va.isaac.gui.conceptview.descriptions.ScreensController;
+import static gov.va.isaac.gui.conceptview.descriptions.wizardPages.AcceptabilityController.processController;
+import gov.va.isaac.interfaces.utility.DialogResponse;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -88,9 +92,19 @@ public class DescriptionController implements PanelControllers {
 			@Override
 			public void handle(ActionEvent e) {
 				processValues();
-				processController.loadAcceptabilityScreen();
-                                processController.setScreen(ScreensController.ACCEPTABILITY_SCREEN);
-			}
+
+                                // If not SNOMED CT or if SCT Definition, no acceptability screen
+                                if (!processController.getWizard().needsAcceptabilityScreen()) {
+                                    DialogResponse response = AppContext.getCommonDialogs().showYesNoDialog("Please Confirm", "Acceptability not applicable for SNOMED CT definitions nor to non-SNOMED descriptions.\nContinue with Save?");
+                                    if (response == DialogResponse.YES) {
+                                        UUID descUid = processController.getWizard().persistDescription(null);
+                                        ((Stage)descriptionModificationPane.getScene().getWindow()).close();
+                                    }
+                                } else {
+                                    processController.loadAcceptabilityScreen();
+                                    processController.setScreen(ScreensController.ACCEPTABILITY_SCREEN);
+                                }
+                        }
 		});
 
 		allValid = new UpdateableBooleanBinding()
@@ -117,7 +131,7 @@ public class DescriptionController implements PanelControllers {
 	{
 		desc = new TermRow();
 		allValid.addBinding(desc.isValid());
-		synonymVBox.getChildren().add(desc.getTermNode());
+		synonymVBox.getChildren().add(desc.getTextNode());
 
 		// Setup Acceptable
 		descTypeVBox.getChildren().add(desc.getTypeNode());
@@ -136,7 +150,7 @@ public class DescriptionController implements PanelControllers {
             desc.populateRow(editDesc);
             
             allValid.addBinding(desc.isValid());
-            synonymVBox.getChildren().add(desc.getTermNode());
+            synonymVBox.getChildren().add(desc.getTextNode());
 
             // Setup Acceptable
             descTypeVBox.getChildren().add(desc.getTypeNode());
@@ -157,7 +171,6 @@ public class DescriptionController implements PanelControllers {
                     modTypeLabel.setText("Edit Description");
                 }
                 
-		
 		// Screen Components
                 if (processController.getWizard().isNew()) {
                     addBlankRow();
@@ -169,7 +182,7 @@ public class DescriptionController implements PanelControllers {
 
 	@Override
 	public void processValues() {
-		processController.getWizard().setNewDescription(desc); 
+		processController.getWizard().setModifiedDescription(desc); 
 	}
 
 }

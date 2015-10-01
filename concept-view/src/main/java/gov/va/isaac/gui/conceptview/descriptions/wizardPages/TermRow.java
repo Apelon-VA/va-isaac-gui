@@ -18,16 +18,22 @@
  */
 package gov.va.isaac.gui.conceptview.descriptions.wizardPages;
 
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.ConceptProxy;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
+import java.util.ArrayList;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
@@ -41,7 +47,7 @@ import javafx.scene.control.TextField;
 public class TermRow
 {
 	Node languageNode;
-	Node synonymNode;
+	Node textNode;
 	Node typeNode;
         Node significanceNode;
 	SimpleStringProperty textFieldInvalidReason_ = new SimpleStringProperty("The Term is required");
@@ -50,17 +56,17 @@ public class TermRow
 	SimpleStringProperty languageFieldInvalidReason_ = new SimpleStringProperty("A Significance selection is required");
 	SimpleStringProperty termRowInvalidReason_ = new SimpleStringProperty("Must fill out all fields or none");
 
-	TextField term;
-	ChoiceBox<String> type;
-	ChoiceBox<String> significance;
-	ChoiceBox<String> language;
+	TextField text;
+	ChoiceBox<SimpleDisplayConcept> type;
+	ChoiceBox<SimpleDisplayConcept> significance;
+	ChoiceBox<SimpleDisplayConcept> language;
         
 	private UpdateableBooleanBinding rowValid;
 	
 	public TermRow()
 	{
-		term = new TextField();
-		term.textProperty().addListener(new ChangeListener<String>()
+		text = new TextField();
+		text.textProperty().addListener(new ChangeListener<String>()
 		{
 			@Override
 			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
@@ -90,18 +96,17 @@ public class TermRow
 				}
 			}
 		});
-		synonymNode = ErrorMarkerUtils.setupErrorMarker(term, textFieldInvalidReason_);
+		textNode = ErrorMarkerUtils.setupErrorMarker(text, textFieldInvalidReason_);
 		
-		type = new ChoiceBox<>(FXCollections.observableArrayList("synonym (ISAAC)", "definition (ISAAC)"));
-		type.valueProperty().addListener(new ChangeListener<String>()
+		type = new ChoiceBox();
+                type.setItems(populateDescriptionTypes());
+                type.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			public void changed(ObservableValue<? extends SimpleDisplayConcept> observable, SimpleDisplayConcept oldValue, SimpleDisplayConcept newValue)
 			{
 				
-				String type = newValue.trim();
-				
-				if (type.length() == 0)
+				if (newValue == null)
 				{
 					typeFieldInvalidReason_.set("A Type selection is required");
 				}
@@ -113,17 +118,15 @@ public class TermRow
 		});
 		
 		typeNode = ErrorMarkerUtils.setupErrorMarker(type, typeFieldInvalidReason_);
-		
-		language = new ChoiceBox<>(FXCollections.observableArrayList("English (ISAAC)", "Spanish (ISAAC)", "French (ISAAC)", "Danish (ISAAC)", "Polish (ISAAC)", "Dutch (ISAAC)", "Lithuanian (ISAAC)", "Chinese (ISAAC)", "Japanese (ISAAC)", "Swedish (ISAAC)"));
-		language.valueProperty().addListener(new ChangeListener<String>()
+                
+                language = new ChoiceBox();
+                language.setItems(populateLanguageTypes());
+		language.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			public void changed(ObservableValue<? extends SimpleDisplayConcept> observable, SimpleDisplayConcept oldValue, SimpleDisplayConcept newValue)
 			{
-				
-				String language = newValue.trim();
-				
-				if (language.length() == 0)
+				if (newValue == null)
 				{
 					languageFieldInvalidReason_.set("A Language selection is required");
 				}
@@ -136,16 +139,16 @@ public class TermRow
 		
 		languageNode = ErrorMarkerUtils.setupErrorMarker(language, languageFieldInvalidReason_);
 
-                significance = new ChoiceBox<>(FXCollections.observableArrayList("initial case is NOT significant (ISAAC)", "initial case IS significant (ISAAC)"));
-		significance.valueProperty().addListener(new ChangeListener<String>()
+                                
+                significance = new ChoiceBox();
+                significance.setItems(populateInitCapTypes());
+		significance.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			public void changed(ObservableValue<? extends SimpleDisplayConcept> observable, SimpleDisplayConcept oldValue, SimpleDisplayConcept newValue)
 			{
 				
-				String sig = newValue.trim();
-				
-				if (sig.length() == 0)
+				if (newValue == null)
 				{
 					significanceFieldInvalidReason_.set("A Significance selection is required");
 				}
@@ -176,14 +179,11 @@ public class TermRow
 	
         public void populateRow(ConceptDescription desc) {
             String descTerm = desc.getValue();
-            String typeTerm = desc.getType();
-            String languageTerm = desc.getLanguage();
-            String significanceString = desc.getSignificance();
             
-            term.setText(descTerm);
-            significance.setValue(significanceString);
-            type.setValue(typeTerm);
-            language.setValue(languageTerm);
+            text.setText(descTerm);
+            significance.setValue(new SimpleDisplayConcept(desc.getSignificanceSequence()));
+            type.setValue(new SimpleDisplayConcept(desc.getTypeSequence()));
+            language.setValue(new SimpleDisplayConcept(desc.getLanguageSequence()));
         }
         
 	public BooleanBinding isValid()
@@ -191,9 +191,9 @@ public class TermRow
 		return rowValid;
 	}
 	
-	public Node getTermNode()
+	public Node getTextNode()
 	{
-		return synonymNode;
+		return textNode;
 	}
 	
 	public Node getTypeNode()
@@ -203,31 +203,12 @@ public class TermRow
 	
 	public String getTypeString()
 	{
-		return type.getValue();
+		return type.getValue().getDescription();
 	}
 	
-	public ConceptProxy getType() //TODO -
+	public int getType() //TODO -
 	{
-		try
-		{
-			if ("synonym (ISAAC)".equals(type.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.SYNONYM;
-			}
-			else if ("definition (ISAAC)".equals(type.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE;
-			}
-			else
-			{
-				throw new Exception("Incorrect Description Type");
-			}
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException(e);
-		}
-
+            return Get.conceptService().getConcept(type.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
 	}
 	
 	public Node getLanguageNode()
@@ -237,65 +218,15 @@ public class TermRow
 	
 	public String getLanguageString()
 	{
-		return language.getValue();
+		return language.getValue().getDescription();
 	}
 	
-	public ConceptProxy getLanguage() //TODO -
+	public int getLanguage() //TODO -
 	{
-		try
-		{
-			if ("English (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.ENGLISH;
-			}
-			else if ("Spanish (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.SPANISH;
-			}
-			else if ("French (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.FRENCH;
-			}
-			else if ("Danish (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.DANISH;
-			}
-			else if ("Polish (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.POLISH;
-			}
-			else if ("Dutch (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.DUTCH;
-			}
-			else if ("Lithuanian (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.LITHUANIAN;
-			}
-			else if ("Chinese (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.CHINESE;
-			}
-			else if ("Japanese (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.JAPANESE;
-			}
-			else if ("Swedish (ISAAC)".equals(language.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.SWEDISH;
-			}
-			else
-			{
-				throw new Exception("Incorrect Description Language");
-			}
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException(e);
-		}
+            return Get.conceptService().getConcept(language.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
 
 	}
-	
+        
         public Node getSignificanceNode()
 	{
  		return significanceNode;
@@ -303,37 +234,18 @@ public class TermRow
 	
 	public String getSignificanceString()
 	{
-		return significance.getValue();
+		return significance.getValue().getDescription();
 	}
 	
-	public ConceptProxy getSignificance() //TODO -
+	public int getSignificance() //TODO -
 	{
-		try
-		{
-			if ("initial case is NOT significant (ISAAC)".equals(significance.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_NOT_SIGNIFICANT;
-			}
-			else if ("initial case IS significant (ISAAC)".equals(significance.getSelectionModel().getSelectedItem()))
-			{
-				return IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_SIGNIFICANT;
-			}
-			else
-			{
-				throw new Exception("Incorrect Description Significance");
-			}
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException(e);
-		}
-
+            return Get.conceptService().getConcept(significance.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
         }
         
 
-	public String getTerm()
+	public String Text()
 	{
-		return term.getText();
+		return text.getText();
 	}
 	
 	
@@ -352,31 +264,38 @@ public class TermRow
 		}
 		return count;
 	}
-//	};
-///*		langInvalidReason = new UpdateableStringBinding() 
-//	{
-//		@Override
-//		protected String computeValue()
-//		{
-//			for (int i = 0; i < langVBox.getChildren().size(); i++)
-//			{
-//				// Check that not partially filled out
-//				TextField tf = (TextField) langVBox.getChildren().get(i);
-//				String lang = tf.getText().trim();
-//				
-//				String term = ((TextField)synonymVBox.getChildren().get(i)).getText().trim();
-//				
-//				if (!lang.isEmpty() && term.trim().isEmpty()) {
-//					return "Cannot fill out Term and not Language";
-//				} else if (!StringUtils.isAlpha(lang)) {
-//					return "Language must be filled with only alphabetically letters";
-//				} else if (lang.length() != 2) {
-//					return "Language must be filled out with a 2-character string";
-//				}
-//			}
-//
-//			return "";
-//		}
-//	};
 
+    private ObservableList<SimpleDisplayConcept> populateDescriptionTypes() {
+        ObservableList<SimpleDisplayConcept> descriptionConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+        descriptionConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()));
+        descriptionConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence()));
+
+        return descriptionConcepts;
+    }
+
+    private ObservableList<SimpleDisplayConcept> populateLanguageTypes() {
+        ObservableList<SimpleDisplayConcept> languageConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+
+            try {
+                ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(IsaacMetadataAuxiliaryBinding.LANGUAGE.getConceptSequence(), 
+                                                                                          ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+
+                for (int conSeq : children.asArray()) {
+                    SimpleDisplayConcept sdc = new SimpleDisplayConcept(conSeq); 
+                    languageConcepts.add(sdc);
+                }
+            } catch (Exception e) {
+            }
+
+            return languageConcepts;
+    }
+
+    private ObservableList<SimpleDisplayConcept> populateInitCapTypes() {
+        ObservableList<SimpleDisplayConcept> initCapConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+        initCapConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_NOT_SIGNIFICANT.getConceptSequence()));
+        initCapConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_SIGNIFICANT.getConceptSequence()));
+
+        return initCapConcepts;
+    }
 }
+

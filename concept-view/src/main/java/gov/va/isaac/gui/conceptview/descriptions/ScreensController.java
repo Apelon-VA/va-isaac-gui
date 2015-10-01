@@ -19,6 +19,8 @@
 package gov.va.isaac.gui.conceptview.descriptions;
 
 import gov.va.isaac.gui.conceptview.data.ConceptDescription;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import java.util.HashMap;
 
 import javafx.animation.KeyFrame;
@@ -57,20 +59,21 @@ public class ScreensController extends StackPane {
 
 	public final WizardController wizard = new WizardController();
 	
-	public ScreensController(int conceptSequence)
+	public ScreensController(ConceptChronology<?> con, StampCoordinate stampCoord)
 	{
                 wizard.setModificationType(ModificationType.NEW);
-                wizard.setEditDescription(null);
-                wizard.setConcept(conceptSequence);
+                wizard.setConcept(con);
+                wizard.setStampCoordinate(stampCoord);
 
                 loadScreen(DESCRIPTION_SCREEN, DESCRIPTION_SCREEN_FXML);
 		setScreen(DESCRIPTION_SCREEN);
 	}
-	public ScreensController(int conceptSequence, ConceptDescription desc)
+	public ScreensController(ConceptChronology<?> con, StampCoordinate stampCoord, ConceptDescription desc)
 	{
                 wizard.setModificationType(ModificationType.EDIT);
                 wizard.setEditDescription(desc);
-                wizard.setConcept(conceptSequence);
+                wizard.setConcept(con);
+                wizard.setStampCoordinate(stampCoord);
                 
                 loadScreen(DESCRIPTION_SCREEN, DESCRIPTION_SCREEN_FXML);
 		setScreen(DESCRIPTION_SCREEN);
