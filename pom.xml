@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>1.10</version>
+		<version>1.11-SNAPSHOT</version>
 	</parent>
 	
 	<groupId>gov.vha.isaac.gui</groupId>
@@ -32,12 +32,12 @@
 	</distributionManagement>
 
 	<properties>
-		<logic.version>1.18</logic.version>
-		<query.version>2.18</query.version>
-		<ochre.version>2.34</ochre.version>
-		<isaac-mojo.version>1.13</isaac-mojo.version>
-		<isaac-metadata.version>1.37</isaac-metadata.version>
-		<newtons-cradle.version>1.24</newtons-cradle.version>
+		<logic.version>1.19-SNAPSHOT</logic.version>
+		<query.version>2.19-SNAPSHOT</query.version>
+		<ochre.version>2.35-SNAPSHOT</ochre.version>
+		<isaac-mojo.version>1.14-SNAPSHOT</isaac-mojo.version>
+		<isaac-metadata.version>1.38-SNAPSHOT</isaac-metadata.version>
+		<newtons-cradle.version>1.25-SNAPSHOT</newtons-cradle.version>
 		<kie.version>6.0.1.Final</kie.version>  <!-- Workflow, drools, etc -->
 		<apache.poi.version>3.11</apache.poi.version>
 	</properties>
