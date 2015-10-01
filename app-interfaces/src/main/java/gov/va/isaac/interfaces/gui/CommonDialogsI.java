@@ -107,4 +107,9 @@ public interface CommonDialogsI
 	 * Present a modal yes/no dialog to the user.  Returns the users answer (YES or NO) to the question.
 	 */
 	public DialogResponse showYesNoDialog(String title, String question);
+
+	/**
+	 * Present a modal yes/no dialog to the user.  Returns the users answer (YES or NO) to the question.
+	 */
+	public DialogResponse showYesNoDialog(String title, String question, Window parentWindow);
 }

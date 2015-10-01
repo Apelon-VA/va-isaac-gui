@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="descriptionModificationPane" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gov.va.isaac.gui.conceptview.descriptions.wizardPages.DescriptionController">
+	<children>
+		<BorderPane prefWidth="800.0" AnchorPane.bottomAnchor="25.0" AnchorPane.topAnchor="25.0">
+			<top>
+				<Label fx:id="modTypeLabel" textAlignment="CENTER" BorderPane.alignment="CENTER">
+					<font>
+						<Font name="System Bold" size="33.0" />
+					</font>
+					<BorderPane.margin>
+						<Insets />
+					</BorderPane.margin>
+				</Label>
+			</top>
+			<center>
+				<VBox alignment="TOP_CENTER" BorderPane.alignment="TOP_CENTER">
+					<children>
+						<VBox alignment="TOP_CENTER">
+							<children>
+								<GridPane fx:id="synonymGridPane" alignment="TOP_CENTER" hgap="5.0" vgap="3.0" BorderPane.alignment="TOP_LEFT">
+									<columnConstraints>
+										<ColumnConstraints halignment="LEFT" hgrow="ALWAYS" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+									</columnConstraints>
+									<rowConstraints>
+										<RowConstraints fillHeight="false" maxHeight="-Infinity" minHeight="10.0" prefHeight="20.0" vgrow="NEVER" />
+										<RowConstraints fillHeight="false" vgrow="NEVER" />
+									</rowConstraints>
+									<children>
+										<Label text="Term" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+											<GridPane.margin>
+												<Insets left="5.0" />
+											</GridPane.margin>
+										</Label>
+										<Label text="Type" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<Label text="Case" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<Label layoutX="354.0" layoutY="15.0" text="Language" GridPane.columnIndex="3">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<VBox fx:id="synonymVBox" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="descTypeVBox" fillWidth="false" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES" />
+										<VBox fx:id="caseVBox" fillWidth="false" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="languageVBox" fillWidth="false" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES" />
+									</children>
+									<BorderPane.margin>
+										<Insets left="5.0" right="5.0" />
+									</BorderPane.margin>
+									<padding>
+										<Insets left="5.0" right="5.0" />
+									</padding>
+								</GridPane>
+							</children>
+						</VBox>
+					</children>
+					<BorderPane.margin>
+						<Insets />
+					</BorderPane.margin>
+					<padding>
+						<Insets bottom="75.0" left="3.0" right="3.0" top="35.0" />
+					</padding>
+				</VBox>
+			</center>
+			<bottom>
+				<GridPane alignment="CENTER" BorderPane.alignment="BOTTOM_CENTER">
+					<columnConstraints>
+						<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="30.0" prefWidth="100.0" />
+						<ColumnConstraints fillWidth="false" hgrow="NEVER" minWidth="10.0" prefWidth="100.0" />
+						<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="30.0" prefWidth="100.0" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+					</rowConstraints>
+					<children>
+						<Button fx:id="cancelButton" mnemonicParsing="false" text="Cancel" GridPane.halignment="RIGHT" GridPane.hgrow="SOMETIMES" HBox.hgrow="SOMETIMES">
+							<HBox.margin>
+								<Insets bottom="5.0" left="5.0" right="15.0" top="5.0" />
+							</HBox.margin>
+							<GridPane.margin>
+								<Insets bottom="5.0" left="5.0" right="15.0" top="5.0" />
+							</GridPane.margin>
+						</Button>
+						<Button fx:id="continueButton" mnemonicParsing="false" text="Next" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" HBox.hgrow="SOMETIMES">
+							<GridPane.margin>
+								<Insets bottom="5.0" left="15.0" right="5.0" top="5.0" />
+							</GridPane.margin>
+						</Button>
+					</children>
+					<BorderPane.margin>
+						<Insets />
+					</BorderPane.margin>
+				</GridPane>
+			</bottom>
+		</BorderPane>
+	</children>
+</AnchorPane>

@@ -22,7 +22,11 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.conceptCreation.PanelControllers;
 import gov.va.isaac.gui.conceptCreation.ScreensController;
+import gov.va.isaac.interfaces.gui.constants.SharedServiceNames;
+import gov.va.isaac.interfaces.gui.views.commonFunctionality.PopupConceptViewI;
+import gov.va.isaac.util.OchreUtility;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 
 import java.util.List;
@@ -46,6 +50,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="jefron@apelon.com">Jesse Efron</a>
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ * @author <a href="mailto:joel.kniaz@gmail.com">Joel Kniaz</a>
  */
 public class SummaryController implements PanelControllers {
 	
@@ -87,12 +92,11 @@ public class SummaryController implements PanelControllers {
 				((Stage)summaryPane.getScene().getWindow()).close();
 			}
 		});
-	
+
 		commitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
-				processValues();
-				((Stage)summaryPane.getScene().getWindow()).close();
+					processValues();
 			}
 		});
 
@@ -115,7 +119,7 @@ public class SummaryController implements PanelControllers {
 	
 	private void setupConcept() {
 		conceptFSN.setText(processController.getWizard().getConceptFSN());
-		conceptPT.setText(processController.getWizard().getConceptPT());
+		conceptPT.setText(OchreUtility.stripSemanticTag(processController.getWizard().getConceptFSN()));
 
 		addAllParents(processController.getWizard().getParents());
 	}
@@ -190,33 +194,25 @@ public class SummaryController implements PanelControllers {
 
 	@Override
 	public void processValues() {
-		try {
+		try {		
+			ConceptChronology<?> newChronology = processController.getWizard().createNewConcept();
 			
-			ConceptChronology newChronology = processController.getWizard().createNewConcept();
-			
-			Get.commitService().addUncommitted(newChronology);
 			Get.commitService().commit(
-					newChronology, 
+					/* newChronology, */ // TODO Change to concept-level commit when attached sememes properly handled
 					ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), 
-					"WizardController adding concept: " + "fsn");
+					"WizardController committing concept: " + conceptFSN.getText());
 			
-//			Ts.get().addUncommitted(Ts.get().getConceptForNid(newCon.getNid()));
-			//boolean committed = 
-//			Ts.get().commit(/* newCon.getNid() */);
-			//TODO OCHRE - figure out how commits get voided now that they don't return boolean
-//			if (!committed)
-//			{
-//				AppContext.getCommonDialogs().showErrorDialog("Commit Failed", "The concept could not be committed", "The commit was vetoed by a validator");
-//				ListBatchViewI lv = LookupService.getService(ListBatchViewI.class, SharedServiceNames.DOCKED);
-//				if (lv != null)
-//				{
-//					lv.addConcept(newCon.getNid());
-//					AppContext.getMainApplicationWindow().ensureDockedViewIsVisble((DockedViewI)lv);
-//				}
-//			}
+			PopupConceptViewI cv = LookupService.getService(PopupConceptViewI.class, SharedServiceNames.DIAGRAM_STYLE);
+			cv.setConcept(newChronology.getNid());
+
+			cv.showView(null);
+
+			((Stage)summaryPane.getScene().getWindow()).close();
 		} catch (Exception e) {
-			LOGGER.error("Unable to create and/or commit new concept", e);
-			AppContext.getCommonDialogs().showErrorDialog("Error Creating Concept", "Unexpected error creating the Concept", e.getMessage(), summaryPane.getScene().getWindow());
+			String error = "While committing " + conceptFSN.getText() + ", caught " + e.getClass().getName() + " " + e.getLocalizedMessage();
+			
+			LOGGER.error(error, e);
+			AppContext.getCommonDialogs().showErrorDialog("Error Committing Concept", "Failed to commit concept", error, summaryPane.getScene().getWindow());
 		}
 	}
 }

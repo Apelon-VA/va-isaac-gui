@@ -23,11 +23,16 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.application.Platform;
 import javafx.beans.binding.IntegerExpression;
 import javafx.beans.binding.StringExpression;
@@ -42,6 +47,8 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public abstract class CommonMenusNIdProvider
 {
+	private static final Logger LOG = LoggerFactory.getLogger(CommonMenusNIdProvider.class);
+
 	SimpleIntegerProperty nidCount = new SimpleIntegerProperty(0);
 	SimpleStringProperty uuidString = new SimpleStringProperty("");
 	SimpleStringProperty sctIdString = new SimpleStringProperty("");
@@ -108,7 +115,14 @@ public abstract class CommonMenusNIdProvider
 					}
 					if (Get.identifierService().getChronologyTypeForNid(i) == ObjectChronologyType.CONCEPT)
 					{
-						ConceptSnapshot conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
+						ConceptSnapshot conceptSnapshot = null;
+						try {
+							conceptSnapshot = Get.conceptSnapshot().getConceptSnapshot(i);
+						} catch (Exception e) {
+							LOG.warn("Failed getting ConceptSnapshot for CONCEPT with nid={}", i);
+						}
+						
+						// This can only be null if exception thrown by getConceptSnapshot()
 						if (conceptSnapshot != null) {
 							Optional<Long> conceptSct = Frills.getSctId(conceptSnapshot.getNid(), null);
 							if(conceptSct.isPresent()) {

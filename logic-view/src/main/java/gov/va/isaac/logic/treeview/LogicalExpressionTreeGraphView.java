@@ -61,6 +61,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import javax.inject.Named;
+import javafx.application.Platform;
 
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
@@ -128,7 +129,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	}
 	private void resetPremiseTypeMenuItemTooltipText(PremiseType pt) {
 		if (title != null) {
-			title.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view"));
+			Platform.runLater(() -> title.setTooltip(new Tooltip("Right-click and select to switch to " + pt.name() + " view")));
 		}
 	}
 	private void updateRootPanePremiseTypeMenuItem() {
@@ -362,7 +363,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		LogicalExpression le = loadData();
 		
 		displayData(le);
-		
+
 		noRefresh_.decrementAndGet();
 
 //		Task<LogicalExpression> task = new Task<LogicalExpression>() {
@@ -405,7 +406,7 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 		} else {
 			Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = taxonomyCoordinate.get().getTaxonomyType() == PremiseType.STATED ? Get.statedDefinitionChronology(conceptId) : Get.inferredDefinitionChronology(conceptId);
 			if (! defChronologyOptional.isPresent()) {
-				String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for  specified TaxonomyCoordinate";
+				String error = "No " + taxonomyCoordinate.get().getTaxonomyType().name() + " definition chronology found for " + Get.conceptDescriptionText(conceptId) + " for specified TaxonomyCoordinate";
 				AppContext.getCommonDialogs().showErrorDialog("Missing Definition Chronology", taxonomyCoordinate.get().getTaxonomyType().name() + " not found", error);
 				logger_.error(error);
 
@@ -438,22 +439,24 @@ public class LogicalExpressionTreeGraphView implements LogicalExpressionTreeGrap
 	
 
 	private void displayData(LogicalExpression le) {
-		logicalExpressionTreeGraph.getChildren().clear();
+		Platform.runLater(() -> {
+			logicalExpressionTreeGraph.getChildren().clear();
 
-		if (le != null) {
-			if (specifiedLogicGraphSememe == null) { 
-				title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
+			if (le != null) {
+				if (specifiedLogicGraphSememe == null) { 
+					title.setText(taxonomyCoordinate.get().getTaxonomyType().name());
+				} else {
+					title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")");
+				}
+
+				logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
+
+				textGraph.setText(le.toString());
 			} else {
-				title.setText(taxonomyCoordinate.get().getTaxonomyType().name() + " (" + DATETIME_FORMAT.format(cachedLogicGraphSememe.getTime()) + ")");
+				Platform.runLater(() -> title.setText(null));
+				Platform.runLater(() -> textGraph.setText(null));
 			}
-
-			logicalExpressionTreeGraph.displayLogicalExpression(le, taxonomyCoordinate.get().getStampCoordinate(), taxonomyCoordinate.get().getLanguageCoordinate());
-
-			textGraph.setText(le.toString());
-		} else {
-			title.setText(null);
-			textGraph.setText(null);
-		}
+		});
 	}
 
 	@Override

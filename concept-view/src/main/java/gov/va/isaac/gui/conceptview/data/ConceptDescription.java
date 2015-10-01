@@ -1,17 +1,26 @@
 package gov.va.isaac.gui.conceptview.data;
 
+import gov.va.isaac.ExtendedAppContext;
+import gov.va.isaac.util.OchreUtility;
 import gov.va.isaac.util.Utility;
+import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.MutableStampedVersion;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -32,10 +41,11 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	
 	private int _acceptabilitySortValue = Integer.MAX_VALUE;
 	private int _typeSortValue = Integer.MAX_VALUE;
+	private UUID primordialUuid;
 	
 	private boolean _hasSememes = false;
 	
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static DescriptionSememe extractDescription(
 			SememeChronology<? extends DescriptionSememe> sememeChronology,
 			StampCoordinate stampCoordinate) {
@@ -98,6 +108,7 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	{
 		if (description != null) 
 		{
+			primordialUuid = description.getPrimordialUuid();
 			readStampDetails(description);
 			_acceptabilitySortValue = AcceptabilitiesHelper.getAcceptabilitySortValue(description);
 			_typeSortValue = (getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence())			? 0 :
@@ -150,6 +161,31 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 	public int getTypeSortValue() 			{ return _typeSortValue; }
 	public int getSememesSortValue() 		{ return (_hasSememes)? Integer.MIN_VALUE : Integer.MAX_VALUE; }
 	
+	@SuppressWarnings("unchecked")
+	public void toggleState() {
+		// TODO implement
+		State newState = getStampedVersion().getState().inverse();
+		DescriptionSememe<?> descriptionSememe = (DescriptionSememe<?>) getStampedVersion();
+		DescriptionSememe<?> oldDescriptionSememe = descriptionSememe;
+		
+		SememeChronology<DescriptionSememe<?>> chronology = (SememeChronology<DescriptionSememe<?>>)descriptionSememe.getChronology();
+		
+		if (isUncommitted()) {
+			cancelUncommitted();
+		}
+		
+		if (getStampedVersion().getState() != newState) {
+			LOG.debug("Setting description state to " + newState.toString());
+			MutableDescriptionSememe<?> newDescription = chronology.createMutableVersion(MutableDescriptionSememe.class, newState, ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			newDescription.setText(descriptionSememe.getText());
+			newDescription.setCaseSignificanceConceptSequence(oldDescriptionSememe.getCaseSignificanceConceptSequence());
+			newDescription.setDescriptionTypeConceptSequence(oldDescriptionSememe.getDescriptionTypeConceptSequence());
+			newDescription.setLanguageConceptSequence(oldDescriptionSememe.getLanguageConceptSequence());
+			Get.commitService().addUncommitted(chronology);
+			readDescription(newDescription);
+		}
+	}
+	
 	public static final Comparator<ConceptDescription> typeComparator = new Comparator<ConceptDescription>() {
 		@Override
 		public int compare(ConceptDescription o1, ConceptDescription o2) {
@@ -190,4 +226,25 @@ public class ConceptDescription extends StampedItem<DescriptionSememe<?>> {
 			return Integer.compare(o1.getSememesSortValue(), o2.getSememesSortValue());
 		}
 	};
+
+	public UUID getPrimordialUuid() {
+		return primordialUuid;
+	}
+	
+	public void cancelUncommitted() {
+		if (isUncommitted()) {
+			Get.commitService().cancel(getStampedVersion().getChronology(), ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get());
+			DescriptionSememe<?> ds = extractDescription(getStampedVersion().getChronology(), StampCoordinates.getDevelopmentLatest());
+			readDescription(ds);
+		}
+	}
+	
+	public void commit(String commitComment) {
+		if (isUncommitted()) {
+			Get.commitService().commit(getStampedVersion().getChronology(), ExtendedAppContext.getUserProfileBindings().getEditCoordinate().get(), commitComment);
+			DescriptionSememe<?> ds = extractDescription(getStampedVersion().getChronology(), StampCoordinates.getDevelopmentLatest());
+			readDescription(ds);
+		}
+	}
+	
 }

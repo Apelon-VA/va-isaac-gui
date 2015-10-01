@@ -653,25 +653,33 @@ public class CommonMenus
 						// Opened up for debug purposes only
 						int numNids = commonMenusNIdProvider.getObservableNidCount().get();
 						boolean hasOne = numNids == 1;
-						if (hasOne) {
-							Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
-							if (nid != null) {
-								ObjectChronology<?> chronology = null;
-								switch (Get.identifierService().getChronologyTypeForNid(nid)) {
-								case CONCEPT:
-									chronology = Get.conceptService().getConcept(nid);
-									break;
-								case SEMEME:
-									chronology = Get.sememeService().getSememe(nid);
-									break;
+						try
+						{
+							if (hasOne) {
+								Integer nid = commonMenusNIdProvider.getNIds().iterator().next();
+								if (nid != null) {
+									ObjectChronology<?> chronology = null;
+									switch (Get.identifierService().getChronologyTypeForNid(nid)) {
+									case CONCEPT:
+										chronology = Get.conceptService().getConcept(nid);
+										break;
+									case SEMEME:
+										chronology = Get.sememeService().getSememe(nid);
+										break;
+										
+									case UNKNOWN_NID:
+										default:
+											return false;
+									}
 									
-								case UNKNOWN_NID:
-									default:
-										return false;
+									return chronology != null && chronology.getSememeList().size() > 0;
 								}
-								
-								return chronology != null && chronology.getSememeList().size() > 0;
 							}
+						}
+						catch (Exception e)
+						{
+							LOG.error("unexpected", e);
+							return false;
 						}
 						return false;
 					}
