@@ -22,18 +22,11 @@ import gov.va.isaac.ExtendedAppContext;
 import gov.va.isaac.gui.SimpleDisplayConcept;
 import gov.va.isaac.gui.conceptViews.componentRows.RelRow;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
-import gov.va.isaac.util.OTFUtility;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import java.util.ArrayList;
-import java.util.Observable;
-import java.util.UUID;
-import java.util.stream.IntStream;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -44,7 +37,6 @@ import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
-import javafx.util.Callback;
 
 /**
  * {@link RelRow}
@@ -54,25 +46,25 @@ import javafx.util.Callback;
 public class AcceptabilityRow
 {
 	Node dialectNode;
-        
+	
 	SimpleStringProperty dialectFieldInvalidReason_ = new SimpleStringProperty("A Type selection is required");
 
 	ChoiceBox<SimpleDisplayConcept> dialect;
-        RadioButton preferred;
-        RadioButton acceptable;
-        RadioButton neither;
+	RadioButton preferred;
+	RadioButton acceptable;
+	RadioButton neither;
 
-        final ToggleGroup acceptableRadioGroup = new ToggleGroup();
+	final ToggleGroup acceptableRadioGroup = new ToggleGroup();
 
 	private UpdateableBooleanBinding rowValid;
 	
 	public AcceptabilityRow()
 	{
 
-		dialect = new ChoiceBox();
-                dialect.setItems(populateDialectFromLanguage());
+		dialect = new ChoiceBox<>();
+		dialect.setItems(populateDialectFromLanguage());
 
-                dialect.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
+		dialect.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
 			public void changed(ObservableValue<? extends SimpleDisplayConcept> observable, SimpleDisplayConcept oldValue, SimpleDisplayConcept newValue)
@@ -95,13 +87,13 @@ public class AcceptabilityRow
 		preferred = new RadioButton();
 		acceptable = new RadioButton();
 		neither = new RadioButton();
-                
-                preferred.setToggleGroup(acceptableRadioGroup);
-                acceptable.setToggleGroup(acceptableRadioGroup);
-                neither.setToggleGroup(acceptableRadioGroup);
-                
-                
-                
+		
+		preferred.setToggleGroup(acceptableRadioGroup);
+		acceptable.setToggleGroup(acceptableRadioGroup);
+		neither.setToggleGroup(acceptableRadioGroup);
+		
+		
+		
 		rowValid = new UpdateableBooleanBinding()
 		{
 			{	
@@ -112,30 +104,29 @@ public class AcceptabilityRow
 			protected boolean computeValue()
 			{
 				return (dialectFieldInvalidReason_.get().length() == 0 );
-//                                return true;
-                        }
+			}
 		};
 	}
 	
-        void populateRows(Integer dialectSeq, Integer acceptabilitySeq) {
-            dialect.setValue(new SimpleDisplayConcept(dialectSeq));
-            
-            if (acceptabilitySeq == IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getNid()) {
-                acceptable.setSelected(true);
-            } else if (acceptabilitySeq == IsaacMetadataAuxiliaryBinding.PREFERRED.getNid()) {
-                preferred.setSelected(true);
-            }
-        }
+	void populateRows(Integer dialectSeq, Integer acceptabilitySeq) {
+		dialect.setValue(new SimpleDisplayConcept(dialectSeq));
+		
+		if (acceptabilitySeq == IsaacMetadataAuxiliaryBinding.ACCEPTABLE.getNid()) {
+		acceptable.setSelected(true);
+		} else if (acceptabilitySeq == IsaacMetadataAuxiliaryBinding.PREFERRED.getNid()) {
+		preferred.setSelected(true);
+		}
+	}
 
-        public void populateBlankRow() {
-            neither.setSelected(true);
-        }
+	public void populateBlankRow() {
+		neither.setSelected(true);
+	}
 	
-        public void populateDefaultRow() {
-            dialect.setValue(getPreferredDefaultDialect());
-            neither.setSelected(true);
-        }
-        
+	public void populateDefaultRow() {
+		dialect.setValue(getPreferredDefaultDialect());
+		neither.setSelected(true);
+	}
+	
 	public BooleanBinding isValid()
 	{
 		return rowValid;
@@ -153,13 +144,13 @@ public class AcceptabilityRow
 	
 	public int getDialect() 
 	{
-            return Get.conceptService().getConcept(dialect.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
+		return Get.conceptService().getConcept(dialect.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
 	}
 	
 
-        public Node getPreferredNode()
+	public Node getPreferredNode()
 	{
- 		return preferred;
+		return preferred;
 	}
 	
 	public Node getAcceptableNode()
@@ -167,42 +158,42 @@ public class AcceptabilityRow
 		return acceptable;
 	}
 
-        	
+		
 	public Node getNeitherNode()
 	{
 		return neither;
 	}
-        
-        public boolean isPreferred() {
-            return preferred.isSelected();
-        }
-        
-        public boolean isAcceptable() {
-            return acceptable.isSelected();
-        }
-        
-        public boolean isNeither() {
-            return neither.isSelected();
-        }
+	
+	public boolean isPreferred() {
+		return preferred.isSelected();
+	}
+	
+	public boolean isAcceptable() {
+		return acceptable.isSelected();
+	}
+	
+	public boolean isNeither() {
+		return neither.isSelected();
+	}
 
-    private ObservableList<SimpleDisplayConcept> populateDialectFromLanguage() {
-        ObservableList<SimpleDisplayConcept> languageConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+	private ObservableList<SimpleDisplayConcept> populateDialectFromLanguage() {
+		ObservableList<SimpleDisplayConcept> languageConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
 
-            try {
-                ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(IsaacMetadataAuxiliaryBinding.DIALECT_ASSEMBLAGE.getConceptSequence(), 
-                                                                                          ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+		try {
+			ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(IsaacMetadataAuxiliaryBinding.DIALECT_ASSEMBLAGE.getConceptSequence(), 
+												  ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+	
+			for (int conSeq : children.asArray()) {
+				SimpleDisplayConcept sdc = new SimpleDisplayConcept(conSeq); 
+				languageConcepts.add(sdc);
+			}
+		} catch (Exception e) {
+		}
 
-                for (int conSeq : children.asArray()) {
-                    SimpleDisplayConcept sdc = new SimpleDisplayConcept(conSeq); 
-                    languageConcepts.add(sdc);
-                }
-            } catch (Exception e) {
-            }
+		return languageConcepts;
+	}
 
-            return languageConcepts;
-    }
-
-    private SimpleDisplayConcept getPreferredDefaultDialect() {
-        return new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT.getConceptSequence());
-    }
+	private SimpleDisplayConcept getPreferredDefaultDialect() {
+		return new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.US_ENGLISH_DIALECT.getConceptSequence());
+	}
 }

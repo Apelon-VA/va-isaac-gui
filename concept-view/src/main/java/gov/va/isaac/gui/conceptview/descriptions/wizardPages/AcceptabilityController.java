@@ -22,14 +22,9 @@ import gov.va.isaac.AppContext;
 import gov.va.isaac.gui.conceptview.descriptions.PanelControllers;
 import gov.va.isaac.gui.conceptview.descriptions.ScreensController;
 import gov.va.isaac.util.UpdateableBooleanBinding;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.impl.utility.Frills;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -39,7 +34,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -51,18 +45,18 @@ import org.slf4j.LoggerFactory;
  */
 public class AcceptabilityController implements PanelControllers {
 	
-        @FXML private AnchorPane acceptabilityModificationPane;
-        @FXML private Label termLabel;
-        @FXML private Label languageLabel;
-        
-        @FXML private GridPane acceptabilityGridPane;
+	@FXML private AnchorPane acceptabilityModificationPane;
+	@FXML private Label termLabel;
+	@FXML private Label languageLabel;
+	
+	@FXML private GridPane acceptabilityGridPane;
 
-        @FXML private VBox neitherVBox;
-        @FXML private VBox acceptableVBox;
-        @FXML private VBox preferredVBox;
-        @FXML private VBox dialectVBox;
-        @FXML private VBox addButtonVBox;
-        @FXML private VBox removeButtonVBox;
+	@FXML private VBox neitherVBox;
+	@FXML private VBox acceptableVBox;
+	@FXML private VBox preferredVBox;
+	@FXML private VBox dialectVBox;
+	@FXML private VBox addButtonVBox;
+	@FXML private VBox removeButtonVBox;
 
 	@FXML private Button cancelButton;
 	@FXML private Button saveButton;
@@ -75,7 +69,7 @@ public class AcceptabilityController implements PanelControllers {
 
 	private UpdateableBooleanBinding allValid;
 
-        @Override
+	@Override
 	public void initialize() {
 		cancelButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
@@ -99,8 +93,8 @@ public class AcceptabilityController implements PanelControllers {
 				processController.setScreen(ScreensController.DESCRIPTION_SCREEN);
 			}
 		});
-                
- 		allValid = new UpdateableBooleanBinding()
+		
+		allValid = new UpdateableBooleanBinding()
 		{
 			{
 				setComputeOnInvalidate(true);
@@ -118,118 +112,117 @@ public class AcceptabilityController implements PanelControllers {
 				}
 				return true;
 			}
-		};           
+		};
 
 		saveButton.disableProperty().bind(allValid.not());
 	}
 
-        @Override
+	@Override
 	public void finishInit(ScreensController screenParent){
-            processController = screenParent;
+		processController = screenParent;
 
-            String termText = processController.getWizard().getTermText();
-            if (termText.length() > 50) {
-                termText = termText.substring(0, 50) + "...";
-            }
-            termLabel.setText(termText);
-            languageLabel.setText(languageLabel.getText() + processController.getWizard().getLanguageString());
-            
-            if (processController.getWizard().isNew() || !addExistingRows()) {
-                addDefaultRow();
-            }
-        }
+		String termText = processController.getWizard().getTermText();
+		if (termText.length() > 50) {
+		termText = termText.substring(0, 50) + "...";
+		}
+		termLabel.setText(termText);
+		languageLabel.setText(languageLabel.getText() + processController.getWizard().getLanguageString());
+		
+		if (processController.getWizard().isNew() || !addExistingRows()) {
+		addDefaultRow();
+		}
+	}
 
 	@Override
 	public void processValues() {
-            try {
+		try {
 
-                UUID uuid = processController.getWizard().persistDescription(acceptabilitySelection);
-                
-                String outputMsg;
-                
-                if (processController.getWizard().isNew()) {
-                    outputMsg = "WizardController adding new description: " + processController.getWizard().getTermText();
-                } else {
-                    outputMsg = "WizardController updating description: " + processController.getWizard().getTermText();
-                }
-                LOGGER.info(outputMsg);
-            } catch (Exception e) {
-                LOGGER.error("Unable to create and/or commit new concept", e);
-                AppContext.getCommonDialogs().showErrorDialog("Error Creating Concept", "Unexpected error creating the Concept", e.getMessage(), acceptabilityModificationPane.getScene().getWindow());
-            }
+		UUID uuid = processController.getWizard().persistDescription(acceptabilitySelection);
+		
+		String outputMsg;
+		
+		if (processController.getWizard().isNew()) {
+			outputMsg = "WizardController adding new description: " + processController.getWizard().getTermText();
+		} else {
+			outputMsg = "WizardController updating description: " + processController.getWizard().getTermText();
+		}
+		LOGGER.info(outputMsg);
+		} catch (Exception e) {
+		LOGGER.error("Unable to create and/or commit new concept", e);
+		AppContext.getCommonDialogs().showErrorDialog("Error Creating Concept", "Unexpected error creating the Concept", e.getMessage(), acceptabilityModificationPane.getScene().getWindow());
+		}
 	}
 
 	
 	private boolean addExistingRows()
 	{
-            Map<Integer, Integer> existingPairs = processController.getWizard().getAcceptabilitiesForEditDesc();
+		Map<Integer, Integer> existingPairs = processController.getWizard().getAcceptabilitiesForEditDesc();
 
-            // Setup Acceptability
-            for (Integer dialect : existingPairs.keySet()) {
-                AcceptabilityRow ar = new AcceptabilityRow();
-                ar.populateRows(dialect, existingPairs.get(dialect));
+		// Setup Acceptability
+		for (Integer dialect : existingPairs.keySet()) {
+		AcceptabilityRow ar = new AcceptabilityRow();
+		ar.populateRows(dialect, existingPairs.get(dialect));
 
-                populateRow(ar);
-            }
+		populateRow(ar);
+		}
 
-            return !existingPairs.isEmpty();
-        }
+		return !existingPairs.isEmpty();
+	}
 
 	private void addBlankRow()
 	{
 		// Setup Acceptability
 		AcceptabilityRow ar = new AcceptabilityRow();
-                ar.populateBlankRow();
+		ar.populateBlankRow();
 
-                populateRow(ar);
-        }
+		populateRow(ar);
+	}
 
-        private void addDefaultRow() {
-            // Setup Acceptability
-            AcceptabilityRow ar = new AcceptabilityRow();
-            ar.populateDefaultRow();
+	private void addDefaultRow() {
+		// Setup Acceptability
+		AcceptabilityRow ar = new AcceptabilityRow();
+		ar.populateDefaultRow();
 
-            populateRow(ar);
-        }
+		populateRow(ar);
+	}
 
-        private void populateRow(AcceptabilityRow ar) {
-            acceptabilitySelection.add(ar);
-            allValid.addBinding(ar.isValid());
+	private void populateRow(AcceptabilityRow ar) {
+		acceptabilitySelection.add(ar);
+		allValid.addBinding(ar.isValid());
 
-            dialectVBox.getChildren().add(ar.getDialectNode());
+		dialectVBox.getChildren().add(ar.getDialectNode());
 
-            preferredVBox.getChildren().add(ar.getPreferredNode());
+		preferredVBox.getChildren().add(ar.getPreferredNode());
 
-            acceptableVBox.getChildren().add(ar.getAcceptableNode());
+		acceptableVBox.getChildren().add(ar.getAcceptableNode());
 
-            neitherVBox.getChildren().add(ar.getNeitherNode());
+		neitherVBox.getChildren().add(ar.getNeitherNode());
 
-            // Setup Add Button
-            Button addButton = new Button("+");
-            addButton.setOnAction(new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent e) {
-                            addBlankRow();
-                    }
-            });
+		// Setup Add Button
+		Button addButton = new Button("+");
+		addButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent e) {
+				addBlankRow();
+			}
+		});
 
-            addButtonVBox.getChildren().add(addButton);
+		addButtonVBox.getChildren().add(addButton);
 
-            // Add new Remove Synonym Button
-            Button removeButton = new Button("-");
-            removeButton.setOnAction(new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent e) {
-                            int idx = removeButtonVBox.getChildren().indexOf(e.getSource());
-                            removeRow(idx);
-                    }
-            });
-            removeButtonVBox.getChildren().add(removeButton);
-        }
+		// Add new Remove Synonym Button
+		Button removeButton = new Button("-");
+		removeButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent e) {
+				int idx = removeButtonVBox.getChildren().indexOf(e.getSource());
+				removeRow(idx);
+			}
+		});
+		removeButtonVBox.getChildren().add(removeButton);
+	}
 
 	
-        private void removeRow(int idx) {
-		int size = acceptabilitySelection.size();
+	private void removeRow(int idx) {
 		AcceptabilityRow ar = acceptabilitySelection.remove(idx);
 		allValid.removeBinding(ar.isValid());
 		
@@ -238,10 +231,8 @@ public class AcceptabilityController implements PanelControllers {
 		acceptableVBox.getChildren().remove(idx);
 		neitherVBox.getChildren().remove(idx);
 		
-                addButtonVBox.getChildren().remove(idx);
+		addButtonVBox.getChildren().remove(idx);
 		removeButtonVBox.getChildren().remove(idx);
-		
-		
 	}
 }
 

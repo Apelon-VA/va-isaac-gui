@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *	 http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,6 @@ import gov.va.isaac.gui.conceptview.data.ConceptDescription;
 import gov.va.isaac.gui.util.ErrorMarkerUtils;
 import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
-import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.collections.ConceptSequenceSet;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextField;
 
@@ -49,7 +47,7 @@ public class TermRow
 	Node languageNode;
 	Node textNode;
 	Node typeNode;
-        Node significanceNode;
+	Node significanceNode;
 	SimpleStringProperty textFieldInvalidReason_ = new SimpleStringProperty("The Term is required");
 	SimpleStringProperty typeFieldInvalidReason_ = new SimpleStringProperty("A Type selection is required");
 	SimpleStringProperty significanceFieldInvalidReason_ = new SimpleStringProperty("A Significance selection is required");
@@ -60,7 +58,7 @@ public class TermRow
 	ChoiceBox<SimpleDisplayConcept> type;
 	ChoiceBox<SimpleDisplayConcept> significance;
 	ChoiceBox<SimpleDisplayConcept> language;
-        
+	
 	private UpdateableBooleanBinding rowValid;
 	
 	public TermRow()
@@ -98,9 +96,9 @@ public class TermRow
 		});
 		textNode = ErrorMarkerUtils.setupErrorMarker(text, textFieldInvalidReason_);
 		
-		type = new ChoiceBox();
-                type.setItems(populateDescriptionTypes());
-                type.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
+		type = new ChoiceBox<>();
+		type.setItems(populateDescriptionTypes());
+		type.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
 			public void changed(ObservableValue<? extends SimpleDisplayConcept> observable, SimpleDisplayConcept oldValue, SimpleDisplayConcept newValue)
@@ -118,9 +116,9 @@ public class TermRow
 		});
 		
 		typeNode = ErrorMarkerUtils.setupErrorMarker(type, typeFieldInvalidReason_);
-                
-                language = new ChoiceBox();
-                language.setItems(populateLanguageTypes());
+		
+		language = new ChoiceBox<>();
+		language.setItems(populateLanguageTypes());
 		language.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
@@ -139,9 +137,9 @@ public class TermRow
 		
 		languageNode = ErrorMarkerUtils.setupErrorMarker(language, languageFieldInvalidReason_);
 
-                                
-                significance = new ChoiceBox();
-                significance.setItems(populateInitCapTypes());
+				
+		significance = new ChoiceBox<>();
+		significance.setItems(populateInitCapTypes());
 		significance.valueProperty().addListener(new ChangeListener<SimpleDisplayConcept>()
 		{
 			@Override
@@ -161,7 +159,7 @@ public class TermRow
 		
 		significanceNode = ErrorMarkerUtils.setupErrorMarker(significance, significanceFieldInvalidReason_);
 		
-                
+		
 		rowValid = new UpdateableBooleanBinding()
 		{
 			{	
@@ -172,20 +170,19 @@ public class TermRow
 			protected boolean computeValue()
 			{
 				return (textFieldInvalidReason_.get().length() == 0 && typeFieldInvalidReason_.get().length() == 0 && languageFieldInvalidReason_.get().length() == 0 && significanceFieldInvalidReason_.get().length() == 0);
-//                                return true;
-                        }
+			}
 		};
 	}
 	
-        public void populateRow(ConceptDescription desc) {
-            String descTerm = desc.getValue();
-            
-            text.setText(descTerm);
-            significance.setValue(new SimpleDisplayConcept(desc.getSignificanceSequence()));
-            type.setValue(new SimpleDisplayConcept(desc.getTypeSequence()));
-            language.setValue(new SimpleDisplayConcept(desc.getLanguageSequence()));
-        }
-        
+	public void populateRow(ConceptDescription desc) {
+		String descTerm = desc.getValue();
+		
+		text.setText(descTerm);
+		significance.setValue(new SimpleDisplayConcept(desc.getSignificanceSequence()));
+		type.setValue(new SimpleDisplayConcept(desc.getTypeSequence()));
+		language.setValue(new SimpleDisplayConcept(desc.getLanguageSequence()));
+	}
+	
 	public BooleanBinding isValid()
 	{
 		return rowValid;
@@ -208,7 +205,7 @@ public class TermRow
 	
 	public int getType() //TODO -
 	{
-            return Get.conceptService().getConcept(type.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
+		return Get.conceptService().getConcept(type.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
 	}
 	
 	public Node getLanguageNode()
@@ -223,11 +220,11 @@ public class TermRow
 	
 	public int getLanguage() //TODO -
 	{
-            return Get.conceptService().getConcept(language.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
+		return Get.conceptService().getConcept(language.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
 
 	}
-        
-        public Node getSignificanceNode()
+	
+	public Node getSignificanceNode()
 	{
  		return significanceNode;
 	}
@@ -239,19 +236,14 @@ public class TermRow
 	
 	public int getSignificance() //TODO -
 	{
-            return Get.conceptService().getConcept(significance.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
-        }
-        
+		return Get.conceptService().getConcept(significance.getSelectionModel().getSelectedItem().getNid()).getConceptSequence();
+	}
+	
 
 	public String Text()
 	{
 		return text.getText();
 	}
-	
-	
-
-	
-
 
 	private int countChar(String str, String c)
 	{
@@ -265,37 +257,37 @@ public class TermRow
 		return count;
 	}
 
-    private ObservableList<SimpleDisplayConcept> populateDescriptionTypes() {
-        ObservableList<SimpleDisplayConcept> descriptionConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
-        descriptionConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()));
-        descriptionConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence()));
+	private ObservableList<SimpleDisplayConcept> populateDescriptionTypes() {
+		ObservableList<SimpleDisplayConcept> descriptionConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+		descriptionConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.SYNONYM.getConceptSequence()));
+		descriptionConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.DEFINITION_DESCRIPTION_TYPE.getConceptSequence()));
+	
+		return descriptionConcepts;
+	}
 
-        return descriptionConcepts;
-    }
+	private ObservableList<SimpleDisplayConcept> populateLanguageTypes() {
+		ObservableList<SimpleDisplayConcept> languageConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
 
-    private ObservableList<SimpleDisplayConcept> populateLanguageTypes() {
-        ObservableList<SimpleDisplayConcept> languageConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+		try {
+			ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(IsaacMetadataAuxiliaryBinding.LANGUAGE.getConceptSequence(), 
+												ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+	
+			for (int conSeq : children.asArray()) {
+				SimpleDisplayConcept sdc = new SimpleDisplayConcept(conSeq); 
+				languageConcepts.add(sdc);
+			}
+		} catch (Exception e) {
+		}
 
-            try {
-                ConceptSequenceSet children = Get.taxonomyService().getChildOfSequenceSet(IsaacMetadataAuxiliaryBinding.LANGUAGE.getConceptSequence(), 
-                                                                                          ExtendedAppContext.getUserProfileBindings().getTaxonomyCoordinate().get());
+		return languageConcepts;
+	}
 
-                for (int conSeq : children.asArray()) {
-                    SimpleDisplayConcept sdc = new SimpleDisplayConcept(conSeq); 
-                    languageConcepts.add(sdc);
-                }
-            } catch (Exception e) {
-            }
-
-            return languageConcepts;
-    }
-
-    private ObservableList<SimpleDisplayConcept> populateInitCapTypes() {
-        ObservableList<SimpleDisplayConcept> initCapConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
-        initCapConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_NOT_SIGNIFICANT.getConceptSequence()));
-        initCapConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_SIGNIFICANT.getConceptSequence()));
-
-        return initCapConcepts;
-    }
+	private ObservableList<SimpleDisplayConcept> populateInitCapTypes() {
+		ObservableList<SimpleDisplayConcept> initCapConcepts = FXCollections.observableArrayList(new ArrayList<SimpleDisplayConcept>());
+		initCapConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_NOT_SIGNIFICANT.getConceptSequence()));
+		initCapConcepts.add(new SimpleDisplayConcept(IsaacMetadataAuxiliaryBinding.INITIAL_CASE_IS_SIGNIFICANT.getConceptSequence()));
+	
+		return initCapConcepts;
+	}
 }
 

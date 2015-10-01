@@ -6,106 +6,133 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="acceptabilityModificationPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.va.isaac.gui.conceptview.descriptions.wizardPages.AcceptabilityController">
+<AnchorPane fx:id="acceptabilityModificationPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gov.va.isaac.gui.conceptview.descriptions.wizardPages.AcceptabilityController">
 	<children>
 		<BorderPane AnchorPane.bottomAnchor="25.0" AnchorPane.topAnchor="25.0">
 			<top>
-<VBox alignment="TOP_CENTER" spacing="5.0" BorderPane.alignment="CENTER">
-<children>
-				<Label text="Define Acceptability" textAlignment="CENTER" BorderPane.alignment="CENTER">
-					<font>
-						<Font name="System Bold" size="33.0" />
-					</font>
-				</Label><Label fx:id="languageLabel" text="For: " textAlignment="CENTER">
-<font>
-<Font name="System Bold" size="14.0" />
-</font>
-</Label><Label fx:id="termLabel" textAlignment="CENTER" wrapText="true" />
-</children>
-</VBox>
+				<VBox alignment="TOP_CENTER" spacing="5.0" BorderPane.alignment="CENTER">
+					<children>
+						<Label text="Define Acceptability" textAlignment="CENTER" BorderPane.alignment="CENTER">
+							<font>
+								<Font name="System Bold" size="33.0" />
+							</font>
+						</Label>
+						<Label fx:id="languageLabel" text="For: " textAlignment="CENTER">
+							<font>
+								<Font name="System Bold" size="14.0" />
+							</font>
+						</Label>
+						<Label fx:id="termLabel" textAlignment="CENTER" wrapText="true" />
+					</children>
+				</VBox>
 			</top>
 			<center>
 				<VBox alignment="TOP_CENTER" BorderPane.alignment="TOP_CENTER">
 					<children>
 						<VBox alignment="TOP_CENTER">
-<children><GridPane fx:id="acceptabilityGridPane" alignment="TOP_CENTER" hgap="25.0" vgap="3.0">
-  <columnConstraints>
-    <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" />
-<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
-<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
-<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
-<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
-<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
-  </columnConstraints>
-  <rowConstraints>
-    <RowConstraints fillHeight="false" maxHeight="-Infinity" vgrow="NEVER" />
-    <RowConstraints fillHeight="false" vgrow="NEVER" />
-  </rowConstraints>
-<children><Label text="Dialect" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
-<font>
-<Font name="System Bold" size="16.0" />
-</font>
-</Label><Label text="Preferred" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
-<font>
-<Font name="System Bold" size="16.0" />
-</font>
-</Label><Label text="Acceptable" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
-<font>
-<Font name="System Bold" size="16.0" />
-</font>
-</Label><Label text="Neither" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
-<font>
-<Font name="System Bold" size="16.0" />
-</font>
-</Label><VBox fx:id="dialectVBox" fillWidth="false" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
-<GridPane.margin>
-<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-</GridPane.margin></VBox><VBox fx:id="preferredVBox" fillWidth="false" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
-<GridPane.margin>
-<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-</GridPane.margin></VBox><VBox fx:id="acceptableVBox" fillWidth="false" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
-<GridPane.margin>
-<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-</GridPane.margin></VBox><VBox fx:id="neitherVBox" fillWidth="false" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
-<GridPane.margin>
-<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-</GridPane.margin></VBox><VBox fx:id="addButtonVBox" fillWidth="false" GridPane.columnIndex="4" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
-<GridPane.margin>
-<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-</GridPane.margin></VBox><VBox fx:id="removeButtonVBox" fillWidth="false" GridPane.columnIndex="5" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
-<GridPane.margin>
-<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-</GridPane.margin></VBox>
-</children>
-<VBox.margin>
-<Insets />
-</VBox.margin>
-<padding>
-<Insets left="5.0" right="5.0" />
-</padding>
-</GridPane>
-</children>
+							<children>
+								<GridPane fx:id="acceptabilityGridPane" alignment="TOP_CENTER" hgap="25.0" vgap="3.0">
+									<columnConstraints>
+										<ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+										<ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="NEVER" />
+									</columnConstraints>
+									<rowConstraints>
+										<RowConstraints fillHeight="false" maxHeight="-Infinity" vgrow="NEVER" />
+										<RowConstraints fillHeight="false" vgrow="NEVER" />
+									</rowConstraints>
+									<children>
+										<Label text="Dialect" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<Label text="Preferred" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<Label text="Acceptable" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<Label text="Neither" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.vgrow="NEVER">
+											<font>
+												<Font name="System Bold" size="16.0" />
+											</font>
+										</Label>
+										<VBox fx:id="dialectVBox" fillWidth="false" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="CENTER"
+											GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="preferredVBox" fillWidth="false" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="acceptableVBox" fillWidth="false" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="neitherVBox" fillWidth="false" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="addButtonVBox" fillWidth="false" GridPane.columnIndex="4" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+										<VBox fx:id="removeButtonVBox" fillWidth="false" GridPane.columnIndex="5" GridPane.halignment="CENTER" GridPane.rowIndex="1"
+											GridPane.valignment="CENTER" GridPane.vgrow="SOMETIMES">
+											<GridPane.margin>
+												<Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+											</GridPane.margin>
+										</VBox>
+									</children>
+									<VBox.margin>
+										<Insets />
+									</VBox.margin>
+									<padding>
+										<Insets left="5.0" right="5.0" />
+									</padding>
+								</GridPane>
+							</children>
 						</VBox>
 					</children>
 					<BorderPane.margin>
 						<Insets />
 					</BorderPane.margin>
-<padding>
-<Insets bottom="50.0" left="3.0" right="3.0" top="15.0" />
-</padding>
+					<padding>
+						<Insets bottom="50.0" left="3.0" right="3.0" top="15.0" />
+					</padding>
 				</VBox>
 			</center>
-<bottom><HBox alignment="CENTER" fillHeight="false" spacing="30.0" BorderPane.alignment="BOTTOM_CENTER">
-<children>
-<Button fx:id="cancelButton" mnemonicParsing="false" text="Cancel" />
-<Button fx:id="backButton" mnemonicParsing="false" text="Back" />
-<Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
-</children>
-<BorderPane.margin>
-<Insets />
-</BorderPane.margin>
-</HBox>
-</bottom>
+			<bottom>
+				<HBox alignment="CENTER" fillHeight="false" spacing="30.0" BorderPane.alignment="BOTTOM_CENTER">
+					<children>
+						<Button fx:id="cancelButton" mnemonicParsing="false" text="Cancel" />
+						<Button fx:id="backButton" mnemonicParsing="false" text="Back" />
+						<Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
+					</children>
+					<BorderPane.margin>
+						<Insets />
+					</BorderPane.margin>
+				</HBox>
+			</bottom>
 		</BorderPane>
 	</children>
 </AnchorPane>

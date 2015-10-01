@@ -51,9 +51,9 @@ public class ScreensController extends StackPane {
 	public static final String ACCEPTABILITY_SCREEN = "acceptability";
 	public static final String ACCEPTABILITY_SCREEN_FXML = "wizardPages/acceptability.fxml";
 
-        public enum ModificationType {
-            NEW, EDIT
-        };
+	public enum ModificationType {
+		NEW, EDIT
+	};
 
 	private static final Logger logger = LoggerFactory.getLogger(ScreensController.class);
 
@@ -61,30 +61,30 @@ public class ScreensController extends StackPane {
 	
 	public ScreensController(ConceptChronology<?> con, StampCoordinate stampCoord)
 	{
-                wizard.setModificationType(ModificationType.NEW);
-                wizard.setConcept(con);
-                wizard.setStampCoordinate(stampCoord);
+		wizard.setModificationType(ModificationType.NEW);
+		wizard.setConcept(con);
+		wizard.setStampCoordinate(stampCoord);
 
-                loadScreen(DESCRIPTION_SCREEN, DESCRIPTION_SCREEN_FXML);
+		loadScreen(DESCRIPTION_SCREEN, DESCRIPTION_SCREEN_FXML);
 		setScreen(DESCRIPTION_SCREEN);
 	}
 	public ScreensController(ConceptChronology<?> con, StampCoordinate stampCoord, ConceptDescription desc)
 	{
-                wizard.setModificationType(ModificationType.EDIT);
-                wizard.setEditDescription(desc);
-                wizard.setConcept(con);
-                wizard.setStampCoordinate(stampCoord);
-                
-                loadScreen(DESCRIPTION_SCREEN, DESCRIPTION_SCREEN_FXML);
+		wizard.setModificationType(ModificationType.EDIT);
+		wizard.setEditDescription(desc);
+		wizard.setConcept(con);
+		wizard.setStampCoordinate(stampCoord);
+		
+		loadScreen(DESCRIPTION_SCREEN, DESCRIPTION_SCREEN_FXML);
 		setScreen(DESCRIPTION_SCREEN);
 	}
 
 	public void addScreen(String name, Parent screen) {
-                screens.put(name, screen);
+		screens.put(name, screen);
 	}
 		
-        public void loadAcceptabilityScreen() {
-                loadScreen(ACCEPTABILITY_SCREEN, ACCEPTABILITY_SCREEN_FXML);
+	public void loadAcceptabilityScreen() {
+		loadScreen(ACCEPTABILITY_SCREEN, ACCEPTABILITY_SCREEN_FXML);
 	}
 
 	public boolean loadScreen(String name, String resource) {

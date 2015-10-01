@@ -34,6 +34,7 @@ import gov.va.isaac.util.UpdateableBooleanBinding;
 import gov.va.isaac.util.Utility;
 import gov.vha.isaac.metadata.coordinates.StampCoordinates;
 import gov.vha.isaac.metadata.coordinates.TaxonomyCoordinates;
+import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -59,7 +60,6 @@ import gov.vha.isaac.ochre.impl.sememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -74,7 +74,6 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -122,13 +121,10 @@ import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-
 import org.reactfx.inhibeans.property.SimpleBooleanProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sun.javafx.tk.Toolkit;
-import gov.vha.isaac.metadata.source.IsaacMetadataAuxiliaryBinding;
 
 
 public class ConceptViewController {
@@ -162,7 +158,7 @@ public class ConceptViewController {
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	descriptionValueTableColumn;
 	@FXML private TableColumn<ConceptDescription, ConceptDescription>	sememeTableColumn;
 	
-    @FXML private TableColumn<ConceptDescription, ?> descriptionTableSTAMPColumn;
+	@FXML private TableColumn<ConceptDescription, ?> descriptionTableSTAMPColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem<?>> moduleTableColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem<?>> timeTableColumn;
 	@FXML private TableColumn<ConceptDescription, StampedItem<?>> authorTableColumn;
@@ -279,38 +275,31 @@ public class ConceptViewController {
 		descriptionTableView.setPlaceholder(new Label("There are no Descriptions for the selected Concept."));
 
 		// This binding refreshes whenever its bindings change
-		refreshBinding = new UpdateableBooleanBinding() {
+		refreshBinding = new UpdateableBooleanBinding()
+		{
 			private volatile boolean enabled = false;
-            {
-                setComputeOnInvalidate(true);
-                addBinding(
-                		conceptProperty,
-                		activeOnlyToggle.selectedProperty(),
-                		panelTaxonomyCoordinate,
-                		stampToggle.selectedProperty(),
-                		conceptChronologyProperty,
-                		conceptCommitRecordProperty
-                		);
-                		//modulesComboBox.getSelectionModel().selectedItemProperty());
-                enabled = true;
-            }
+			{
+				setComputeOnInvalidate(true);
+				addBinding(conceptProperty, activeOnlyToggle.selectedProperty(), panelTaxonomyCoordinate, stampToggle.selectedProperty(), conceptChronologyProperty,
+						conceptCommitRecordProperty);
+				enabled = true;
+			}
 
-            @Override
-            protected boolean computeValue()
-            {
-                if (!enabled)
-                {
-                    LOG.debug("Skip initial spurious refresh calls");
-                    return false;
-                }
-                LOG.debug("Refreshing ConceptView due to change in updateableBooleanBinding");
+			@Override
+			protected boolean computeValue()
+			{
+				if (!enabled)
+				{
+					LOG.debug("Skip initial spurious refresh calls");
+					return false;
+				}
+				LOG.debug("Refreshing ConceptView due to change in updateableBooleanBinding");
 
 				refresh();
 
 				return false;
-            }
+			}
 		};
-		//updateableBooleanBinding.addBinding(conceptNode.getConceptProperty(), activeOnlyToggle.selectedProperty());
 
 		Platform.runLater(() -> {
 			getRoot().getScene().getWindow().setOnCloseRequest(new EventHandler<WindowEvent>() {
@@ -1170,7 +1159,7 @@ public class ConceptViewController {
 				StackPane sp = new StackPane();
 				sp.setPrefSize(25, 25);
 				String tooltipText = conceptDescription.getStampedVersion().getState().toString();
-				ImageView image    = conceptDescription.isActive()? Images.BLACK_DOT.createImageView() : Images.GREY_DOT.createImageView();
+				ImageView image	= conceptDescription.isActive()? Images.BLACK_DOT.createImageView() : Images.GREY_DOT.createImageView();
 				sizeAndPosition(image, sp, Pos.CENTER);
 				cell.setTooltip(new Tooltip(tooltipText));
 				cell.setGraphic(sp);
@@ -1374,11 +1363,11 @@ public class ConceptViewController {
 				miEdit.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent arg0) {
-                                            if (conceptDescription.getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence()) {
-                                                AppContext.getCommonDialogs().showInformationDialog("Edit Description Failed", "Cannot edit a Fully Specified Name");
-                                            } else {
-                                                editDescription(conceptDescription);
-                                            }
+						if (conceptDescription.getTypeSequence() == IsaacMetadataAuxiliaryBinding.FULLY_SPECIFIED_NAME.getConceptSequence()) {
+							AppContext.getCommonDialogs().showInformationDialog("Edit Description Failed", "Cannot edit a Fully Specified Name");
+						} else {
+							editDescription(conceptDescription);
+						}
 					}
 				});
 				cm.getItems().add(miEdit);
@@ -1560,7 +1549,7 @@ public class ConceptViewController {
 	private void newDescriptionButton_Click() {
 		Stage stage = new Stage(StageStyle.DECORATED);
 		stage.initModality(Modality.NONE);
-                stage.setScene(new Scene(new ScreensController(conceptProperty.get().getChronology(), panelTaxonomyCoordinate.get().getStampCoordinate())));
+		stage.setScene(new Scene(new ScreensController(conceptProperty.get().getChronology(), panelTaxonomyCoordinate.get().getStampCoordinate())));
 		stage.setTitle("Define New Concept");
 		stage.getScene().getStylesheets().add(DescriptionModificationWizard.class.getResource("/isaac-shared-styles.css").toString());
 		stage.showAndWait();
